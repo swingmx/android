@@ -1,6 +1,8 @@
 plugins {
+    id("com.google.devtools.ksp")
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -67,5 +69,9 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    //
+    // Exoplayer
+    implementation("androidx.media3:media3-exoplayer:1.3.0")
+    implementation("androidx.media3:media3-exoplayer-dash:1.3.0")
+    implementation("androidx.media3:media3-ui:1.3.0")
+
 }
