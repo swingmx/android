@@ -14,4 +14,13 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Swing Music"
+// App Module
 include(":app")
+
+// Core Modules
+include(":core")
+include(":network")
+
+// Feature Modules
+include(":feature:folder")
+
