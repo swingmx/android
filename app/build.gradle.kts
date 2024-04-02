@@ -54,7 +54,8 @@ android {
 dependencies {
     // Local Modules
     implementation(project(":core"))
-    implementation(project(":feature:folder"))
+    implementation(project(":feature:folder")) // TODO: Remove this
+    implementation(project(":uicomponent"))
 
     // Core
     implementation("androidx.core:core-ktx:1.12.0")
