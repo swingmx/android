@@ -64,7 +64,7 @@ fun FolderItem(
                 // Folder Icon
                 Icon(
                     modifier = Modifier
-                        .padding(horizontal = 8.dp)
+                        .padding(start = 8.dp, end = 4.dp)
                         .size(36.dp),
                     painter = painterResource(id = R.drawable.folder_filled),
                     contentDescription = "Folder Icon",
