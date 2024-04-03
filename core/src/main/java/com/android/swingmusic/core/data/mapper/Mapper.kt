@@ -1,9 +1,9 @@
 package com.android.swingmusic.core.data.mapper
 
 import com.android.swingmusic.core.data.dto.ArtistDto
-import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.FolderDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
+import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.RootDirDto
 import com.android.swingmusic.core.data.dto.RootDirListDto
 import com.android.swingmusic.core.data.dto.TrackDto
@@ -39,7 +39,7 @@ object Map {
             albumArtists = albumArtistDtos?.map { it.toArtist() } ?: emptyList(),
             albumHash = albumHash ?: "",
             artistHashes = artistHashes ?: "",
-            artists = artistDtos?.map { it.toArtist() } ?: emptyList(),
+            artists = artistsDto?.map { it.toArtist() } ?: emptyList(),
             ati = ati ?: "",
             bitrate = bitrate ?: 0,
             copyright = copyright ?: "",
@@ -69,14 +69,14 @@ object Map {
         )
     }
 
-    fun FoldersAndTracksRequestDto.toFolderAndTracksRequest(): FoldersAndTracksRequest{
+    fun FoldersAndTracksRequestDto.toFolderAndTracksRequest(): FoldersAndTracksRequest {
         return FoldersAndTracksRequest(
             folder = folder ?: "",
             tracksOnly = tracksOnly ?: false
         )
     }
 
-    fun FoldersAndTracksRequest.toFoldersAndTracksRequestDto(): FoldersAndTracksRequestDto{
+    fun FoldersAndTracksRequest.toFoldersAndTracksRequestDto(): FoldersAndTracksRequestDto {
         return FoldersAndTracksRequestDto(
             folder = folder,
             tracksOnly = tracksOnly

@@ -20,6 +20,7 @@ include(":app")
 // Core Modules
 include(":core")
 include(":network")
+include(":uicomponent")
 
 // Feature Modules
 include(":feature:folder")

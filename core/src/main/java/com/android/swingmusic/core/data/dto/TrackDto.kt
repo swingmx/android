@@ -13,13 +13,13 @@ data class TrackDto(
     @SerializedName("artist_hashes")
     val artistHashes: String?,
     @SerializedName("artists")
-    val artistDtos: List<ArtistDto>?,
+    val artistsDto: List<ArtistDto>?,
     @SerializedName("_ati")
     val ati: String?,
     @SerializedName("bitrate")
     val bitrate: Int?,
     @SerializedName("copyright")
-    val copyright: Any?,
+    val copyright: String?,
     @SerializedName("created_date")
     val createdDate: Double?,
     @SerializedName("date")
