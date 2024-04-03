@@ -21,10 +21,13 @@ class DataNetworkRepository @Inject constructor(
             Resource.Success(data = foldersAndTracksDto.toFolderAndTracks())
 
         } catch (e: IOException) {
-            Resource.Error<FoldersAndTracks>(message = "Unable to fetch folders. Check your connection and try again!")
+            Resource.Error(
+                message = e.localizedMessage
+                    ?: "Unable to fetch folders\nCheck your connection and try again!"
+            )
 
         } catch (e: HttpException) {
-            Resource.Error<FoldersAndTracks>(
+            Resource.Error(
                 message = e.localizedMessage ?: "An unexpected error occurred!"
             )
         }
