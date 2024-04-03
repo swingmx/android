@@ -41,7 +41,7 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 @Composable
 fun FolderItem(
     folder: Folder,
-    folderCount: Int,
+    folderCount: Int = 0, // TODO: Request back-end implementation of this
     onClickFolderItem: (Folder) -> Unit,
     onClickMoreVert: () -> Unit
 ) {
@@ -64,7 +64,7 @@ fun FolderItem(
                 // Folder Icon
                 Icon(
                     modifier = Modifier
-                        .padding(start = 8.dp, end = 4.dp)
+                        .padding(start = 8.dp)
                         .size(36.dp),
                     painter = painterResource(id = R.drawable.folder_filled),
                     contentDescription = "Folder Icon",
