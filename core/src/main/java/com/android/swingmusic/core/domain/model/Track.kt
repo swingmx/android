@@ -9,7 +9,7 @@ data class Track(
     val artists: List<Artist>,
     val ati: String,
     val bitrate: Int,
-    val copyright: Any,
+    val copyright: String,
     val createdDate: Double,
     val date: Int,
     val disc: Int,
