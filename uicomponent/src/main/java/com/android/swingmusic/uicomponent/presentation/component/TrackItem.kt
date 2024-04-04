@@ -4,6 +4,8 @@ import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,6 +42,7 @@ import com.android.swingmusic.core.util.PlayerState
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.util.formatDuration
+import com.android.swingmusic.uicomponent.util.trimString
 
 
 @Composable
@@ -79,35 +83,51 @@ fun TrackItem(
                             .size(48.dp),
                         contentAlignment = Alignment.Center
                     ) {
+                        /*AsyncImage(
+                            model = "${BASE_URL}img/t/s/${track.image}",
+                            fallback = painterResource(id = R.drawable.audio_fallback),
+                            placeholder = painterResource(id = R.drawable.audio_fallback),
+                            contentDescription = "Artist Image"
+                        )*/
                         Image(
-                            painter = painterResource(id = R.drawable.sample_image),
-                            contentDescription = "Sample image"
+                            painter = painterResource(id = R.drawable.audio_fallback),
+                            contentDescription = "Painter"
                         )
+
                         if (isCurrentTrack) {
                             PlayingTrackIndicator(playerState = playerState)
                         }
                     }
 
-                    Column(modifier = Modifier.padding(start = 4.dp)) {
-                        Text(text = track.title)
+                    Column(
+                        modifier = Modifier
+                            .padding(start = 4.dp)
+                            .scrollable(
+                                orientation = Orientation.Horizontal,
+                                state = rememberScrollState()
+                            )
+                    ) {
+                        Text(
+                            text = track.title.trimString(32)
+                        )
 
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            var artists = ""
+
                             for (artist in track.artists) {
-                                Text(
-                                    text = artist.name,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                                artists += artist.name
                                 if (track.artists.lastIndex != track.artists.indexOf(artist)) {
-                                    Text(
-                                        text = ", ",
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
+                                    artists += ", "
                                 }
                             }
+
+                            Text(
+                                text = artists.trimString(42),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                style = MaterialTheme.typography.bodySmall
+                            )
 
                             // Dot Separator
                             Box(
