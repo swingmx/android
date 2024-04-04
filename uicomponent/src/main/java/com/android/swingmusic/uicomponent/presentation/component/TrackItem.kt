@@ -1,7 +1,6 @@
 package com.android.swingmusic.uicomponent.presentation.component
 
 import android.content.res.Configuration
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -31,14 +30,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.util.PlayerState
+import com.android.swingmusic.network.util.BASE_URL
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.util.formatDuration
@@ -83,15 +87,16 @@ fun TrackItem(
                             .size(48.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        /*AsyncImage(
-                            model = "${BASE_URL}img/t/s/${track.image}",
-                            fallback = painterResource(id = R.drawable.audio_fallback),
-                            placeholder = painterResource(id = R.drawable.audio_fallback),
-                            contentDescription = "Artist Image"
-                        )*/
-                        Image(
-                            painter = painterResource(id = R.drawable.audio_fallback),
-                            contentDescription = "Painter"
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data("${BASE_URL}img/t/s/${track.image}")
+                                .crossfade(true)
+                                .build(),
+                            placeholder = painterResource(R.drawable.audio_fallback),
+                            fallback = painterResource(R.drawable.audio_fallback),
+                            contentDescription = "Track Image",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
                         )
 
                         if (isCurrentTrack) {
