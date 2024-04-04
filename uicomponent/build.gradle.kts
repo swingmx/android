@@ -46,6 +46,7 @@ android {
 dependencies {
     // Local Modules
     implementation(project(":core"))
+    implementation(project(":network"))
 
     // Core
     implementation("androidx.core:core-ktx:1.12.0")

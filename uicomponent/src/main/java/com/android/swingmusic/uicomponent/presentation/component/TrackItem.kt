@@ -1,9 +1,10 @@
 package com.android.swingmusic.uicomponent.presentation.component
 
 import android.content.res.Configuration
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,17 +30,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.util.PlayerState
+import com.android.swingmusic.network.util.BASE_URL
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.util.formatDuration
+import com.android.swingmusic.uicomponent.util.trimString
 
 
 @Composable
@@ -79,35 +87,52 @@ fun TrackItem(
                             .size(48.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.sample_image),
-                            contentDescription = "Sample image"
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data("${BASE_URL}img/t/s/${track.image}")
+                                .crossfade(true)
+                                .build(),
+                            placeholder = painterResource(R.drawable.audio_fallback),
+                            fallback = painterResource(R.drawable.audio_fallback),
+                            contentDescription = "Track Image",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
                         )
+
                         if (isCurrentTrack) {
                             PlayingTrackIndicator(playerState = playerState)
                         }
                     }
 
-                    Column(modifier = Modifier.padding(start = 4.dp)) {
-                        Text(text = track.title)
+                    Column(
+                        modifier = Modifier
+                            .padding(start = 4.dp)
+                            .scrollable(
+                                orientation = Orientation.Horizontal,
+                                state = rememberScrollState()
+                            )
+                    ) {
+                        Text(
+                            text = track.title.trimString(32)
+                        )
 
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            var artists = ""
+
                             for (artist in track.artists) {
-                                Text(
-                                    text = artist.name,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                                artists += artist.name
                                 if (track.artists.lastIndex != track.artists.indexOf(artist)) {
-                                    Text(
-                                        text = ", ",
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
+                                    artists += ", "
                                 }
                             }
+
+                            Text(
+                                text = artists.trimString(42),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                style = MaterialTheme.typography.bodySmall
+                            )
 
                             // Dot Separator
                             Box(
