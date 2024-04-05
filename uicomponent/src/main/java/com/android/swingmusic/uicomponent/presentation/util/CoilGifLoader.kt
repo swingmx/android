@@ -1,4 +1,4 @@
-package com.android.swingmusic.uicomponent.util
+package com.android.swingmusic.uicomponent.presentation.util
 
 import android.os.Build
 import androidx.annotation.RawRes

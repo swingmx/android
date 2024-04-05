@@ -1,18 +1,20 @@
 package com.android.swingmusic.core.data.mapper
 
 import com.android.swingmusic.core.data.dto.ArtistDto
+import com.android.swingmusic.core.data.dto.DirDto
+import com.android.swingmusic.core.data.dto.DirListDto
 import com.android.swingmusic.core.data.dto.FolderDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
-import com.android.swingmusic.core.data.dto.RootDirDto
-import com.android.swingmusic.core.data.dto.RootDirListDto
+import com.android.swingmusic.core.data.dto.RootDirsDto
 import com.android.swingmusic.core.data.dto.TrackDto
 import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.core.domain.model.Dir
+import com.android.swingmusic.core.domain.model.DirList
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
-import com.android.swingmusic.core.domain.model.RootDir
-import com.android.swingmusic.core.domain.model.RootDirList
+import com.android.swingmusic.core.domain.model.RootDirs
 import com.android.swingmusic.core.domain.model.Track
 
 object Map {
@@ -26,7 +28,8 @@ object Map {
 
     fun FolderDto.toFolder(): Folder {
         return Folder(
-            fileCount = fileCount ?: 0,
+            trackCount = fileCount ?: 0,
+            folderCount = folderCount ?: 0,
             isSym = isSym ?: false,
             name = name ?: "",
             path = path ?: ""
@@ -83,16 +86,28 @@ object Map {
         )
     }
 
-    fun RootDirDto.toRootDir(): RootDir {
-        return RootDir(
+    fun DirDto.toDir(): Dir {
+        return Dir(
             name = name ?: "",
             path = path ?: ""
         )
     }
 
-    fun RootDirListDto.toRootDirList(): RootDirList {
-        return RootDirList(
-            folders = folders?.map { it.toRootDir() } ?: emptyList()
+    fun DirListDto.toDirList(): DirList {
+        return DirList(
+            folders = folders?.map { it.toDir() } ?: emptyList()
+        )
+    }
+
+    fun RootDirsDto.toRootDirs(): RootDirs {
+        return RootDirs(
+            rootDirs = rootDirs ?: emptyList()
+        )
+    }
+
+    fun RootDirs.toRootDirsDto(): RootDirsDto {
+        return RootDirsDto(
+            rootDirs = rootDirs
         )
     }
 }
