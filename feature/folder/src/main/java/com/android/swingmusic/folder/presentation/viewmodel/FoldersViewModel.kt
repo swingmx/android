@@ -21,19 +21,19 @@ import javax.inject.Inject
 class FoldersViewModel @Inject constructor(
     private val networkRepository: NetworkRepository
 ) : ViewModel() {
-    // TODO: Read this from DB
-    private val defaultFolder: Folder = Folder(
-        path = "/home/eric/swing",
-        name = "Home",
-        fileCount = 0,
+    val rootFolder: Folder = Folder(
+        path = "/",
+        name = "Root",
+        trackCount = 0,
+        folderCount = 0,
         isSym = false
     )
-    private var _currentFolder: MutableState<Folder> = mutableStateOf(defaultFolder)
+
+    private var _currentFolder: MutableState<Folder> = mutableStateOf(rootFolder)
     val currentFolder: State<Folder> = _currentFolder
 
-
     private var _navPaths: MutableState<List<Folder>> =
-        mutableStateOf(listOf(defaultFolder))
+        mutableStateOf(listOf(rootFolder))
     val navPaths: State<List<Folder>> = _navPaths
 
     private var _foldersAndTracks: MutableState<FoldersAndTracksState> =
@@ -59,8 +59,70 @@ class FoldersViewModel @Inject constructor(
         )
     }
 
+    private fun getRootDirectories() {
+
+
+        viewModelScope.launch {
+            when (val result = networkRepository.getRootDirectories()) {
+                is Resource.Success -> {
+                    val rootDirs: MutableList<Folder> = ArrayList()
+
+                    Timber.e("Root Dirs: ${result.data!!.rootDirs}")
+
+                    for (path in result.data!!.rootDirs) {
+                        rootDirs.add(
+                            Folder(
+                                path = path,
+                                name = path.substringAfterLast("/"),
+                                trackCount = 0,
+                                folderCount = 0,
+                                isSym = true
+                            )
+                        )
+                    }
+
+                    Timber.e("Root Folders: $rootDirs")
+
+                    _foldersAndTracks.value =
+                        _foldersAndTracks.value.copy(
+                            foldersAndTracks = FoldersAndTracks(
+                                folders = rootDirs,
+                                tracks = emptyList()
+                            ),
+                            isLoading = false,
+                            isError = false
+                        )
+                }
+
+                is Resource.Error -> {
+                    _foldersAndTracks.value =
+                        _foldersAndTracks.value.copy(
+                            foldersAndTracks = FoldersAndTracks(
+                                emptyList(),
+                                emptyList()
+                            ),
+                            isLoading = false,
+                            isError = true,
+                            errorMsg = "Unable to fetch root directories"
+                        )
+                }
+
+                is Resource.Loading -> {
+                    _foldersAndTracks.value =
+                        _foldersAndTracks.value.copy(
+                            foldersAndTracks = FoldersAndTracks(
+                                emptyList(),
+                                emptyList()
+                            ),
+                            isLoading = true,
+                            isError = false
+                        )
+                }
+            }
+        }
+    }
+
     private fun getFoldersAndTracks(path: String) {
-        // resetUiStates()
         viewModelScope.launch {
             val request = FoldersAndTracksRequest(path, false)
 
@@ -105,17 +167,31 @@ class FoldersViewModel @Inject constructor(
     }
 
     init {
-        getFoldersAndTracks(path = defaultFolder.path)
+        getRootDirectories()
     }
 
     fun onFolderUiEvent(event: FolderUiEvent) {
         when (event) {
+            is FolderUiEvent.ClickRootDir -> {
+                if (_currentFolder.value.path != rootFolder.path) {
+                    _currentFolder.value = rootFolder
+                    resetUiStates()
+                    getRootDirectories()
+                }
+            }
+
             is FolderUiEvent.ClickNavPath -> {
-                _currentFolder.value = event.folder
-                getFoldersAndTracks(event.folder.path)
+                if (event.folder.path != _currentFolder.value.path) {
+                    resetUiStates()
+
+                    _currentFolder.value = event.folder
+                    getFoldersAndTracks(event.folder.path)
+                }
             }
 
             is FolderUiEvent.ClickFolder -> {
+                resetUiStates()
+
                 _currentFolder.value = event.folder
                 getFoldersAndTracks(event.folder.path)
 
@@ -125,21 +201,32 @@ class FoldersViewModel @Inject constructor(
                     }.plus(event.folder).toSet().toList()
             }
 
-            is FolderUiEvent.OnBackNav -> {
+            is FolderUiEvent.OnBackNav -> { // TODO: Handle back to Root
                 if (_navPaths.value.size > 1) {
                     val currentPathIndex = _navPaths.value.indexOf(event.folder)
                     val backPathIndex = currentPathIndex - 1
                     if (backPathIndex > -1) { // Just to be safe
+                        resetUiStates()
+
                         val backFolder = _navPaths.value[backPathIndex]
                         _currentFolder.value = backFolder
-                        getFoldersAndTracks(backFolder.path)
+
+                        if (backFolder.path == rootFolder.path) {
+                            getRootDirectories()
+                        } else {
+                            getFoldersAndTracks(backFolder.path)
+                        }
                     }
                 }
             }
 
             is FolderUiEvent.Retry -> {
                 resetUiStates()
-                getFoldersAndTracks(_currentFolder.value.path)
+                if (event.event is FolderUiEvent.ClickRootDir) {
+                    getRootDirectories()
+                } else {
+                    getFoldersAndTracks(_currentFolder.value.path)
+                }
             }
         }
     }
