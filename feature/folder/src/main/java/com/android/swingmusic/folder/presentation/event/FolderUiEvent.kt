@@ -6,5 +6,6 @@ interface FolderUiEvent {
     data class ClickFolder(val folder: Folder) : FolderUiEvent
     data class ClickNavPath(val folder: Folder) : FolderUiEvent
     data class OnBackNav(val folder: Folder) : FolderUiEvent
-    object Retry : FolderUiEvent
+    object ClickRootDir : FolderUiEvent
+    data class Retry(val event: FolderUiEvent) : FolderUiEvent
 }
