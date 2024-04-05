@@ -42,11 +42,11 @@ import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.util.PlayerState
-import com.android.swingmusic.network.util.BASE_URL
+import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.util.formatDuration
-import com.android.swingmusic.uicomponent.util.trimString
+import com.android.swingmusic.uicomponent.presentation.util.formatDuration
+import com.android.swingmusic.uicomponent.presentation.util.trimString
 
 
 @Composable
@@ -83,7 +83,7 @@ fun TrackItem(
                     Box(
                         modifier = Modifier
                             .padding(end = 8.dp)
-                            .clip(RoundedCornerShape(24))
+                            .clip(RoundedCornerShape(16))
                             .size(48.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -170,7 +170,7 @@ fun TrackItem(
     showBackground = true,
     device = Devices.PIXEL_2,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
-    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
+    wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE
 )
 @Composable
 fun TrackItemPreview() {
@@ -222,7 +222,7 @@ fun TrackItemPreview() {
             Column {
                 TrackItem(
                     isCurrentTrack = true,
-                    playerState = PlayerState.PLAYING,
+                    playerState = PlayerState.PAUSED,
                     track = track,
                     onClickTrackItem = {
 
@@ -283,7 +283,7 @@ fun TrackItemPreview() {
                 )
                 TrackItem(
                     isCurrentTrack = true,
-                    playerState = PlayerState.PAUSED,
+                    playerState = PlayerState.PLAYING,
                     track = track,
                     onClickTrackItem = {
 

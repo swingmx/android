@@ -1,4 +1,4 @@
-package com.android.swingmusic.network.di
+package com.android.swingmusic.network.data.di
 
 import com.android.swingmusic.network.data.repository.DataNetworkRepository
 import com.android.swingmusic.network.domain.repository.NetworkRepository

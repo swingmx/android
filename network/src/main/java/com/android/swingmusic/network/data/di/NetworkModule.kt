@@ -1,7 +1,7 @@
-package com.android.swingmusic.network.di
+package com.android.swingmusic.network.data.di
 
 import com.android.swingmusic.network.data.api.ApiService
-import com.android.swingmusic.network.util.BASE_URL
+import com.android.swingmusic.network.data.util.BASE_URL
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

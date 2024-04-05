@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.util.PlayerState
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.util.CoilGifLoader
+import com.android.swingmusic.uicomponent.presentation.util.CoilGifLoader
 
 @Composable
 fun PlayingTrackIndicator(

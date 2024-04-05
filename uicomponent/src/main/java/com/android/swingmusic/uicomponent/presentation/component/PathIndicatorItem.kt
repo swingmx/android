@@ -74,7 +74,8 @@ fun PathIndicatorItem(
 @Composable
 fun PathIndicatorItemPreview() {
     val home = Folder(
-        fileCount = 10,
+        trackCount = 10,
+        folderCount = 10,
         isSym = false,
         name = "Sample",
         path = "/sample"
