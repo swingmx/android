@@ -1,4 +1,4 @@
-package com.android.swingmusic.uicomponent.util
+package com.android.swingmusic.uicomponent.presentation.util
 
 fun Int.formatDuration(): String {
     val minutes = this / 60
