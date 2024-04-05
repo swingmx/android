@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -60,102 +61,136 @@ fun FoldersAndTracksScreen(
         ) { paddingValues ->
             Surface(modifier = Modifier.padding(paddingValues)) {
                 val lazyColumnState = rememberLazyListState()
+                val pathsLazyRowState = rememberLazyListState()
                 val coroutineScope = rememberCoroutineScope()
 
-                DisposableEffect(key1 = foldersAndTracksState) {
+                DisposableEffect(key1 = currentFolder, key2 = foldersAndTracksState) {
                     onDispose {
                         coroutineScope.launch {
-                            if (foldersAndTracksState.foldersAndTracks.folders.isNotEmpty() or
-                                foldersAndTracksState.foldersAndTracks.tracks.isNotEmpty()
-                            ) {
-                                lazyColumnState.scrollToItem(0)
-                            }
+                            //  lazyColumnState.animateScrollToItem(0)
+                            val index = navPaths.indexOf(currentFolder)
+                            pathsLazyRowState.animateScrollToItem(if (index > 0) index else 0)
                         }
                     }
                 }
 
-                if (foldersAndTracksState.isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-
-                if (foldersAndTracksState.isError) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Column(
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = lazyColumnState
+                ) {
+                    // Navigation Paths
+                    stickyHeader {
+                        LazyRow(
+                            state = pathsLazyRowState,
                             modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .background(MaterialTheme.colorScheme.surface)
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = foldersAndTracksState.errorMsg,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Button(onClick = {
-                                foldersViewModel.onFolderUiEvent(FolderUiEvent.Retry)
-                            }) {
-                                Text("RETRY")
+                            // Always display a root dir item
+                            item {
+                                PathIndicatorItem(
+                                    folder = foldersViewModel.rootFolder,
+                                    isRootPath = true,
+                                    isCurrentPath = foldersViewModel.rootFolder.path == currentFolder.path,
+                                    onClick = {
+                                        foldersViewModel.onFolderUiEvent(
+                                            FolderUiEvent.ClickRootDir
+                                        )
+                                    }
+                                )
                             }
-                        }
-                    }
-                }
-                if (!foldersAndTracksState.isError && !foldersAndTracksState.isLoading) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        state = lazyColumnState
-                    ) {
-                        // Navigation Paths
-                        stickyHeader {
-                            LazyRow(
-                                modifier = Modifier
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                items(navPaths) { folder ->
+
+                            items(navPaths) { folder ->
+                                // Ignore root dir because it is already displayed
+                                if (folder.path != "/") {
                                     PathIndicatorItem(
                                         folder = folder,
-                                        isRootPath = folder.path == navPaths.first().path,
                                         isCurrentPath = folder.path == currentFolder.path,
                                         onClick = { navFolder ->
                                             foldersViewModel.onFolderUiEvent(
-                                                FolderUiEvent.ClickNavPath(
-                                                    navFolder
-                                                )
+                                                FolderUiEvent.ClickNavPath(navFolder)
                                             )
                                         }
                                     )
-                                    if (navPaths.size != 1 &&
-                                        navPaths.indexOf(folder) != navPaths.lastIndex
-                                    ) {
-                                        Icon(
-                                            modifier = Modifier.padding(horizontal = 4.dp),
-                                            imageVector = Icons.Default.KeyboardArrowRight,
-                                            contentDescription = "Arrow Right"
-                                        )
+                                }
+                                if (navPaths.size != 1 &&
+                                    navPaths.indexOf(folder) != navPaths.lastIndex
+                                ) {
+                                    /*Text(
+                                        modifier = Modifier.padding(horizontal = 8.dp),
+                                        text = "/",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
+                                    )*/
+                                    Icon(
+                                        imageVector = Icons.Default.KeyboardArrowRight,
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F),
+                                        contentDescription = "Arrow Right"
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        if (foldersAndTracksState.isLoading) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                // TODO: Use lottie/gif 💻 📲 loader
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+                    item {
+                        if (foldersAndTracksState.isError) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillParentMaxHeight()
+                                    .padding(bottom = 48.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = foldersAndTracksState.errorMsg,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Button(onClick = {
+                                        val event =
+                                            if (currentFolder.path != "/")
+                                                FolderUiEvent.ClickFolder(currentFolder)
+                                            else FolderUiEvent.ClickRootDir
+
+                                        foldersViewModel.onFolderUiEvent(FolderUiEvent.Retry(event))
+                                    }) {
+                                        Text("RETRY")
                                     }
                                 }
                             }
                         }
+                    }
 
+                    if (!foldersAndTracksState.isError && !foldersAndTracksState.isLoading) {
                         // Folders
                         items(foldersAndTracksState.foldersAndTracks.folders) { folder ->
                             FolderItem(
                                 folder = folder,
+                                isRootDir = folder.isSym,
                                 onClickFolderItem = {
                                     foldersViewModel.onFolderUiEvent(FolderUiEvent.ClickFolder(it))
                                 },
@@ -163,21 +198,49 @@ fun FoldersAndTracksScreen(
 
                                 }
                             )
+                            if (foldersAndTracksState.foldersAndTracks.folders.indexOf(folder) !=
+                                foldersAndTracksState.foldersAndTracks.folders.lastIndex
+                            ) {
+                                Divider(
+                                    modifier = Modifier.padding(horizontal = 12.dp),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                                )
+                            }
+                        }
+
+                        item {
+                            if (foldersAndTracksState.foldersAndTracks.folders.isNotEmpty() &&
+                                foldersAndTracksState.foldersAndTracks.tracks.isNotEmpty()
+                            ) {
+                                Divider(
+                                    modifier = Modifier.padding(horizontal = 12.dp),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                                )
+                            }
                         }
 
                         // Tracks
                         items(foldersAndTracksState.foldersAndTracks.tracks) { track ->
                             TrackItem(track = track, onClickTrackItem = {}, onClickMoreVert = {})
-
                         }
+                    }
+                    if (
+                        foldersAndTracksState.foldersAndTracks.folders.isEmpty() &&
+                        foldersAndTracksState.foldersAndTracks.tracks.isEmpty() &&
+                        !foldersAndTracksState.isError &&
+                        !foldersAndTracksState.isLoading
+                    ) {
+                        // This could mean the root directories are not configured or are empty
+                        // TODO: Show configure button
+                        item { Text(text = "This directory is empty!") }
                     }
                 }
             }
         }
+    }
 
-        // Override the system back handler
-        BackHandler(enabled = true) {
-            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
-        }
+    // Override the system back handler
+    BackHandler(enabled = true) {
+        foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
     }
 }
