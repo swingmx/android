@@ -1,4 +1,4 @@
-package com.android.swingmusic.core.util
+package com.android.swingmusic.core.data.util
 
 sealed class Resource<T>(val data: T? = null, val message: String? = null){
     class Loading<T>: Resource<T>()

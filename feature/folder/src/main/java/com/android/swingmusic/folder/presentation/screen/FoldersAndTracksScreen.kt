@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,7 +32,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.android.swingmusic.core.util.PlayerState
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.uicomponent.presentation.component.FolderItem
@@ -192,7 +190,6 @@ fun FoldersAndTracksScreen(
                         items(foldersAndTracksState.foldersAndTracks.folders) { folder ->
                             FolderItem(
                                 folder = folder,
-                                isRootDir = folder.isSym,
                                 onClickFolderItem = {
                                     foldersViewModel.onFolderUiEvent(FolderUiEvent.ClickFolder(it))
                                 },

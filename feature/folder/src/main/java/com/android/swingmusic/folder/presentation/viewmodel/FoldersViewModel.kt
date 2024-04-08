@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
-import com.android.swingmusic.core.util.Resource
+import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.network.domain.repository.NetworkRepository
@@ -60,8 +60,6 @@ class FoldersViewModel @Inject constructor(
     }
 
     private fun getRootDirectories() {
-
-
         viewModelScope.launch {
             when (val result = networkRepository.getRootDirectories()) {
                 is Resource.Success -> {
@@ -204,7 +202,6 @@ class FoldersViewModel @Inject constructor(
             }
 
             is FolderUiEvent.OnBackNav -> {
-
                 if (_navPaths.value.size > 1) {
                     val currentPathIndex = _navPaths.value.indexOf(event.folder)
                     val backPathIndex = currentPathIndex - 1

@@ -6,7 +6,7 @@ import com.android.swingmusic.core.data.mapper.Map.toRootDirs
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.RootDirs
-import com.android.swingmusic.core.util.Resource
+import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.network.data.api.ApiService
 import com.android.swingmusic.network.domain.repository.NetworkRepository
 import retrofit2.HttpException

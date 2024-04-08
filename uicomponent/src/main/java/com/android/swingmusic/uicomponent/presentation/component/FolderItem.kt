@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -166,7 +167,7 @@ private fun Int.getFolderHelperText(): String {
     showBackground = true,
     device = Devices.PIXEL_4,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
-    wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE
+    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
 )
 @Composable
 fun FolderItemPreview() {
@@ -187,7 +188,7 @@ fun FolderItemPreview() {
                     )
                     if (count < 6) {
                         /* Divider(
-                             modifier = Modifier.padding(horizontal = 12.dp),
+                             modifier = Modifier.padding(start = 74.dp,end = 12.dp),
                              color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
                          )*/
                     }

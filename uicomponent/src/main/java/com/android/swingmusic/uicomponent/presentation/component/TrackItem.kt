@@ -43,7 +43,7 @@ import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
-import com.android.swingmusic.core.util.PlayerState
+import com.android.swingmusic.core.domain.util.PlayerState
 import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -282,38 +282,8 @@ fun TrackItemPreview() {
                     }
                 )
                 TrackItem(
-                    isCurrentTrack = false,
-                    track = track,
-                    onClickTrackItem = {
-
-                    },
-                    onClickMoreVert = {
-
-                    }
-                )
-                TrackItem(
-                    isCurrentTrack = false,
-                    track = track,
-                    onClickTrackItem = {
-
-                    },
-                    onClickMoreVert = {
-
-                    }
-                )
-                TrackItem(
-                    isCurrentTrack = false,
-                    track = track,
-                    onClickTrackItem = {
-
-                    },
-                    onClickMoreVert = {
-
-                    }
-                )
-                TrackItem(
                     isCurrentTrack = true,
-                    playerState = PlayerState.PLAYING,
+                    playerState = PlayerState.PAUSED,
                     track = track,
                     onClickTrackItem = {
 
