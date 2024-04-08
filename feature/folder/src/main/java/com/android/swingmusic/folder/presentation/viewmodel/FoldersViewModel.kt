@@ -203,7 +203,8 @@ class FoldersViewModel @Inject constructor(
                     }.plus(event.folder).toSet().toList()
             }
 
-            is FolderUiEvent.OnBackNav -> { // TODO: Handle back to Root
+            is FolderUiEvent.OnBackNav -> {
+
                 if (_navPaths.value.size > 1) {
                     val currentPathIndex = _navPaths.value.indexOf(event.folder)
                     val backPathIndex = currentPathIndex - 1
