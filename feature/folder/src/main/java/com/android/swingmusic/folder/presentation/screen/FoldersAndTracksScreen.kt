@@ -192,6 +192,7 @@ fun FoldersAndTracksScreen(
                         items(foldersAndTracksState.foldersAndTracks.folders) { folder ->
                             FolderItem(
                                 folder = folder,
+                                isRootDir = folder.isSym,
                                 onClickFolderItem = {
                                     foldersViewModel.onFolderUiEvent(FolderUiEvent.ClickFolder(it))
                                 },
