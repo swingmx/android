@@ -1,11 +1,18 @@
 package com.android.swingmusic.uicomponent.presentation.util
 
 fun Int.formatDuration(): String {
-    val minutes = this / 60
-    val seconds = this % 60
-    return "$minutes:$seconds"
+    val hours = this / 3600
+    val remainingSeconds = this % 3600
+    val minutes = remainingSeconds / 60
+    val seconds = remainingSeconds % 60
+
+    return when {
+        hours > 0 -> "%02d:%02d:%02d".format(hours, minutes, seconds)
+        minutes > 0 -> "%02d:%02d".format(minutes, seconds)
+        else -> "00:%02d".format(seconds)
+    }
 }
 
 fun String.trimString(limit: Int): String {
-    return if (this.length <= limit) this else this.take(limit - 1).plus("...")
+    return if (this.length <= limit) this else this.take(limit).plus("...")
 }

@@ -2,6 +2,7 @@ package com.android.swingmusic.uicomponent.presentation.component
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.util.PlayerState
 import com.android.swingmusic.network.data.util.BASE_URL
@@ -51,24 +53,24 @@ import com.android.swingmusic.uicomponent.presentation.util.trimString
 
 @Composable
 fun TrackItem(
+    track: Track,
     isCurrentTrack: Boolean = false,
     playerState: PlayerState = PlayerState.UNSPECIFIED,
-    track: Track,
     onClickTrackItem: (Track) -> Unit,
-    onClickMoreVert: () -> Unit
+    onClickMoreVert: (Track) -> Unit
 ) {
     SwingMusicTheme {
         Surface(
             modifier = Modifier
                 .padding(vertical = 4.dp, horizontal = 12.dp)
-                .clip(RoundedCornerShape(24))
+                .clip(RoundedCornerShape(20))
         ) {
             // Image, Title, Artists, Duration
             Row(
                 modifier = Modifier
                     .background(
                         color = if (isCurrentTrack)
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = .15F) else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = .14F) else
                             Color.Unspecified
                     )
                     .clickable {
@@ -84,7 +86,12 @@ fun TrackItem(
                         modifier = Modifier
                             .padding(end = 8.dp)
                             .clip(RoundedCornerShape(16))
-                            .size(48.dp),
+                            .size(48.dp)
+                            .border(
+                                width = (.1).dp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
+                                shape = RoundedCornerShape(16)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         AsyncImage(
@@ -94,6 +101,7 @@ fun TrackItem(
                                 .build(),
                             placeholder = painterResource(R.drawable.audio_fallback),
                             fallback = painterResource(R.drawable.audio_fallback),
+                            error = painterResource(R.drawable.audio_fallback),
                             contentDescription = "Track Image",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
@@ -121,16 +129,17 @@ fun TrackItem(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             var artists = ""
 
-                            for (artist in track.artists) {
+                            for ((index, artist) in track.artists.withIndex()) {
                                 artists += artist.name
-                                if (track.artists.lastIndex != track.artists.indexOf(artist)) {
+
+                                if (track.artists.lastIndex != index) {
                                     artists += ", "
                                 }
                             }
 
                             Text(
-                                text = artists.trimString(42),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                text = artists.trimString(36),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
                                 style = MaterialTheme.typography.bodySmall
                             )
 
@@ -147,7 +156,7 @@ fun TrackItem(
 
                             Text(
                                 text = track.duration.formatDuration(),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -155,10 +164,10 @@ fun TrackItem(
                 }
 
                 // More Icon
-                IconButton(onClick = { onClickMoreVert() }) {
+                IconButton(onClick = { onClickMoreVert(track) }) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "MoreVert"
+                        contentDescription = "More Icon"
                     )
                 }
             }
@@ -181,8 +190,8 @@ fun TrackItemPreview() {
         name = "Lil Peep"
     )
     val juice = Artist(
-        artistHash = "juicepeep123",
-        image = "lilpeep.jpg",
+        artistHash = "juice123",
+        image = "juice.jpg",
         name = "Juice WRLD"
     )
 
@@ -202,7 +211,7 @@ fun TrackItemPreview() {
         createdDate = 1648731600.0, // Sample timestamp
         date = 2024,
         disc = 1,
-        duration = 204, // Sample duration in seconds
+        duration = 454, // Sample duration in seconds
         filepath = "/path/to/track.mp3",
         folder = "/path/to/album",
         genre = genre,
@@ -220,8 +229,29 @@ fun TrackItemPreview() {
     SwingMusicTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column {
+                val demoFolder =
+                    Folder((0..6).random(), (0..6).random(), false, "Sample Folder", "/home")
+                FolderItem(
+                    folder = demoFolder,
+                    onClickFolderItem = {
+
+                    },
+                    onClickMoreVert = {
+
+                    }
+                )
+
+                FolderItem(
+                    folder = demoFolder,
+                    onClickFolderItem = {
+
+                    },
+                    onClickMoreVert = {
+
+                    }
+                )
                 TrackItem(
-                    isCurrentTrack = true,
+                    isCurrentTrack = false,
                     playerState = PlayerState.PAUSED,
                     track = track,
                     onClickTrackItem = {

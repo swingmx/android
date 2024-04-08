@@ -23,7 +23,7 @@ class FoldersViewModel @Inject constructor(
 ) : ViewModel() {
     val rootFolder: Folder = Folder(
         path = "/",
-        name = "Root",
+        name = "", // Root
         trackCount = 0,
         folderCount = 0,
         isSym = false
@@ -72,8 +72,8 @@ class FoldersViewModel @Inject constructor(
                     for (path in result.data!!.rootDirs) {
                         rootDirs.add(
                             Folder(
-                                path = path,
-                                name = path.substringAfterLast("/"),
+                                path = path.replaceFirst("$", "/"),
+                                name = path.substringAfterLast("/").replace("$", ""),
                                 trackCount = 0,
                                 folderCount = 0,
                                 isSym = true
@@ -181,6 +181,8 @@ class FoldersViewModel @Inject constructor(
             }
 
             is FolderUiEvent.ClickNavPath -> {
+                Timber.e("NAV PATH: ${event.folder.path} -> ${event.folder.name}")
+
                 if (event.folder.path != _currentFolder.value.path) {
                     resetUiStates()
 

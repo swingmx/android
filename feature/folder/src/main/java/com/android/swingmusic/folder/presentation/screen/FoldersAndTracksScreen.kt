@@ -28,10 +28,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.android.swingmusic.core.util.PlayerState
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.uicomponent.presentation.component.FolderItem
@@ -45,9 +47,9 @@ import kotlinx.coroutines.launch
 fun FoldersAndTracksScreen(
     foldersViewModel: FoldersViewModel
 ) {
-    val currentFolder by foldersViewModel.currentFolder
-    val foldersAndTracksState by foldersViewModel.foldersAndTracks
-    val navPaths by foldersViewModel.navPaths
+    val currentFolder by remember { foldersViewModel.currentFolder }
+    val foldersAndTracksState by remember { foldersViewModel.foldersAndTracks }
+    val navPaths by remember { foldersViewModel.navPaths }
 
     SwingMusicTheme {
         Scaffold(
@@ -198,17 +200,18 @@ fun FoldersAndTracksScreen(
 
                                 }
                             )
-                            if (foldersAndTracksState.foldersAndTracks.folders.indexOf(folder) !=
+
+                            /*if (foldersAndTracksState.foldersAndTracks.folders.indexOf(folder) !=
                                 foldersAndTracksState.foldersAndTracks.folders.lastIndex
                             ) {
                                 Divider(
                                     modifier = Modifier.padding(horizontal = 12.dp),
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
                                 )
-                            }
+                            }*/
                         }
 
-                        item {
+                        /*item {
                             if (foldersAndTracksState.foldersAndTracks.folders.isNotEmpty() &&
                                 foldersAndTracksState.foldersAndTracks.tracks.isNotEmpty()
                             ) {
@@ -217,11 +220,24 @@ fun FoldersAndTracksScreen(
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
                                 )
                             }
-                        }
+                        }*/
 
                         // Tracks
-                        items(foldersAndTracksState.foldersAndTracks.tracks) { track ->
-                            TrackItem(track = track, onClickTrackItem = {}, onClickMoreVert = {})
+                        items(
+                            foldersAndTracksState.foldersAndTracks.tracks,
+                            key = {
+                                it.filepath
+                            }
+                        ) { track ->
+                            TrackItem(
+                                track = track,
+                                onClickTrackItem = {
+
+                                },
+                                onClickMoreVert = {
+
+                                }
+                            )
                         }
                     }
                     if (
