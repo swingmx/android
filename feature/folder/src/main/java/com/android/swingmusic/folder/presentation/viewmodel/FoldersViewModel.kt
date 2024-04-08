@@ -204,6 +204,7 @@ class FoldersViewModel @Inject constructor(
             }
 
             is FolderUiEvent.OnBackNav -> {
+
                 if (_navPaths.value.size > 1) {
                     val currentPathIndex = _navPaths.value.indexOf(event.folder)
                     val backPathIndex = currentPathIndex - 1
