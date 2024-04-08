@@ -166,7 +166,7 @@ private fun Int.getFolderHelperText(): String {
     showBackground = true,
     device = Devices.PIXEL_4,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
-    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
+    wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE
 )
 @Composable
 fun FolderItemPreview() {

@@ -179,7 +179,7 @@ fun TrackItem(
     showBackground = true,
     device = Devices.PIXEL_2,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
-    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
+    wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE
 )
 @Composable
 fun TrackItemPreview() {
@@ -313,7 +313,7 @@ fun TrackItemPreview() {
                 )
                 TrackItem(
                     isCurrentTrack = true,
-                    playerState = PlayerState.PAUSED,
+                    playerState = PlayerState.PLAYING,
                     track = track,
                     onClickTrackItem = {
 
