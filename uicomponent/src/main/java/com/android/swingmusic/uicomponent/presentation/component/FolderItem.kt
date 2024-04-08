@@ -12,13 +12,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,9 +42,8 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 @Composable
 fun FolderItem(
     folder: Folder,
-    isRootDir: Boolean = false,
     onClickFolderItem: (Folder) -> Unit,
-    onClickMoreVert: () -> Unit
+    onClickMoreVert: (Folder) -> Unit
 ) {
     SwingMusicTheme {
         Surface(
@@ -53,13 +53,18 @@ fun FolderItem(
                 .clickable {
                     onClickFolderItem(folder)
                 }
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = 4.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
-                    .padding(12.dp)
+                    .padding(
+                        start = (11.5).dp, // to align well with Track Item
+                        top = 12.dp,
+                        bottom = 12.dp,
+                        end = 16.dp
+                    )
                     .fillMaxWidth()
             ) {
                 Row(
@@ -67,20 +72,30 @@ fun FolderItem(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     // Folder Icon
-                    Icon(
+                    Box(
                         modifier = Modifier
-                            .padding(start = 8.dp, end = 4.dp)
-                            .size(36.dp),
-                        painter = painterResource(id = R.drawable.folder_filled),
-                        contentDescription = "Folder Icon",
-                    )
+                            .padding(start = 4.dp, end = 4.dp)
+                            .requiredSize(48.dp)
+                            .clip(RoundedCornerShape(16))
+                            .background(
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            modifier = Modifier,
+                            painter = painterResource(id = R.drawable.folder_outlined_open),
+                            // tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .90F),
+                            contentDescription = "Folder Icon",
+                        )
+                    }
 
                     // Folder name, folder count, songs
                     Column(
-                        modifier = Modifier.padding(start = 12.dp)
+                        modifier = Modifier.padding(start = 8.dp)
                     ) {
                         Text(
-                            modifier = Modifier.width(250.dp),
+                            modifier = Modifier.width(240.dp),
                             text = folder.name,
                             style = MaterialTheme.typography.bodyLarge,
                             overflow = TextOverflow.Ellipsis,
@@ -95,31 +110,32 @@ fun FolderItem(
                             if (folder.folderCount != 0) {
                                 Text(
                                     text = folder.folderCount.getFolderHelperText(),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
                             if (folder.folderCount > 0 && folder.trackCount > 0) {
+                                // Dot Separator
                                 Box(
                                     modifier = Modifier
                                         .padding(horizontal = 8.dp)
                                         .clip(CircleShape)
                                         .size(3.dp)
                                         .background(
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .50F)
                                         )
-                                )
-                            } else if (folder.folderCount == 0 && folder.trackCount == 0) {
-                                Text(
-                                    text = if (isRootDir) "Root directory" else "This folder is empty",
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                    style = MaterialTheme.typography.bodySmall
                                 )
                             }
                             if (folder.trackCount != 0) {
                                 Text(
-                                    text = folder.trackCount.getFileCountHelperText(),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                    text = folder.trackCount.getTrackCountHelperText(),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            } else if (folder.folderCount == 0) {
+                                Text(
+                                    text = "This folder is empty",
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -127,7 +143,7 @@ fun FolderItem(
                     }
                 }
 
-                IconButton(onClick = { onClickMoreVert() }) {
+                IconButton(onClick = { onClickMoreVert(folder) }) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "MoreVert"
@@ -138,7 +154,7 @@ fun FolderItem(
     }
 }
 
-private fun Int.getFileCountHelperText(): String {
+private fun Int.getTrackCountHelperText(): String {
     return if (this <= 1) "$this Track" else "$this Tracks"
 }
 
@@ -150,7 +166,7 @@ private fun Int.getFolderHelperText(): String {
     showBackground = true,
     device = Devices.PIXEL_4,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
-    wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE
+    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
 )
 @Composable
 fun FolderItemPreview() {
@@ -158,7 +174,8 @@ fun FolderItemPreview() {
         Surface {
             Column(modifier = Modifier.fillMaxSize()) {
                 for (count in 0..6) {
-                    val demoFolder = Folder((0..6).random(), (0..6).random(),false, "Swing Music", "/home")
+                    val demoFolder =
+                        Folder((0..6).random(), (0..6).random(), false, "Swing Music", "/home")
                     FolderItem(
                         folder = demoFolder,
                         onClickFolderItem = {
@@ -169,10 +186,10 @@ fun FolderItemPreview() {
                         }
                     )
                     if (count < 6) {
-                        Divider(
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                        )
+                        /* Divider(
+                             modifier = Modifier.padding(horizontal = 12.dp),
+                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                         )*/
                     }
                 }
             }
