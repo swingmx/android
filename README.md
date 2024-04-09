@@ -60,7 +60,4 @@ It covers the following tasks:
 
 ### Important Tips
 
-We are currently using [Mungaist Server](https://music.mungaist.com/) as our test server. However,
-you can set the base URL to your desired server including your local Swing Music server.
-
-Currently, we are utilizing the [Mungaist](https://music.mungaist.com/) as our test server. However, you can set the base URL to your desired server, including your local Swing Music server.
+Currently, we are using [Mungaist](https://music.mungaist.com/) as our test server. However, you can set the base URL to your desired server, including your local Swing Music server.
