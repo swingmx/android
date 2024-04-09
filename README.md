@@ -1,4 +1,4 @@
-## Android client for [Swing Music](https://)
+## Android client for [Swing Music](https://github.com/swing-opensource/swingmusic)
 
 This project is currently in its early development stages as the Swing Music team is diligently working to deliver an MVP as soon as possible.
 
