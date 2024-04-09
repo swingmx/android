@@ -14,7 +14,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "v0.0.1"
+        versionName = "0.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -54,7 +54,7 @@ android {
 dependencies {
     // Local Modules
     implementation(project(":core"))
-    implementation(project(":feature:folder")) // TODO: Remove this
+    implementation(project(":feature:folder")) // TODO: Remove this after impl navigation
     implementation(project(":uicomponent"))
 
     // Core
@@ -73,11 +73,6 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-
-    // Exoplayer
-    implementation("androidx.media3:media3-exoplayer:1.3.0")
-    implementation("androidx.media3:media3-exoplayer-dash:1.3.0")
-    implementation("androidx.media3:media3-ui:1.3.0")
 
     // Hilt DI
     implementation("com.google.dagger:hilt-android:2.50")
