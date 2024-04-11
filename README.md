@@ -9,7 +9,7 @@ Android Studio Hedgehog | 2023.1.1 Patch 1
 ```
 ## Development Plan
 
-Swing Music is poised to be a sophisticated app expected to scale seamlessly. To facilitate this, the project is `modularized by feature` and utilizes an MVVM architecture.
+Swing Music is poised to be a sophisticated app expected to scale seamlessly. To facilitate this, the project is `modularized by feature` and utilizes an `MVVM` architecture.
 
 #### 1. `:folder` Module
 
@@ -37,8 +37,6 @@ It covers the following tasks:
 </table>
 
 #### `:folder` Known Issues
-
-- The first screen should display `$home` directories rather than manually crafted directories. `status:` `PENDING`
 - Track images are a bit blurry. `status:` `PENDING`
 
 > [!TIP]
