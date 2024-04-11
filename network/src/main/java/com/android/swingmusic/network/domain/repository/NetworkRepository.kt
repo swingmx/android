@@ -6,6 +6,5 @@ import com.android.swingmusic.core.domain.model.RootDirs
 import com.android.swingmusic.core.data.util.Resource
 
 interface NetworkRepository {
-    suspend fun getRootDirectories(): Resource<RootDirs>
     suspend fun getFoldersAndTracks(requestData: FoldersAndTracksRequest): Resource<FoldersAndTracks>
 }
