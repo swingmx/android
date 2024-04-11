@@ -8,9 +8,6 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface ApiService {
-    @GET("/notsettings/get-root-dirs")
-    suspend fun getRootDirectories(): RootDirsDto
-
     @POST("/folder")
     suspend fun getFoldersAndTracks(@Body requestData: FoldersAndTracksRequestDto): FoldersAndTracksDto
 }
