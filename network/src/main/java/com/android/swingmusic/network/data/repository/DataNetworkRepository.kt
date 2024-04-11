@@ -16,23 +16,6 @@ import javax.inject.Inject
 class DataNetworkRepository @Inject constructor(
     private val apiService: ApiService,
 ) : NetworkRepository {
-    override suspend fun getRootDirectories(): Resource<RootDirs> {
-        return try {
-            val rootDirs = apiService.getRootDirectories()
-            Resource.Success(data = rootDirs.toRootDirs())
-        } catch (e: IOException) {
-            Resource.Error(
-                message = e.localizedMessage
-                    ?: "Unable to fetch root directories\nCheck your connection and try again!"
-            )
-
-        } catch (e: HttpException) {
-            Resource.Error(
-                message = e.localizedMessage ?: "An unexpected error occurred!"
-            )
-        }
-    }
-
     override suspend fun getFoldersAndTracks(requestData: FoldersAndTracksRequest): Resource<FoldersAndTracks> {
         return try {
             val foldersAndTracksDto =
