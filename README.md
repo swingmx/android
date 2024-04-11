@@ -2,31 +2,14 @@
 
 This project is currently in its early development stages as the Swing Music team is diligently working to deliver an MVP as soon as possible.
 
-### What do you need to run this app?
-
 Anyone should be able to clone this repo and open it with Android Studio. You need at least:
 
 ```kt
 Android Studio Hedgehog | 2023.1.1 Patch 1
 ```
-
-Android Studio will automatically download the following core components if you don't already have them:
-
-```kt
-Kotlin version 1.9.0
-```
-
-```kt
-Compose version 1.5.1
-```
-
-```gradle
-Gradle version 8.2
-```
-
 ## Development Plan
 
-Swing Music is poised to be a sophisticated app expected to scale seamlessly. To facilitate this, the project is `modularized by feature` and utilizes an MVVM architecture.
+Swing Music is poised to be a sophisticated app expected to scale seamlessly. To facilitate this, the project is `modularized by feature` and utilizes an `MVVM` architecture.
 
 #### 1. `:folder` Module
 
@@ -54,10 +37,7 @@ It covers the following tasks:
 </table>
 
 #### `:folder` Known Issues
-
-- The first screen should display `$home` directories rather than manually crafted directories. `status:` `PENDING`
 - Track images are a bit blurry. `status:` `PENDING`
 
-### Important Tips
-
-Currently, we are using [Mungaist](https://music.mungaist.com/) as our test server. However, you can set the base URL to your desired server, including your local Swing Music server.
+> [!TIP]
+> Currently, we are using [Mungaist](https://music.mungaist.com/) as our test server. However, you can set the base URL to your desired server, including your local Swing Music server.

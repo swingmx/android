@@ -21,11 +21,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,13 +65,11 @@ fun FoldersAndTracksScreen(
                 val pathsLazyRowState = rememberLazyListState()
                 val coroutineScope = rememberCoroutineScope()
 
-                DisposableEffect(key1 = currentFolder, key2 = foldersAndTracksState) {
-                    onDispose {
-                        coroutineScope.launch {
-                            //  lazyColumnState.animateScrollToItem(0)
-                            val index = navPaths.indexOf(currentFolder)
-                            pathsLazyRowState.animateScrollToItem(if (index > 0) index else 0)
-                        }
+                LaunchedEffect(key1 = currentFolder, key2 = foldersAndTracksState) {
+                    coroutineScope.launch {
+                        //  lazyColumnState.animateScrollToItem(0)
+                        val index = navPaths.indexOf(currentFolder)
+                        pathsLazyRowState.animateScrollToItem(if (index >= 0) index else 0)
                     }
                 }
 
@@ -91,20 +90,20 @@ fun FoldersAndTracksScreen(
                             // Always display a root dir item
                             item {
                                 PathIndicatorItem(
-                                    folder = foldersViewModel.rootFolder,
+                                    folder = foldersViewModel.homeDir,
                                     isRootPath = true,
-                                    isCurrentPath = foldersViewModel.rootFolder.path == currentFolder.path,
+                                    isCurrentPath = foldersViewModel.homeDir.path == currentFolder.path,
                                     onClick = {
                                         foldersViewModel.onFolderUiEvent(
-                                            FolderUiEvent.ClickRootDir
+                                            FolderUiEvent.ClickNavPath(it)
                                         )
                                     }
                                 )
                             }
 
                             items(navPaths) { folder ->
-                                // Ignore root dir because it is already displayed
-                                if (folder.path != "/") {
+                                // Ignore home dir because it is already displayed
+                                if (folder.path != "\$home") {
                                     PathIndicatorItem(
                                         folder = folder,
                                         isCurrentPath = folder.path == currentFolder.path,
@@ -171,11 +170,7 @@ fun FoldersAndTracksScreen(
                                     Spacer(modifier = Modifier.height(12.dp))
 
                                     Button(onClick = {
-                                        val event =
-                                            if (currentFolder.path != "/")
-                                                FolderUiEvent.ClickFolder(currentFolder)
-                                            else FolderUiEvent.ClickRootDir
-
+                                        val event = FolderUiEvent.ClickFolder(currentFolder)
                                         foldersViewModel.onFolderUiEvent(FolderUiEvent.Retry(event))
                                     }) {
                                         Text("RETRY")
@@ -197,27 +192,7 @@ fun FoldersAndTracksScreen(
 
                                 }
                             )
-
-                            /*if (foldersAndTracksState.foldersAndTracks.folders.indexOf(folder) !=
-                                foldersAndTracksState.foldersAndTracks.folders.lastIndex
-                            ) {
-                                Divider(
-                                    modifier = Modifier.padding(horizontal = 12.dp),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                                )
-                            }*/
                         }
-
-                        /*item {
-                            if (foldersAndTracksState.foldersAndTracks.folders.isNotEmpty() &&
-                                foldersAndTracksState.foldersAndTracks.tracks.isNotEmpty()
-                            ) {
-                                Divider(
-                                    modifier = Modifier.padding(horizontal = 12.dp),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                                )
-                            }
-                        }*/
 
                         // Tracks
                         items(
@@ -243,17 +218,47 @@ fun FoldersAndTracksScreen(
                         !foldersAndTracksState.isError &&
                         !foldersAndTracksState.isLoading
                     ) {
-                        // This could mean the root directories are not configured or are empty
-                        // TODO: Show configure button
-                        item { Text(text = "This directory is empty!") }
+                        // This could mean the root directory is not configured or current directory is empty
+                        item {
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillParentMaxSize()
+                                    .padding(bottom = 48.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "This directory is empty!",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                if (currentFolder.path == "\$home") {
+                                    Button(onClick = {
+                                        // TODO:Add Configure Dir Event
+                                    }) {
+                                        Text("Configure Root Directory")
+                                    }
+                                } else {
+                                    OutlinedButton(onClick = {
+                                        val event = FolderUiEvent.ClickFolder(currentFolder)
+                                        foldersViewModel.onFolderUiEvent(FolderUiEvent.Retry(event))
+                                    }) {
+                                        Text("RETRY")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    // Override the system back handler
-    BackHandler(enabled = true) {
+    val overrideSystemBackNav = currentFolder.path != "\$home"
+    BackHandler(enabled = overrideSystemBackNav) {
         foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
     }
 }
