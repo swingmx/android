@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -78,7 +79,7 @@ fun FoldersAndTracksScreen(
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.surface)
                                 .fillMaxWidth()
-                                .padding(8.dp),
+                                .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Always display a root dir item
@@ -95,7 +96,7 @@ fun FoldersAndTracksScreen(
                                 )
                             }
 
-                            items(navPaths) { folder ->
+                            itemsIndexed(navPaths) { index, folder ->
                                 // Ignore home dir because it is already displayed
                                 if (folder.path != "\$home") {
                                     PathIndicatorItem(
@@ -109,17 +110,14 @@ fun FoldersAndTracksScreen(
                                     )
                                 }
                                 if (navPaths.size != 1 &&
-                                    navPaths.indexOf(folder) != navPaths.lastIndex
+                                    index != navPaths.lastIndex
                                 ) {
-                                    /*Text(
-                                        modifier = Modifier.padding(horizontal = 8.dp),
-                                        text = "/",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
-                                    )*/
+                                    val tint = if (navPaths[index + 1].path == currentFolder.path)
+                                        MaterialTheme.colorScheme.onSurface else
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .30F)
                                     Icon(
                                         imageVector = Icons.Default.KeyboardArrowRight,
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F),
+                                        tint = tint,
                                         contentDescription = "Arrow Right"
                                     )
                                 }
