@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
@@ -121,7 +122,9 @@ fun TrackItem(
                             )
                     ) {
                         Text(
-                            text = track.title.trimString(32)
+                            text = track.title.trimString(32),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -140,7 +143,9 @@ fun TrackItem(
                             Text(
                                 text = artists.trimString(36),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
-                                style = MaterialTheme.typography.bodySmall
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
 
                             // Dot Separator

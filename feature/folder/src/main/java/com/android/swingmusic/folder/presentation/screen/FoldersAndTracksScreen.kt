@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -29,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -39,7 +39,6 @@ import com.android.swingmusic.uicomponent.presentation.component.FolderItem
 import com.android.swingmusic.uicomponent.presentation.component.PathIndicatorItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -63,14 +62,10 @@ fun FoldersAndTracksScreen(
             Surface(modifier = Modifier.padding(paddingValues)) {
                 val lazyColumnState = rememberLazyListState()
                 val pathsLazyRowState = rememberLazyListState()
-                val coroutineScope = rememberCoroutineScope()
 
-                LaunchedEffect(key1 = currentFolder, key2 = foldersAndTracksState) {
-                    coroutineScope.launch {
-                        //  lazyColumnState.animateScrollToItem(0)
-                        val index = navPaths.indexOf(currentFolder)
-                        pathsLazyRowState.animateScrollToItem(if (index >= 0) index else 0)
-                    }
+                LaunchedEffect(key1 = currentFolder) {
+                    val index = navPaths.indexOf(currentFolder)
+                    pathsLazyRowState.animateScrollToItem(if (index >= 0) index else 0)
                 }
 
                 LazyColumn(
@@ -84,7 +79,7 @@ fun FoldersAndTracksScreen(
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.surface)
                                 .fillMaxWidth()
-                                .padding(8.dp),
+                                .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Always display a root dir item
@@ -95,13 +90,13 @@ fun FoldersAndTracksScreen(
                                     isCurrentPath = foldersViewModel.homeDir.path == currentFolder.path,
                                     onClick = {
                                         foldersViewModel.onFolderUiEvent(
-                                            FolderUiEvent.ClickNavPath(it)
+                                            FolderUiEvent.OnClickNavPath(it)
                                         )
                                     }
                                 )
                             }
 
-                            items(navPaths) { folder ->
+                            itemsIndexed(navPaths) { index, folder ->
                                 // Ignore home dir because it is already displayed
                                 if (folder.path != "\$home") {
                                     PathIndicatorItem(
@@ -109,23 +104,20 @@ fun FoldersAndTracksScreen(
                                         isCurrentPath = folder.path == currentFolder.path,
                                         onClick = { navFolder ->
                                             foldersViewModel.onFolderUiEvent(
-                                                FolderUiEvent.ClickNavPath(navFolder)
+                                                FolderUiEvent.OnClickNavPath(navFolder)
                                             )
                                         }
                                     )
                                 }
                                 if (navPaths.size != 1 &&
-                                    navPaths.indexOf(folder) != navPaths.lastIndex
+                                    index != navPaths.lastIndex
                                 ) {
-                                    /*Text(
-                                        modifier = Modifier.padding(horizontal = 8.dp),
-                                        text = "/",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
-                                    )*/
+                                    val tint = if (navPaths[index + 1].path == currentFolder.path)
+                                        MaterialTheme.colorScheme.onSurface else
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .30F)
                                     Icon(
                                         imageVector = Icons.Default.KeyboardArrowRight,
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F),
+                                        tint = tint,
                                         contentDescription = "Arrow Right"
                                     )
                                 }
@@ -170,8 +162,8 @@ fun FoldersAndTracksScreen(
                                     Spacer(modifier = Modifier.height(12.dp))
 
                                     Button(onClick = {
-                                        val event = FolderUiEvent.ClickFolder(currentFolder)
-                                        foldersViewModel.onFolderUiEvent(FolderUiEvent.Retry(event))
+                                        val event = FolderUiEvent.OnClickFolder(currentFolder)
+                                        foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
                                     }) {
                                         Text("RETRY")
                                     }
@@ -186,7 +178,7 @@ fun FoldersAndTracksScreen(
                             FolderItem(
                                 folder = folder,
                                 onClickFolderItem = {
-                                    foldersViewModel.onFolderUiEvent(FolderUiEvent.ClickFolder(it))
+                                    foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(it))
                                 },
                                 onClickMoreVert = {
 
@@ -243,8 +235,8 @@ fun FoldersAndTracksScreen(
                                     }
                                 } else {
                                     OutlinedButton(onClick = {
-                                        val event = FolderUiEvent.ClickFolder(currentFolder)
-                                        foldersViewModel.onFolderUiEvent(FolderUiEvent.Retry(event))
+                                        val event = FolderUiEvent.OnClickFolder(currentFolder)
+                                        foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
                                     }) {
                                         Text("RETRY")
                                     }

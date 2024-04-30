@@ -111,9 +111,7 @@ class FoldersViewModel @Inject constructor(
 
     fun onFolderUiEvent(event: FolderUiEvent) {
         when (event) {
-            is FolderUiEvent.ClickNavPath -> {
-                Timber.e("NAV PATH: ${event.folder.path} -> ${event.folder.name}")
-
+            is FolderUiEvent.OnClickNavPath -> {
                 if (event.folder.path != _currentFolder.value.path) {
                     resetUiStates()
 
@@ -122,20 +120,22 @@ class FoldersViewModel @Inject constructor(
                 }
             }
 
-            is FolderUiEvent.ClickFolder -> {
+            is FolderUiEvent.OnClickFolder -> {
                 resetUiStates()
 
                 _currentFolder.value = event.folder
                 getFoldersAndTracks(event.folder.path)
 
-                _navPaths.value = listOf<Folder>(homeDir)
-                    .plus(
-                        (_navPaths.value.filter {
-                            event.folder.path.contains(it.path)
-                        }.plus(event.folder))
-                            .toSet()
-                            .toList()
-                    )
+                if(!_navPaths.value.contains(event.folder)) {
+                    _navPaths.value = listOf<Folder>(homeDir)
+                        .plus(
+                            (_navPaths.value.filter {
+                                event.folder.path.contains(it.path)
+                            }.plus(event.folder))
+                                .toSet()
+                                .toList()
+                        )
+                }
             }
 
             is FolderUiEvent.OnBackNav -> {
@@ -153,7 +153,7 @@ class FoldersViewModel @Inject constructor(
                 }
             }
 
-            is FolderUiEvent.Retry -> {
+            is FolderUiEvent.OnRetry -> {
                 resetUiStates()
                 getFoldersAndTracks(_currentFolder.value.path)
             }
