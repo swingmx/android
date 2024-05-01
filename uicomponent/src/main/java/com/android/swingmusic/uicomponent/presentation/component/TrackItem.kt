@@ -41,7 +41,7 @@ import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlayerState
@@ -77,7 +77,11 @@ fun TrackItem(
                     .clickable {
                         onClickTrackItem(track)
                     }
-                    .padding(all = 8.dp)
+                    .padding(
+                        start = 8.dp,
+                        top = 8.dp,
+                        bottom = 8.dp
+                    )
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -97,7 +101,7 @@ fun TrackItem(
                     ) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data("${BASE_URL}img/t/s/${track.image}")
+                                .data("${BASE_URL}/img/t/s/${track.image}")
                                 .crossfade(true)
                                 .build(),
                             placeholder = painterResource(R.drawable.audio_fallback),
@@ -132,10 +136,10 @@ fun TrackItem(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             var artists = ""
 
-                            for ((index, artist) in track.artists.withIndex()) {
+                            for ((index, artist) in track.trackArtists.withIndex()) {
                                 artists += artist.name
 
-                                if (track.artists.lastIndex != index) {
+                                if (track.trackArtists.lastIndex != index) {
                                     artists += ", "
                                 }
                             }
@@ -189,12 +193,12 @@ fun TrackItem(
 @Composable
 fun TrackItemPreview() {
 
-    val lilPeep = Artist(
+    val lilPeep = TrackArtist(
         artistHash = "lilpeep123",
         image = "lilpeep.jpg",
         name = "Lil Peep"
     )
-    val juice = Artist(
+    val juice = TrackArtist(
         artistHash = "juice123",
         image = "juice.jpg",
         name = "Juice WRLD"
@@ -206,10 +210,10 @@ fun TrackItemPreview() {
 
     val track = Track(
         album = "Sample Album",
-        albumArtists = albumArtists,
+        albumTrackArtists = albumArtists,
         albumHash = "albumHash123",
         artistHashes = "artistHashes123",
-        artists = artists,
+        trackArtists = artists,
         ati = "ati123",
         bitrate = 320,
         copyright = "Copyright © 2024",
