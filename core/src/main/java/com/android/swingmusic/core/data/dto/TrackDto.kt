@@ -7,13 +7,13 @@ data class TrackDto(
     @SerializedName("album")
     val album: String?,
     @SerializedName("albumartists")
-    val albumArtistDtos: List<ArtistDto>?,
+    val albumTrackArtistDtos: List<TrackArtistDto>?,
     @SerializedName("albumhash")
     val albumHash: String?,
     @SerializedName("artist_hashes")
     val artistHashes: String?,
     @SerializedName("artists")
-    val artistsDto: List<ArtistDto>?,
+    val artistsDto: List<TrackArtistDto>?,
     @SerializedName("_ati")
     val ati: String?,
     @SerializedName("bitrate")

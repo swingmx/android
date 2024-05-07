@@ -3,10 +3,10 @@ package com.android.swingmusic.core.domain.model
 
 data class Track(
     val album: String?,
-    val albumArtists: List<Artist>,
+    val albumTrackArtists: List<TrackArtist>,
     val albumHash: String,
     val artistHashes: String,
-    val artists: List<Artist>,
+    val trackArtists: List<TrackArtist>,
     val ati: String,
     val bitrate: Int,
     val copyright: String,

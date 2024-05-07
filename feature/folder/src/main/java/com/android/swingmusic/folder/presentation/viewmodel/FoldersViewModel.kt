@@ -11,6 +11,7 @@ import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
+import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.network.domain.repository.NetworkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -86,7 +87,7 @@ class FoldersViewModel @Inject constructor(
                             ),
                             isLoading = false,
                             isError = true,
-                            errorMsg = result.message ?: "Unable to fetch folders"
+                            errorMessage = result.message!!
                         )
                 }
 

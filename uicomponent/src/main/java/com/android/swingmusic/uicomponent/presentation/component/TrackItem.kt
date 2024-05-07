@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,15 +42,14 @@ import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlayerState
 import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
-import com.android.swingmusic.uicomponent.presentation.util.trimString
 
 
 @Composable
@@ -60,6 +60,22 @@ fun TrackItem(
     onClickTrackItem: (Track) -> Unit,
     onClickMoreVert: (Track) -> Unit
 ) {
+    /*val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.roundToPx() }
+
+    val maxTrackTitleLength by remember {
+        derivedStateOf {
+            (screenWidthPx * (0.23)).roundToInt()
+        }
+    }
+
+    val maxArtistLength by remember {
+        derivedStateOf {
+            (screenWidthPx * (0.17)).roundToInt()
+        }
+    }*/
+
     SwingMusicTheme {
         Surface(
             modifier = Modifier
@@ -77,7 +93,11 @@ fun TrackItem(
                     .clickable {
                         onClickTrackItem(track)
                     }
-                    .padding(all = 8.dp)
+                    .padding(
+                        start = 8.dp,
+                        top = 8.dp,
+                        bottom = 8.dp
+                    )
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -97,7 +117,7 @@ fun TrackItem(
                     ) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data("${BASE_URL}img/t/s/${track.image}")
+                                .data("${BASE_URL}/img/t/s/${track.image}")
                                 .crossfade(true)
                                 .build(),
                             placeholder = painterResource(R.drawable.audio_fallback),
@@ -122,7 +142,8 @@ fun TrackItem(
                             )
                     ) {
                         Text(
-                            text = track.title.trimString(32),
+                            text = track.title,
+                            modifier = Modifier.sizeIn(maxWidth = 250.dp),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -132,16 +153,16 @@ fun TrackItem(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             var artists = ""
 
-                            for ((index, artist) in track.artists.withIndex()) {
-                                artists += artist.name
+                            track.trackArtists.forEachIndexed { index, trackArtist ->
+                                artists += trackArtist.name
 
-                                if (track.artists.lastIndex != index) {
+                                if (track.trackArtists.lastIndex != index) {
                                     artists += ", "
                                 }
                             }
-
                             Text(
-                                text = artists.trimString(36),
+                                text = artists,
+                                modifier = Modifier.sizeIn(maxWidth = 185.dp),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
                                 style = MaterialTheme.typography.bodySmall,
                                 maxLines = 1,
@@ -189,12 +210,12 @@ fun TrackItem(
 @Composable
 fun TrackItemPreview() {
 
-    val lilPeep = Artist(
+    val lilPeep = TrackArtist(
         artistHash = "lilpeep123",
         image = "lilpeep.jpg",
         name = "Lil Peep"
     )
-    val juice = Artist(
+    val juice = TrackArtist(
         artistHash = "juice123",
         image = "juice.jpg",
         name = "Juice WRLD"
@@ -206,10 +227,10 @@ fun TrackItemPreview() {
 
     val track = Track(
         album = "Sample Album",
-        albumArtists = albumArtists,
+        albumTrackArtists = albumArtists,
         albumHash = "albumHash123",
         artistHashes = "artistHashes123",
-        artists = artists,
+        trackArtists = artists,
         ati = "ati123",
         bitrate = 320,
         copyright = "Copyright © 2024",

@@ -25,3 +25,4 @@ include(":uicomponent")
 // Feature Modules
 include(":feature:folder")
 
+include(":feature:artist")

@@ -1,12 +1,12 @@
 plugins {
-    id("com.google.devtools.ksp")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("com.google.dagger.hilt.android")
+    id("com.google.devtools.ksp")
 }
 
 android {
-    namespace = "com.android.swingmusic.network"
+    namespace = "com.android.swingmusic.artist"
     compileSdk = 34
 
     defaultConfig {
@@ -32,24 +32,33 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1"
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
 dependencies {
+
     // Local Modules
     implementation(project(":core"))
+    implementation(project(":network"))
+    implementation(project(":uicomponent"))
 
-    // Kotlin extensions
+    // Core
     implementation("androidx.core:core-ktx:1.12.0")
-
-    // Testing
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.compose.material3:material3")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-
-    // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.5.0")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.50")
@@ -60,6 +69,10 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Navigation
+    implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
+    ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
     // Pagination
     implementation ("androidx.paging:paging-compose:1.0.0-alpha15")
