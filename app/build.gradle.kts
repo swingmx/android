@@ -55,6 +55,7 @@ dependencies {
     // Local Modules
     implementation(project(":core"))
     implementation(project(":feature:folder")) // TODO: Remove this after impl navigation
+    implementation(project(":feature:artist")) // TODO: Remove this after impl navigation
     implementation(project(":uicomponent"))
 
     // Core
@@ -96,4 +97,7 @@ dependencies {
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
+
+    // Pagination
+    implementation ("androidx.paging:paging-compose:1.0.0-alpha15")
 }
