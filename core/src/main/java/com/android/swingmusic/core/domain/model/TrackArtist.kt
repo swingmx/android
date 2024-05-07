@@ -1,7 +1,7 @@
 package com.android.swingmusic.core.domain.model
 
 
-data class Artist(
+data class TrackArtist(
     val artistHash: String,
     val image: String,
     val name: String

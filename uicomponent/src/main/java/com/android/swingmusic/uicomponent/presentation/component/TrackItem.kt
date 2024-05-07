@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,15 +42,14 @@ import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlayerState
 import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
-import com.android.swingmusic.uicomponent.presentation.util.trimString
 
 
 @Composable
@@ -60,6 +60,22 @@ fun TrackItem(
     onClickTrackItem: (Track) -> Unit,
     onClickMoreVert: (Track) -> Unit
 ) {
+    /*val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.roundToPx() }
+
+    val maxTrackTitleLength by remember {
+        derivedStateOf {
+            (screenWidthPx * (0.23)).roundToInt()
+        }
+    }
+
+    val maxArtistLength by remember {
+        derivedStateOf {
+            (screenWidthPx * (0.17)).roundToInt()
+        }
+    }*/
+
     SwingMusicTheme {
         Surface(
             modifier = Modifier
@@ -126,7 +142,8 @@ fun TrackItem(
                             )
                     ) {
                         Text(
-                            text = track.title.trimString(32),
+                            text = track.title,
+                            modifier = Modifier.sizeIn(maxWidth = 250.dp),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -136,16 +153,16 @@ fun TrackItem(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             var artists = ""
 
-                            for ((index, artist) in track.trackArtists.withIndex()) {
-                                artists += artist.name
+                            track.trackArtists.forEachIndexed { index, trackArtist ->
+                                artists += trackArtist.name
 
                                 if (track.trackArtists.lastIndex != index) {
                                     artists += ", "
                                 }
                             }
-
                             Text(
-                                text = artists.trimString(36),
+                                text = artists,
+                                modifier = Modifier.sizeIn(maxWidth = 185.dp),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
                                 style = MaterialTheme.typography.bodySmall,
                                 maxLines = 1,

@@ -3,7 +3,7 @@ package com.android.swingmusic.core.data.dto
 
 import com.google.gson.annotations.SerializedName
 
-data class ArtistDto(
+data class TrackArtistDto(
     @SerializedName("artisthash")
     val artistHash: String?,
     @SerializedName("image")
