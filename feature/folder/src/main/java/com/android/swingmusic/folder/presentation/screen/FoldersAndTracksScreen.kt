@@ -155,7 +155,7 @@ fun FoldersAndTracksScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
-                                        text = foldersAndTracksState.errorMsg,
+                                        text = foldersAndTracksState.errorMessage,
                                         style = MaterialTheme.typography.bodyLarge
                                     )
 

@@ -6,5 +6,5 @@ data class FoldersAndTracksState(
     val foldersAndTracks: FoldersAndTracks = FoldersAndTracks(emptyList(), emptyList()),
     val isLoading: Boolean = false,
     val isError: Boolean = false,
-    val errorMsg: String = ""
+    val errorMessage: String = ""
 )

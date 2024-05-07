@@ -1,5 +1,6 @@
 package com.android.swingmusic.core.data.mapper
 
+import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.ArtistDto
 import com.android.swingmusic.core.data.dto.DirDto
 import com.android.swingmusic.core.data.dto.DirListDto
@@ -7,7 +8,9 @@ import com.android.swingmusic.core.data.dto.FolderDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.RootDirsDto
+import com.android.swingmusic.core.data.dto.TrackArtistDto
 import com.android.swingmusic.core.data.dto.TrackDto
+import com.android.swingmusic.core.domain.model.AllArtists
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.Dir
 import com.android.swingmusic.core.domain.model.DirList
@@ -16,10 +19,22 @@ import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.RootDirs
 import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.core.domain.model.TrackArtist
 
 object Map {
     fun ArtistDto.toArtist(): Artist {
         return Artist(
+            artisthash = artisthash ?: "",
+            name = name ?: "",
+            colors = colors ?: emptyList(),
+            createdDate = createdDate ?: 0.0,
+            helpText = helpText ?: "",
+            image = image ?: ""
+        )
+    }
+
+    fun TrackArtistDto.toArtist(): TrackArtist {
+        return TrackArtist(
             artistHash = artistHash ?: "",
             image = image ?: "",
             name = name ?: ""
@@ -39,10 +54,10 @@ object Map {
     fun TrackDto.toTrack(): Track {
         return Track(
             album = album,
-            albumArtists = albumArtistDtos?.map { it.toArtist() } ?: emptyList(),
+            albumTrackArtists = albumTrackArtistDtos?.map { it.toArtist() } ?: emptyList(),
             albumHash = albumHash ?: "",
             artistHashes = artistHashes ?: "",
-            artists = artistsDto?.map { it.toArtist() } ?: emptyList(),
+            trackArtists = artistsDto?.map { it.toArtist() } ?: emptyList(),
             ati = ati ?: "",
             bitrate = bitrate ?: 0,
             copyright = copyright ?: "",
@@ -62,6 +77,13 @@ object Map {
             title = title ?: "",
             track = track ?: 0,
             trackHash = trackHash ?: ""
+        )
+    }
+
+    fun AllArtistsDto.toAllArtists(): AllArtists {
+        return AllArtists(
+            artists = artists?.map { it.toArtist() } ?: emptyList(),
+            total = total ?: 0
         )
     }
 

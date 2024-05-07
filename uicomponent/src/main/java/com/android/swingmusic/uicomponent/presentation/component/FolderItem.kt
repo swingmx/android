@@ -63,7 +63,7 @@ fun FolderItem(
                         start = (11.5).dp, // to align well with Track Item
                         top = 12.dp,
                         bottom = 12.dp,
-                        end = 16.dp
+                        end = 8.dp
                     )
                     .fillMaxWidth()
             ) {
