@@ -60,22 +60,6 @@ fun TrackItem(
     onClickTrackItem: (Track) -> Unit,
     onClickMoreVert: (Track) -> Unit
 ) {
-    /*val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.roundToPx() }
-
-    val maxTrackTitleLength by remember {
-        derivedStateOf {
-            (screenWidthPx * (0.23)).roundToInt()
-        }
-    }
-
-    val maxArtistLength by remember {
-        derivedStateOf {
-            (screenWidthPx * (0.17)).roundToInt()
-        }
-    }*/
-
     SwingMusicTheme {
         Surface(
             modifier = Modifier

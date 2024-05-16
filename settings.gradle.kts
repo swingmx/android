@@ -26,3 +26,4 @@ include(":uicomponent")
 include(":feature:folder")
 
 include(":feature:artist")
+include(":feature:player")
