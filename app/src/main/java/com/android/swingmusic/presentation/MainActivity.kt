@@ -12,11 +12,8 @@ import com.android.swingmusic.artist.presentation.viewmodel.ArtistsViewModel
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlayerState
-import com.android.swingmusic.core.domain.util.RepeatMode
-import com.android.swingmusic.core.domain.util.ShuffleMode
-import com.android.swingmusic.folder.presentation.screen.FoldersAndTracksScreen
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
-import com.android.swingmusic.player.presentation.FullPlayerScreen
+import com.android.swingmusic.player.presentation.NowPlayingScreen
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -60,7 +57,7 @@ class MainActivity : ComponentActivity() {
                         filepath = "/path/to/track.mp3",
                         folder = "/path/to/album",
                         genre = genre,
-                        image = "/path/to/album/artwork.jpg",
+                        image = "aefcb0afd5.webp",
                         isFavorite = true,
                         lastMod = 1648731600, // Sample timestamp
                         ogAlbum = "Original Album",
@@ -68,10 +65,10 @@ class MainActivity : ComponentActivity() {
                         pos = 1,
                         title = "Save Your Tears",
                         track = 1,
-                        trackHash = "trackHash123"
+                        trackHash = "aefcb0afd5"
                     )
 
-                    FullPlayerScreen(
+                    /*FullPlayerScreen(
                         track = track,
                         progress = .22F,
                         playerState = PlayerState.PLAYING,
@@ -88,6 +85,17 @@ class MainActivity : ComponentActivity() {
                         onToggleFavorite = {},
                         onClickQueue = {},
                         onClickMore = {}
+                    )*/
+                    val queue = listOf(
+                        track,
+                        track.copy(title = "Popular", trackHash = "popular"),
+                        track.copy(title = "One Right Now", trackHash = "one")
+                    )
+
+                    NowPlayingScreen(
+                        nowPlayingTrackIndex = 2,
+                        playerState = PlayerState.PLAYING,
+                        queue = queue
                     )
                 }
             }
