@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,16 +56,18 @@ import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 @Composable
 fun TrackItem(
     track: Track,
+    trackQueueNumber: Int? = null,
     isCurrentTrack: Boolean = false,
     playerState: PlayerState = PlayerState.UNSPECIFIED,
     onClickTrackItem: (Track) -> Unit,
     onClickMoreVert: (Track) -> Unit
 ) {
     SwingMusicTheme {
-        Surface(
+        Box(
             modifier = Modifier
                 .padding(vertical = 4.dp, horizontal = 12.dp)
-                .clip(RoundedCornerShape(20))
+                .clip(RoundedCornerShape(20)),
+            contentAlignment = Alignment.CenterStart
         ) {
             // Image, Title, Artists, Duration
             Row(
@@ -181,15 +184,31 @@ fun TrackItem(
                     )
                 }
             }
+
+            trackQueueNumber?.let { number ->
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .wrapContentSize()
+                        .background(MaterialTheme.colorScheme.inverseOnSurface)
+                        .padding(vertical = 2.dp, horizontal = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = number.toString(),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
         }
     }
 }
 
 @Preview(
     showBackground = true,
-    device = Devices.PIXEL_2,
+    device = Devices.PIXEL_6,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
-    wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE
+    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
 )
 @Composable
 fun TrackItemPreview() {
@@ -264,6 +283,7 @@ fun TrackItemPreview() {
                     isCurrentTrack = false,
                     playerState = PlayerState.PAUSED,
                     track = track,
+                    trackQueueNumber = 1,
                     onClickTrackItem = {
 
                     },
@@ -272,7 +292,8 @@ fun TrackItemPreview() {
                     }
                 )
                 TrackItem(
-                    isCurrentTrack = false,
+                    isCurrentTrack = true,
+                    playerState = PlayerState.PAUSED,
                     track = track,
                     onClickTrackItem = {
 
@@ -295,6 +316,7 @@ fun TrackItemPreview() {
                     isCurrentTrack = true,
                     playerState = PlayerState.PAUSED,
                     track = track,
+                    trackQueueNumber = 23,
                     onClickTrackItem = {
 
                     },
