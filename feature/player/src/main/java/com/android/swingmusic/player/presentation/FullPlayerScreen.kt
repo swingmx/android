@@ -3,8 +3,7 @@ package com.android.swingmusic.player.presentation
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,7 +25,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -42,7 +39,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.Wallpapers
+import androidx.compose.ui.tooling.preview.Wallpapers.RED_DOMINATED_EXAMPLE
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -79,13 +76,11 @@ fun FullPlayerScreen(
     val artistsSeparator by remember {
         derivedStateOf { if (track.trackArtists.size == 2) " & " else ", " }
     }
-
     val fileType by remember {
         derivedStateOf {
             track.filepath.substringAfterLast(".").uppercase(Locale.ROOT)
         }
     }
-
     val repeatModeIcon by remember {
         derivedStateOf {
             when (repeatMode) {
@@ -94,7 +89,6 @@ fun FullPlayerScreen(
             }
         }
     }
-
     val playerStateIcon by remember {
         derivedStateOf {
             when (playerState) {
@@ -159,12 +153,15 @@ fun FullPlayerScreen(
 
                             LazyRow(modifier = Modifier.fillMaxWidth()) {
                                 track.trackArtists.forEachIndexed { index, trackArtist ->
+                                    // TODO: Hide Ripple
                                     item {
-                                        // TODO: Hide tap indicator
                                         Text(
-                                            modifier = Modifier.clickable {
-                                                onClickArtist(trackArtist.artistHash)
-                                            },
+                                            modifier = Modifier
+                                                .clickable(
+                                                    onClick = { onClickArtist(trackArtist.artistHash) },
+                                                    indication = null,  // Disables the ripple effect
+                                                    interactionSource = remember { MutableInteractionSource() }
+                                                ),
                                             text = trackArtist.name,
                                             maxLines = 1,
                                             style = MaterialTheme.typography.bodySmall,
@@ -379,7 +376,7 @@ fun FullPlayerScreen(
 
 @Preview(
     uiMode = Configuration.UI_MODE_NIGHT_YES,
-    wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE,
+    wallpaper = RED_DOMINATED_EXAMPLE,
     device = Devices.PIXEL_5
 )
 @Composable
