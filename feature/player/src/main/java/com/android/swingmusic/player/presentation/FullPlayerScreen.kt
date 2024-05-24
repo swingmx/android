@@ -24,12 +24,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +53,9 @@ import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.galaxygoldfish.waveslider.PillThumb
+import com.galaxygoldfish.waveslider.WaveSlider
+import com.galaxygoldfish.waveslider.WaveSliderDefaults
 import java.util.Locale
 
 @Composable
@@ -126,14 +130,14 @@ fun FullPlayerScreen(
                             .data("$BASE_URL/img/t/${track.image}")
                             .crossfade(true)
                             .build(),
-                        placeholder = painterResource(R.drawable.img_2),
-                        fallback = painterResource(R.drawable.img_2),
-                        error = painterResource(R.drawable.img_2),
+                        placeholder = painterResource(R.drawable.audio_fallback),
+                        fallback = painterResource(R.drawable.audio_fallback),
+                        error = painterResource(R.drawable.audio_fallback),
                         contentDescription = "Track Image",
                         contentScale = ContentScale.Crop
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -201,18 +205,34 @@ fun FullPlayerScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
 
                     Column {
                         // TODO: Figure out how to update progress in sync with duration
-                        Slider(
-                            modifier = Modifier.fillMaxWidth(),
-                            value = progress,
-                            onValueChange = { position ->
-                                onSliderPositionChanged(position)
 
-                            }
+                        var sliderValue by remember { mutableFloatStateOf(0.4F) }
+
+                        WaveSlider(
+                            modifier = Modifier.height(12.dp),
+                            value = sliderValue,
+                            onValueChange = { value -> sliderValue = value },
+                            animationOptions = WaveSliderDefaults.animationOptions(
+                                reverseDirection = false,
+                                flatlineOnDrag = true,
+                                animateWave = playerState == PlayerState.PLAYING,
+                                reverseFlatline = false
+                            ),
+                            colors = WaveSliderDefaults.colors(
+                                inactiveTrackColor = MaterialTheme.colorScheme.inverseOnSurface
+                            ),
+                            thumb = { PillThumb() },
+                            waveOptions = WaveSliderDefaults.waveOptions(
+                                amplitude = 12F,
+                                frequency = 0.07F
+                            )
                         )
+
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Row(
                             modifier = Modifier
