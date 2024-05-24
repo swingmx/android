@@ -12,7 +12,10 @@ import com.android.swingmusic.artist.presentation.viewmodel.ArtistsViewModel
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlayerState
+import com.android.swingmusic.core.domain.util.RepeatMode
+import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
+import com.android.swingmusic.player.presentation.FullPlayerScreen
 import com.android.swingmusic.player.presentation.NowPlayingScreen
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -23,13 +26,13 @@ class MainActivity : ComponentActivity() {
     private val artistsViewModel: ArtistsViewModel by viewModels<ArtistsViewModel>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             SwingMusicTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
                 ) {
+                    // TODO: Add a bottom nav bar and a mini player - visible across the entire app
                     // For interaction purposes
                     // FoldersAndTracksScreen(foldersViewModel)
                     // ArtistsScreen(artistsViewModel)
@@ -68,9 +71,9 @@ class MainActivity : ComponentActivity() {
                         trackHash = "aefcb0afd5"
                     )
 
-                    /*FullPlayerScreen(
+                    FullPlayerScreen(
                         track = track,
-                        progress = .22F,
+                        progress = .5F,
                         playerState = PlayerState.PLAYING,
                         repeatMode = RepeatMode.REPEAT_NONE,
                         shuffleMode = ShuffleMode.SHUFFLE_OFF,
@@ -85,18 +88,22 @@ class MainActivity : ComponentActivity() {
                         onToggleFavorite = {},
                         onClickQueue = {},
                         onClickMore = {}
-                    )*/
-                    val queue = listOf(
-                        track,
-                        track.copy(title = "Popular", trackHash = "popular"),
-                        track.copy(title = "One Right Now", trackHash = "one")
                     )
+                    val queue = mutableListOf<Track>(
+                        /*track,
+                        track.copy(title = "Popular", trackHash = "popular"),
+                        track.copy(title = "One Right Now", trackHash = "one")*/
+                    )
+                    (1..20).forEach {
+                        val thisTrack = track.copy(title = "Track $it", trackHash = "one+${it}")
+                        queue.add(thisTrack)
+                    }
 
-                    NowPlayingScreen(
-                        nowPlayingTrackIndex = 2,
+                  /*  NowPlayingScreen(
+                        nowPlayingTrackIndex = 5,
                         playerState = PlayerState.PLAYING,
                         queue = queue
-                    )
+                    )*/
                 }
             }
         }
