@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,8 +73,8 @@ fun MiniPlayer(
                     ) {
                         AsyncImage(
                             modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(16)),
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(18)),
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data("$BASE_URL/img/t/s/${trackImage}")
                                 .crossfade(true)
@@ -91,29 +92,32 @@ fun MiniPlayer(
                             text = trackTitle,
                             maxLines = 1,
                             style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
                             overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
                         )
                     }
 
-                    // Player Indicator
+                    // Player State Indicator
                     IconButton(
-                        modifier = Modifier.padding(end = 4.dp),
+                        modifier = Modifier
+                            .padding(end = 8.dp),
                         onClick = {
-                            onClickPlayerIcon(playerState)
+                            if (playerState != PlayerState.UNSPECIFIED)
+                                onClickPlayerIcon(playerState)
                         }) {
                         when (playerState) {
                             PlayerState.PLAYING -> {
                                 Icon(
                                     painter = painterResource(id = R.drawable.pause_icon),
-                                    contentDescription = "playing State indicator"
+                                    contentDescription = "playing state indicator"
                                 )
                             }
 
                             PlayerState.PAUSED -> {
                                 Icon(
                                     painter = painterResource(id = R.drawable.play_arrow),
-                                    contentDescription = "paused State indicator"
+                                    contentDescription = "paused state indicator"
                                 )
                             }
 
@@ -121,7 +125,7 @@ fun MiniPlayer(
                                 Icon(
                                     painter = painterResource(id = R.drawable.disabled),
                                     tint = MaterialTheme.colorScheme.inverseSurface.copy(alpha = .5F),
-                                    contentDescription = "paused State indicator"
+                                    contentDescription = "paused state indicator"
                                 )
                             }
                         }
@@ -139,7 +143,6 @@ fun MiniPlayer(
         }
     }
 }
-
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.NEXUS_5, showBackground = true)
 @Composable

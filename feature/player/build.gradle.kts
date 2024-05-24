@@ -78,4 +78,7 @@ dependencies {
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
+
+    //Wavy Slider
+    implementation("com.github.galaxygoldfish:waveslider:v0.0.3")
 }
