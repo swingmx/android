@@ -15,10 +15,10 @@ This project is currently in its early development stages as the [Swing Music te
 <table>
   <tr>
     <td>
-      <img src="https://github.com/swing-opensource/android/assets/54077752/3ff804e0-9a06-4352-8bb0-463e7e1c3bbf" width="320" alt="image" />
+      <img src="https://github.com/swingmx/android/assets/54077752/01d6bf5c-fe90-4a2c-88f1-46c15eabf529" width="320" alt="image" />
     </td>
     <td>
-      <img src="https://github.com/swing-opensource/android/assets/54077752/2ff2a86c-c1ad-4dd1-901a-e18b4103b420" width="320" alt="image" />
+      <img src="https://github.com/swingmx/android/assets/54077752/203e7834-e5eb-46f4-93fd-5123b4245d3b" width="320" alt="image" />
     </td>
   </tr>
 </table>
