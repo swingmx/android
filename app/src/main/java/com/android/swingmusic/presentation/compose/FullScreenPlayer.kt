@@ -392,7 +392,7 @@ private fun FullScreenPlayer(
                         onClickLyricsIcon()
                     }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.lyrics_delete_this),
+                            painter = painterResource(id = R.drawable.lyrics_icon),
                             contentDescription = "Lyrics"
                         )
                     }

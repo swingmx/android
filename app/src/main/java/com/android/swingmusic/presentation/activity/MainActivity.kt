@@ -27,7 +27,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (mediaControllerViewModel.getMediaController() == null) {
+
+        if (
+            mediaControllerViewModel.getMediaController() == null ||
+            (this::controllerFuture.isInitialized).not()
+        ) {
+            Timber.e("Media Controller: ${mediaControllerViewModel.getMediaController()}")
+            Timber.e("Future Init: ${(this::controllerFuture.isInitialized)}")
+
             val sessionToken = SessionToken(this, ComponentName(this, PlaybackService::class.java))
             controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
             controllerFuture.addListener({
@@ -74,9 +81,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        mediaControllerViewModel.releaseMediaController(controllerFuture)
+        if (this::controllerFuture.isInitialized) {
+            mediaControllerViewModel.releaseMediaController(controllerFuture)
 
-        Timber.i("-------------------  Media Session Disconnected  ---------------------")
+            Timber.i("-------------------  Media Session Disconnected  ---------------------")
+        }
         Timber.i("-------------------------  App Destroyed  ----------------------------")
     }
 }

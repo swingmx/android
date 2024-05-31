@@ -343,5 +343,7 @@ class MediaControllerViewModel : ViewModel() {
 
     fun releaseMediaController(controllerFuture: ListenableFuture<MediaController>) {
         MediaController.releaseFuture(controllerFuture)
+        mediaController?.release()
+        mediaController = null
     }
 }
