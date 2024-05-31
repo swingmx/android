@@ -58,7 +58,6 @@ dependencies {
     implementation(project(":network"))
     implementation(project(":feature:folder")) // TODO: Remove this after impl navigation
     implementation(project(":feature:artist")) // TODO: Remove this after impl navigation
-    implementation(project(":feature:player")) // TODO: Remove this after impl navigation
     implementation(project(":uicomponent"))
 
     // Core

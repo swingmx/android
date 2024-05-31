@@ -52,8 +52,7 @@ private fun FoldersAndTracks(
     navPaths: List<Folder>,
     onClickNavPath: (Folder) -> Unit,
     onRetry: (FolderUiEvent) -> Unit,
-    onClickFolder: (Folder) -> Unit,
-    onBackNav: (Folder) -> Unit
+    onClickFolder: (Folder) -> Unit
 ) {
     SwingMusicTheme {
         Scaffold(
@@ -277,9 +276,6 @@ fun FoldersAndTracksScreen(viewModel: FoldersViewModel = viewModel()) {
         },
         onClickFolder = { folder ->
             viewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
-        },
-        onBackNav = { folder ->
-            viewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(folder))
         }
     )
 
