@@ -1,7 +1,7 @@
 package com.android.swingmusic.core.domain.model
 
 data class FoldersAndTracksRequest(
-    // path
+    // used as path
     val folder: String,
     val tracksOnly: Boolean
 )
