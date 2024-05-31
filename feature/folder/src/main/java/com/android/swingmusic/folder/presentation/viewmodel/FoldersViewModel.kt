@@ -11,11 +11,9 @@ import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
-import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.network.domain.repository.NetworkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -51,7 +49,7 @@ class FoldersViewModel @Inject constructor(
 
     val foldersAndTracks: State<FoldersAndTracksState> = _foldersAndTracks
 
-    private fun resetUiStates() {
+    private fun resetUiToLoadingState() {
         _foldersAndTracks.value = FoldersAndTracksState(
             foldersAndTracks = FoldersAndTracks(
                 folders = emptyList(),
@@ -114,7 +112,7 @@ class FoldersViewModel @Inject constructor(
         when (event) {
             is FolderUiEvent.OnClickNavPath -> {
                 if (event.folder.path != _currentFolder.value.path) {
-                    resetUiStates()
+                    resetUiToLoadingState()
 
                     _currentFolder.value = event.folder
                     getFoldersAndTracks(event.folder.path)
@@ -122,12 +120,12 @@ class FoldersViewModel @Inject constructor(
             }
 
             is FolderUiEvent.OnClickFolder -> {
-                resetUiStates()
+                resetUiToLoadingState()
 
                 _currentFolder.value = event.folder
                 getFoldersAndTracks(event.folder.path)
 
-                if(!_navPaths.value.contains(event.folder)) {
+                if (!_navPaths.value.contains(event.folder)) {
                     _navPaths.value = listOf<Folder>(homeDir)
                         .plus(
                             (_navPaths.value.filter {
@@ -141,10 +139,11 @@ class FoldersViewModel @Inject constructor(
 
             is FolderUiEvent.OnBackNav -> {
                 if (_navPaths.value.size > 1) {
+                    // Utilizing the fact that we can't have multiple folders with the same name
                     val currentPathIndex = _navPaths.value.indexOf(event.folder)
                     val backPathIndex = currentPathIndex - 1
                     if (backPathIndex > -1) { // Just to be safe
-                        resetUiStates()
+                        resetUiToLoadingState()
 
                         val backFolder = _navPaths.value[backPathIndex]
                         _currentFolder.value = backFolder
@@ -155,7 +154,7 @@ class FoldersViewModel @Inject constructor(
             }
 
             is FolderUiEvent.OnRetry -> {
-                resetUiStates()
+                resetUiToLoadingState()
                 getFoldersAndTracks(_currentFolder.value.path)
             }
         }
