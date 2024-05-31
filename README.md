@@ -1,29 +1,16 @@
-## Android client for [Swing Music](https://github.com/swing-opensource/swingmusic)
+## Android client for [Swing Music](https://github.com/swingmx/swingmusic)
 
-This project is currently in its early development stages as the Swing Music team is diligently working to deliver an MVP as soon as possible.
+This project is currently in its early development stages as the [Swing Music team](https://github.com/orgs/swingmx/people) is diligently working to deliver an MVP as soon as possible.
 
-Anyone should be able to clone this repo and open it with Android Studio. You need at least:
-
-```kt
-Android Studio Hedgehog | 2023.1.1 Patch 1
-```
-## Development Plan
-
-Swing Music is poised to be a sophisticated app expected to scale seamlessly. To facilitate this, the project is `modularized by feature` and utilizes an `MVVM` architecture.
-
-#### 1. `:folder` Module
-
-This is a feature module with access to the `core`,`uicomponent` and `network` module.
-
-It covers the following tasks:
-
+<!--
 | Task                               | Status |
 |------------------------------------|--------|
 | List Folders                       | ✔ Done |
 | List Tracks within a folder        | ✔ Done |
 | Implement breadcrumb navigation    | ✔ Done |
+-->
 
-#### Screenshots
+#### [Recent Changes](https://github.com/swingmx/android/pulls?q=is%3Apr+sort%3Aupdated-desc+is%3Amerged)
 
 <table>
   <tr>
@@ -35,9 +22,3 @@ It covers the following tasks:
     </td>
   </tr>
 </table>
-
-#### `:folder` Known Issues
-- Track images are a bit blurry. `status:` `PENDING`
-
-> [!TIP]
-> Currently, we are using [Mungaist](https://music.mungaist.com/) as our test server. However, you can set the base URL to your desired server, including your local Swing Music server.
