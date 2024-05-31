@@ -62,5 +62,5 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // Pagination
-    implementation ("androidx.paging:paging-compose:1.0.0-alpha15")
+    implementation ("androidx.paging:paging-compose:3.3.0")
 }

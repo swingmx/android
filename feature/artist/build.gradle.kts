@@ -53,7 +53,7 @@ dependencies {
     implementation(project(":uicomponent"))
 
     // Core
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.compose.material3:material3")
     testImplementation("junit:junit:4.13.2")
@@ -75,5 +75,5 @@ dependencies {
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
     // Pagination
-    implementation ("androidx.paging:paging-compose:1.0.0-alpha15")
+    implementation ("androidx.paging:paging-compose:3.3.0")
 }

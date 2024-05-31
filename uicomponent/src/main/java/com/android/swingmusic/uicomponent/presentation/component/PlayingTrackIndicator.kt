@@ -14,14 +14,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.android.swingmusic.core.domain.util.PlayerState
+import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.CoilGifLoader
 
 @Composable
 fun PlayingTrackIndicator(
-    playerState: PlayerState
+    playbackState: PlaybackState
 ) {
     SwingMusicTheme {
         // Background
@@ -39,22 +39,22 @@ fun PlayingTrackIndicator(
                 .clip(CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            when (playerState) {
-                PlayerState.PLAYING -> {
+            when (playbackState) {
+                PlaybackState.PLAYING -> {
                     CoilGifLoader(
                         resource = R.raw.playing_anim,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
 
-                PlayerState.PAUSED -> {
+                PlaybackState.PAUSED -> {
                     Image(
                         painter = painterResource(id = R.drawable.paused),
                         contentDescription = "Paused State Indicator"
                     )
                 }
 
-                PlayerState.UNSPECIFIED -> {
+                PlaybackState.ERROR -> {
 
                 }
             }

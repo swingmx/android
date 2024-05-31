@@ -46,7 +46,7 @@ import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
-import com.android.swingmusic.core.domain.util.PlayerState
+import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -58,7 +58,7 @@ fun TrackItem(
     track: Track,
     trackQueueNumber: Int? = null,
     isCurrentTrack: Boolean = false,
-    playerState: PlayerState = PlayerState.UNSPECIFIED,
+    playbackState: PlaybackState = PlaybackState.ERROR,
     onClickTrackItem: (Track) -> Unit,
     onClickMoreVert: (Track) -> Unit
 ) {
@@ -116,7 +116,7 @@ fun TrackItem(
                         )
 
                         if (isCurrentTrack) {
-                            PlayingTrackIndicator(playerState = playerState)
+                            PlayingTrackIndicator(playbackState = playbackState)
                         }
                     }
 
@@ -281,7 +281,7 @@ fun TrackItemPreview() {
                 )
                 TrackItem(
                     isCurrentTrack = false,
-                    playerState = PlayerState.PAUSED,
+                    playbackState = PlaybackState.PAUSED,
                     track = track,
                     trackQueueNumber = 1,
                     onClickTrackItem = {
@@ -293,7 +293,7 @@ fun TrackItemPreview() {
                 )
                 TrackItem(
                     isCurrentTrack = true,
-                    playerState = PlayerState.PAUSED,
+                    playbackState = PlaybackState.PAUSED,
                     track = track,
                     onClickTrackItem = {
 
@@ -314,7 +314,7 @@ fun TrackItemPreview() {
                 )
                 TrackItem(
                     isCurrentTrack = true,
-                    playerState = PlayerState.PAUSED,
+                    playbackState = PlaybackState.PAUSED,
                     track = track,
                     trackQueueNumber = 23,
                     onClickTrackItem = {

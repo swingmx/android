@@ -44,35 +44,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.android.swingmusic.artist.presentation.event.ArtistUiEvent
+import com.android.swingmusic.artist.presentation.state.ArtistsUiState
 import com.android.swingmusic.artist.presentation.util.pagingItems
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistsViewModel
 import com.android.swingmusic.core.data.util.Resource
+import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
 import com.android.swingmusic.uicomponent.presentation.component.SortByChip
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.R as UiComponents
 
 @Composable
-fun ArtistsScreen(
-    artistsViewModel: ArtistsViewModel
+private fun Artists(
+    pagingArtists: LazyPagingItems<Artist>,
+    artistsUiState: ArtistsUiState,
+    sortByPairs: List<Pair<SortBy, String>>,
+    onUpdateGridCount: (Int) -> Unit,
+    onSortBy: (Pair<SortBy, String>) -> Unit,
+    onRetry: () -> Unit
 ) {
-    val pagingArtists =
-        artistsViewModel.artistsUiState.value.pagingArtists.collectAsLazyPagingItems()
-
-    val artistUiState by remember { artistsViewModel.artistsUiState }
-    val sortByPairs by remember { derivedStateOf { artistsViewModel.sortByEntries.toList() } }
     val gridState = rememberLazyGridState()
-    val artistCount by remember {
-        derivedStateOf {
-            when (val result = artistUiState.totalArtists) {
-                is Resource.Loading -> -1
-                is Resource.Error -> 0
-                is Resource.Success -> result.data!!
-            }
-        }
+    val artistCount = when (val result = artistsUiState.totalArtists) {
+        is Resource.Loading -> -1
+        is Resource.Error -> 0
+        is Resource.Success -> result.data!!
     }
 
     val loadingState = when {
@@ -133,7 +134,7 @@ fun ArtistsScreen(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(12))
                                                 .background(
-                                                    if (artistUiState.gridCount == count)
+                                                    if (artistsUiState.gridCount == count)
                                                         MaterialTheme.colorScheme.inverseSurface.copy(
                                                             alpha = .1F
                                                         )
@@ -141,11 +142,9 @@ fun ArtistsScreen(
                                                 ),
                                             interactionSource = MutableInteractionSource(),
                                             onClick = {
-                                                if (artistUiState.gridCount != count) {
+                                                if (artistsUiState.gridCount != count) {
                                                     isGridCountMenuExpanded = false
-                                                    artistsViewModel.onArtistUiEvent(
-                                                        ArtistUiEvent.OnUpdateGridCount(count)
-                                                    )
+                                                    onUpdateGridCount(count)
                                                 }
                                             }, text = {
                                                 Text(
@@ -158,7 +157,7 @@ fun ArtistsScreen(
                                                 )
                                             },
                                             trailingIcon = {
-                                                if (artistUiState.gridCount == count)
+                                                if (artistsUiState.gridCount == count)
                                                     Icon(
                                                         modifier = Modifier.padding(start = 12.dp),
                                                         imageVector = Icons.Rounded.CheckCircle,
@@ -191,10 +190,10 @@ fun ArtistsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 8.dp),
-                    columns = GridCells.Fixed(artistUiState.gridCount),
+                    columns = GridCells.Fixed(artistsUiState.gridCount),
                     state = gridState,
                 ) {
-                    item(span = { GridItemSpan(artistUiState.gridCount) }) {
+                    item(span = { GridItemSpan(artistsUiState.gridCount) }) {
                         LazyRow(
                             modifier = Modifier
                                 .padding(horizontal = 4.dp, vertical = 12.dp)
@@ -204,12 +203,10 @@ fun ArtistsScreen(
                             items(sortByPairs) { pair ->
                                 SortByChip(
                                     labelPair = pair,
-                                    sortOrder = artistUiState.sortOrder,
-                                    isSelected = artistUiState.sortBy == pair
+                                    sortOrder = artistsUiState.sortOrder,
+                                    isSelected = artistsUiState.sortBy == pair
                                 ) { clickedPair ->
-                                    artistsViewModel.onArtistUiEvent(
-                                        ArtistUiEvent.OnSortBy(sortByPair = clickedPair)
-                                    )
+                                    onSortBy(clickedPair)
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                             }
@@ -230,7 +227,7 @@ fun ArtistsScreen(
                     }
 
                     loadingState?.let {
-                        item(span = { GridItemSpan(artistUiState.gridCount) }) {
+                        item(span = { GridItemSpan(artistsUiState.gridCount) }) {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -254,7 +251,7 @@ fun ArtistsScreen(
                     }
 
                     errorState?.let {
-                        item(span = { GridItemSpan(artistUiState.gridCount) }) {
+                        item(span = { GridItemSpan(artistsUiState.gridCount) }) {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -275,7 +272,7 @@ fun ArtistsScreen(
 
                                     Button(onClick = {
                                         pagingArtists.retry()
-                                        artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnRetry)
+                                        onRetry()
                                     }) {
                                         Text(text = "RETRY")
                                     }
@@ -287,6 +284,33 @@ fun ArtistsScreen(
             }
         }
     }
+}
+
+
+/**
+ * This Composable is heavily coupled with ArtistsViewModel. [Artists] comp has no ties.
+ **/
+@Composable
+fun ArtistsScreen(viewModel: ArtistsViewModel = viewModel()) {
+
+    val pagingArtists = viewModel.artistsUiState.value.pagingArtists.collectAsLazyPagingItems()
+    val artistsUiState by remember { viewModel.artistsUiState }
+    val sortByPairs by remember { derivedStateOf { viewModel.sortByEntries.toList() } }
+
+    Artists(
+        pagingArtists = pagingArtists,
+        artistsUiState = artistsUiState,
+        sortByPairs = sortByPairs,
+        onUpdateGridCount = { count ->
+            viewModel.onArtistUiEvent(ArtistUiEvent.OnUpdateGridCount(count))
+        },
+        onSortBy = { pair ->
+            viewModel.onArtistUiEvent(ArtistUiEvent.OnSortBy(pair))
+        },
+        onRetry = {
+            viewModel.onArtistUiEvent(ArtistUiEvent.OnRetry)
+        }
+    )
 }
 
 private fun getArtistCountHelperText(count: Int): String {

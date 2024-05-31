@@ -1,6 +1,6 @@
-package com.android.swingmusic.uicomponent.presentation.util
+package com.android.swingmusic.presentation.util
 
-fun Int.formatDuration(): String {
+internal fun Int.formatDuration(): String {
     val hours = this / 3600
     val remainingSeconds = this % 3600
     val minutes = remainingSeconds / 60

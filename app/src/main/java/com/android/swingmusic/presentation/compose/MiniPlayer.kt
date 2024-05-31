@@ -1,4 +1,4 @@
-package com.android.swingmusic.uicomponent.presentation.component
+package com.android.swingmusic.presentation.compose
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -20,6 +21,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,22 +35,26 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.swingmusic.core.domain.util.PlayerState
+import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.network.data.util.BASE_URL
+import com.android.swingmusic.presentation.event.PlayerUiEvent
+import com.android.swingmusic.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 
 @Composable
-fun MiniPlayer(
+private fun MiniPlayer(
     trackHash: String,
     trackTitle: String,
     trackImage: String,
-    playerState: PlayerState,
-    progress: Float,
+    playbackState: PlaybackState,
+    isBuffering: Boolean,
+    playbackProgress: Float, // also called seekPosition
     onClickPlayerItem: (hash: String) -> Unit,
-    onClickPlayerIcon: (state: PlayerState) -> Unit,
+    onTogglePlaybackState: () -> Unit,
 ) {
     SwingMusicTheme {
         Surface {
@@ -103,27 +110,34 @@ fun MiniPlayer(
                         modifier = Modifier
                             .padding(end = 8.dp),
                         onClick = {
-                            if (playerState != PlayerState.UNSPECIFIED)
-                                onClickPlayerIcon(playerState)
+                            if (playbackState != PlaybackState.ERROR)
+                                onTogglePlaybackState()
                         }) {
-                        when (playerState) {
-                            PlayerState.PLAYING -> {
+                        if (isBuffering) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = (.75).dp,
+                                strokeCap = StrokeCap.Round
+                            )
+                        }
+                        when (playbackState) {
+                            PlaybackState.PLAYING -> {
                                 Icon(
                                     painter = painterResource(id = R.drawable.pause_icon),
                                     contentDescription = "playing state indicator"
                                 )
                             }
 
-                            PlayerState.PAUSED -> {
+                            PlaybackState.PAUSED -> {
                                 Icon(
                                     painter = painterResource(id = R.drawable.play_arrow),
                                     contentDescription = "paused state indicator"
                                 )
                             }
 
-                            PlayerState.UNSPECIFIED -> {
+                            PlaybackState.ERROR -> {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.disabled),
+                                    painter = painterResource(id = R.drawable.error),
                                     tint = MaterialTheme.colorScheme.inverseSurface.copy(alpha = .5F),
                                     contentDescription = "paused state indicator"
                                 )
@@ -136,7 +150,7 @@ fun MiniPlayer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(1.dp),
-                    progress = progress,
+                    progress = playbackProgress,
                     strokeCap = StrokeCap.Square
                 )
             }
@@ -144,22 +158,43 @@ fun MiniPlayer(
     }
 }
 
+/**
+ * A public overload that implements [MiniPlayer] under the hood.
+ * It couples its MiniPlayer to [MediaControllerViewModel]
+ * */
+
+@Composable
+fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel()) {
+    val playerUiState by remember { mediaControllerViewModel.playerUiState }
+    MiniPlayer(
+        trackHash = playerUiState.track.trackHash,
+        trackTitle = playerUiState.track.title,
+        trackImage = playerUiState.track.image,
+        playbackState = playerUiState.playbackState,
+        isBuffering = playerUiState.isBuffering,
+        playbackProgress = playerUiState.seekPosition,
+        onClickPlayerItem = {
+            // TODO: Open FullScreen player in a full screen bottom sheet
+        },
+        onTogglePlaybackState = {
+            mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
+        }
+    )
+}
+
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.NEXUS_5, showBackground = true)
 @Composable
 fun MiniPlayerPreview() {
     SwingMusicTheme {
         MiniPlayer(
-            playerState = PlayerState.PAUSED,
+            playbackState = PlaybackState.PLAYING,
+            isBuffering = true,
             trackHash = "abc123",
             trackTitle = "Track title is too large to be displayed",
             trackImage = "https://image",
-            progress = 0.2F,
-            onClickPlayerItem = {
-
-            },
-            onClickPlayerIcon = {
-
-            }
+            playbackProgress = 0.2F,
+            onClickPlayerItem = {},
+            onTogglePlaybackState = {}
         )
     }
 }

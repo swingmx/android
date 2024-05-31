@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -54,9 +55,9 @@ android {
 dependencies {
     // Local Modules
     implementation(project(":core"))
+    implementation(project(":network"))
     implementation(project(":feature:folder")) // TODO: Remove this after impl navigation
     implementation(project(":feature:artist")) // TODO: Remove this after impl navigation
-    implementation(project(":feature:player")) // TODO: Remove this after impl navigation
     implementation(project(":uicomponent"))
 
     // Core
@@ -92,13 +93,30 @@ dependencies {
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
 
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
+    // V2 only: for bottom sheet destination support, also add
+    // implementation("io.github.raamcosta.compose-destinations:bottom-sheet:1.9.63")
+
+    // Exo-Player
+    implementation ("androidx.media3:media3-exoplayer:1.3.1")
+    implementation ("androidx.media3:media3-session:1.3.1")
+
+    // Coil Image Loader
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("io.coil-kt:coil-gif:2.6.0")
+
     // Pagination
-    implementation ("androidx.paging:paging-compose:1.0.0-alpha15")
+    implementation("androidx.paging:paging-compose:3.3.0")
+
+    //Wavy Slider
+    implementation("com.github.galaxygoldfish:waveslider:v0.0.3")
+
+    // Coroutines
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
 }

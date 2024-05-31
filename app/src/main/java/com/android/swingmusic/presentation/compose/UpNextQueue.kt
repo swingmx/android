@@ -1,4 +1,4 @@
-package com.android.swingmusic.player.presentation
+package com.android.swingmusic.presentation.compose
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,10 +21,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -38,40 +39,84 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
-import com.android.swingmusic.core.domain.util.PlayerState
+import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.network.data.util.BASE_URL
+import com.android.swingmusic.presentation.event.PlayerUiEvent
+import com.android.swingmusic.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 
 @Composable
-fun NowPlayingScreen(
-    nowPlayingTrackIndex: Int,
-    playerState: PlayerState,
+private fun UpNextQueue(
+    playingTrackIndex: Int,
+    playbackState: PlaybackState,
     queue: List<Track>,
     onClickUpNextTrackItem: () -> Unit,
-    onClickQueueItem: () -> Unit
+    onClickQueueItem: (Track, index: Int) -> Unit
 ) {
-    // TODO(level: LOW) -> Move the up-next logic to a viewModel and pass nextTrack and queue as states
-    val nextTrackIndex = when {
-        nowPlayingTrackIndex == queue.lastIndex -> 0
-        nowPlayingTrackIndex > queue.lastIndex -> 0
-        else -> nowPlayingTrackIndex + 1
-    }
-    val upNextTrack by remember {
-        derivedStateOf {
-            queue[nextTrackIndex]
+    if (queue.isEmpty()) {
+        Surface {
+            Column {
+                Text(
+                    modifier = Modifier.padding(
+                        top = 16.dp,
+                        bottom = 16.dp,
+                        start = 16.dp,
+                    ),
+                    text = "Up Next",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 54.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "No queued tracks found!",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "I don't know how you got here.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                        )
+                    }
+                }
+            }
         }
+
+        return
     }
+
+    val nextTrackIndex = when {
+        playingTrackIndex == queue.lastIndex -> 0
+        playingTrackIndex > queue.lastIndex -> 0
+        else -> playingTrackIndex + 1
+    }
+    val upNextTrack = queue[nextTrackIndex]
     val lazyColumnState = rememberLazyListState()
 
     LaunchedEffect(key1 = Unit) {
+        /** TODO: Confirm auto scroll behavior when user clicks a track in queue
+         *        Expected -> Auto scroll should only happen once (after the initial composition)
+         * */
         if (queue.isNotEmpty())
-            lazyColumnState.animateScrollToItem(nowPlayingTrackIndex)
+            lazyColumnState.animateScrollToItem(playingTrackIndex)
     }
 
     SwingMusicTheme {
@@ -183,32 +228,17 @@ fun NowPlayingScreen(
                     .padding(paddingValues)
                     .padding(top = 104.dp) // The exact height of UpNext Track item plus padding.
             ) {
-                if (queue.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillParentMaxSize()
-                                .padding(bottom = 54.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = "No queued tracks found!")
-                        }
-                    }
-
-                    return@LazyColumn
-                }
-
                 itemsIndexed(
                     items = queue,
                     key = { index: Int, track: Track -> "$index" + track.filepath }
                 ) { index, track ->
                     TrackItem(
                         track = track,
-                        playerState = playerState,
-                        isCurrentTrack = index == nowPlayingTrackIndex,
+                        playbackState = playbackState,
+                        isCurrentTrack = index == playingTrackIndex,
                         trackQueueNumber = index + 1,
-                        onClickTrackItem = {
-                            onClickQueueItem()
+                        onClickTrackItem = { clickedTrack ->
+                            onClickQueueItem(clickedTrack, index)
                         },
                         onClickMoreVert = {}
                     )
@@ -218,13 +248,38 @@ fun NowPlayingScreen(
     }
 }
 
+/**
+ * A Composable that ties [UpNextQueue] to [MediaControllerViewModel] where its sates are hoisted
+ * */
+
+@Composable
+fun UpNextQueueScreen(mediaControllerViewModel: MediaControllerViewModel = viewModel()) {
+    val playerUiState by remember { mediaControllerViewModel.playerUiState }
+
+    UpNextQueue(
+        playingTrackIndex = playerUiState.playingTrackIndex,
+        playbackState = playerUiState.playbackState,
+        queue = playerUiState.queue,
+        onClickUpNextTrackItem = {
+            mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnNext)
+        },
+        onClickQueueItem = { track: Track, index: Int ->
+            /** TODO: Update now playing track,
+             *        Start playing track at this index in queue,
+             *        Update playingTrackIndex
+             */
+        }
+    )
+}
+
+
 @Preview(
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     device = Devices.PIXEL,
     wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
 )
 @Composable
-fun NowPlayingPreview() {
+fun UpNextQueuePreview() {
     val weeknd = TrackArtist(
         artistHash = "juice123",
         image = "juice.jpg",
@@ -269,12 +324,12 @@ fun NowPlayingPreview() {
     )
 
     SwingMusicTheme {
-        NowPlayingScreen(
-            nowPlayingTrackIndex = 1,
-            playerState = PlayerState.PLAYING,
+        UpNextQueue(
+            playingTrackIndex = 1,
+            playbackState = PlaybackState.PLAYING,
             queue = queue,
             onClickUpNextTrackItem = {},
-            onClickQueueItem = {},
+            onClickQueueItem = { track: Track, index: Int -> },
         )
     }
 }
