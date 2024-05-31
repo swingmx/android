@@ -12,7 +12,3 @@ fun Int.formatDuration(): String {
         else -> "00:%02d".format(seconds)
     }
 }
-
-fun String.trimString(limit: Int): String {
-    return if (this.length <= limit) this else this.take(limit).plus("...")
-}
