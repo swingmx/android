@@ -28,13 +28,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
+import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.uicomponent.presentation.component.FolderItem
 import com.android.swingmusic.uicomponent.presentation.component.PathIndicatorItem
@@ -43,13 +45,16 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FoldersAndTracksScreen(
-    foldersViewModel: FoldersViewModel
+private fun FoldersAndTracks(
+    currentFolder: Folder,
+    homeDir: Folder,
+    foldersAndTracksState: FoldersAndTracksState,
+    navPaths: List<Folder>,
+    onClickNavPath: (Folder) -> Unit,
+    onRetry: (FolderUiEvent) -> Unit,
+    onClickFolder: (Folder) -> Unit,
+    onBackNav: (Folder) -> Unit
 ) {
-    val currentFolder by remember { foldersViewModel.currentFolder }
-    val foldersAndTracksState by remember { foldersViewModel.foldersAndTracks }
-    val navPaths by remember { foldersViewModel.navPaths }
-
     SwingMusicTheme {
         Scaffold(
             topBar = {
@@ -86,13 +91,11 @@ fun FoldersAndTracksScreen(
                             // Always display a root dir item
                             item {
                                 PathIndicatorItem(
-                                    folder = foldersViewModel.homeDir,
+                                    folder = homeDir,
                                     isRootPath = true,
-                                    isCurrentPath = foldersViewModel.homeDir.path == currentFolder.path,
-                                    onClick = {
-                                        foldersViewModel.onFolderUiEvent(
-                                            FolderUiEvent.OnClickNavPath(it)
-                                        )
+                                    isCurrentPath = homeDir.path == currentFolder.path,
+                                    onClick = { navFolder ->
+                                        onClickNavPath(navFolder)
                                     }
                                 )
                             }
@@ -104,9 +107,7 @@ fun FoldersAndTracksScreen(
                                         folder = folder,
                                         isCurrentPath = folder.path == currentFolder.path,
                                         onClick = { navFolder ->
-                                            foldersViewModel.onFolderUiEvent(
-                                                FolderUiEvent.OnClickNavPath(navFolder)
-                                            )
+                                            onClickNavPath(navFolder)
                                         }
                                     )
                                 }
@@ -164,7 +165,7 @@ fun FoldersAndTracksScreen(
 
                                     Button(onClick = {
                                         val event = FolderUiEvent.OnClickFolder(currentFolder)
-                                        foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
+                                        onRetry(event)
                                     }) {
                                         Text("RETRY")
                                     }
@@ -178,8 +179,8 @@ fun FoldersAndTracksScreen(
                         items(foldersAndTracksState.foldersAndTracks.folders) { folder ->
                             FolderItem(
                                 folder = folder,
-                                onClickFolderItem = {
-                                    foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(it))
+                                onClickFolderItem = { clickedFolder ->
+                                    onClickFolder(clickedFolder)
                                 },
                                 onClickMoreVert = {
 
@@ -237,7 +238,7 @@ fun FoldersAndTracksScreen(
                                 } else {
                                     OutlinedButton(onClick = {
                                         val event = FolderUiEvent.OnClickFolder(currentFolder)
-                                        foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
+                                        onRetry(event)
                                     }) {
                                         Text("RETRY")
                                     }
@@ -249,11 +250,42 @@ fun FoldersAndTracksScreen(
             }
         }
     }
+}
 
-    val overrideSystemBackNav by remember {
-        derivedStateOf { currentFolder.path != "\$home" }
-    }
+/**
+ * This Composable it tied to FoldersViewModel.
+ *  It basically calls a stateless composable
+ *  and provides hoisted states
+ */
+@Composable
+fun FoldersAndTracksScreen(viewModel: FoldersViewModel = viewModel()) {
+    val currentFolder by remember { viewModel.currentFolder }
+    val foldersAndTracksState by remember { viewModel.foldersAndTracks }
+    val navPaths by remember { viewModel.navPaths }
+    val homeDir = remember { viewModel.homeDir }
+
+    FoldersAndTracks(
+        currentFolder = currentFolder,
+        homeDir = homeDir,
+        foldersAndTracksState = foldersAndTracksState,
+        navPaths = navPaths,
+        onClickNavPath = { folder ->
+            viewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
+        },
+        onRetry = { event ->
+            viewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
+        },
+        onClickFolder = { folder ->
+            viewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
+        },
+        onBackNav = { folder ->
+            viewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(folder))
+        }
+    )
+
+    val overrideSystemBackNav = currentFolder.path != "\$home"
     BackHandler(enabled = overrideSystemBackNav) {
-        foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
+        viewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
     }
 }
+
