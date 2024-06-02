@@ -11,7 +11,6 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import com.android.swingmusic.core.domain.model.Track
-import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
@@ -28,78 +27,46 @@ import com.android.swingmusic.presentation.event.PlayerUiEvent.OnToggleFavorite
 import com.android.swingmusic.presentation.event.PlayerUiEvent.OnTogglePlayerState
 import com.android.swingmusic.presentation.event.PlayerUiEvent.OnToggleRepeatMode
 import com.android.swingmusic.presentation.event.PlayerUiEvent.OnToggleShuffleMode
+import com.android.swingmusic.presentation.event.QueueEvent
 import com.android.swingmusic.presentation.state.PlayerUiState
 import com.android.swingmusic.presentation.util.formatDuration
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import kotlin.math.roundToInt
 
 class MediaControllerViewModel : ViewModel() {
     private val playerListener = PlayerListener()
     private var mediaController: MediaController? = null
+    fun getMediaController() = mediaController
 
     fun setMediaController(controller: MediaController) {
         if (mediaController == null)
             mediaController = controller
     }
 
-    fun getMediaController() = mediaController
-
-    // TODO: Handle Queue, playingTrack, playingTrackIndex
-
-    val track = Track(
-        album = "Sample Album",
-        albumTrackArtists = listOf(),
-        albumHash = "albumHash123",
-        artistHashes = "artistHashes123",
-        trackArtists = listOf(
-            TrackArtist(
-                artistHash = "aefcb0afd5",
-                image = "aefcb0afd5.webp",
-                name = "Weeknd"
-            )
-        ),
-        ati = "ati123",
-        bitrate = 320,
-        copyright = "Copyright © 2024",
-        createdDate = 1648731600.0, // Sample timestamp
-        date = 2024,
-        disc = 1,
-        duration = 216, // duration in seconds
-        filepath = "/home/eric/Swing/Iann Mix/The Weeknd - Save Your Tears.mp3",
-        folder = "/home/eric/Swing/Iann Mix",
-        genre = listOf("pop"),
-        image = "aefcb0afd5.webp",
-        isFavorite = false,
-        lastMod = 1648731600, // Sample timestamp
-        ogAlbum = "",
-        ogTitle = "",
-        pos = 1,
-        title = "Save Your Tears",
-        track = 1,
-        trackHash = "bbdb9302c2"
-    )
+    private var workingQueue: MutableList<Track> = mutableListOf<Track>()
+    private var shuffledQueue: MutableList<Track> = mutableListOf<Track>()
 
     val playerUiState: MutableState<PlayerUiState> = mutableStateOf(
-        PlayerUiState(track = track)
+        PlayerUiState(
+            track = tracks[0], // Get this fro DB at first launch
+            queue = tracks
+        )
     )
 
     init {
-        val trackDuration = track.duration.formatDuration()
-
-        playerUiState.value = playerUiState.value.copy(
-            trackDuration = trackDuration
-        )
-
         viewModelScope.launch {
             while (true) {
                 mediaController?.let { controller ->
                     if (controller.playbackState == Player.STATE_READY) {
-                        val exoPlayerPosition = controller.currentPosition
+
+                        val exoPlayerPosition = when (val pos = controller.currentPosition) {
+                            0L -> 1
+                            else -> pos
+                        }
                         val seekPosition = (exoPlayerPosition / 1000F)
-                            .div(track.duration)
+                            .div(playerUiState.value.track?.duration ?: 1)
                             .coerceIn(0F, 1F)
                         val playbackDuration = (exoPlayerPosition / 1000F).roundToInt()
 
@@ -115,44 +82,77 @@ class MediaControllerViewModel : ViewModel() {
         }
     }
 
-    public fun loadMediaItems() {
-        _loadMediaItems(listOf(track, track))
+    init {
+        /** TODO: Check if playerUiState.value.queue is Empty... if so,
+         *        Get saved Track from DB (one time not a Flow),
+         *        Update working queue with a single track,
+         *        Create mediaItem
+         * */
+
+        /* onQueueEvent(
+             QueueEvent.CreateNewQueue(
+                 newQueue = playerUiState.value.queue,
+                 startIndex = 0,
+                 autoPlay = true
+             )
+         )*/
+        workingQueue = tracks.toMutableList()
+
+        if (playerUiState.value.track != null) {
+            val trackDuration = playerUiState.value.track!!.duration.formatDuration()
+            playerUiState.value = playerUiState.value.copy(
+                trackDuration = trackDuration
+            )
+        }
     }
 
-    private fun _loadMediaItems(tracks: List<Track>) {
-        viewModelScope.launch {
+    private fun createMediaItem(index: Int, track: Track): MediaItem {
+        val path = "$BASE_URL${""}file/${track.trackHash}?filepath=${track.filepath}"
+        val encodedPath = Uri.encode(path, "/:;?&=+$,@!*()^.<>_-")
+        val uri = Uri.parse(encodedPath)
 
-            val mediaItems = tracks.map { track ->
-                val path = "$BASE_URL${""}file/${track.trackHash}?filepath=${track.filepath}"
-                val encodedPath = Uri.encode(path, "/:;?&=+$,@!*()^.<>_-")
-                val uri = Uri.parse(encodedPath)
+        val artworkUri = Uri.parse("$BASE_URL${""}img/t/${track.image}")
+        val artists = track.trackArtists.joinToString(", ") { it.name }
 
-                val artworkUri = Uri.parse("$BASE_URL${""}img/t/${track.image}")
-                val artists = track.trackArtists.joinToString(", ") { it.name }
-
-                MediaItem.Builder()
-                    .setUri(uri)
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setArtist(artists)
-                            .setTitle(track.title)
-                            .setArtworkUri(artworkUri)
-                            .setGenre(track.genre.joinToString(", ") { it })
-                            .build()
-                    )
+        return MediaItem.Builder()
+            .setUri(uri)
+            .setMediaId(index.toString())
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setArtist(artists)
+                    .setTitle(track.title)
+                    .setArtworkUri(artworkUri)
+                    .setGenre(track.genre.joinToString(", ") { it })
                     .build()
-            }
+            ).build()
+    }
 
+    public fun loadMediaItems() {
+        if (playerUiState.value.queue.isNotEmpty()) {
+            _loadMediaItems(playerUiState.value.queue)
+        }
+    }
+
+    private fun _loadMediaItems(
+        tracks: List<Track>,
+        startIndex: Int = 0,
+        autoPlay: Boolean = false
+    ) {
+        viewModelScope.launch {
+            val mediaItems = tracks.mapIndexed { index, track ->
+                createMediaItem(index, track)
+            }
             mediaController?.apply {
                 clearMediaItems()
                 addMediaItems(mediaItems)
                 prepare()
                 setPlaybackSpeed(1F)
                 addListener(playerListener)
-                playWhenReady = true
+                seekToDefaultPosition(startIndex)
+                playWhenReady = autoPlay
 
                 playerUiState.value = playerUiState.value.copy(
-                    playbackState = PlaybackState.PLAYING
+                    playbackState = if (autoPlay) PlaybackState.PLAYING else PlaybackState.PAUSED
                 )
             }
         }
@@ -163,13 +163,14 @@ class MediaControllerViewModel : ViewModel() {
             when (event) {
                 is OnSeekPlayBack -> {
                     val toValue = event.value // Ranges from 0.0 to 1.0
-                    val playbackDuration = (toValue * track.duration).toInt()
+                    val playbackDuration =
+                        (toValue * (playerUiState.value.track?.duration ?: 1)).toInt()
 
                     playerUiState.value = playerUiState.value.copy(
                         seekPosition = event.value,
                         playbackDuration = playbackDuration.formatDuration()
                     )
-                    val trackDurationMs = playerUiState.value.track.duration * 1000
+                    val trackDurationMs = (playerUiState.value.track?.duration ?: 0) * 1000
                     val positionInMs = (trackDurationMs * toValue).toLong()
                     val seekPosition = positionInMs.coerceIn(0, trackDurationMs.toLong())
 
@@ -182,6 +183,8 @@ class MediaControllerViewModel : ViewModel() {
                             pause()
                         }
                     }
+
+                    // TODO: Calculate +ve play time, update global value
                 }
 
                 is OnPrev -> {
@@ -190,6 +193,7 @@ class MediaControllerViewModel : ViewModel() {
 
                 is OnNext -> {
                     controller.seekToNext()
+                    controller.playWhenReady = true
                 }
 
                 is OnTogglePlayerState -> {
@@ -256,11 +260,32 @@ class MediaControllerViewModel : ViewModel() {
 
                 is OnToggleShuffleMode -> {
                     val shuffleMode = playerUiState.value.shuffleMode
+                    val newShuffleMode = if (shuffleMode == ShuffleMode.SHUFFLE_ON)
+                        ShuffleMode.SHUFFLE_OFF else ShuffleMode.SHUFFLE_ON
 
-                    playerUiState.value = playerUiState.value.copy(
-                        shuffleMode = if (shuffleMode == ShuffleMode.SHUFFLE_ON)
-                            ShuffleMode.SHUFFLE_OFF else ShuffleMode.SHUFFLE_ON
-                    )
+                    // Handle shuffle mode manually
+                    if (newShuffleMode == ShuffleMode.SHUFFLE_ON) {
+                        shuffledQueue = workingQueue.shuffled().toMutableList()
+                        _loadMediaItems(
+                            tracks = shuffledQueue,
+                            autoPlay = true,
+                            startIndex = 0
+                        )
+                        playerUiState.value = playerUiState.value.copy(
+                            shuffleMode = newShuffleMode,
+                            track = shuffledQueue[0]
+                        )
+                    } else {
+                        _loadMediaItems(
+                            tracks = workingQueue,
+                            autoPlay = true,
+                            startIndex = 0
+                        )
+                        playerUiState.value = playerUiState.value.copy(
+                            shuffleMode = newShuffleMode,
+                            track = workingQueue[0]
+                        )
+                    }
                 }
 
                 is OnClickQueue -> {}
@@ -268,6 +293,60 @@ class MediaControllerViewModel : ViewModel() {
                 is OnClickMore -> {}
 
                 else -> {}
+            }
+        }
+    }
+
+    fun onQueueEvent(event: QueueEvent) {
+        when (event) {
+            is QueueEvent.GetQueueFromDB -> {
+                // TODO: Fetch Queue from Room
+                // getQueueFromDB()
+            }
+
+            is QueueEvent.CreateNewQueue -> {
+                workingQueue = event.newQueue.toMutableList()
+
+                _loadMediaItems(
+                    tracks = workingQueue,
+                    startIndex = event.startIndex,
+                    autoPlay = event.autoPlay
+                )
+
+                playerUiState.value = playerUiState.value.copy(
+                    playingTrackIndex = event.startIndex,
+                    track = workingQueue[event.startIndex]
+                )
+            }
+
+            /**  This assumes the queue hasn't changed/shuffled/cleared  **/
+            is QueueEvent.SeekToQueueItem -> {
+                mediaController?.seekTo(event.index, 0L)
+                mediaController?.playWhenReady = true
+            }
+
+            is QueueEvent.PlaUpNextTrack -> {
+                mediaController?.seekToNext()
+                mediaController?.playWhenReady = true
+            }
+
+            is QueueEvent.InsertTrackAtIndex -> {
+                val eventTrack = event.track
+                if (playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
+                    shuffledQueue.add(event.index, eventTrack)
+                    val mediaItem = createMediaItem(event.index, eventTrack)
+                    mediaController?.addMediaItem(event.index, mediaItem)
+                } else {
+                    workingQueue.add(event.index, eventTrack)
+                    val mediaItem = createMediaItem(event.index, eventTrack)
+                    mediaController?.addMediaItem(event.index, mediaItem)
+                }
+            }
+
+            is QueueEvent.ClearQueue -> {
+                workingQueue.clear()
+                shuffledQueue.clear()
+                mediaController?.clearMediaItems()
             }
         }
     }
@@ -335,8 +414,20 @@ class MediaControllerViewModel : ViewModel() {
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             mediaItem?.let {
-                Timber.i("Media item changed to -> ${it.localConfiguration?.uri} Reason -> $reason")
-                // TODO: Update current Track object, Queue, Plying track index in queue ...
+                val trackIndex = it.mediaId.toInt() // index == id
+                val playingTrack: Track =
+                    if (playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
+                        shuffledQueue[trackIndex]
+                    } else {
+                        workingQueue[trackIndex]
+                    }
+
+                playerUiState.value = playerUiState.value.copy(
+                    playingTrackIndex = trackIndex,
+                    track = playingTrack
+                )
+                // TODO: Push Logs to server referring to the previous track. check repeat mode or get prev media item.
+                // TODO: Save this to DB as the last played track [pls don't save queue or index]
             }
         }
     }
