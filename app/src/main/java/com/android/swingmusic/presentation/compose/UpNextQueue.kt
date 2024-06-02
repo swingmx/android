@@ -1,7 +1,9 @@
 package com.android.swingmusic.presentation.compose
 
+import android.app.Activity
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,15 +27,18 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
+import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,7 +52,7 @@ import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.network.data.util.BASE_URL
-import com.android.swingmusic.presentation.event.PlayerUiEvent
+import com.android.swingmusic.presentation.event.QueueEvent
 import com.android.swingmusic.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
@@ -62,60 +67,77 @@ private fun UpNextQueue(
     onClickQueueItem: (Track, index: Int) -> Unit
 ) {
     if (queue.isEmpty()) {
-        Surface {
-            Column {
-                Text(
-                    modifier = Modifier.padding(
-                        top = 16.dp,
-                        bottom = 16.dp,
-                        start = 16.dp,
-                    ),
-                    text = "Up Next",
-                    style = MaterialTheme.typography.headlineMedium
-                )
+        SwingMusicTheme {
+            val view = LocalView.current
+            val color = MaterialTheme.colorScheme.surface.toArgb()
+            if (!view.isInEditMode) {
+                SideEffect {
+                    val window = (view.context as Activity).window
+                    window.navigationBarColor = color
+                }
+            }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 54.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+            Surface {
+                Column {
+                    Text(
+                        modifier = Modifier.padding(
+                            top = 16.dp,
+                            bottom = 16.dp,
+                            start = 16.dp,
+                        ),
+                        text = "Up Next",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 54.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "No queued tracks found!",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "No queued tracks found!",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                        Text(
-                            text = "I don't know how you got here.",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
-                        )
+                            Text(
+                                text = "I don't know how you got here.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                            )
+                        }
                     }
                 }
             }
         }
-
         return
+    } else {
+        val view = LocalView.current
+        val color = MaterialTheme.colorScheme.surface.toArgb()
+        if (!view.isInEditMode) {
+            SideEffect {
+                val window = (view.context as Activity).window
+                window.navigationBarColor = color
+            }
+        }
     }
 
     val nextTrackIndex = when {
         playingTrackIndex == queue.lastIndex -> 0
         playingTrackIndex > queue.lastIndex -> 0
+        playingTrackIndex < 0 -> 0
         else -> playingTrackIndex + 1
     }
     val upNextTrack = queue[nextTrackIndex]
     val lazyColumnState = rememberLazyListState()
 
-    LaunchedEffect(key1 = Unit) {
-        /** TODO: Confirm auto scroll behavior when user clicks a track in queue
-         *        Expected -> Auto scroll should only happen once (after the initial composition)
-         * */
-        if (queue.isNotEmpty())
+    LaunchedEffect(key1 = true) {
+        if (queue.isNotEmpty() && playingTrackIndex in queue.indices)
             lazyColumnState.animateScrollToItem(playingTrackIndex)
     }
 
@@ -140,8 +162,13 @@ private fun UpNextQueue(
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(12.dp)
                     .fillMaxWidth()
+                    .border(
+                        width = (0.4).dp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        shape = RoundedCornerShape(16.dp)
+                    )
                     .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.inverseOnSurface)
+                    //.background(MaterialTheme.colorScheme.inverseOnSurface)
                     .clickable {
                         onClickUpNextTrackItem()
                     }
@@ -177,7 +204,7 @@ private fun UpNextQueue(
                             text = upNextTrack.title,
                             modifier = Modifier.sizeIn(maxWidth = 300.dp),
                             style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = SemiBold,
+                            fontWeight = Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -217,7 +244,7 @@ private fun UpNextQueue(
                 ) {
                     Text(
                         text = (nextTrackIndex + 1).toString(),
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
@@ -261,13 +288,14 @@ fun UpNextQueueScreen(mediaControllerViewModel: MediaControllerViewModel = viewM
         playbackState = playerUiState.playbackState,
         queue = playerUiState.queue,
         onClickUpNextTrackItem = {
-            mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnNext)
+            if (playerUiState.playingTrackIndex == playerUiState.queue.lastIndex) {
+                mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(0))
+            } else {
+                mediaControllerViewModel.onQueueEvent(QueueEvent.PlaUpNextTrack)
+            }
         },
         onClickQueueItem = { track: Track, index: Int ->
-            /** TODO: Update now playing track,
-             *        Start playing track at this index in queue,
-             *        Update playingTrackIndex
-             */
+            mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(index))
         }
     )
 }
