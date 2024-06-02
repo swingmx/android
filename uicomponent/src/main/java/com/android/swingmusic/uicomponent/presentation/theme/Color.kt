@@ -2,7 +2,6 @@ package com.android.swingmusic.uicomponent.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
-// TODO: Fix colors to use a blue theme...
 // Default App Theme Colors
 
 val light_primary = Color(0xFF6750A4)

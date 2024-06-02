@@ -1,5 +1,6 @@
 package com.android.swingmusic.artist.presentation.screen
 
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -93,6 +97,15 @@ private fun Artists(
     var isGridCountMenuExpanded by remember { mutableStateOf(false) }
 
     SwingMusicTheme {
+        val view = LocalView.current
+        val color = MaterialTheme.colorScheme.surface.toArgb()
+        if (!view.isInEditMode) {
+            SideEffect {
+                val window = (view.context as Activity).window
+                window.navigationBarColor = color
+            }
+        }
+
         Scaffold(
             topBar = {
                 Column(verticalArrangement = Arrangement.Center) {
