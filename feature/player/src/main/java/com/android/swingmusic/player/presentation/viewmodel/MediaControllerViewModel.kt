@@ -33,6 +33,7 @@ import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.math.roundToInt
 
 class MediaControllerViewModel : ViewModel() {
@@ -48,9 +49,12 @@ class MediaControllerViewModel : ViewModel() {
     private var workingQueue: MutableList<Track> = mutableListOf<Track>()
     private var shuffledQueue: MutableList<Track> = mutableListOf<Track>()
 
+    private var trackToLog: Track? = null
+    private var durationPlayed: Long = 0L
+
     val playerUiState: MutableState<PlayerUiState> = mutableStateOf(
         PlayerUiState(
-            track = null, // Get this fro DB at first launch
+            track = null,
             queue = workingQueue
         )
     )
@@ -60,10 +64,6 @@ class MediaControllerViewModel : ViewModel() {
             while (true) {
                 mediaController?.let { controller ->
                     if (controller.playbackState == Player.STATE_READY) {
-                        /*val exoPlayerPosition = when (val pos = controller.currentPosition) {
-                            0L -> 1
-                            else -> pos
-                        }*/
                         val exoPlayerPosition = controller.currentPosition
                         val seekPosition = (exoPlayerPosition / 1000F)
                             .div(playerUiState.value.track?.duration ?: 1)
@@ -74,6 +74,9 @@ class MediaControllerViewModel : ViewModel() {
                             seekPosition = seekPosition,
                             playbackDuration = playbackDuration.formatDuration()
                         )
+                        if (controller.isPlaying) {
+                            durationPlayed += 1
+                        }
                     }
                 }
 
@@ -85,21 +88,9 @@ class MediaControllerViewModel : ViewModel() {
     init {
         /** TODO: Check if playerUiState.value.queue is Empty... if so,
          *        Get saved Track from DB (one time not a Flow),
-         *        Update working queue with a single track,
+         *        Update UiState,
+         *        Update working queue with a tracks from this track's folder,
          * */
-
-        /* onQueueEvent(
-             QueueEvent.CreateNewQueue(
-                 newQueue = playerUiState.value.queue,
-                 startIndex = 0,
-                 autoPlay = true
-             )
-         )*/
-        /*workingQueue = tracks.toMutableList()
-        playerUiState.value = playerUiState.value.copy(
-            queue = workingQueue,
-            track = workingQueue[0]
-        )*/
 
         if (playerUiState.value.track != null) {
             val trackDuration = playerUiState.value.track!!.duration.formatDuration()
@@ -137,7 +128,7 @@ class MediaControllerViewModel : ViewModel() {
     }
 
     /** Prevent seekbar from snapping to end by resetting it to zero
-     * especially when switching shuffle mode
+     * especially when switching shuffle mode or when creating new queue
      * **/
     private fun stabilizeSeekBarProgress() {
         playerUiState.value = playerUiState.value.copy(seekPosition = 0F)
@@ -168,6 +159,44 @@ class MediaControllerViewModel : ViewModel() {
         }
     }
 
+    private fun createNewQueue(tracks: List<Track>, startIndex: Int, autoPlay: Boolean) {
+        workingQueue = tracks.toMutableList()
+        shuffledQueue.clear()
+
+        _loadMediaItems(
+            tracks = workingQueue,
+            startIndex = startIndex,
+            autoPlay = autoPlay
+        )
+
+        playerUiState.value = playerUiState.value.copy(
+            playingTrackIndex = startIndex,
+            track = workingQueue[startIndex],
+            shuffleMode = ShuffleMode.SHUFFLE_OFF
+        )
+
+        // Update the Track to Log in case of a transition
+        trackToLog = workingQueue[startIndex]
+    }
+
+    // TODO: Log and save the respective Track
+    fun logRecentlyPlayedTrackToServer(
+        track: Track?,
+        durationPlayed: Long,
+        logReason: String? = ""
+    ) {
+        track?.let {
+            Timber.tag("LOG")
+            Timber.e("[$logReason]: Played -> ${it.title} -> $durationPlayed sec")
+        }
+    }
+
+    fun saveLastPlayedTrack(track: Track?, indexInQueue: Int) {
+        track?.let {
+
+        }
+    }
+
     fun onPlayerUiEvent(event: PlayerUiEvent) {
         mediaController?.let { controller ->
             when (event) {
@@ -193,8 +222,6 @@ class MediaControllerViewModel : ViewModel() {
                             pause()
                         }
                     }
-
-                    // TODO: Calculate +ve play time, update global value
                 }
 
                 is OnPrev -> {
@@ -311,23 +338,6 @@ class MediaControllerViewModel : ViewModel() {
         }
     }
 
-    private fun createNewQueue(tracks: List<Track>, startIndex: Int, autoPlay: Boolean) {
-        workingQueue = tracks.toMutableList()
-        shuffledQueue.clear()
-
-        _loadMediaItems(
-            tracks = workingQueue,
-            startIndex = startIndex,
-            autoPlay = autoPlay
-        )
-
-        playerUiState.value = playerUiState.value.copy(
-            playingTrackIndex = startIndex,
-            track = workingQueue[startIndex],
-            shuffleMode = ShuffleMode.SHUFFLE_OFF
-        )
-    }
-
     fun onQueueEvent(event: QueueEvent) {
         when (event) {
             is QueueEvent.GetQueueFromDB -> {
@@ -354,6 +364,8 @@ class MediaControllerViewModel : ViewModel() {
                         autoPlay = true
                     )
                 }
+
+                stabilizeSeekBarProgress()
             }
 
             is QueueEvent.CreateNewQueue -> {
@@ -362,6 +374,8 @@ class MediaControllerViewModel : ViewModel() {
                     startIndex = event.startIndex,
                     autoPlay = event.autoPlay
                 )
+
+                stabilizeSeekBarProgress()
             }
 
             /**  This assumes the queue hasn't changed/shuffled/cleared  **/
@@ -392,6 +406,7 @@ class MediaControllerViewModel : ViewModel() {
                 workingQueue.clear()
                 shuffledQueue.clear()
                 mediaController?.clearMediaItems()
+                trackToLog = null
             }
         }
     }
@@ -436,6 +451,22 @@ class MediaControllerViewModel : ViewModel() {
                         isBuffering = false,
                         playbackState = PlaybackState.PAUSED
                     )
+
+                    if (trackToLog != null && durationPlayed > 5L) {
+                        logRecentlyPlayedTrackToServer(
+                            track = trackToLog,
+                            durationPlayed = durationPlayed,
+                            logReason = "E"
+                        )
+
+                        saveLastPlayedTrack(
+                            track = trackToLog,// == playerUiState.value.track
+                            indexInQueue = playerUiState.value.playingTrackIndex
+                        )
+                    }
+
+                    // Prepare for the next log data
+                    durationPlayed = 0L
                 }
             }
         }
@@ -471,8 +502,23 @@ class MediaControllerViewModel : ViewModel() {
                     playingTrackIndex = trackIndex,
                     track = playingTrack
                 )
-                // TODO: Push Logs to server referring to the previous track. check repeat mode or get prev media item.
-                // TODO: Save this to DB as the last played track [pls don't save queue or index]
+
+                if (trackToLog != null && durationPlayed > 5L) {
+                    logRecentlyPlayedTrackToServer(
+                        track = trackToLog,
+                        durationPlayed = durationPlayed,
+                        logReason = "T"
+                    )
+
+                    saveLastPlayedTrack(
+                        track = trackToLog,// == playerUiState.value.track
+                        indexInQueue = trackIndex // == playerUiState.value.playingTrackIndex
+                    )
+                }
+
+                // Prepare for the next log data
+                durationPlayed = 0L
+                trackToLog = playingTrack
             }
         }
     }

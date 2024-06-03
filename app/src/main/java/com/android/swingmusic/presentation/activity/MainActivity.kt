@@ -13,9 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.android.swingmusic.folder.presentation.screen.FoldersAndTracksScreen
-import com.android.swingmusic.player.presentation.compose.FullScreenPlayerScreen
 import com.android.swingmusic.player.presentation.compose.MiniPlayer
-import com.android.swingmusic.player.presentation.compose.UpNextQueueScreen
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -70,8 +68,8 @@ class MainActivity : ComponentActivity() {
                         // For testing purposes ONLY
                         FoldersAndTracksScreen()
                         // ArtistsScreen()
-                         // FullScreenPlayerScreen()
-                        //  UpNextQueueScreen()
+                        // FullScreenPlayerScreen()
+                        // UpNextQueueScreen()
                     }
                 }
             }
