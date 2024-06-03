@@ -35,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.swingmusic.core.domain.model.Folder
+import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
@@ -49,16 +51,23 @@ private fun FoldersAndTracks(
     currentFolder: Folder,
     homeDir: Folder,
     foldersAndTracksState: FoldersAndTracksState,
+    currentTrackHash: String,
+    playbackState: PlaybackState,
     navPaths: List<Folder>,
     onClickNavPath: (Folder) -> Unit,
     onRetry: (FolderUiEvent) -> Unit,
-    onClickFolder: (Folder) -> Unit
+    onClickFolder: (Folder) -> Unit,
+    onClickTrackItem: (track: Track, index: Int, queue: List<Track>) -> Unit
 ) {
     SwingMusicTheme {
         Scaffold(
             topBar = {
                 Text(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(
+                        top = 16.dp,
+                        start = 16.dp,
+                        bottom = 8.dp
+                    ),
                     text = "Folders",
                     style = MaterialTheme.typography.headlineMedium
                 )
@@ -84,7 +93,7 @@ private fun FoldersAndTracks(
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.surface)
                                 .fillMaxWidth()
-                                .padding(12.dp),
+                                .padding(start = 9.dp, top = 4.dp, bottom = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Always display a root dir item
@@ -188,19 +197,26 @@ private fun FoldersAndTracks(
                         }
 
                         // Tracks
-                        items(
+                        itemsIndexed(
                             foldersAndTracksState.foldersAndTracks.tracks,
-                            key = {
-                                it.filepath
+                            key = { index: Int, item: Track ->
+                                item.filepath + index
                             }
-                        ) { track ->
+                        ) { index, track ->
+
                             TrackItem(
                                 track = track,
+                                isCurrentTrack = track.trackHash == currentTrackHash,
+                                playbackState = playbackState,
                                 onClickTrackItem = {
-
+                                    onClickTrackItem(
+                                        track,
+                                        index,
+                                        foldersAndTracksState.foldersAndTracks.tracks
+                                    )
                                 },
                                 onClickMoreVert = {
-
+                                    // TODO: Show context menu
                                 }
                             )
                         }
@@ -257,31 +273,42 @@ private fun FoldersAndTracks(
  *  and provides hoisted states
  */
 @Composable
-fun FoldersAndTracksScreen(viewModel: FoldersViewModel = viewModel()) {
-    val currentFolder by remember { viewModel.currentFolder }
-    val foldersAndTracksState by remember { viewModel.foldersAndTracks }
-    val navPaths by remember { viewModel.navPaths }
-    val homeDir = remember { viewModel.homeDir }
+fun FoldersAndTracksScreen(
+    foldersViewModel: FoldersViewModel = viewModel(),
+    // mediaControllerViewModel: MediaControllerViewModel = viewModel() // TODO: Finish this after impl Nav
+) {
+    val currentFolder by remember { foldersViewModel.currentFolder }
+    val foldersAndTracksState by remember { foldersViewModel.foldersAndTracks }
+    val navPaths by remember { foldersViewModel.navPaths }
+    val homeDir = remember { foldersViewModel.homeDir }
 
     FoldersAndTracks(
         currentFolder = currentFolder,
+        currentTrackHash = "7e99f85e13", // TODO: Get this from MediaControllerViewModel
+        playbackState = PlaybackState.PLAYING, // TODO: Get this from MediaControllerViewModel
         homeDir = homeDir,
         foldersAndTracksState = foldersAndTracksState,
         navPaths = navPaths,
         onClickNavPath = { folder ->
-            viewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
+            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
         },
         onRetry = { event ->
-            viewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
+            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
         },
         onClickFolder = { folder ->
-            viewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
+            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
+        },
+        onClickTrackItem = { track: Track, index: Int, queue: List<Track> ->
+
+            /** TODO: Call playerViewModel to report this event
+             *        Pass the new Queue
+             *        Play starting at the index of this track
+             * */
         }
     )
 
     val overrideSystemBackNav = currentFolder.path != "\$home"
     BackHandler(enabled = overrideSystemBackNav) {
-        viewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
+        foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
     }
 }
-

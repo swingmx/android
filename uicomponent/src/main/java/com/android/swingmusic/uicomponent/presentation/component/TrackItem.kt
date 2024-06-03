@@ -196,7 +196,7 @@ fun TrackItem(
                 ) {
                     Text(
                         text = number.toString(),
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
             }

@@ -1,5 +1,6 @@
 package com.android.swingmusic.presentation.compose
 
+import android.app.Activity
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,9 +26,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -35,8 +38,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
@@ -87,10 +92,31 @@ private fun FullScreenPlayer(
 ) {
     if (track == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "Loading track...")
+            Text(
+                text = "Playing track will appear here!",
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+
+        val view = LocalView.current
+        val color = colorScheme.surface.toArgb()
+        if (!view.isInEditMode) {
+            SideEffect {
+                val window = (view.context as Activity).window
+                window.navigationBarColor = color
+            }
         }
 
         return
+    } else {
+        val view = LocalView.current
+        val color = colorScheme.inverseOnSurface.toArgb()
+        if (!view.isInEditMode) {
+            SideEffect {
+                val window = (view.context as Activity).window
+                window.navigationBarColor = color
+            }
+        }
     }
 
     val artistsSeparator by remember {
@@ -106,7 +132,7 @@ private fun FullScreenPlayer(
         else -> R.drawable.repeat_all
     }
     val playbackStateIcon = when (playbackState) {
-        PlaybackState.PLAYING -> R.drawable.pause_icon // TODO: Replace with a thinner icon
+        PlaybackState.PLAYING -> R.drawable.pause_icon
         PlaybackState.PAUSED -> R.drawable.play_arrow
         PlaybackState.ERROR -> R.drawable.error
     }
@@ -215,8 +241,6 @@ private fun FullScreenPlayer(
                     Spacer(modifier = Modifier.height(28.dp))
 
                     Column {
-                        // TODO: Figure out how to update progress in sync with duration
-
                         WaveSlider(
                             modifier = Modifier.height(12.dp),
                             value = seekPosition,
@@ -294,7 +318,6 @@ private fun FullScreenPlayer(
                                 modifier = Modifier.wrapContentSize(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                //TODO Use colored box here
                                 if (playbackState == PlaybackState.ERROR) {
                                     Icon(
                                         modifier = Modifier

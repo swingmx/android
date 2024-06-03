@@ -1,5 +1,6 @@
 package com.android.swingmusic.presentation.compose
 
+import android.app.Activity
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,14 +22,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -166,20 +170,33 @@ private fun MiniPlayer(
 @Composable
 fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel()) {
     val playerUiState by remember { mediaControllerViewModel.playerUiState }
-    MiniPlayer(
-        trackHash = playerUiState.track.trackHash,
-        trackTitle = playerUiState.track.title,
-        trackImage = playerUiState.track.image,
-        playbackState = playerUiState.playbackState,
-        isBuffering = playerUiState.isBuffering,
-        playbackProgress = playerUiState.seekPosition,
-        onClickPlayerItem = {
-            // TODO: Open FullScreen player in a full screen bottom sheet
-        },
-        onTogglePlaybackState = {
-            mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
+    playerUiState.track?.let { track ->
+        SwingMusicTheme {
+            val view = LocalView.current
+            val color = MaterialTheme.colorScheme.inverseOnSurface.toArgb()
+            if (!view.isInEditMode) {
+                SideEffect {
+                    val window = (view.context as Activity).window
+                    window.navigationBarColor = color
+                }
+            }
+
+            MiniPlayer(
+                trackHash = track.trackHash,
+                trackTitle = track.title,
+                trackImage = track.image,
+                playbackState = playerUiState.playbackState,
+                isBuffering = playerUiState.isBuffering,
+                playbackProgress = playerUiState.seekPosition,
+                onClickPlayerItem = {
+                    // TODO: Open FullScreen player in a full screen bottom sheet
+                },
+                onTogglePlaybackState = {
+                    mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
+                }
+            )
         }
-    )
+    }
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.NEXUS_5, showBackground = true)
