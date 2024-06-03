@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,7 +28,11 @@ fun PlayingTrackIndicator(
         // Background
         Box(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = .50F))
+                .background(
+                    if (playbackState != PlaybackState.ERROR)
+                        MaterialTheme.colorScheme.surface.copy(alpha = .50F) else
+                        MaterialTheme.colorScheme.errorContainer.copy(alpha = .75F)
+                )
                 .size(48.dp)
         )
 
@@ -55,7 +60,12 @@ fun PlayingTrackIndicator(
                 }
 
                 PlaybackState.ERROR -> {
-
+                    Icon(
+                        modifier = Modifier.size(32.dp),
+                        painter = painterResource(id = R.drawable.error),
+                        tint = MaterialTheme.colorScheme.error,
+                        contentDescription = "Error Icon"
+                    )
                 }
             }
         }

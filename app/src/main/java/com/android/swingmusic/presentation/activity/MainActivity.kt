@@ -6,13 +6,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.android.swingmusic.presentation.compose.UpNextQueueScreen
-import com.android.swingmusic.presentation.viewmodel.MediaControllerViewModel
+import com.android.swingmusic.folder.presentation.screen.FoldersAndTracksScreen
+import com.android.swingmusic.player.presentation.compose.FullScreenPlayerScreen
+import com.android.swingmusic.player.presentation.compose.MiniPlayer
+import com.android.swingmusic.player.presentation.compose.UpNextQueueScreen
+import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.google.common.util.concurrent.ListenableFuture
@@ -52,28 +56,23 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             SwingMusicTheme {
-                Surface(
+                Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.surface
+                    bottomBar = {
+                        MiniPlayer()
+                    }
                 ) {
                     /** TODO: Add a bottom nav bar,
                      *        A mini player - visible across the entire app -> Except when excepted
                      * */
-                    // For testing purposes ONLY
-                    // FoldersAndTracksScreen()
-                    // ArtistsScreen()
-                    // FullScreenPlayerScreen()
-                    UpNextQueueScreen()
 
-                    /*Column(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        verticalArrangement = Arrangement.Bottom
-                    ) {
-                        MiniPlayer()
-
-                       Spacer(modifier = Modifier.height(64.dp))
-                    }*/
+                    Surface(modifier = Modifier.padding(it)) {
+                        // For testing purposes ONLY
+                        FoldersAndTracksScreen()
+                        // ArtistsScreen()
+                         // FullScreenPlayerScreen()
+                        //  UpNextQueueScreen()
+                    }
                 }
             }
         }

@@ -1,4 +1,4 @@
-package com.android.swingmusic.presentation.event
+package com.android.swingmusic.player.presentation.event
 
 interface PlayerUiEvent {
 

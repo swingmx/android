@@ -1,4 +1,4 @@
-package com.android.swingmusic.presentation.compose
+package com.android.swingmusic.player.presentation.compose
 
 import android.app.Activity
 import android.content.res.Configuration
@@ -26,7 +26,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,9 +57,9 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.network.data.util.BASE_URL
-import com.android.swingmusic.presentation.event.PlayerUiEvent
-import com.android.swingmusic.presentation.state.PlayerUiState
-import com.android.swingmusic.presentation.viewmodel.MediaControllerViewModel
+import com.android.swingmusic.player.presentation.event.PlayerUiEvent
+import com.android.swingmusic.player.presentation.state.PlayerUiState
+import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.galaxygoldfish.waveslider.PillThumb
@@ -99,7 +98,7 @@ private fun FullScreenPlayer(
         }
 
         val view = LocalView.current
-        val color = colorScheme.surface.toArgb()
+        val color = MaterialTheme.colorScheme.surface.toArgb()
         if (!view.isInEditMode) {
             SideEffect {
                 val window = (view.context as Activity).window
@@ -110,7 +109,7 @@ private fun FullScreenPlayer(
         return
     } else {
         val view = LocalView.current
-        val color = colorScheme.inverseOnSurface.toArgb()
+        val color = MaterialTheme.colorScheme.inverseOnSurface.toArgb()
         if (!view.isInEditMode) {
             SideEffect {
                 val window = (view.context as Activity).window
@@ -436,7 +435,7 @@ private fun FullScreenPlayer(
                         onClickQueue()
                     }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.queue),
+                            painter = painterResource(id = R.drawable.play_list),
                             contentDescription = "Queue"
                         )
                     }
