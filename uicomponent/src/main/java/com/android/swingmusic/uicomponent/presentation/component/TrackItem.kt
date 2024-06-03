@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -138,17 +137,11 @@ fun TrackItem(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            var artists = ""
 
-                            track.trackArtists.forEachIndexed { index, trackArtist ->
-                                artists += trackArtist.name
+                            val artistsJoined = track.trackArtists.joinToString(", ") { it.name }
 
-                                if (track.trackArtists.lastIndex != index) {
-                                    artists += ", "
-                                }
-                            }
                             Text(
-                                text = artists,
+                                text = artistsJoined,
                                 modifier = Modifier.sizeIn(maxWidth = 185.dp),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
                                 style = MaterialTheme.typography.bodySmall,
@@ -186,19 +179,19 @@ fun TrackItem(
             }
 
             trackQueueNumber?.let { number ->
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .wrapContentSize()
-                        .background(MaterialTheme.colorScheme.inverseOnSurface)
-                        .padding(vertical = 2.dp, horizontal = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = number.toString(),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
+                /* Box(
+                     modifier = Modifier
+                         .clip(CircleShape)
+                         .wrapContentSize()
+                         .background(MaterialTheme.colorScheme.inverseOnSurface)
+                         .padding(vertical = 2.dp, horizontal = 4.dp),
+                     contentAlignment = Alignment.Center
+                 ) {
+                     Text(
+                         text = number.toString(),
+                         style = MaterialTheme.typography.labelMedium
+                     )
+                 }*/
             }
         }
     }
