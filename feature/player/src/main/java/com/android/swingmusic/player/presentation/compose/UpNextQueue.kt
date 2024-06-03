@@ -181,7 +181,10 @@ private fun UpNextQueue(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
-                    modifier = Modifier.padding(start = 12.dp),
+                    modifier = Modifier.padding(
+                      //  start = 12.dp
+                        start = 8.dp
+                    ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
@@ -234,7 +237,7 @@ private fun UpNextQueue(
                     }
                 }
 
-                Box(
+                /*Box(
                     modifier = Modifier
                         .clip(CircleShape)
                         .wrapContentSize()
@@ -246,7 +249,7 @@ private fun UpNextQueue(
                         text = (nextTrackIndex + 1).toString(),
                         style = MaterialTheme.typography.labelLarge,
                     )
-                }
+                }*/
             }
 
             LazyColumn(
