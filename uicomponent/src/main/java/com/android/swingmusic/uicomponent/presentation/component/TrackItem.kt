@@ -59,7 +59,7 @@ fun TrackItem(
     trackQueueNumber: Int? = null,
     isCurrentTrack: Boolean = false,
     playbackState: PlaybackState = PlaybackState.ERROR,
-    onClickTrackItem: (Track) -> Unit,
+    onClickTrackItem: () -> Unit,
     onClickMoreVert: (Track) -> Unit
 ) {
     SwingMusicTheme {
@@ -78,7 +78,7 @@ fun TrackItem(
                             Color.Unspecified
                     )
                     .clickable {
-                        onClickTrackItem(track)
+                        onClickTrackItem()
                     }
                     .padding(
                         start = 8.dp,

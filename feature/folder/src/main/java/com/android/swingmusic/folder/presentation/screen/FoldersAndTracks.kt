@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -32,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.swingmusic.core.domain.model.Folder
@@ -40,10 +40,13 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
+import com.android.swingmusic.player.presentation.event.QueueEvent
+import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.presentation.component.FolderItem
 import com.android.swingmusic.uicomponent.presentation.component.PathIndicatorItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import java.util.Locale
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -57,7 +60,7 @@ private fun FoldersAndTracks(
     onClickNavPath: (Folder) -> Unit,
     onRetry: (FolderUiEvent) -> Unit,
     onClickFolder: (Folder) -> Unit,
-    onClickTrackItem: (track: Track, index: Int, queue: List<Track>) -> Unit
+    onClickTrackItem: (index: Int, queue: List<Track>) -> Unit
 ) {
     SwingMusicTheme {
         Scaffold(
@@ -134,7 +137,6 @@ private fun FoldersAndTracks(
                             }
                         }
                     }
-
                     item {
                         if (foldersAndTracksState.isLoading) {
                             Box(
@@ -143,8 +145,7 @@ private fun FoldersAndTracks(
                                     .padding(24.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                // TODO: Use lottie/gif 💻 📲 loader
-                                CircularProgressIndicator()
+                                CircularProgressIndicator(strokeCap = StrokeCap.Round)
                             }
                         }
                     }
@@ -164,8 +165,14 @@ private fun FoldersAndTracks(
                                     verticalArrangement = Arrangement.Center,
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
+                                    val capsFirst =
+                                        foldersAndTracksState.errorMessage.replaceFirstChar {
+                                            if (it.isLowerCase()) it.titlecase(Locale.ROOT)
+                                            else it.toString()
+                                        }
+
                                     Text(
-                                        text = foldersAndTracksState.errorMessage,
+                                        text = capsFirst,
                                         style = MaterialTheme.typography.bodyLarge
                                     )
 
@@ -184,7 +191,7 @@ private fun FoldersAndTracks(
 
                     if (!foldersAndTracksState.isError && !foldersAndTracksState.isLoading) {
                         // Folders
-                        items(foldersAndTracksState.foldersAndTracks.folders) { folder ->
+                        itemsIndexed(foldersAndTracksState.foldersAndTracks.folders) { index, folder ->
                             FolderItem(
                                 folder = folder,
                                 onClickFolderItem = { clickedFolder ->
@@ -194,33 +201,39 @@ private fun FoldersAndTracks(
 
                                 }
                             )
+
+                            if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex &&
+                                foldersAndTracksState.foldersAndTracks.tracks.isEmpty()
+                            ) {
+                                Spacer(modifier = Modifier.height(100.dp))
+                            }
                         }
 
                         // Tracks
                         itemsIndexed(
                             foldersAndTracksState.foldersAndTracks.tracks,
-                            key = { index: Int, item: Track ->
-                                item.filepath + index
-                            }
+                            key = { _: Int, item: Track -> item.filepath }
                         ) { index, track ->
-
                             TrackItem(
                                 track = track,
                                 isCurrentTrack = track.trackHash == currentTrackHash,
                                 playbackState = playbackState,
                                 onClickTrackItem = {
                                     onClickTrackItem(
-                                        track,
-                                        index,
-                                        foldersAndTracksState.foldersAndTracks.tracks
+                                        index, foldersAndTracksState.foldersAndTracks.tracks
                                     )
                                 },
                                 onClickMoreVert = {
                                     // TODO: Show context menu
                                 }
                             )
+
+                            if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex) {
+                                Spacer(modifier = Modifier.height(100.dp))
+                            }
                         }
                     }
+
                     if (
                         foldersAndTracksState.foldersAndTracks.folders.isEmpty() &&
                         foldersAndTracksState.foldersAndTracks.tracks.isEmpty() &&
@@ -275,17 +288,19 @@ private fun FoldersAndTracks(
 @Composable
 fun FoldersAndTracksScreen(
     foldersViewModel: FoldersViewModel = viewModel(),
-    // mediaControllerViewModel: MediaControllerViewModel = viewModel() // TODO: Finish this after impl Nav
+    mediaControllerViewModel: MediaControllerViewModel = viewModel()
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }
     val foldersAndTracksState by remember { foldersViewModel.foldersAndTracks }
     val navPaths by remember { foldersViewModel.navPaths }
     val homeDir = remember { foldersViewModel.homeDir }
 
+    val playerUiState by remember { mediaControllerViewModel.playerUiState }
+
     FoldersAndTracks(
         currentFolder = currentFolder,
-        currentTrackHash = "7e99f85e13", // TODO: Get this from MediaControllerViewModel
-        playbackState = PlaybackState.PLAYING, // TODO: Get this from MediaControllerViewModel
+        currentTrackHash = playerUiState.track?.trackHash ?: "",
+        playbackState = playerUiState.playbackState,
         homeDir = homeDir,
         foldersAndTracksState = foldersAndTracksState,
         navPaths = navPaths,
@@ -298,12 +313,14 @@ fun FoldersAndTracksScreen(
         onClickFolder = { folder ->
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
         },
-        onClickTrackItem = { track: Track, index: Int, queue: List<Track> ->
-
-            /** TODO: Call playerViewModel to report this event
-             *        Pass the new Queue
-             *        Play starting at the index of this track
-             * */
+        onClickTrackItem = { index: Int, queue: List<Track> ->
+            mediaControllerViewModel.onQueueEvent(
+                QueueEvent.CreateQueueFromFolder(
+                    folderPath = currentFolder.path,
+                    clickedTrackIndex = index,
+                    queue = queue
+                )
+            )
         }
     )
 

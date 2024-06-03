@@ -1,4 +1,4 @@
-package com.android.swingmusic.presentation.state
+package com.android.swingmusic.player.presentation.state
 
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState

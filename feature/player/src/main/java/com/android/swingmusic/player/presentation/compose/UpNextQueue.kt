@@ -1,4 +1,4 @@
-package com.android.swingmusic.presentation.compose
+package com.android.swingmusic.player.presentation.compose
 
 import android.app.Activity
 import android.content.res.Configuration
@@ -52,8 +52,8 @@ import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.network.data.util.BASE_URL
-import com.android.swingmusic.presentation.event.QueueEvent
-import com.android.swingmusic.presentation.viewmodel.MediaControllerViewModel
+import com.android.swingmusic.player.presentation.event.QueueEvent
+import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -64,7 +64,7 @@ private fun UpNextQueue(
     playbackState: PlaybackState,
     queue: List<Track>,
     onClickUpNextTrackItem: () -> Unit,
-    onClickQueueItem: (Track, index: Int) -> Unit
+    onClickQueueItem: (index: Int) -> Unit
 ) {
     if (queue.isEmpty()) {
         SwingMusicTheme {
@@ -162,13 +162,13 @@ private fun UpNextQueue(
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(12.dp)
                     .fillMaxWidth()
-                    .border(
+                    /*.border(
                         width = (0.4).dp,
                         color = MaterialTheme.colorScheme.onSurface,
                         shape = RoundedCornerShape(16.dp)
-                    )
+                    )*/
                     .clip(RoundedCornerShape(16.dp))
-                    //.background(MaterialTheme.colorScheme.inverseOnSurface)
+                    .background(MaterialTheme.colorScheme.inverseOnSurface)
                     .clickable {
                         onClickUpNextTrackItem()
                     }
@@ -264,8 +264,8 @@ private fun UpNextQueue(
                         playbackState = playbackState,
                         isCurrentTrack = index == playingTrackIndex,
                         trackQueueNumber = index + 1,
-                        onClickTrackItem = { clickedTrack ->
-                            onClickQueueItem(clickedTrack, index)
+                        onClickTrackItem = {
+                            onClickQueueItem(index)
                         },
                         onClickMoreVert = {}
                     )
@@ -294,7 +294,7 @@ fun UpNextQueueScreen(mediaControllerViewModel: MediaControllerViewModel = viewM
                 mediaControllerViewModel.onQueueEvent(QueueEvent.PlaUpNextTrack)
             }
         },
-        onClickQueueItem = { track: Track, index: Int ->
+        onClickQueueItem = { index: Int ->
             mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(index))
         }
     )
@@ -357,7 +357,7 @@ fun UpNextQueuePreview() {
             playbackState = PlaybackState.PLAYING,
             queue = queue,
             onClickUpNextTrackItem = {},
-            onClickQueueItem = { track: Track, index: Int -> },
+            onClickQueueItem = { index: Int -> },
         )
     }
 }

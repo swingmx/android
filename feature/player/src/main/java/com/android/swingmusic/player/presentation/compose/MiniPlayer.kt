@@ -1,6 +1,5 @@
-package com.android.swingmusic.presentation.compose
+package com.android.swingmusic.player.presentation.compose
 
-import android.app.Activity
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,17 +21,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,8 +40,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.network.data.util.BASE_URL
-import com.android.swingmusic.presentation.event.PlayerUiEvent
-import com.android.swingmusic.presentation.viewmodel.MediaControllerViewModel
+import com.android.swingmusic.player.presentation.event.PlayerUiEvent
+import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 
@@ -172,15 +168,6 @@ fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel())
     val playerUiState by remember { mediaControllerViewModel.playerUiState }
     playerUiState.track?.let { track ->
         SwingMusicTheme {
-            val view = LocalView.current
-            val color = MaterialTheme.colorScheme.inverseOnSurface.toArgb()
-            if (!view.isInEditMode) {
-                SideEffect {
-                    val window = (view.context as Activity).window
-                    window.navigationBarColor = color
-                }
-            }
-
             MiniPlayer(
                 trackHash = track.trackHash,
                 trackTitle = track.title,
