@@ -18,7 +18,6 @@ This project is currently in its early development stages as the [Swing Music te
       <img src="https://github.com/swingmx/android/assets/54077752/01d6bf5c-fe90-4a2c-88f1-46c15eabf529" width="320" alt="image" />
     </td>
     <td>
-      <img src="https://github.com/swingmx/android/assets/54077752/203e7834-e5eb-46f4-93fd-5123b4245d3b" width="320" alt="image" />
+      <img src="https://github.com/swingmx/android/assets/54077752/37768bbf-6501-4459-b65d-8e6ef09856a4" width="320" alt="image" />
     </td>
   </tr>
-</table>
