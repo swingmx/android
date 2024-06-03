@@ -11,7 +11,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.android.swingmusic.presentation.compose.FullScreenPlayerScreen
+import com.android.swingmusic.presentation.compose.UpNextQueueScreen
 import com.android.swingmusic.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -32,18 +32,18 @@ class MainActivity : ComponentActivity() {
             mediaControllerViewModel.getMediaController() == null ||
             (this::controllerFuture.isInitialized).not()
         ) {
-            Timber.e("Media Controller: ${mediaControllerViewModel.getMediaController()}")
-            Timber.e("Future Init: ${(this::controllerFuture.isInitialized)}")
-
             val sessionToken = SessionToken(this, ComponentName(this, PlaybackService::class.java))
             controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
-            controllerFuture.addListener({
-                val mediaController = controllerFuture.get()
-                mediaControllerViewModel.setMediaController(mediaController)
+            controllerFuture
+                .addListener(
+                    {
+                        val mediaController = controllerFuture.get()
+                        mediaControllerViewModel.setMediaController(mediaController)
 
-                // TODO: Create UI events that calls this for the current queue and track
-                mediaControllerViewModel.loadMediaItems()
-            }, MoreExecutors.directExecutor())
+                        // TODO: Create UI events that calls this for the current queue and track
+                        mediaControllerViewModel.loadMediaItems()
+                    }, MoreExecutors.directExecutor()
+                )
         }
     }
 
@@ -62,8 +62,8 @@ class MainActivity : ComponentActivity() {
                     // For testing purposes ONLY
                     // FoldersAndTracksScreen()
                     // ArtistsScreen()
-                    FullScreenPlayerScreen()
-                    // UpNextQueueScreen()
+                    // FullScreenPlayerScreen()
+                    UpNextQueueScreen()
 
                     /*Column(
                         modifier = Modifier
