@@ -1,6 +1,5 @@
 package com.android.swingmusic.artist.presentation.screen
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +32,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,8 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -96,199 +92,188 @@ private fun Artists(
 
     var isGridCountMenuExpanded by remember { mutableStateOf(false) }
 
-    SwingMusicTheme {
-        val view = LocalView.current
-        val color = MaterialTheme.colorScheme.surface.toArgb()
-        if (!view.isInEditMode) {
-            SideEffect {
-                val window = (view.context as Activity).window
-                window.navigationBarColor = color
+    Scaffold(
+        topBar = {
+            Column(verticalArrangement = Arrangement.Center) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Artists",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                    IconButton(
+                        onClick = {
+                            isGridCountMenuExpanded = isGridCountMenuExpanded.not()
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(id = UiComponents.drawable.grid),
+                            contentDescription = "Sort Order Icon"
+                        ).also {
+                            DropdownMenu(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                expanded = isGridCountMenuExpanded,
+                                onDismissRequest = {
+                                    isGridCountMenuExpanded = isGridCountMenuExpanded.not()
+                                }
+                            ) {
+                                Text(
+                                    text = "Grid count",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                (2..4).forEach { count ->
+                                    DropdownMenuItem(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(12))
+                                            .background(
+                                                if (artistsUiState.gridCount == count)
+                                                    MaterialTheme.colorScheme.inverseSurface.copy(
+                                                        alpha = .1F
+                                                    )
+                                                else Color.Unspecified
+                                            ),
+                                        interactionSource = MutableInteractionSource(),
+                                        onClick = {
+                                            if (artistsUiState.gridCount != count) {
+                                                isGridCountMenuExpanded = false
+                                                onUpdateGridCount(count)
+                                            }
+                                        }, text = {
+                                            Text(
+                                                maxLines = 1,
+                                                text = count.toString(),
+                                                style = MaterialTheme.typography.titleLarge,
+                                                color = MaterialTheme.colorScheme.inverseSurface.copy(
+                                                    alpha = .84F
+                                                )
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            if (artistsUiState.gridCount == count)
+                                                Icon(
+                                                    modifier = Modifier.padding(start = 12.dp),
+                                                    imageVector = Icons.Rounded.CheckCircle,
+                                                    contentDescription = "Checked"
+                                                )
+                                        }
+                                    )
+                                    if (count < 4) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Text(
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        bottom = 8.dp
+                    ),
+                    text = getArtistCountHelperText(artistCount),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F)
+                )
             }
         }
-
-        Scaffold(
-            topBar = {
-                Column(verticalArrangement = Arrangement.Center) {
-                    Row(
+    ) { paddingValues ->
+        Surface(modifier = Modifier.padding(paddingValues)) {
+            LazyVerticalGrid(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp),
+                columns = GridCells.Fixed(artistsUiState.gridCount),
+                state = gridState,
+            ) {
+                item(span = { GridItemSpan(artistsUiState.gridCount) }) {
+                    LazyRow(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp, end = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .padding(horizontal = 4.dp, vertical = 12.dp)
+                            .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Artists",
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                        IconButton(
-                            onClick = {
-                                isGridCountMenuExpanded = isGridCountMenuExpanded.not()
+                        items(sortByPairs) { pair ->
+                            SortByChip(
+                                labelPair = pair,
+                                sortOrder = artistsUiState.sortOrder,
+                                isSelected = artistsUiState.sortBy == pair
+                            ) { clickedPair ->
+                                onSortBy(clickedPair)
                             }
-                        ) {
-                            Icon(
-                                painter = painterResource(id = UiComponents.drawable.grid),
-                                contentDescription = "Sort Order Icon"
-                            ).also {
-                                DropdownMenu(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    expanded = isGridCountMenuExpanded,
-                                    onDismissRequest = {
-                                        isGridCountMenuExpanded = isGridCountMenuExpanded.not()
-                                    }
-                                ) {
-                                    Text(
-                                        text = "Grid count",
-                                        style = MaterialTheme.typography.labelMedium
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-
-                                    (2..4).forEach { count ->
-                                        DropdownMenuItem(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(12))
-                                                .background(
-                                                    if (artistsUiState.gridCount == count)
-                                                        MaterialTheme.colorScheme.inverseSurface.copy(
-                                                            alpha = .1F
-                                                        )
-                                                    else Color.Unspecified
-                                                ),
-                                            interactionSource = MutableInteractionSource(),
-                                            onClick = {
-                                                if (artistsUiState.gridCount != count) {
-                                                    isGridCountMenuExpanded = false
-                                                    onUpdateGridCount(count)
-                                                }
-                                            }, text = {
-                                                Text(
-                                                    maxLines = 1,
-                                                    text = count.toString(),
-                                                    style = MaterialTheme.typography.titleLarge,
-                                                    color = MaterialTheme.colorScheme.inverseSurface.copy(
-                                                        alpha = .84F
-                                                    )
-                                                )
-                                            },
-                                            trailingIcon = {
-                                                if (artistsUiState.gridCount == count)
-                                                    Icon(
-                                                        modifier = Modifier.padding(start = 12.dp),
-                                                        imageVector = Icons.Rounded.CheckCircle,
-                                                        contentDescription = "Checked"
-                                                    )
-                                            }
-                                        )
-                                        if (count < 4) {
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                        }
-                                    }
-                                }
-                            }
+                            Spacer(modifier = Modifier.width(12.dp))
                         }
                     }
-                    Text(
-                        modifier = Modifier.padding(
-                            start = 16.dp,
-                            bottom = 8.dp
-                        ),
-                        text = getArtistCountHelperText(artistCount),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F)
-                    )
                 }
-            }
-        ) { paddingValues ->
-            Surface(modifier = Modifier.padding(paddingValues)) {
-                LazyVerticalGrid(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp),
-                    columns = GridCells.Fixed(artistsUiState.gridCount),
-                    state = gridState,
-                ) {
+
+                if (pagingArtists.loadState.refresh is LoadState.NotLoading) {
+                    pagingItems(pagingArtists) { artist ->
+                        if (artist == null) return@pagingItems
+                        ArtistItem(
+                            modifier = Modifier.fillMaxSize(),
+                            artist = artist,
+                            onClick = {
+
+                            }
+                        )
+                    }
+                }
+
+                loadingState?.let {
                     item(span = { GridItemSpan(artistsUiState.gridCount) }) {
-                        LazyRow(
-                            modifier = Modifier
-                                .padding(horizontal = 4.dp, vertical = 12.dp)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            items(sortByPairs) { pair ->
-                                SortByChip(
-                                    labelPair = pair,
-                                    sortOrder = artistsUiState.sortOrder,
-                                    isSelected = artistsUiState.sortBy == pair
-                                ) { clickedPair ->
-                                    onSortBy(clickedPair)
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxSize()
+                                    .padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(text = "Loading artists...")
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                CircularProgressIndicator()
                             }
                         }
                     }
+                }
 
-                    if (pagingArtists.loadState.refresh is LoadState.NotLoading) {
-                        pagingItems(pagingArtists) { artist ->
-                            if (artist == null) return@pagingItems
-                            ArtistItem(
-                                modifier = Modifier.fillMaxSize(),
-                                artist = artist,
-                                onClick = {
-
-                                }
-                            )
-                        }
-                    }
-
-                    loadingState?.let {
-                        item(span = { GridItemSpan(artistsUiState.gridCount) }) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                errorState?.let {
+                    item(span = { GridItemSpan(artistsUiState.gridCount) }) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxSize()
+                                    .padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
+                                Text(
+                                    text = it.error.message!!,
+                                    textAlign = TextAlign.Center
+                                )
 
-                                Column(
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxSize()
-                                        .padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(text = "Loading artists...")
+                                Spacer(modifier = Modifier.height(8.dp))
 
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    CircularProgressIndicator()
-                                }
-                            }
-                        }
-                    }
-
-                    errorState?.let {
-                        item(span = { GridItemSpan(artistsUiState.gridCount) }) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxSize()
-                                        .padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = it.error.message!!,
-                                        textAlign = TextAlign.Center
-                                    )
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    Button(onClick = {
-                                        pagingArtists.retry()
-                                        onRetry()
-                                    }) {
-                                        Text(text = "RETRY")
-                                    }
+                                Button(onClick = {
+                                    pagingArtists.retry()
+                                    onRetry()
+                                }) {
+                                    Text(text = "RETRY")
                                 }
                             }
                         }
@@ -298,7 +283,6 @@ private fun Artists(
         }
     }
 }
-
 
 /**
  * This Composable is heavily coupled with ArtistsViewModel. [Artists] comp has no ties.
@@ -310,20 +294,24 @@ fun ArtistsScreen(viewModel: ArtistsViewModel = viewModel()) {
     val artistsUiState by remember { viewModel.artistsUiState }
     val sortByPairs by remember { derivedStateOf { viewModel.sortByEntries.toList() } }
 
-    Artists(
-        pagingArtists = pagingArtists,
-        artistsUiState = artistsUiState,
-        sortByPairs = sortByPairs,
-        onUpdateGridCount = { count ->
-            viewModel.onArtistUiEvent(ArtistUiEvent.OnUpdateGridCount(count))
-        },
-        onSortBy = { pair ->
-            viewModel.onArtistUiEvent(ArtistUiEvent.OnSortBy(pair))
-        },
-        onRetry = {
-            viewModel.onArtistUiEvent(ArtistUiEvent.OnRetry)
-        }
-    )
+    SwingMusicTheme(
+        navBarColor = MaterialTheme.colorScheme.surface
+    ) {
+        Artists(
+            pagingArtists = pagingArtists,
+            artistsUiState = artistsUiState,
+            sortByPairs = sortByPairs,
+            onUpdateGridCount = { count ->
+                viewModel.onArtistUiEvent(ArtistUiEvent.OnUpdateGridCount(count))
+            },
+            onSortBy = { pair ->
+                viewModel.onArtistUiEvent(ArtistUiEvent.OnSortBy(pair))
+            },
+            onRetry = {
+                viewModel.onArtistUiEvent(ArtistUiEvent.OnRetry)
+            }
+        )
+    }
 }
 
 private fun getArtistCountHelperText(count: Int): String {
