@@ -24,8 +24,12 @@ class DataNetworkRepository @Inject constructor(
     override suspend fun getFoldersAndTracks(requestData: FoldersAndTracksRequest): Resource<FoldersAndTracks> {
         return try {
             Resource.Loading<FoldersAndTracks>()
+            val token = ""
             val foldersAndTracksDto =
-                apiService.getFoldersAndTracks(requestData.toFoldersAndTracksRequestDto())
+                apiService.getFoldersAndTracks(
+                    requestData = requestData.toFoldersAndTracksRequestDto(),
+                    bearerToken = "Bearer $token"
+                )
             Resource.Success(data = foldersAndTracksDto.toFolderAndTracks())
         } catch (e: IOException) {
             Resource.Error(
