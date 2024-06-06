@@ -45,110 +45,107 @@ fun FolderItem(
     onClickFolderItem: (Folder) -> Unit,
     onClickMoreVert: (Folder) -> Unit
 ) {
-    SwingMusicTheme {
-        Surface(
+    Surface(
+        modifier = Modifier
+            .wrapContentHeight()
+            .fillMaxWidth()
+            .clickable {
+                onClickFolderItem(folder)
+            }
+            .padding(horizontal = 4.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
-                .wrapContentHeight()
+                .padding(
+                    start = (11.5).dp, // to align well with Track Item
+                    top = 12.dp,
+                    bottom = 12.dp,
+                    end = 8.dp
+                )
                 .fillMaxWidth()
-                .clickable {
-                    onClickFolderItem(folder)
-                }
-                .padding(horizontal = 4.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .padding(
-                        start = (11.5).dp, // to align well with Track Item
-                        top = 12.dp,
-                        bottom = 12.dp,
-                        end = 8.dp
-                    )
-                    .fillMaxWidth()
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                // Folder Icon
+                Box(
+                    modifier = Modifier
+                        .padding(start = 4.dp, end = 4.dp)
+                        .requiredSize(48.dp)
+                        .clip(RoundedCornerShape(16))
+                        .background(
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Folder Icon
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 4.dp, end = 4.dp)
-                            .requiredSize(48.dp)
-                            .clip(RoundedCornerShape(16))
-                            .background(
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                            ),
-                        contentAlignment = Alignment.Center
+                    Icon(
+                        modifier = Modifier,
+                        painter = painterResource(id = R.drawable.folder_outlined_open),
+                        contentDescription = "Folder Icon",
+                    )
+                }
+
+                // Folder name, folder count, songs
+                Column(
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text(
+                        text = folder.name,
+                        modifier = Modifier.width(240.dp),
+                        style = MaterialTheme.typography.bodyLarge,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            modifier = Modifier,
-                            painter = painterResource(id = R.drawable.folder_outlined_open),
-                            // tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .90F),
-                            contentDescription = "Folder Icon",
-                        )
-                    }
-
-                    // Folder name, folder count, songs
-                    Column(
-                        modifier = Modifier.padding(start = 8.dp)
-                    ) {
-                        Text(
-                            modifier = Modifier.width(240.dp),
-                            text = folder.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            overflow = TextOverflow.Ellipsis,
-                            maxLines = 1
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (folder.folderCount != 0) {
-                                Text(
-                                    text = folder.folderCount.getFolderHelperText(),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                            if (folder.folderCount > 0 && folder.trackCount > 0) {
-                                // Dot Separator
-                                Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = 8.dp)
-                                        .clip(CircleShape)
-                                        .size(3.dp)
-                                        .background(
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .50F)
-                                        )
-                                )
-                            }
-                            if (folder.trackCount != 0) {
-                                Text(
-                                    text = folder.trackCount.getTrackCountHelperText(),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            } else if (folder.folderCount == 0) {
-                                Text(
-                                    text = "This folder is empty",
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                        if (folder.folderCount != 0) {
+                            Text(
+                                text = folder.folderCount.getFolderHelperText(),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        if (folder.folderCount > 0 && folder.trackCount > 0) {
+                            // Dot Separator
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .clip(CircleShape)
+                                    .size(3.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .50F)
+                                    )
+                            )
+                        }
+                        if (folder.trackCount != 0) {
+                            Text(
+                                text = folder.trackCount.getTrackCountHelperText(),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else if (folder.folderCount == 0) {
+                            Text(
+                                text = "This folder is empty",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F),
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     }
                 }
+            }
 
-                IconButton(onClick = { onClickMoreVert(folder) }) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "MoreVert"
-                    )
-                }
+            IconButton(onClick = { onClickMoreVert(folder) }) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "MoreVert"
+                )
             }
         }
     }
@@ -175,7 +172,13 @@ fun FolderItemPreview() {
             Column(modifier = Modifier.fillMaxSize()) {
                 for (count in 0..6) {
                     val demoFolder =
-                        Folder((0..6).random(), (0..6).random(), false, "Swing Music", "/home")
+                        Folder(
+                            trackCount = (0..6).random(),
+                            folderCount = (0..6).random(),
+                            isSym = false,
+                            name = "Swing Music",
+                            path = "/home"
+                        )
                     FolderItem(
                         folder = demoFolder,
                         onClickFolderItem = {
@@ -186,10 +189,10 @@ fun FolderItemPreview() {
                         }
                     )
                     if (count < 6) {
-                        /* Divider(
-                             modifier = Modifier.padding(start = 74.dp,end = 12.dp),
-                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                         )*/
+                        /*Divider(
+                            modifier = Modifier.padding(start = 74.dp,end = 12.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                        )*/
                     }
                 }
             }

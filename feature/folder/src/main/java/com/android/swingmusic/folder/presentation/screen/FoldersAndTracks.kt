@@ -62,7 +62,13 @@ private fun FoldersAndTracks(
     onClickFolder: (Folder) -> Unit,
     onClickTrackItem: (index: Int, queue: List<Track>) -> Unit
 ) {
-    SwingMusicTheme {
+    SwingMusicTheme(
+        navBarColor = if (currentTrackHash.isEmpty()) {
+            MaterialTheme.colorScheme.surface
+        } else {
+            MaterialTheme.colorScheme.inverseOnSurface
+        }
+    ) {
         Scaffold(
             topBar = {
                 Text(
@@ -299,7 +305,7 @@ fun FoldersAndTracksScreen(
 
     FoldersAndTracks(
         currentFolder = currentFolder,
-        currentTrackHash = playerUiState.track?.trackHash ?: "",
+        currentTrackHash = playerUiState.nowPlayingTrack?.trackHash ?: "",
         playbackState = playerUiState.playbackState,
         homeDir = homeDir,
         foldersAndTracksState = foldersAndTracksState,
@@ -315,8 +321,8 @@ fun FoldersAndTracksScreen(
         },
         onClickTrackItem = { index: Int, queue: List<Track> ->
             mediaControllerViewModel.onQueueEvent(
-                QueueEvent.CreateQueueFromFolder(
-                    folderPath = currentFolder.path,
+                QueueEvent.RecreateQueue(
+                    source = currentFolder.path,
                     clickedTrackIndex = index,
                     queue = queue
                 )
