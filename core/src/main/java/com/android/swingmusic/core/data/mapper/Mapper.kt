@@ -41,7 +41,7 @@ object Map {
         )
     }
 
-    fun FolderDto.toFolder(): Folder {
+    private fun FolderDto.toFolder(): Folder {
         return Folder(
             trackCount = fileCount ?: 0,
             folderCount = folderCount ?: 0,
@@ -51,31 +51,20 @@ object Map {
         )
     }
 
-    fun TrackDto.toTrack(): Track {
+    private fun TrackDto.toTrack(): Track {
         return Track(
             album = album,
             albumTrackArtists = albumTrackArtistDtos?.map { it.toArtist() } ?: emptyList(),
             albumHash = albumHash ?: "",
             artistHashes = artistHashes ?: "",
             trackArtists = artistsDto?.map { it.toArtist() } ?: emptyList(),
-            ati = ati ?: "",
             bitrate = bitrate ?: 0,
-            copyright = copyright ?: "",
-            createdDate = createdDate ?: 0.0,
-            date = date ?: 0,
-            disc = disc ?: 0,
             duration = duration ?: 0,
             filepath = filepath ?: "",
             folder = folder ?: "",
-            genre = genre ?: emptyList(),
             image = image ?: "",
             isFavorite = isFavorite ?: false,
-            lastMod = lastMod ?: 0,
-            ogAlbum = ogAlbum ?: "",
-            ogTitle = ogTitle ?: "",
-            pos = pos ?: 0,
             title = title ?: "",
-            track = track ?: 0,
             trackHash = trackHash ?: ""
         )
     }
@@ -108,7 +97,7 @@ object Map {
         )
     }
 
-    fun DirDto.toDir(): Dir {
+    private fun DirDto.toDir(): Dir {
         return Dir(
             name = name ?: "",
             path = path ?: ""

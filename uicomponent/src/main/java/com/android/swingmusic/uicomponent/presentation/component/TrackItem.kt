@@ -57,145 +57,144 @@ fun TrackItem(
     track: Track,
     trackQueueNumber: Int? = null,
     isCurrentTrack: Boolean = false,
-    playbackState: PlaybackState = PlaybackState.ERROR,
+    playbackState: PlaybackState = PlaybackState.PAUSED,
     onClickTrackItem: () -> Unit,
     onClickMoreVert: (Track) -> Unit
 ) {
-    SwingMusicTheme {
-        Box(
+    // TODO: Redo this Component using Fractions to avoid overflow in small screens
+    Box(
+        modifier = Modifier
+            .padding(vertical = 4.dp, horizontal = 12.dp)
+            .clip(RoundedCornerShape(20)),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        // Image, Title, Artists, Duration
+        Row(
             modifier = Modifier
-                .padding(vertical = 4.dp, horizontal = 12.dp)
-                .clip(RoundedCornerShape(20)),
-            contentAlignment = Alignment.CenterStart
+                .background(
+                    color = if (isCurrentTrack)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = .14F) else
+                        Color.Unspecified
+                )
+                .clickable {
+                    onClickTrackItem()
+                }
+                .padding(
+                    start = 8.dp,
+                    top = 8.dp,
+                    bottom = 8.dp
+                )
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Image, Title, Artists, Duration
-            Row(
-                modifier = Modifier
-                    .background(
-                        color = if (isCurrentTrack)
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = .14F) else
-                            Color.Unspecified
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .clip(RoundedCornerShape(16))
+                        .size(48.dp)
+                        .border(
+                            width = (.1).dp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
+                            shape = RoundedCornerShape(16)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data("${BASE_URL}/img/t/s/${track.image}")
+                            //.crossfade(true)
+                            .build(),
+                        placeholder = painterResource(R.drawable.audio_fallback),
+                        fallback = painterResource(R.drawable.audio_fallback),
+                        error = painterResource(R.drawable.audio_fallback),
+                        contentDescription = "Track Image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    .clickable {
-                        onClickTrackItem()
+
+                    if (isCurrentTrack) {
+                        PlayingTrackIndicator(playbackState = playbackState)
                     }
-                    .padding(
-                        start = 8.dp,
-                        top = 8.dp,
-                        bottom = 8.dp
-                    )
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .clip(RoundedCornerShape(16))
-                            .size(48.dp)
-                            .border(
-                                width = (.1).dp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
-                                shape = RoundedCornerShape(16)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data("${BASE_URL}/img/t/s/${track.image}")
-                                .crossfade(true)
-                                .build(),
-                            placeholder = painterResource(R.drawable.audio_fallback),
-                            fallback = painterResource(R.drawable.audio_fallback),
-                            error = painterResource(R.drawable.audio_fallback),
-                            contentDescription = "Track Image",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                }
+
+                Column(
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .scrollable(
+                            orientation = Orientation.Horizontal,
+                            state = rememberScrollState()
                         )
+                ) {
+                    Text(
+                        text = track.title,
+                        modifier = Modifier.sizeIn(maxWidth = 250.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
 
-                        if (isCurrentTrack) {
-                            PlayingTrackIndicator(playbackState = playbackState)
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                    Column(
-                        modifier = Modifier
-                            .padding(start = 4.dp)
-                            .scrollable(
-                                orientation = Orientation.Horizontal,
-                                state = rememberScrollState()
-                            )
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+
+                        val artistsJoined = track.trackArtists.joinToString(", ") { it.name }
                         Text(
-                            text = track.title,
-                            modifier = Modifier.sizeIn(maxWidth = 250.dp),
+                            text = artistsJoined,
+                            modifier = Modifier.sizeIn(maxWidth = 185.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F),
+                            style = MaterialTheme.typography.bodySmall,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        // Dot Separator
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .clip(CircleShape)
+                                .size(3.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = .50F)
+                                )
+                        )
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-
-                            val artistsJoined = track.trackArtists.joinToString(", ") { it.name }
-
-                            Text(
-                                text = artistsJoined,
-                                modifier = Modifier.sizeIn(maxWidth = 185.dp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            // Dot Separator
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .clip(CircleShape)
-                                    .size(3.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .50F)
-                                    )
-                            )
-
-                            Text(
-                                text = track.duration.formatDuration(),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
+                        Text(
+                            text = track.duration.formatDuration(),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F),
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
-
-                // More Icon
-                IconButton(onClick = { onClickMoreVert(track) }) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More Icon"
-                    )
-                }
             }
 
-            trackQueueNumber?.let { number ->
-                /* Box(
-                     modifier = Modifier
-                         .clip(CircleShape)
-                         .wrapContentSize()
-                         .background(MaterialTheme.colorScheme.inverseOnSurface)
-                         .padding(vertical = 2.dp, horizontal = 4.dp),
-                     contentAlignment = Alignment.Center
-                 ) {
-                     Text(
-                         text = number.toString(),
-                         style = MaterialTheme.typography.labelMedium
-                     )
-                 }*/
+            // More Icon
+            IconButton(onClick = { onClickMoreVert(track) }) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "More Icon"
+                )
             }
+        }
+
+        trackQueueNumber?.let { number ->
+            /* Box(
+                 modifier = Modifier
+                     .clip(CircleShape)
+                     .wrapContentSize()
+                     .background(MaterialTheme.colorScheme.inverseOnSurface)
+                     .padding(vertical = 2.dp, horizontal = 4.dp),
+                 contentAlignment = Alignment.Center
+             ) {
+                 Text(
+                     text = number.toString(),
+                     style = MaterialTheme.typography.labelMedium
+                 )
+             }*/
         }
     }
 }
+
 
 @Preview(
     showBackground = true,
@@ -227,24 +226,13 @@ fun TrackItemPreview() {
         albumHash = "albumHash123",
         artistHashes = "artistHashes123",
         trackArtists = artists,
-        ati = "ati123",
         bitrate = 320,
-        copyright = "Copyright © 2024",
-        createdDate = 1648731600.0, // Sample timestamp
-        date = 2024,
-        disc = 1,
         duration = 454, // Sample duration in seconds
         filepath = "/path/to/track.mp3",
         folder = "/path/to/album",
-        genre = genre,
         image = "/path/to/album/artwork.jpg",
         isFavorite = true,
-        lastMod = 1648731600, // Sample timestamp
-        ogAlbum = "Original Album",
-        ogTitle = "Original Title",
-        pos = 1,
         title = "Sample Track",
-        track = 1,
         trackHash = "trackHash123"
     )
 
