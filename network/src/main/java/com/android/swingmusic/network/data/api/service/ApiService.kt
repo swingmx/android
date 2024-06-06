@@ -5,13 +5,15 @@ import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface ApiService {
     @POST("folder")
     suspend fun getFoldersAndTracks(
-        @Body requestData: FoldersAndTracksRequestDto
+        @Body requestData: FoldersAndTracksRequestDto,
+        @Header("Authorization") bearerToken: String,
     ): FoldersAndTracksDto
 
     @GET("getall/artists")
