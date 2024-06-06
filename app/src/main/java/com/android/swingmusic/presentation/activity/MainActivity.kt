@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.android.swingmusic.folder.presentation.screen.FoldersAndTracksScreen
+import com.android.swingmusic.player.presentation.compose.NowPlayingScreen
 import com.android.swingmusic.player.presentation.compose.MiniPlayer
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.service.PlaybackService
@@ -34,6 +35,7 @@ class MainActivity : ComponentActivity() {
             mediaControllerViewModel.getMediaController() == null ||
             (this::controllerFuture.isInitialized).not()
         ) {
+            // TODO: Check if a session already exists -> in case the app was closed them re-opened from the notification
             val sessionToken = SessionToken(this, ComponentName(this, PlaybackService::class.java))
             controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
             controllerFuture
@@ -41,9 +43,6 @@ class MainActivity : ComponentActivity() {
                     {
                         val mediaController = controllerFuture.get()
                         mediaControllerViewModel.setMediaController(mediaController)
-
-                        // TODO: Create UI events that calls this for the current queue and track
-                        mediaControllerViewModel.loadMediaItems()
                     }, MoreExecutors.directExecutor()
                 )
         }
@@ -66,9 +65,9 @@ class MainActivity : ComponentActivity() {
 
                     Surface(modifier = Modifier.padding(it)) {
                         // For testing purposes ONLY
-                        FoldersAndTracksScreen()
+                         FoldersAndTracksScreen()
                         // ArtistsScreen()
-                        // FullScreenPlayerScreen()
+                        // NowPlayingScreen()
                         // UpNextQueueScreen()
                     }
                 }

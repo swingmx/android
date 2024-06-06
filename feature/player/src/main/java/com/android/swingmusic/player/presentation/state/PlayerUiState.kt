@@ -6,7 +6,7 @@ import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
 
 data class PlayerUiState(
-    val track: Track? = null,
+    val nowPlayingTrack: Track? = null,
     val playingTrackIndex: Int = 0,
     val queue: List<Track> = emptyList(),
     val playbackState: PlaybackState = PlaybackState.PAUSED,

@@ -10,7 +10,7 @@ interface PlayerUiEvent {
 
     object OnNext: PlayerUiEvent
 
-    object OnPlayBackComplete: PlayerUiEvent
+    object OnResumePlaybackFromError: PlayerUiEvent
 
     object OnToggleFavorite: PlayerUiEvent
 

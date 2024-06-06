@@ -28,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import java.util.Locale
 import com.android.swingmusic.uicomponent.R as UiComponents
 
@@ -92,27 +91,26 @@ fun SortByChip(
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun SortByChipPreview() {
-    SwingMusicTheme {
-        Surface {
-            Row(
-                modifier = Modifier.padding(8.dp)
+
+    Surface {
+        Row(
+            modifier = Modifier.padding(8.dp)
+        ) {
+            SortByChip(
+                labelPair = Pair(SortBy.NAME, "Name"),
+                isSelected = true,
+                sortOrder = SortOrder.ASCENDING
             ) {
-                SortByChip(
-                    labelPair = Pair(SortBy.NAME, "Name"),
-                    isSelected = true,
-                    sortOrder = SortOrder.ASCENDING
-                ) {
 
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-
-                SortByChip(
-                    labelPair = Pair(SortBy.NAME, "Name"),
-                ) {
-
-                }
             }
+            Spacer(modifier = Modifier.width(12.dp))
 
+            SortByChip(
+                labelPair = Pair(SortBy.NAME, "Name"),
+            ) {
+
+            }
         }
+
     }
 }
