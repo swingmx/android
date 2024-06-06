@@ -262,7 +262,6 @@ class MediaControllerViewModel : ViewModel() {
                             }
 
                             PlaybackState.PAUSED -> {
-                                controller.setPlaybackSpeed(1F)
                                 controller.play()
                                 PlaybackState.PLAYING
                             }
