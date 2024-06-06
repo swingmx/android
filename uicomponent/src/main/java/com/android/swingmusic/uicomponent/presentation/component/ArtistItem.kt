@@ -92,11 +92,11 @@ fun ArtistItem(
 fun ArtistItemPreview() {
     fun generateDummyArtist(): Artist {
         val artisthash = "dummy_artist"
-        val colors = listOf("#FFFFFF", "#000000", "#FF0000") // Example colors
-        val createdDate = System.currentTimeMillis().toDouble() // Example created date
-        val helpText = "2hrs, 10 minutes" // Example help text
-        val image = "https://example.com/image.jpg" // Example image URL
-        val name = "Dummy Artist" // Example name
+        val colors = listOf("#FFFFFF", "#000000", "#FF0000")
+        val createdDate = System.currentTimeMillis().toDouble()
+        val helpText = "2hrs, 10 minutes"
+        val image = "https://example.com/image.jpg"
+        val name = "Dummy Artist"
 
         return Artist(artisthash, colors, createdDate, helpText, image, name)
     }
