@@ -22,7 +22,6 @@ class PlaybackService : MediaSessionService() {
             .setAudioAttributes(AudioAttributes.DEFAULT, true)
             .setDeviceVolumeControlEnabled(true)
             .setHandleAudioBecomingNoisy(true)
-            //.setSkipSilenceEnabled(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
         mediaSession = MediaSession.Builder(this, player).build()

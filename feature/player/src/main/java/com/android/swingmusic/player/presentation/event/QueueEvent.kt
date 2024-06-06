@@ -4,16 +4,10 @@ import com.android.swingmusic.core.domain.model.Track
 
 interface QueueEvent {
 
-    data class CreateNewQueue(
-        val newQueue: List<Track>,
-        val startIndex: Int,
-        val autoPlay: Boolean
-    ) : QueueEvent
-
-    data class CreateQueueFromFolder(
-        val folderPath: String,
+    data class RecreateQueue(
+        val source: String, // Todo: Use an umbrella type for album, artist, folder, playList, search, favorite, Empty String
+        val queue: List<Track>,
         val clickedTrackIndex: Int,
-        val queue: List<Track>
     ) : QueueEvent
 
     data class InsertTrackAtIndex(val track: Track, val index: Int) : QueueEvent

@@ -17,56 +17,53 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.CoilGifLoader
 
 @Composable
 fun PlayingTrackIndicator(
     playbackState: PlaybackState
 ) {
-    SwingMusicTheme {
-        // Background
-        Box(
-            modifier = Modifier
-                .background(
-                    if (playbackState != PlaybackState.ERROR)
-                        MaterialTheme.colorScheme.surface.copy(alpha = .50F) else
-                        MaterialTheme.colorScheme.errorContainer.copy(alpha = .75F)
+    // Background
+    Box(
+        modifier = Modifier
+            .background(
+                if (playbackState != PlaybackState.ERROR)
+                    MaterialTheme.colorScheme.surface.copy(alpha = .50F) else
+                    MaterialTheme.colorScheme.errorContainer.copy(alpha = .75F)
+            )
+            .size(48.dp)
+    )
+
+    // Gif/Image
+    Box(
+        modifier = Modifier
+            .padding(8.dp)
+            .size(48.dp)
+            .clip(CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        when (playbackState) {
+            PlaybackState.PLAYING -> {
+                CoilGifLoader(
+                    resource = R.raw.playing_anim,
+                    modifier = Modifier.fillMaxSize()
                 )
-                .size(48.dp)
-        )
+            }
 
-        // Gif/Image
-        Box(
-            modifier = Modifier
-                .padding(8.dp)
-                .size(48.dp)
-                .clip(CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            when (playbackState) {
-                PlaybackState.PLAYING -> {
-                    CoilGifLoader(
-                        resource = R.raw.playing_anim,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+            PlaybackState.PAUSED -> {
+                Image(
+                    painter = painterResource(id = R.drawable.paused),
+                    contentDescription = "Paused State Indicator"
+                )
+            }
 
-                PlaybackState.PAUSED -> {
-                    Image(
-                        painter = painterResource(id = R.drawable.paused),
-                        contentDescription = "Paused State Indicator"
-                    )
-                }
-
-                PlaybackState.ERROR -> {
-                    Icon(
-                        modifier = Modifier.size(32.dp),
-                        painter = painterResource(id = R.drawable.error),
-                        tint = MaterialTheme.colorScheme.error,
-                        contentDescription = "Error Icon"
-                    )
-                }
+            PlaybackState.ERROR -> {
+                Icon(
+                    modifier = Modifier.size(32.dp),
+                    painter = painterResource(id = R.drawable.error),
+                    tint = MaterialTheme.colorScheme.error,
+                    contentDescription = "Error Icon"
+                )
             }
         }
     }
