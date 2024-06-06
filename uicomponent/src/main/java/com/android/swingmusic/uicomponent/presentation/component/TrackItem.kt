@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,6 +63,8 @@ fun TrackItem(
     onClickTrackItem: () -> Unit,
     onClickMoreVert: (Track) -> Unit
 ) {
+    val interaction = remember { MutableInteractionSource() }
+
     // TODO: Redo this Component using Fractions to avoid overflow in small screens
     Box(
         modifier = Modifier
@@ -76,9 +80,11 @@ fun TrackItem(
                         MaterialTheme.colorScheme.onSurface.copy(alpha = .14F) else
                         Color.Unspecified
                 )
-                .clickable {
-                    onClickTrackItem()
-                }
+                .clickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    onClick = { onClickTrackItem() }
+                )
                 .padding(
                     start = 8.dp,
                     top = 8.dp,
