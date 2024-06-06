@@ -1,23 +1,19 @@
 package com.android.swingmusic.uicomponent.presentation.component
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.util.CoilGifLoader
 
 @Composable
 fun PlayingTrackIndicator(
@@ -26,35 +22,28 @@ fun PlayingTrackIndicator(
     // Background
     Box(
         modifier = Modifier
-            .background(
-                if (playbackState != PlaybackState.ERROR)
-                    MaterialTheme.colorScheme.surface.copy(alpha = .50F) else
-                    MaterialTheme.colorScheme.errorContainer.copy(alpha = .75F)
-            )
             .size(48.dp)
+            .background(
+                if (playbackState == PlaybackState.ERROR)
+                    MaterialTheme.colorScheme.errorContainer.copy(alpha = .75F) else
+                    MaterialTheme.colorScheme.surface.copy(alpha = .750F)
+            )
     )
 
-    // Gif/Image
+    // Sound Signal Bars
     Box(
         modifier = Modifier
-            .padding(8.dp)
-            .size(48.dp)
-            .clip(CircleShape),
+            .padding(vertical = 8.dp, horizontal = 4.dp)
+            .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         when (playbackState) {
             PlaybackState.PLAYING -> {
-                CoilGifLoader(
-                    resource = R.raw.playing_anim,
-                    modifier = Modifier.fillMaxSize()
-                )
+                SoundSignalBars(animate = true)
             }
 
             PlaybackState.PAUSED -> {
-                Image(
-                    painter = painterResource(id = R.drawable.paused),
-                    contentDescription = "Paused State Indicator"
-                )
+                SoundSignalBars(animate = false)
             }
 
             PlaybackState.ERROR -> {
