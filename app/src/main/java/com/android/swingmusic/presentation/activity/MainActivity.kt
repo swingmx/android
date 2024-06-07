@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
 
                     Surface(modifier = Modifier.padding(it)) {
                         // For testing purposes ONLY
-                        FoldersAndTracksScreen()
+                         FoldersAndTracksScreen()
                         // ArtistsScreen()
                         // NowPlayingScreen()
                         // UpNextQueueScreen()
