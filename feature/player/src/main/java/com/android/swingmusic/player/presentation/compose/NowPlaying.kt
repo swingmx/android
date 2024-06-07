@@ -105,6 +105,7 @@ private fun NowPlaying(
             track.filepath.substringAfterLast(".").uppercase(Locale.ROOT)
         }
     }
+    val animateWave = playbackState == PlaybackState.PLAYING && isBuffering.not()
     val repeatModeIcon = when (repeatMode) {
         RepeatMode.REPEAT_ONE -> R.drawable.repeat_one
         else -> R.drawable.repeat_all
@@ -227,7 +228,7 @@ private fun NowPlaying(
                         animationOptions = WaveSliderDefaults.animationOptions(
                             reverseDirection = false,
                             flatlineOnDrag = true,
-                            animateWave = playbackState == PlaybackState.PLAYING,
+                            animateWave = animateWave,
                             reverseFlatline = false
                         ),
                         colors = WaveSliderDefaults.colors(

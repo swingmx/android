@@ -1,8 +1,1 @@
-            - name: Kotlin Linter
-  # You may pin to the exact commit or the version.
-  # uses: vroy/gha-kotlin-linter@203eb96c88c48320dd3a37a7edf1e748e713f214
-  uses: vroy/gha-kotlin-linter@v4
-  with:
-    # A list of patterns to pass along to the ktlint command
-    patterns: # optional, default is **/*.kt
-          
+
