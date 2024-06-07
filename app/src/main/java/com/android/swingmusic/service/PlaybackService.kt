@@ -1,5 +1,8 @@
 package com.android.swingmusic.service
 
+import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_IMMUTABLE
+import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -24,7 +27,18 @@ class PlaybackService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
-        mediaSession = MediaSession.Builder(this, player).build()
+
+        val intent = packageManager.getLaunchIntentForPackage(packageName)
+        intent?.putExtra("DESTINATION", "NOW_PLAYING")
+        val pendingIntent =
+            PendingIntent.getActivity(this, 0, intent, FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
+
+        mediaSession = MediaSession.Builder(this, player)
+            .setSessionActivity(pendingIntent)
+            .build()
+
+        // Store the session token
+        MediaSessionManager.sessionToken = mediaSession?.token
     }
 
     // The user dismissed the app from the recent tasks
@@ -50,6 +64,7 @@ class PlaybackService : MediaSessionService() {
             release()
             mediaSession = null
         }
+        MediaSessionManager.sessionToken = null // Clear the session token
         super.onDestroy()
     }
 }

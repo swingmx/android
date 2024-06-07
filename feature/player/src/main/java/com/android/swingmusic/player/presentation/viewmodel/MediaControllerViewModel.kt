@@ -6,22 +6,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState
+import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.network.data.util.BASE_URL
+import com.android.swingmusic.player.domain.repository.QueueRepository
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickLyricsIcon
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickMore
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickQueue
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnNext
-import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnResumePlaybackFromError
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnPrev
+import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnResumePlaybackFromError
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnSeekPlayBack
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnToggleFavorite
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnTogglePlayerState
@@ -31,14 +34,19 @@ import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.state.PlayerUiState
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.google.common.util.concurrent.ListenableFuture
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
+import javax.inject.Inject
 import kotlin.math.roundToInt
 
-class MediaControllerViewModel : ViewModel() {
+@HiltViewModel
+class MediaControllerViewModel @Inject constructor(
+    private val queueRepository: QueueRepository
+) : ViewModel() {
     private val playerListener = PlayerListener()
     private var mediaController: MediaController? = null
     fun getMediaController() = mediaController
@@ -48,7 +56,26 @@ class MediaControllerViewModel : ViewModel() {
             mediaController = controller
 
             initPlayingListener()
+            initQueue()
         }
+    }
+
+    fun reconnectMediaController(controller: MediaController) {
+        mediaController = controller
+
+        initPlayingListener()
+        initQueue()
+
+        // Quickly Trigger playing listener
+        if (mediaController?.isPlaying == true) {
+            mediaController?.pause()
+            mediaController?.play()
+        } else {
+            mediaController?.play()
+            mediaController?.pause()
+        }
+
+        Timber.e("--------------- RECONNECTED CONTROLLER TO SESSION ----------------")
     }
 
     private var workingQueue: MutableList<Track> = mutableListOf<Track>()
@@ -62,7 +89,7 @@ class MediaControllerViewModel : ViewModel() {
     )
 
     private var trackToLog: Track? = null
-    private var queueSource: String = "" // TODO: Use QueueSource enum class
+    private var queueSource: QueueSource = QueueSource.FOLDER // TODO: Use QueueSource enum class
     private var durationPlayed: Long = 0L
     private val playbackMutex = Mutex()
 
@@ -81,6 +108,14 @@ class MediaControllerViewModel : ViewModel() {
                                     }
                                 }
                             }
+                        }
+
+                        val state = if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED
+                        // Prevent play/pause UI state from flipping when buffering
+                        if (mediaController?.playbackState != Player.STATE_BUFFERING) {
+                            playerUiState.value = playerUiState.value.copy(
+                                playbackState = state
+                            )
                         }
                     }
                 })
@@ -103,18 +138,72 @@ class MediaControllerViewModel : ViewModel() {
         }
     }
 
-    init {
-        /** TODO: Check if playerUiState.value.queue is Empty... if so,
-         *        Get saved Track, source (eg playlist, folder), call loadMediaItems
-         *        Update working queue with tracks from this track's source,
-         *        Update trackToLog, UiState,
-         * */
+    private fun initQueue() {
+        viewModelScope.launch {
+            val queue = queueRepository.getAllTracks()
+            val lastPlayedTrack = queueRepository.getLastPlayedTrack()
+            val trackIndex = lastPlayedTrack?.indexInQueue ?: -1
 
-        if (playerUiState.value.nowPlayingTrack != null) {
-            val trackDuration = playerUiState.value.nowPlayingTrack!!.duration.formatDuration()
-            playerUiState.value = playerUiState.value.copy(
-                trackDuration = trackDuration
-            )
+            // Init the working queue
+            workingQueue = queue.toMutableList()
+
+            if (queue.isNotEmpty() && trackIndex > -1) {
+
+                /** It's now safe to add [PlayerListener] since it has a queue to work with */
+                mediaController?.addListener(playerListener)
+                if (mediaController?.mediaItemCount == 0) {
+                    loadMediaItems(
+                        tracks = workingQueue,
+                        startIndex = if (trackIndex in queue.indices) trackIndex else 0,
+                        autoPlay = false,
+                        updateDatabase = false
+                    )
+                }
+
+                if (trackIndex in queue.indices) {
+                    playerUiState.value = playerUiState.value.copy(
+                        queue = workingQueue,
+                        nowPlayingTrack = workingQueue[trackIndex],
+                        playingTrackIndex = trackIndex
+                    )
+
+                    trackToLog = workingQueue[trackIndex]
+                } else { // track index is out of range but queue is not empty
+                    playerUiState.value = playerUiState.value.copy(
+                        queue = workingQueue,
+                        nowPlayingTrack = workingQueue[0],
+                        playingTrackIndex = 0
+                    )
+
+                    trackToLog = workingQueue[0]
+                }
+
+                stabilizeSeekBarProgress()
+            }
+        }
+    }
+
+    private fun updateQueueInDatabase(
+        queue: List<Track>,
+        playingTrackIndex: Int
+    ) {
+        viewModelScope.launch {
+            if (queue.isEmpty()) return@launch
+            try {
+                queueRepository.insertTracks(queue)
+                Timber.e("Queue Size: ${queue.size}")
+
+                if (playingTrackIndex in queue.indices) {
+                    val track = queue[playingTrackIndex]
+                    queueRepository.updateLastPlayedTrack(
+                        trackHash = track.trackHash,
+                        indexInQueue = playingTrackIndex
+                    )
+                }
+            } catch (e: Exception) {
+                // Handle the exception, e.g., log it or show a user-friendly message
+                Timber.e("Database Error")
+            }
         }
     }
 
@@ -149,7 +238,8 @@ class MediaControllerViewModel : ViewModel() {
     private fun loadMediaItems(
         tracks: List<Track>,
         startIndex: Int = 0,
-        autoPlay: Boolean = false
+        autoPlay: Boolean = false,
+        updateDatabase: Boolean = true
     ) {
         viewModelScope.launch {
             val mediaItems = tracks.mapIndexed { index, track ->
@@ -160,12 +250,19 @@ class MediaControllerViewModel : ViewModel() {
                 addMediaItems(mediaItems)
                 prepare()
                 setPlaybackSpeed(1F)
-                addListener(playerListener)
                 seekToDefaultPosition(startIndex)
                 playWhenReady = autoPlay
+            }
 
-                playerUiState.value = playerUiState.value.copy(
-                    playbackState = if (autoPlay) PlaybackState.PLAYING else PlaybackState.PAUSED
+            playerUiState.value = playerUiState.value.copy(
+                playbackState = if (autoPlay) PlaybackState.PLAYING else PlaybackState.PAUSED
+            )
+
+            // Update db here because this function has the most recent queue
+            if (updateDatabase) {
+                updateQueueInDatabase(
+                    queue = tracks,
+                    playingTrackIndex = startIndex
                 )
             }
         }
@@ -174,9 +271,16 @@ class MediaControllerViewModel : ViewModel() {
     private fun createNewQueue(
         tracks: List<Track>,
         startIndex: Int,
-        source: String = "", // TODO: Confirm possible sources
+        source: QueueSource = QueueSource.FOLDER, // TODO: Confirm possible sources
         autoPlay: Boolean
     ) {
+        /** If working queue is empty at this point, then it means no queue was found in the db
+         * which also means [PlayerListener] is not added yet */
+
+        if (workingQueue.isEmpty() && mediaController != null) {
+            mediaController?.addListener(playerListener)
+        }
+
         workingQueue = tracks.toMutableList()
         shuffledQueue.clear()
 
@@ -197,7 +301,7 @@ class MediaControllerViewModel : ViewModel() {
         queueSource = source
     }
 
-    // TODO: Log and save the respective Track
+    // TODO: Log the respective Track
     fun logRecentlyPlayedTrackToServer(
         track: Track?,
         durationPlayed: Long,
@@ -211,7 +315,14 @@ class MediaControllerViewModel : ViewModel() {
 
     fun saveLastPlayedTrack(track: Track?, indexInQueue: Int) {
         track?.let {
-
+            viewModelScope.launch {
+                if (indexInQueue in workingQueue.indices) {
+                    queueRepository.updateLastPlayedTrack(
+                        trackHash = track.trackHash,
+                        indexInQueue = indexInQueue
+                    )
+                }
+            }
         }
     }
 
@@ -227,7 +338,8 @@ class MediaControllerViewModel : ViewModel() {
                         seekPosition = event.value,
                         playbackDuration = playbackDuration.formatDuration()
                     )
-                    val trackDurationMs = (playerUiState.value.nowPlayingTrack?.duration ?: 0) * 1000
+                    val trackDurationMs =
+                        (playerUiState.value.nowPlayingTrack?.duration ?: 0) * 1000
                     val positionInMs = (trackDurationMs * toValue).toLong()
                     val seekPosition = positionInMs.coerceIn(0, trackDurationMs.toLong())
 
@@ -365,8 +477,7 @@ class MediaControllerViewModel : ViewModel() {
     fun onQueueEvent(event: QueueEvent) {
         when (event) {
             is QueueEvent.GetQueueFromDB -> {
-                // TODO: Fetch Queue from Room
-                // getQueueFromDB()
+                initQueue()
             }
 
             is QueueEvent.RecreateQueue -> {
@@ -410,18 +521,32 @@ class MediaControllerViewModel : ViewModel() {
                     shuffledQueue.add(event.index, eventTrack)
                     val mediaItem = createMediaItem(event.index, eventTrack)
                     mediaController?.addMediaItem(event.index, mediaItem)
+
+                    updateQueueInDatabase(
+                        queue = shuffledQueue,
+                        playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
+                    )
                 } else {
                     workingQueue.add(event.index, eventTrack)
                     val mediaItem = createMediaItem(event.index, eventTrack)
                     mediaController?.addMediaItem(event.index, mediaItem)
+
+                    updateQueueInDatabase(
+                        queue = workingQueue,
+                        playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
+                    )
                 }
             }
 
             is QueueEvent.ClearQueue -> {
-                workingQueue.clear()
-                shuffledQueue.clear()
-                mediaController?.clearMediaItems()
-                trackToLog = null
+                viewModelScope.launch {
+                    queueRepository.clearQueue()
+
+                    workingQueue.clear()
+                    shuffledQueue.clear()
+                    mediaController?.clearMediaItems()
+                    trackToLog = null
+                }
             }
         }
     }
@@ -491,16 +616,6 @@ class MediaControllerViewModel : ViewModel() {
                 playbackState = PlaybackState.ERROR,
                 isBuffering = false
             )
-        }
-
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            val state = if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED
-            // Prevent play/pause UI state from flipping when buffering
-            if (mediaController?.playbackState != Player.STATE_BUFFERING) {
-                playerUiState.value = playerUiState.value.copy(
-                    playbackState = state
-                )
-            }
         }
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
