@@ -22,6 +22,7 @@ include(":app")
 
 // Core Modules
 include(":core")
+include(":database")
 include(":network")
 include(":uicomponent")
 

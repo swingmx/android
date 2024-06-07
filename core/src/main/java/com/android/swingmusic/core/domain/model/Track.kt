@@ -2,7 +2,7 @@ package com.android.swingmusic.core.domain.model
 
 
 data class Track(
-    val album: String?,
+    val album: String,
     val albumTrackArtists: List<TrackArtist>,
     val albumHash: String,
     val artistHashes: String,

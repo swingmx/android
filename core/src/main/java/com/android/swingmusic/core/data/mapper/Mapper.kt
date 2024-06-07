@@ -53,7 +53,7 @@ object Map {
 
     private fun TrackDto.toTrack(): Track {
         return Track(
-            album = album,
+            album = album ?: "",
             albumTrackArtists = albumTrackArtistDtos?.map { it.toArtist() } ?: emptyList(),
             albumHash = albumHash ?: "",
             artistHashes = artistHashes ?: "",
