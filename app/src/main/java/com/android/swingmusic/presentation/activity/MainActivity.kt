@@ -14,6 +14,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.android.swingmusic.folder.presentation.screen.FoldersAndTracksScreen
 import com.android.swingmusic.player.presentation.compose.MiniPlayer
+import com.android.swingmusic.player.presentation.compose.NowPlayingScreen
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.service.MediaSessionManager
 import com.android.swingmusic.service.PlaybackService
@@ -81,7 +82,7 @@ class MainActivity : ComponentActivity() {
                         // For testing purposes ONLY
                          FoldersAndTracksScreen()
                         // ArtistsScreen()
-                        // NowPlayingScreen()
+                       // NowPlayingScreen()
                         // UpNextQueueScreen()
                     }
                 }

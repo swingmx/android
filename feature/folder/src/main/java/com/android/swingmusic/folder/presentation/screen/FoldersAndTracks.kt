@@ -40,6 +40,7 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
+import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.presentation.component.FolderItem
@@ -315,6 +316,7 @@ fun FoldersAndTracksScreen(
         },
         onRetry = { event ->
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
+            mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnRetry)
         },
         onClickFolder = { folder ->
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
