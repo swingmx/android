@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -51,6 +53,7 @@ import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import kotlin.math.roundToInt
 
 @Composable
 private fun MiniPlayer(
@@ -96,7 +99,6 @@ private fun MiniPlayer(
                             swipeDistance += dragAmount
                         }
                     }
-                    //.offset { IntOffset(swipeDistance.roundToInt(), 0) }
                     .clickable(
                         interactionSource = interactions,
                         indication = null
@@ -108,7 +110,9 @@ private fun MiniPlayer(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(0.8F)
-                        .padding(8.dp),
+                        .padding(8.dp)
+                        // div/3 the offset to kinda slow down the displacement
+                        .offset { IntOffset(swipeDistance.roundToInt() / 3, y = 0) },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
@@ -128,14 +132,20 @@ private fun MiniPlayer(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
+                    /* AnimatedContent(
+                         targetState = (swipeDistance.toInt() != 0), label = "anim",
+                     ) {*/
                     Text(
                         text = trackTitle,
                         maxLines = 1,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
+                        color = if ((swipeDistance.toInt() != 0))
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = .25F) else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
                     )
+                    //   }
                 }
 
                 // Player State Indicator
@@ -203,7 +213,7 @@ fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel())
             isBuffering = playerUiState.isBuffering,
             playbackProgress = playerUiState.seekPosition,
             onClickPlayerItem = {
-// TODO: Open FullScreen player in a full screen bottom sheet
+                    // TODO: Open FullScreen player in a full screen bottom sheet
             },
             onTogglePlaybackState = {
                 mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
