@@ -62,13 +62,15 @@ fun TrackArtistEntity.toModel(): TrackArtist {
 fun LastPlayedTrack.toEntity(): LastPlayedTrackEntity {
     return LastPlayedTrackEntity(
         trackHash = this.trackHash,
-        indexInQueue = this.indexInQueue
+        indexInQueue = this.indexInQueue,
+        lastPlayPositionMs = lastPlayPositionMs
     )
 }
 
 fun LastPlayedTrackEntity.toModel(): LastPlayedTrack {
     return LastPlayedTrack(
         trackHash = this.trackHash,
-        indexInQueue = this.indexInQueue
+        indexInQueue = this.indexInQueue,
+        lastPlayPositionMs = this.lastPlayPositionMs
     )
 }
