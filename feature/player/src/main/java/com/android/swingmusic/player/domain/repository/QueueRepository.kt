@@ -10,7 +10,7 @@ interface QueueRepository {
 
     suspend fun clearQueue()
 
-    suspend fun updateLastPlayedTrack(trackHash: String, indexInQueue: Int)
+    suspend fun updateLastPlayedTrack(trackHash: String, indexInQueue: Int, lastPlayPositionMs: Long)
 
     suspend fun getLastPlayedTrack(): LastPlayedTrack?
 }
