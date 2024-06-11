@@ -3,6 +3,7 @@ package com.android.swingmusic.player.presentation.compose
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,6 +49,7 @@ import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 
@@ -56,7 +58,6 @@ private fun UpNextQueue(
     playingTrackIndex: Int,
     playbackState: PlaybackState,
     queue: List<Track>,
-    onClickUpNextTrackItem: () -> Unit,
     onClickQueueItem: (index: Int) -> Unit
 ) {
     if (queue.isEmpty()) {
@@ -69,7 +70,7 @@ private fun UpNextQueue(
                             bottom = 16.dp,
                             start = 16.dp,
                         ),
-                        text = "Up Next",
+                        text = "Now Playing",
                         style = MaterialTheme.typography.headlineMedium
                     )
 
@@ -102,13 +103,7 @@ private fun UpNextQueue(
         return
     }
 
-    val nextTrackIndex = when {
-        playingTrackIndex == queue.lastIndex -> 0
-        playingTrackIndex > queue.lastIndex -> 0
-        playingTrackIndex < 0 -> 0
-        else -> playingTrackIndex + 1
-    }
-    val upNextTrack = queue[nextTrackIndex]
+    val playingTrack = queue[playingTrackIndex]
     val lazyColumnState = rememberLazyListState()
 
     LaunchedEffect(key1 = true) {
@@ -116,7 +111,7 @@ private fun UpNextQueue(
             lazyColumnState.animateScrollToItem(playingTrackIndex)
     }
 
-    SwingMusicTheme(navBarColor = MaterialTheme.colorScheme.inverseSurface) {
+    SwingMusicTheme(navBarColor = MaterialTheme.colorScheme.inverseOnSurface) {
         Scaffold(
             topBar = {
                 Text(
@@ -125,27 +120,22 @@ private fun UpNextQueue(
                         bottom = 16.dp,
                         start = 16.dp,
                     ),
-                    text = "Up Next",
+                    text = "Now Playing",
                     style = MaterialTheme.typography.headlineMedium
                 )
             }
         ) { paddingValues ->
-            // UpNext Track
+            // Now Playing Track
             Box(
                 modifier = Modifier
                     .padding(paddingValues)
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(12.dp)
                     .fillMaxWidth()
-                    /*.border(
-                        width = (0.4).dp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        shape = RoundedCornerShape(16.dp)
-                    )*/
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.inverseOnSurface)
                     .clickable {
-                        onClickUpNextTrackItem()
+                        onClickQueueItem(playingTrackIndex)
                     }
                     .padding(
                         start = 4.dp,
@@ -156,82 +146,80 @@ private fun UpNextQueue(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
-                    modifier = Modifier.padding(
-                        //  start = 12.dp
-                        start = 8.dp
-                    ),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data("$BASE_URL/img/t/${upNextTrack.image}")
-                            .crossfade(true)
-                            .build(),
-                        placeholder = painterResource(R.drawable.audio_fallback),
-                        fallback = painterResource(R.drawable.audio_fallback),
-                        error = painterResource(R.drawable.audio_fallback),
-                        contentDescription = "Track Image",
-                        contentScale = ContentScale.Crop,
+                    Row(
                         modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                    )
-
-                    Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                        Text(
-                            text = upNextTrack.title,
-                            modifier = Modifier.sizeIn(maxWidth = 300.dp),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            .padding(start = 8.dp)
+                            .fillMaxWidth(0.8F),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data("$BASE_URL/img/t/${playingTrack.image}")
+                                .crossfade(true)
+                                .build(),
+                            placeholder = painterResource(R.drawable.audio_fallback),
+                            fallback = painterResource(R.drawable.audio_fallback),
+                            error = painterResource(R.drawable.audio_fallback),
+                            contentDescription = "Track Image",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(6.dp))
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            var artists = ""
-
-                            upNextTrack.trackArtists.forEachIndexed { index, trackArtist ->
-                                artists += trackArtist.name
-
-                                if (upNextTrack.trackArtists.lastIndex != index) {
-                                    artists += ", "
-                                }
-                            }
-
+                        Column(modifier = Modifier.padding(horizontal = 12.dp)) {
                             Text(
-                                text = artists,
-                                modifier = Modifier.sizeIn(maxWidth = 185.dp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
-                                style = MaterialTheme.typography.bodySmall,
+                                text = playingTrack.title,
+                                modifier = Modifier.sizeIn(maxWidth = 300.dp),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val artists =
+                                    playingTrack.trackArtists.joinToString(", ") { it.name }
+
+                                Text(
+                                    text = artists,
+                                    modifier = Modifier.sizeIn(maxWidth = 185.dp),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+
+                    // Sound Bars
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .padding(end = 8.dp)
+                    ) {
+                        if (playbackState == PlaybackState.PLAYING) {
+                            SoundSignalBars(animate = true)
+                        } else {
+                            SoundSignalBars(animate = false)
                         }
                     }
                 }
 
-                /*Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .wrapContentSize()
-                        .background(MaterialTheme.colorScheme.inverseOnSurface)
-                        .padding(vertical = 4.dp, horizontal = 6.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = (nextTrackIndex + 1).toString(),
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }*/
             }
 
             LazyColumn(
                 state = lazyColumnState,
                 modifier = Modifier
                     .padding(paddingValues)
-                    .padding(top = 104.dp) // The exact height of UpNext Track item plus padding.
+                    .padding(top = 104.dp) // The exact height of now playing item plus padding.
             ) {
                 itemsIndexed(
                     items = queue,
@@ -241,7 +229,6 @@ private fun UpNextQueue(
                         track = track,
                         playbackState = playbackState,
                         isCurrentTrack = index == playingTrackIndex,
-                        trackQueueNumber = index + 1,
                         onClickTrackItem = {
                             onClickQueueItem(index)
                         },
@@ -265,19 +252,11 @@ fun UpNextQueueScreen(mediaControllerViewModel: MediaControllerViewModel = viewM
         playingTrackIndex = playerUiState.playingTrackIndex,
         playbackState = playerUiState.playbackState,
         queue = playerUiState.queue,
-        onClickUpNextTrackItem = {
-            if (playerUiState.playingTrackIndex == playerUiState.queue.lastIndex) {
-                mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(0))
-            } else {
-                mediaControllerViewModel.onQueueEvent(QueueEvent.PlaUpNextTrack)
-            }
-        },
         onClickQueueItem = { index: Int ->
             mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(index))
         }
     )
 }
-
 
 @Preview(
     uiMode = Configuration.UI_MODE_NIGHT_YES,
@@ -323,7 +302,6 @@ fun UpNextQueuePreview() {
             playingTrackIndex = 1,
             playbackState = PlaybackState.PLAYING,
             queue = queue,
-            onClickUpNextTrackItem = {},
             onClickQueueItem = { index: Int -> },
         )
     }
