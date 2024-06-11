@@ -44,6 +44,7 @@ import timber.log.Timber
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
+
 @HiltViewModel
 class MediaControllerViewModel @Inject constructor(
     private val queueRepository: QueueRepository
@@ -226,17 +227,18 @@ class MediaControllerViewModel @Inject constructor(
         val artworkUri = Uri.parse("$BASE_URL${""}img/t/${track.image}")
         val artists = track.trackArtists.joinToString(", ") { it.name }
 
+        val mediaMetadata = MediaMetadata.Builder()
+            .setMediaType(MEDIA_TYPE_MUSIC)
+            .setTitle(track.title)
+            .setArtworkUri(artworkUri)
+            .setArtist(artists)
+            .build()
+
         return MediaItem.Builder()
             .setUri(uri)
             .setMediaId(index.toString())
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setArtist(artists)
-                    .setTitle(track.title)
-                    .setArtworkUri(artworkUri)
-                    .setMediaType(MEDIA_TYPE_MUSIC)
-                    .build()
-            ).build()
+            .setMediaMetadata(mediaMetadata)
+            .build()
     }
 
     /** Prevent seekbar from snapping to end by resetting it to zero
@@ -384,24 +386,24 @@ class MediaControllerViewModel @Inject constructor(
                 }
 
                 is OnTogglePlayerState -> {
-                    val playerState = playerUiState.value.playbackState
-
-                    playerUiState.value = playerUiState.value.copy(
-                        playbackState = when (playerState) {
-                            PlaybackState.PLAYING -> {
-                                controller.pause()
-                                PlaybackState.PAUSED
-                            }
-
-                            PlaybackState.PAUSED -> {
-                                controller.play()
-                                PlaybackState.PAUSED
-                                // PlayerListener will set this to PLAYING as soon as buffering is over
-                            }
-
-                            else -> playerState
+                    when (playerUiState.value.playbackState) {
+                        PlaybackState.PLAYING -> {
+                            controller.pause()
+                            playerUiState.value = playerUiState.value.copy(
+                                playbackState = PlaybackState.PAUSED
+                            )
                         }
-                    )
+
+                        /** UI remain paused for a moment during which the
+                         *  player is buffering... [PlayerListener] will
+                         *  update this UI state when the playback resumes.*/
+                        PlaybackState.PAUSED -> {
+                            controller.play()
+                        }
+
+                        else -> {}
+                    }
+
                     when (controller.playbackState) {
                         Player.STATE_ENDED -> {
                             controller.prepare()
@@ -409,9 +411,7 @@ class MediaControllerViewModel @Inject constructor(
                             controller.play()
                         }
 
-                        else -> {
-
-                        }
+                        else -> {}
                     }
                 }
 
@@ -512,9 +512,10 @@ class MediaControllerViewModel @Inject constructor(
                 // TODO: Check source with when()
                 if (
                     event.source == playerUiState.value.nowPlayingTrack?.folder &&
-                    playerUiState.value.playbackState != PlaybackState.ERROR
+                    playerUiState.value.playbackState != PlaybackState.ERROR &&
+                    workingQueue == event.queue // Ensure working queue isn't shuffled
                 ) {
-                    // The queue hasn't changed -> seekTo this index
+                    // The queue hasn't changed or shuffled -> seekTo this index
                     mediaController?.prepare()
                     mediaController?.seekTo(event.clickedTrackIndex, 0L)
                     mediaController?.playWhenReady = true
