@@ -26,7 +26,7 @@ import kotlin.random.Random
 
 @Composable
 fun SoundSignalBars(animate: Boolean) {
-    val initialHeights = listOf(0.1F, 0.45F, 0.75F)
+    val initialHeights = listOf(0.15F, 0.45F, 0.75F)
     val barStates = remember {
         initialHeights.map { mutableFloatStateOf(it) }
     }

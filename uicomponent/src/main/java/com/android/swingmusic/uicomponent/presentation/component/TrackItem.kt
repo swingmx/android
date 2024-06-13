@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -110,7 +111,6 @@ fun TrackItem(
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data("${BASE_URL}/img/t/s/${track.image}")
-                            //.crossfade(true)
                             .build(),
                         placeholder = painterResource(R.drawable.audio_fallback),
                         fallback = painterResource(R.drawable.audio_fallback),
@@ -184,7 +184,7 @@ fun TrackItem(
         }
 
         trackQueueNumber?.let { number ->
-            /* Box(
+             Box(
                  modifier = Modifier
                      .clip(CircleShape)
                      .wrapContentSize()
@@ -194,9 +194,10 @@ fun TrackItem(
              ) {
                  Text(
                      text = number.toString(),
+                     color = MaterialTheme.colorScheme.onSurface,
                      style = MaterialTheme.typography.labelMedium
                  )
-             }*/
+             }
         }
     }
 }

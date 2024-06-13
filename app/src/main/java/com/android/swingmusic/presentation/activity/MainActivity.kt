@@ -12,8 +12,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.android.swingmusic.folder.presentation.screen.FoldersAndTracksScreen
 import com.android.swingmusic.player.presentation.compose.MiniPlayer
+import com.android.swingmusic.player.presentation.compose.UpNextQueueScreen
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.service.MediaSessionManager
 import com.android.swingmusic.service.PlaybackService
@@ -78,11 +78,14 @@ class MainActivity : ComponentActivity() {
                      * */
 
                     Surface(modifier = Modifier.padding(it)) {
-                        // For testing purposes ONLY
-                         FoldersAndTracksScreen()
+                        //For testing purposes ONLY
+                        //FoldersAndTracksScreen()
                         // ArtistsScreen()
                         // NowPlayingScreen()
-                        // UpNextQueueScreen()
+                        UpNextQueueScreen()
+
+                        // @Reserved("Custom")
+                        // G_UpNextQueueScreen()
                     }
                 }
             }
@@ -93,9 +96,6 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         if (this::controllerFuture.isInitialized) {
             mediaControllerViewModel.releaseMediaController(controllerFuture)
-
-            Timber.i("-------------------  Media Session Disconnected  ---------------------")
         }
-        Timber.i("-------------------------  App Destroyed  ----------------------------")
     }
 }

@@ -8,5 +8,6 @@ data class LastPlayedTrackEntity(
     @PrimaryKey(autoGenerate = false)
     val id: Int = 0,
     val trackHash: String,
-    val indexInQueue: Int
+    val indexInQueue: Int,
+    val lastPlayPositionMs: Long
 )

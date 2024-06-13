@@ -7,7 +7,6 @@ import com.android.swingmusic.database.data.mapper.toEntity
 import com.android.swingmusic.database.data.mapper.toModel
 import com.android.swingmusic.database.domain.model.LastPlayedTrack
 import com.android.swingmusic.player.domain.repository.QueueRepository
-import timber.log.Timber
 import javax.inject.Inject
 
 class DataQueueRepository @Inject constructor(
@@ -16,7 +15,6 @@ class DataQueueRepository @Inject constructor(
 ) : QueueRepository {
     override suspend fun insertTracks(track: List<Track>) {
         val trackEntities = track.map { it.toEntity() }
-        Timber.e("Entity Size: ${trackEntities.size}")
         queueDao.saveTracksInTransaction(trackEntities)
     }
 
@@ -28,9 +26,17 @@ class DataQueueRepository @Inject constructor(
         queueDao.clearQueue()
     }
 
-    override suspend fun updateLastPlayedTrack(trackHash: String, indexInQueue: Int) {
+    override suspend fun updateLastPlayedTrack(
+        trackHash: String,
+        indexInQueue: Int,
+        lastPlayPositionMs: Long
+    ) {
         lastPlayedTrackDao.insertLastPlayedTrack(
-            LastPlayedTrack(trackHash = trackHash, indexInQueue = indexInQueue).toEntity()
+            LastPlayedTrack(
+                trackHash = trackHash,
+                indexInQueue = indexInQueue,
+                lastPlayPositionMs = lastPlayPositionMs
+            ).toEntity()
         )
     }
 

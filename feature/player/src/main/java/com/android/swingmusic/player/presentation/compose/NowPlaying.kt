@@ -378,7 +378,7 @@ private fun NowPlaying(
                     )
 
                     Text(
-                        text = track.bitrate.toString(),
+                        text = "${ track.bitrate} Kbps",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }

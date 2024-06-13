@@ -41,6 +41,8 @@ class PlaybackService : MediaSessionService() {
         MediaSessionManager.sessionToken = mediaSession?.token
     }
 
+    // TODO: Save Played Track on Transition within this Service when app is not running but service is.
+
     // The user dismissed the app from the recent tasks
     override fun onTaskRemoved(rootIntent: Intent?) {
         val player = mediaSession?.player!!
@@ -51,6 +53,7 @@ class PlaybackService : MediaSessionService() {
             // Stop the service if not playing, continue playing in the background
             // otherwise.
             stopSelf()
+            // TODO: Remove Notification by force
         }
     }
 
