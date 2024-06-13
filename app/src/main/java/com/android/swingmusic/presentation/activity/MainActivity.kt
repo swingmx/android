@@ -12,7 +12,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.android.swingmusic.artist.presentation.screen.ArtistsScreen
+import com.android.swingmusic.folder.presentation.screen.FoldersAndTracksScreen
 import com.android.swingmusic.player.presentation.compose.MiniPlayer
+import com.android.swingmusic.player.presentation.compose.NowPlayingScreen
 import com.android.swingmusic.player.presentation.compose.UpNextQueueScreen
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.service.MediaSessionManager
@@ -70,7 +73,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
-                        MiniPlayer()
+                      MiniPlayer()
                     }
                 ) {
                     /** TODO: Add a bottom nav bar,
@@ -79,10 +82,10 @@ class MainActivity : ComponentActivity() {
 
                     Surface(modifier = Modifier.padding(it)) {
                         //For testing purposes ONLY
-                        //FoldersAndTracksScreen()
+                         // FoldersAndTracksScreen()
                         // ArtistsScreen()
-                        // NowPlayingScreen()
-                        UpNextQueueScreen()
+                         // NowPlayingScreen()
+                         UpNextQueueScreen()
 
                         // @Reserved("Custom")
                         // G_UpNextQueueScreen()

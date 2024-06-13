@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.android.swingmusic.player"
+    namespace = "com.android.swingmusic.auth"
     compileSdk = 34
 
     defaultConfig {
@@ -46,6 +46,11 @@ android {
 }
 
 dependencies {
+    implementation(project(":core"))
+    implementation(project(":database"))
+    implementation(project(":network"))
+    implementation(project(":uicomponent"))
+
     // Core
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
@@ -66,20 +71,6 @@ dependencies {
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
-
-    // Exo-Player
-    implementation ("androidx.media3:media3-exoplayer:1.3.1")
-    implementation ("androidx.media3:media3-session:1.3.1")
-
-    // Coil Image Loader
-    implementation("io.coil-kt:coil-compose:2.6.0")
-    implementation("io.coil-kt:coil-gif:2.6.0")
-
-    // Pagination
-    implementation("androidx.paging:paging-compose:3.3.0")
-
-    //Wavy Slider
-    implementation("com.github.galaxygoldfish:waveslider:v0.0.3")
 
     // Coroutines
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
