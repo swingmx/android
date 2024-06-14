@@ -1,1 +1,2 @@
-
+- name: Gradle Dependency Submission
+  uses: mikepenz/gradle-dependency-submission@v1.0.0
