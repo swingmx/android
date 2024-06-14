@@ -1,2 +1,10 @@
-- name: Gradle Dependency Submission
-  uses: mikepenz/gradle-dependency-submission@v1.0.0
+name: Gradle Dependency Submission
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  your_job_name:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mikepenz/gradle-dependency-submission@v1.0.0
