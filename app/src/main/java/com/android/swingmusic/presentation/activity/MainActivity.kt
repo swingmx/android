@@ -12,13 +12,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.android.swingmusic.artist.presentation.screen.ArtistsScreen
 import com.android.swingmusic.folder.presentation.screen.FoldersAndTracksScreen
 import com.android.swingmusic.player.presentation.compose.MiniPlayer
-import com.android.swingmusic.player.presentation.compose.NowPlayingScreen
-import com.android.swingmusic.player.presentation.compose.UpNextQueueScreen
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
-import com.android.swingmusic.service.MediaSessionManager
+import com.android.swingmusic.service.SessionTokenManager
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.google.common.util.concurrent.ListenableFuture
@@ -39,7 +36,7 @@ class MainActivity : ComponentActivity() {
             mediaControllerViewModel.getMediaController() == null ||
             (this::controllerFuture.isInitialized).not()
         ) {
-            val sessionToken = MediaSessionManager.sessionToken
+            val sessionToken = SessionTokenManager.sessionToken
             if (sessionToken != null) {
                 // Use the existing session token to build the MediaController
                 controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
@@ -51,9 +48,10 @@ class MainActivity : ComponentActivity() {
                 )
 
             } else {
-                // Create a new session if no existing token is found
+                // Create a new session token if no existing token is found
                 val newSessionToken =
                     SessionToken(this, ComponentName(this, PlaybackService::class.java))
+
                 controllerFuture = MediaController.Builder(this, newSessionToken).buildAsync()
                 controllerFuture.addListener(
                     {
@@ -73,7 +71,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
-                      MiniPlayer()
+                        MiniPlayer()
                     }
                 ) {
                     /** TODO: Add a bottom nav bar,
@@ -82,10 +80,10 @@ class MainActivity : ComponentActivity() {
 
                     Surface(modifier = Modifier.padding(it)) {
                         //For testing purposes ONLY
-                         // FoldersAndTracksScreen()
+                        FoldersAndTracksScreen()
                         // ArtistsScreen()
-                         // NowPlayingScreen()
-                         UpNextQueueScreen()
+                        // NowPlayingScreen()
+                        //UpNextQueueScreen()
 
                         // @Reserved("Custom")
                         // G_UpNextQueueScreen()
