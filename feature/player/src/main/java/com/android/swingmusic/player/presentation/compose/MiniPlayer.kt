@@ -36,7 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,13 +45,12 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.util.PlaybackState
-import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.util.createImageRequestWithAuth
 import kotlin.math.roundToInt
 
 @Composable
@@ -68,6 +66,8 @@ private fun MiniPlayer(
     onResumePlayBackFromError: () -> Unit,
     onSwipeLeft: () -> Unit, //  <<- |
     onSwipeRight: () -> Unit, // | ->>
+    baseUrl: String,
+    accessToken: String,
 ) {
     Surface {
         var swipeDistance by remember { mutableFloatStateOf(0F) }
@@ -119,10 +119,16 @@ private fun MiniPlayer(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(RoundedCornerShape(18)),
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data("$BASE_URL/img/t/s/${trackImage}")
+                        model =
+                        /*ImageRequest.Builder(LocalContext.current)
+                            .data("$baseUrl${""}img/thumbnail/small/${trackImage}")
                             .crossfade(true)
-                            .build(),
+                            .build(),*/
+                        createImageRequestWithAuth(
+                            imageUrl = "${baseUrl}img/thumbnail/small/${trackImage}",
+                            accessToken = accessToken,
+                            crossfade = true
+                        ),
                         placeholder = painterResource(R.drawable.audio_fallback),
                         fallback = painterResource(R.drawable.audio_fallback),
                         error = painterResource(R.drawable.audio_fallback),
@@ -204,6 +210,10 @@ private fun MiniPlayer(
 @Composable
 fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel()) {
     val playerUiState by remember { mediaControllerViewModel.playerUiState }
+
+    val baseUrl by remember { mediaControllerViewModel.baseUrl() }
+    val accessToken by remember { mediaControllerViewModel.accessToken() }
+
     playerUiState.nowPlayingTrack?.let { track ->
         MiniPlayer(
             trackHash = track.trackHash,
@@ -212,8 +222,10 @@ fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel())
             playbackState = playerUiState.playbackState,
             isBuffering = playerUiState.isBuffering,
             playbackProgress = playerUiState.seekPosition,
+            baseUrl = baseUrl ?: "",
+            accessToken = accessToken ?: "",
             onClickPlayerItem = {
-                    // TODO: Open FullScreen player in a full screen bottom sheet
+                // TODO: Open FullScreen player in a full screen bottom sheet
             },
             onTogglePlaybackState = {
                 mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
@@ -242,6 +254,8 @@ fun MiniPlayerPreview() {
         navBarColor = Color.Red
     ) {
         MiniPlayer(
+            baseUrl = "",
+            accessToken = "",
             trackHash = "abc123",
             trackTitle = "Track title is too large to be displayed",
             trackImage = "https://image",
@@ -251,7 +265,8 @@ fun MiniPlayerPreview() {
             onClickPlayerItem = {},
             onTogglePlaybackState = {},
             onResumePlayBackFromError = {},
-            {}
-        ) {}
+            onSwipeLeft = {},
+            onSwipeRight = {}
+        )
     }
 }
