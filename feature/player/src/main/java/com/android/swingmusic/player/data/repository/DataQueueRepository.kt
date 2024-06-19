@@ -1,6 +1,7 @@
 package com.android.swingmusic.player.data.repository
 
 import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.database.data.dao.BaseUrlDao
 import com.android.swingmusic.database.data.dao.LastPlayedTrackDao
 import com.android.swingmusic.database.data.dao.QueueDao
 import com.android.swingmusic.database.data.mapper.toEntity
@@ -13,9 +14,10 @@ class DataQueueRepository @Inject constructor(
     private val queueDao: QueueDao,
     private val lastPlayedTrackDao: LastPlayedTrackDao
 ) : QueueRepository {
-    override suspend fun insertTracks(track: List<Track>) {
+
+    override suspend fun insertQueue(track: List<Track>) {
         val trackEntities = track.map { it.toEntity() }
-        queueDao.saveTracksInTransaction(trackEntities)
+        queueDao.insertQueueInTransaction(trackEntities)
     }
 
     override suspend fun getAllTracks(): List<Track> {
