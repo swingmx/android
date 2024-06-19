@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
@@ -46,18 +45,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
-import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.state.PlayerUiState
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.util.createImageRequestWithAuth
 import com.galaxygoldfish.waveslider.PillThumb
 import com.galaxygoldfish.waveslider.WaveSlider
 import com.galaxygoldfish.waveslider.WaveSliderDefaults
@@ -73,6 +71,8 @@ private fun NowPlaying(
     isBuffering: Boolean,
     repeatMode: RepeatMode,
     shuffleMode: ShuffleMode,
+    baseUrl: String,
+    accessToken: String,
     onClickArtist: (artistHash: String) -> Unit,
     onToggleRepeatMode: (RepeatMode) -> Unit,
     onClickPrev: () -> Unit,
@@ -138,10 +138,16 @@ private fun NowPlaying(
                         .fillMaxWidth()
                         .height(360.dp)
                         .clip(RoundedCornerShape(7)),
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data("$BASE_URL/img/t/${track.image}")
+                    model =
+                    /*ImageRequest.Builder(LocalContext.current)
+                        .data("${baseUrl}img/thumbnail/${track.image}")
                         .crossfade(true)
-                        .build(),
+                        .build(),*/
+                    createImageRequestWithAuth(
+                        imageUrl = "${baseUrl}img/thumbnail/${track.image}",
+                        accessToken = accessToken,
+                        crossfade = true
+                    ),
                     placeholder = painterResource(R.drawable.audio_fallback),
                     fallback = painterResource(R.drawable.audio_fallback),
                     error = painterResource(R.drawable.audio_fallback),
@@ -378,7 +384,7 @@ private fun NowPlaying(
                     )
 
                     Text(
-                        text = "${ track.bitrate} Kbps",
+                        text = "${track.bitrate} Kbps",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -457,6 +463,9 @@ fun NowPlayingScreen(
 ) {
     val playerUiState: PlayerUiState by mediaControllerViewModel.playerUiState
 
+    val baseUrl by remember { mediaControllerViewModel.baseUrl() }
+    val accessToken by remember { mediaControllerViewModel.accessToken() }
+
     SwingMusicTheme(
         navBarColor = if (playerUiState.nowPlayingTrack == null)
             MaterialTheme.colorScheme.surface else
@@ -471,6 +480,8 @@ fun NowPlayingScreen(
             repeatMode = playerUiState.repeatMode,
             shuffleMode = playerUiState.shuffleMode,
             isBuffering = playerUiState.isBuffering,
+            baseUrl = baseUrl ?: "",
+            accessToken = accessToken ?: "",
             onClickArtist = {},
             onToggleRepeatMode = {
                 mediaControllerViewModel.onPlayerUiEvent(
@@ -592,6 +603,8 @@ fun FullPlayerPreview() {
             isBuffering = true,
             repeatMode = RepeatMode.REPEAT_OFF,
             shuffleMode = ShuffleMode.SHUFFLE_OFF,
+            baseUrl = "",
+            accessToken = "",
             onClickArtist = {},
             onToggleRepeatMode = {},
             onResumePlayBackFromError = {},
