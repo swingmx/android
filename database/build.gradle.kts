@@ -34,6 +34,7 @@ android {
 }
 
 dependencies {
+    // Local Modules
     implementation(project(":core"))
 
     // Gson
