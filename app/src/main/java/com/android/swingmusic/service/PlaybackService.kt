@@ -9,19 +9,47 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.LoadControl
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.android.swingmusic.auth.data.tokenmanager.AuthTokenManager
+import com.android.swingmusic.auth.domain.repository.AuthRepository
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+
 
 @AndroidEntryPoint
 class PlaybackService : MediaSessionService() {
+    @Inject
+    lateinit var authRepository: AuthRepository
     private var mediaSession: MediaSession? = null
 
     @OptIn(UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
+
+        val loadControlBuilder = DefaultLoadControl.Builder()
+        loadControlBuilder.setBufferDurationsMs(
+            DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+            DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
+            DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+            DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+        ).setBackBuffer(30_000, false)
+        val loadControl: LoadControl = loadControlBuilder.build()
+
+        val accessToken = authRepository.getAccessToken() ?: ""
+        val dataSourceFactory = CustomDataSourceFactory(this@PlaybackService, accessToken)
+        val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+        // val mediaSource = DefaultMediaSourceFactory(dataSourceFactory)
+        // val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
+        // val mediaSource = DashMediaSource.Factory(dataSourceFactory)
+
         val player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(mediaSource)
+            .setLoadControl(loadControl)
             .setAudioAttributes(AudioAttributes.DEFAULT, true)
             .setDeviceVolumeControlEnabled(true)
             .setHandleAudioBecomingNoisy(true)
@@ -29,7 +57,7 @@ class PlaybackService : MediaSessionService() {
             .build()
 
         val intent = packageManager.getLaunchIntentForPackage(packageName)
-        intent?.putExtra("DESTINATION", "NOW_PLAYING")
+        intent?.putExtra("DESTINATION", "NOW_PLAYING_SCREEN")
         val pendingIntent =
             PendingIntent.getActivity(this, 0, intent, FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
 
@@ -38,7 +66,7 @@ class PlaybackService : MediaSessionService() {
             .build()
 
         // Store the session token
-        MediaSessionManager.sessionToken = mediaSession?.token
+        SessionTokenManager.sessionToken = mediaSession?.token
     }
 
     // TODO: Save Played Track on Transition within this Service when app is not running but service is.
@@ -53,7 +81,6 @@ class PlaybackService : MediaSessionService() {
             // Stop the service if not playing, continue playing in the background
             // otherwise.
             stopSelf()
-            // TODO: Remove Notification by force
         }
     }
 
@@ -64,10 +91,14 @@ class PlaybackService : MediaSessionService() {
     override fun onDestroy() {
         mediaSession?.run {
             player.release()
-            release()
+            this.release()
             mediaSession = null
         }
-        MediaSessionManager.sessionToken = null // Clear the session token
+        // Clear Tokens when they're not needed anymore
+        SessionTokenManager.sessionToken = null
+        AuthTokenManager.accessToken = null
+        AuthTokenManager.refreshToken = null
+
         super.onDestroy()
     }
 }
