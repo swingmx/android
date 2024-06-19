@@ -48,13 +48,13 @@ import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
-import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.util.Reserved
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.util.createImageRequestWithAuth
 
 /**
  * THIS FILE IS RESERVED FOR [ERIC]
@@ -66,6 +66,8 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 private fun G_UpNextQueue(
     playingTrackIndex: Int,
     playbackState: PlaybackState,
+    baseUrl: String,
+    accessToken: String,
     queue: List<Track>,
     onClickUpNextTrackItem: () -> Unit,
     onClickQueueItem: (index: Int) -> Unit
@@ -172,10 +174,11 @@ private fun G_UpNextQueue(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data("$BASE_URL/img/t/${upNextTrack.image}")
-                            .crossfade(true)
-                            .build(),
+                        model = createImageRequestWithAuth(
+                            imageUrl = "${baseUrl}img/thumbnail/small/${upNextTrack.image}",
+                            accessToken = accessToken,
+                            crossfade = true
+                        ),
                         placeholder = painterResource(R.drawable.audio_fallback),
                         fallback = painterResource(R.drawable.audio_fallback),
                         error = painterResource(R.drawable.audio_fallback),
@@ -245,6 +248,8 @@ private fun G_UpNextQueue(
                         playbackState = playbackState,
                         isCurrentTrack = index == playingTrackIndex,
                         trackQueueNumber = index + 1,
+                        baseUrl = baseUrl,
+                        accessToken = accessToken,
                         onClickTrackItem = {
                             onClickQueueItem(index)
                         },
@@ -264,10 +269,15 @@ private fun G_UpNextQueue(
 fun G_UpNextQueueScreen(mediaControllerViewModel: MediaControllerViewModel = viewModel()) {
     val playerUiState by remember { mediaControllerViewModel.playerUiState }
 
+    val baseUrl by remember { mediaControllerViewModel.baseUrl() }
+    val accessToken by remember { mediaControllerViewModel.accessToken() }
+
     G_UpNextQueue(
         playingTrackIndex = playerUiState.playingTrackIndex,
         playbackState = playerUiState.playbackState,
         queue = playerUiState.queue,
+        baseUrl = baseUrl ?: "",
+        accessToken = accessToken ?: "",
         onClickUpNextTrackItem = {
             if (playerUiState.playingTrackIndex == playerUiState.queue.lastIndex) {
                 mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(0))
@@ -326,6 +336,8 @@ fun UpNextQueuePreview() {
             playingTrackIndex = 1,
             playbackState = PlaybackState.PLAYING,
             queue = queue,
+            baseUrl = "",
+            accessToken = "",
             onClickUpNextTrackItem = {},
             onClickQueueItem = { index: Int -> },
         )
