@@ -53,6 +53,7 @@ android {
 
 dependencies {
     // Local Modules
+    implementation(project(":auth"))
     implementation(project(":core"))
     implementation(project(":network"))
     implementation(project(":feature:folder")) // TODO: Remove this after impl navigation
@@ -100,9 +101,12 @@ dependencies {
     // V2 only: for bottom sheet destination support, also add
     // implementation("io.github.raamcosta.compose-destinations:bottom-sheet:1.9.63")
 
-    // Exo-Player
+    // Media3-Player
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-session:1.3.1")
+
+    implementation("androidx.media3:media3-exoplayer-hls:1.3.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
 
     // Coil Image Loader
     implementation("io.coil-kt:coil-compose:2.6.0")
