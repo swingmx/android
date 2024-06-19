@@ -1,16 +1,18 @@
 package com.android.swingmusic.network.data.di
 
+import com.android.swingmusic.database.data.dao.BaseUrlDao
 import com.android.swingmusic.network.data.api.service.ApiService
-import com.android.swingmusic.network.data.util.BASE_URL
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.create
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -32,12 +34,18 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun providesApiService(httpClient: OkHttpClient): ApiService {
+    fun providesApiService(okHttpClient: OkHttpClient, baseUrlDao: BaseUrlDao): ApiService {
+        // Use a runBlocking block to fetch the URL synchronously
+        val baseUrl = runBlocking(Dispatchers.IO) {
+            baseUrlDao.getBaseUrl()?.url ?: "https://music.mungaist.com/"
+        }
+        Timber.e("BASE URL: $baseUrl")
+
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
-            .client(httpClient)
+            .client(okHttpClient)
             .build()
-            .create()
+            .create(ApiService::class.java)
     }
 }
