@@ -46,6 +46,12 @@ android {
 }
 
 dependencies {
+    implementation(project(":auth"))
+    implementation(project(":core"))
+    implementation(project(":database"))
+    implementation(project(":network"))
+    implementation(project(":uicomponent"))
+
     // Core
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
@@ -68,8 +74,8 @@ dependencies {
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
     // Exo-Player
-    implementation ("androidx.media3:media3-exoplayer:1.3.1")
-    implementation ("androidx.media3:media3-session:1.3.1")
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-session:1.3.1")
 
     // Coil Image Loader
     implementation("io.coil-kt:coil-compose:2.6.0")
@@ -82,8 +88,8 @@ dependencies {
     implementation("com.github.galaxygoldfish:waveslider:v0.0.3")
 
     // Coroutines
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
-    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
 }
