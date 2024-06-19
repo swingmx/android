@@ -46,10 +46,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":core"))
+    // Local Modules
     implementation(project(":database"))
-    implementation(project(":network"))
-    implementation(project(":uicomponent"))
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")
@@ -61,9 +59,20 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:1.6.7")
     implementation("androidx.compose.material3:material3")
 
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.5.0")
+
     // Hilt DI
     implementation("com.google.dagger:hilt-android:2.50")
     ksp("com.google.dagger:hilt-android-compiler:2.50")
+
+    //Prefs Datastore
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // Android Crypto Security
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
@@ -73,8 +82,8 @@ dependencies {
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
     // Coroutines
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
-    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
 }
