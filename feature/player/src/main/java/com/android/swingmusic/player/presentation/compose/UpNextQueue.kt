@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,22 +40,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
-import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.util.createImageRequestWithAuth
 
 @Composable
 private fun UpNextQueue(
     playingTrackIndex: Int,
     playbackState: PlaybackState,
+    baseUrl: String,
+    accessToken: String,
     queue: List<Track>,
     onClickQueueItem: (index: Int) -> Unit
 ) {
@@ -157,10 +157,14 @@ private fun UpNextQueue(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
+                            model = /*ImageRequest.Builder(LocalContext.current)
                                 .data("$BASE_URL/img/t/${playingTrack.image}")
                                 .crossfade(true)
-                                .build(),
+                                .build(),*/
+                            createImageRequestWithAuth(
+                                imageUrl = "${baseUrl}img/thumbnail/small/${playingTrack.image}",
+                                accessToken = accessToken
+                            ),
                             placeholder = painterResource(R.drawable.audio_fallback),
                             fallback = painterResource(R.drawable.audio_fallback),
                             error = painterResource(R.drawable.audio_fallback),
@@ -229,6 +233,8 @@ private fun UpNextQueue(
                         track = track,
                         playbackState = playbackState,
                         isCurrentTrack = index == playingTrackIndex,
+                        baseUrl = baseUrl,
+                        accessToken = accessToken,
                         onClickTrackItem = {
                             onClickQueueItem(index)
                         },
@@ -248,10 +254,15 @@ private fun UpNextQueue(
 fun UpNextQueueScreen(mediaControllerViewModel: MediaControllerViewModel = viewModel()) {
     val playerUiState by remember { mediaControllerViewModel.playerUiState }
 
+    val baseUrl by remember { mediaControllerViewModel.baseUrl() }
+    val accessToken by remember { mediaControllerViewModel.accessToken() }
+
     UpNextQueue(
         playingTrackIndex = playerUiState.playingTrackIndex,
         playbackState = playerUiState.playbackState,
         queue = playerUiState.queue,
+        baseUrl = baseUrl ?: "",
+        accessToken = accessToken ?: "",
         onClickQueueItem = { index: Int ->
             mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(index))
         }
@@ -302,6 +313,8 @@ fun UpNextQueuePreview() {
             playingTrackIndex = 1,
             playbackState = PlaybackState.PLAYING,
             queue = queue,
+            baseUrl = "",
+            accessToken = "",
             onClickQueueItem = { index: Int -> },
         )
     }

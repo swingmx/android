@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
 import com.android.swingmusic.artist.presentation.event.ArtistUiEvent
 import com.android.swingmusic.artist.presentation.state.ArtistsUiState
+import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
@@ -17,8 +18,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ArtistsViewModel @Inject constructor(
-    private val networkRepository: NetworkRepository
+    private val networkRepository: NetworkRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
+    private var baseUrl: MutableState<String?> = mutableStateOf(null)
+    private var accessToken: MutableState<String?> = mutableStateOf(null)
 
     val artistsUiState: MutableState<ArtistsUiState> = mutableStateOf(ArtistsUiState())
 
@@ -50,6 +54,22 @@ class ArtistsViewModel @Inject constructor(
                 ).cachedIn(viewModelScope)
             )
         }
+    }
+
+    init {
+        getBaseUrl()
+        getAccessToken()
+    }
+
+    fun baseUrl() = baseUrl
+    fun accessToken() = accessToken
+
+    private fun getBaseUrl() {
+        baseUrl.value = authRepository.getBaseUrl()
+    }
+
+    private fun getAccessToken() {
+        accessToken.value = authRepository.getAccessToken()
     }
 
     init {

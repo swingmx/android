@@ -2,10 +2,20 @@ package com.android.swingmusic.database.data.mapper
 
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
+import com.android.swingmusic.database.data.entity.BaseUrlEntity
 import com.android.swingmusic.database.data.entity.LastPlayedTrackEntity
-import com.android.swingmusic.database.data.entity.TrackArtistEntity
 import com.android.swingmusic.database.data.entity.QueueEntity
+import com.android.swingmusic.database.data.entity.TrackArtistEntity
+import com.android.swingmusic.database.domain.model.BaseUrl
 import com.android.swingmusic.database.domain.model.LastPlayedTrack
+
+fun BaseUrl.toEntity(): BaseUrlEntity {
+    return BaseUrlEntity(url = url)
+}
+
+fun BaseUrlEntity.toModel(): BaseUrl {
+    return BaseUrl(id = id, url = url)
+}
 
 fun Track.toEntity(): QueueEntity {
     return QueueEntity(

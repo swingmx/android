@@ -67,7 +67,9 @@ private fun Artists(
     sortByPairs: List<Pair<SortBy, String>>,
     onUpdateGridCount: (Int) -> Unit,
     onSortBy: (Pair<SortBy, String>) -> Unit,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    baseUrl: String,
+    accessToken: String
 ) {
     val gridState = rememberLazyGridState()
     val artistCount = when (val result = artistsUiState.totalArtists) {
@@ -218,6 +220,8 @@ private fun Artists(
                         ArtistItem(
                             modifier = Modifier.fillMaxSize(),
                             artist = artist,
+                            baseUrl = baseUrl,
+                            accessToken = accessToken,
                             onClick = {
 
                             }
@@ -288,11 +292,16 @@ private fun Artists(
  * This Composable is heavily coupled with ArtistsViewModel. [Artists] comp has no ties.
  **/
 @Composable
-fun ArtistsScreen(viewModel: ArtistsViewModel = viewModel()) {
+fun ArtistsScreen(
+    artistsViewModel: ArtistsViewModel = viewModel()
+) {
+    val pagingArtists =
+        artistsViewModel.artistsUiState.value.pagingArtists.collectAsLazyPagingItems()
+    val artistsUiState by remember { artistsViewModel.artistsUiState }
+    val sortByPairs by remember { derivedStateOf { artistsViewModel.sortByEntries.toList() } }
 
-    val pagingArtists = viewModel.artistsUiState.value.pagingArtists.collectAsLazyPagingItems()
-    val artistsUiState by remember { viewModel.artistsUiState }
-    val sortByPairs by remember { derivedStateOf { viewModel.sortByEntries.toList() } }
+    val baseUrl by remember { artistsViewModel.baseUrl() }
+    val accessToken by remember { artistsViewModel.accessToken() }
 
     SwingMusicTheme(
         navBarColor = MaterialTheme.colorScheme.surface
@@ -301,14 +310,16 @@ fun ArtistsScreen(viewModel: ArtistsViewModel = viewModel()) {
             pagingArtists = pagingArtists,
             artistsUiState = artistsUiState,
             sortByPairs = sortByPairs,
+            baseUrl = baseUrl ?: "",
+            accessToken = accessToken ?: "",
             onUpdateGridCount = { count ->
-                viewModel.onArtistUiEvent(ArtistUiEvent.OnUpdateGridCount(count))
+                artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnUpdateGridCount(count))
             },
             onSortBy = { pair ->
-                viewModel.onArtistUiEvent(ArtistUiEvent.OnSortBy(pair))
+                artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnSortBy(pair))
             },
             onRetry = {
-                viewModel.onArtistUiEvent(ArtistUiEvent.OnRetry)
+                artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnRetry)
             }
         )
     }

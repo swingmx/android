@@ -3,6 +3,8 @@ package com.android.swingmusic.network.data.repository
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.android.swingmusic.auth.data.tokenmanager.AuthTokenManager
+import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toAllArtists
 import com.android.swingmusic.core.data.mapper.Map.toFolderAndTracks
 import com.android.swingmusic.core.data.mapper.Map.toFoldersAndTracksRequestDto
@@ -20,26 +22,28 @@ import javax.inject.Inject
 
 class DataNetworkRepository @Inject constructor(
     private val apiService: ApiService,
+    private val authRepository: AuthRepository
 ) : NetworkRepository {
     override suspend fun getFoldersAndTracks(requestData: FoldersAndTracksRequest): Resource<FoldersAndTracks> {
         return try {
             Resource.Loading<FoldersAndTracks>()
-            val token = ""
+
+            val accessToken = AuthTokenManager.accessToken ?: authRepository.getAccessToken()
             val foldersAndTracksDto =
                 apiService.getFoldersAndTracks(
                     requestData = requestData.toFoldersAndTracksRequestDto(),
-                    bearerToken = "Bearer $token"
+                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
                 )
             Resource.Success(data = foldersAndTracksDto.toFolderAndTracks())
         } catch (e: IOException) {
             Resource.Error(
-                message = e.localizedMessage
+                message = e.message
                     ?: "Unable to fetch folders\nCheck your connection and try again!"
             )
 
         } catch (e: HttpException) {
             Resource.Error(
-                message = e.localizedMessage ?: "An unexpected error occurred!"
+                message = e.message ?: "An unexpected error occurred!"
             )
         }
     }

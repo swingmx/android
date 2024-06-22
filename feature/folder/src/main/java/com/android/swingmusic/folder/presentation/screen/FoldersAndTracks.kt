@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.swingmusic.core.domain.model.Folder
@@ -61,7 +62,9 @@ private fun FoldersAndTracks(
     onClickNavPath: (Folder) -> Unit,
     onRetry: (FolderUiEvent) -> Unit,
     onClickFolder: (Folder) -> Unit,
-    onClickTrackItem: (index: Int, queue: List<Track>) -> Unit
+    onClickTrackItem: (index: Int, queue: List<Track>) -> Unit,
+    baseUrl: String,
+    accessToken: String
 ) {
     SwingMusicTheme(
         navBarColor = if (currentTrackHash.isEmpty()) {
@@ -174,12 +177,13 @@ private fun FoldersAndTracks(
                                 ) {
                                     val capsFirst =
                                         foldersAndTracksState.errorMessage.replaceFirstChar {
-                                            if (it.isLowerCase()) it.titlecase(Locale.ROOT)
-                                            else it.toString()
+                                            it.titlecase(Locale.ROOT)
                                         }
 
                                     Text(
                                         text = capsFirst,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Center,
                                         style = MaterialTheme.typography.bodyLarge
                                     )
 
@@ -232,7 +236,9 @@ private fun FoldersAndTracks(
                                 },
                                 onClickMoreVert = {
                                     // TODO: Show context menu
-                                }
+                                },
+                                baseUrl = baseUrl,
+                                accessToken = accessToken
                             )
 
                             if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex) {
@@ -304,6 +310,9 @@ fun FoldersAndTracksScreen(
 
     val playerUiState by remember { mediaControllerViewModel.playerUiState }
 
+    val baseUrl by remember { mediaControllerViewModel.baseUrl() }
+    val accessToken by remember { mediaControllerViewModel.accessToken() }
+
     FoldersAndTracks(
         currentFolder = currentFolder,
         currentTrackHash = playerUiState.nowPlayingTrack?.trackHash ?: "",
@@ -329,7 +338,9 @@ fun FoldersAndTracksScreen(
                     queue = queue
                 )
             )
-        }
+        },
+        baseUrl = baseUrl ?: "",
+        accessToken = accessToken ?: ""
     )
 
     val overrideSystemBackNav = currentFolder.path != "\$home"

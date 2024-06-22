@@ -11,12 +11,13 @@ import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
+import com.android.swingmusic.auth.data.tokenmanager.AuthTokenManager
+import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
-import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.player.domain.repository.QueueRepository
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickLyricsIcon
@@ -36,8 +37,10 @@ import com.android.swingmusic.player.presentation.state.PlayerUiState
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
@@ -47,20 +50,59 @@ import kotlin.math.roundToInt
 
 @HiltViewModel
 class MediaControllerViewModel @Inject constructor(
-    private val queueRepository: QueueRepository
+    private val queueRepository: QueueRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
+    private var baseUrl: MutableState<String?> = mutableStateOf(null)
+    private var accessToken: MutableState<String?> = mutableStateOf(null)
+
     private val playerListener = PlayerListener()
     private var mediaController: MediaController? = null
     private var workingQueue: MutableList<Track> = mutableListOf()
     private var shuffledQueue: MutableList<Track> = mutableListOf()
     private var trackToLog: Track? = null
     private var queueSource: QueueSource = QueueSource.FOLDER // TODO: Use QueueSource enum class
-    private var durationPlayed: Long = 0L
+    private var durationPlayed: Long = 0L //TODO: Manage this within the Playback Service to improve accuracy
     private val playbackMutex = Mutex()
 
     val playerUiState: MutableState<PlayerUiState> = mutableStateOf(
         PlayerUiState(nowPlayingTrack = null, queue = emptyList())
     )
+
+    init {
+        saveSampleTokens()
+        getBaseUrl()
+        getAccessToken()
+    }
+
+    private fun saveSampleTokens() {
+        runBlocking(Dispatchers.IO) {
+            val accessToken = ""
+            AuthTokenManager.accessToken = accessToken
+
+            authRepository.storeAuthTokens(
+                accessToken = accessToken,
+                refreshToken = "test",
+            )
+        }
+    }
+
+    fun baseUrl() = baseUrl
+    fun accessToken() = accessToken
+
+    private fun getBaseUrl() {
+        runBlocking(Dispatchers.IO) {
+            baseUrl.value = authRepository.getBaseUrl() ?: "https://music.mungaist.com/"
+
+            Timber.e("BASE_URL ${baseUrl.value}")
+        }
+    }
+
+    private fun getAccessToken() {
+        accessToken.value = AuthTokenManager.accessToken ?: authRepository.getAccessToken()
+
+        Timber.e("ACCESS TOKEN -> ${accessToken.value}")
+    }
 
     fun getMediaController() = mediaController
     fun setMediaController(controller: MediaController) {
@@ -206,7 +248,7 @@ class MediaControllerViewModel @Inject constructor(
         viewModelScope.launch {
             if (queue.isEmpty()) return@launch
             try {
-                queueRepository.insertTracks(queue)
+                queueRepository.insertQueue(queue)
                 if (playingTrackIndex in queue.indices) {
                     saveLastPlayedTrack(
                         track = queue[playingTrackIndex],
@@ -219,12 +261,12 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
-    private fun createMediaItem(index: Int, track: Track): MediaItem {
-        val path = "$BASE_URL${""}file/${track.trackHash}?filepath=${track.filepath}"
-        val encodedPath = Uri.encode(path, "/:;?&=+$,@!*()^.<>_-")
+    private fun createMediaItem(id: Int, track: Track): MediaItem {
+        val path = "${baseUrl.value}file/${track.trackHash}/legacy?filepath=${track.filepath}"
+        val encodedPath = Uri.encode(path, "#/:;?&=+$,@!*()^.<>_-")
         val uri = Uri.parse(encodedPath)
 
-        val artworkUri = Uri.parse("$BASE_URL${""}img/t/${track.image}")
+        val artworkUri = Uri.parse("${baseUrl.value}img/thumbnail/${track.image}")
         val artists = track.trackArtists.joinToString(", ") { it.name }
 
         val mediaMetadata = MediaMetadata.Builder()
@@ -236,7 +278,7 @@ class MediaControllerViewModel @Inject constructor(
 
         return MediaItem.Builder()
             .setUri(uri)
-            .setMediaId(index.toString())
+            .setMediaId(id.toString())
             .setMediaMetadata(mediaMetadata)
             .build()
     }
@@ -550,6 +592,7 @@ class MediaControllerViewModel @Inject constructor(
                 val eventTrack = event.track
                 if (playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
                     shuffledQueue.add(event.index, eventTrack)
+                    // TODO: Examine how this affects the ids of the mediaItems after the inserted one
                     val mediaItem = createMediaItem(event.index, eventTrack)
                     mediaController?.addMediaItem(event.index, mediaItem)
 
@@ -696,13 +739,13 @@ class MediaControllerViewModel @Inject constructor(
                     )
 
                     saveLastPlayedTrack(
-                        track = trackToLog,// == playerUiState.value.track
-                        indexInQueue = trackIndex, // == playerUiState.value.playingTrackIndex
+                        track = trackToLog,
+                        indexInQueue = trackIndex,
                         lastPlayPositionMs = durationPlayed * 1000L
                     )
                 }
 
-                // Prepare for the next log data
+                // Prepare for the next Transition log data
                 durationPlayed = 0L
                 trackToLog = playingTrack
             }

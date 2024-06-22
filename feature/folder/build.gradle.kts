@@ -47,6 +47,7 @@ android {
 
 dependencies {
     // Local Modules
+    implementation(project(":auth"))
     implementation(project(":core"))
     implementation(project(":network"))
     implementation(project(":uicomponent"))

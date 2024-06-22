@@ -10,12 +10,12 @@ import com.android.swingmusic.database.data.entity.QueueEntity
 @Dao
 interface QueueDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTracks(tracks: List<QueueEntity>)
+    suspend fun insertQueue(tracks: List<QueueEntity>)
 
     @Transaction
-    suspend fun saveTracksInTransaction(tracks: List<QueueEntity>) {
+    suspend fun insertQueueInTransaction(tracks: List<QueueEntity>) {
         clearQueue()
-        insertTracks(tracks)
+        insertQueue(tracks)
     }
 
     @Query("DELETE FROM queue")

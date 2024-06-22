@@ -36,7 +36,9 @@ android {
 
 dependencies {
     // Local Modules
+    implementation(project(":auth"))
     implementation(project(":core"))
+    implementation(project(":database"))
 
     // Kotlin extensions
     implementation("androidx.core:core-ktx:1.12.0")

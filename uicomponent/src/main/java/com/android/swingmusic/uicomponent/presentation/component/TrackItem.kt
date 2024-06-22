@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
@@ -44,14 +43,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
-import com.android.swingmusic.network.data.util.BASE_URL
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.util.createImageRequestWithAuth
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 
 
@@ -62,7 +60,9 @@ fun TrackItem(
     isCurrentTrack: Boolean = false,
     playbackState: PlaybackState = PlaybackState.PAUSED,
     onClickTrackItem: () -> Unit,
-    onClickMoreVert: (Track) -> Unit
+    onClickMoreVert: (Track) -> Unit,
+    baseUrl: String,
+    accessToken: String
 ) {
     val interaction = remember { MutableInteractionSource() }
 
@@ -109,9 +109,13 @@ fun TrackItem(
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data("${BASE_URL}/img/t/s/${track.image}")
-                            .build(),
+                        /*model = ImageRequest.Builder(LocalContext.current)
+                            .data("${base_url}img/thumbnail/small/${track.image}")
+                            .build(),*/
+                        createImageRequestWithAuth(
+                            imageUrl = "${baseUrl}img/thumbnail/small/${track.image}",
+                            accessToken = accessToken
+                        ),
                         placeholder = painterResource(R.drawable.audio_fallback),
                         fallback = painterResource(R.drawable.audio_fallback),
                         error = painterResource(R.drawable.audio_fallback),
@@ -277,7 +281,9 @@ fun TrackItemPreview() {
                     },
                     onClickMoreVert = {
 
-                    }
+                    },
+                    baseUrl = "",
+                    accessToken = ""
                 )
                 TrackItem(
                     isCurrentTrack = true,
@@ -288,7 +294,9 @@ fun TrackItemPreview() {
                     },
                     onClickMoreVert = {
 
-                    }
+                    },
+                    baseUrl = "",
+                    accessToken = ""
                 )
                 TrackItem(
                     isCurrentTrack = false,
@@ -298,7 +306,9 @@ fun TrackItemPreview() {
                     },
                     onClickMoreVert = {
 
-                    }
+                    },
+                    baseUrl = "",
+                    accessToken = ""
                 )
                 TrackItem(
                     isCurrentTrack = true,
@@ -310,7 +320,9 @@ fun TrackItemPreview() {
                     },
                     onClickMoreVert = {
 
-                    }
+                    },
+                    baseUrl = "",
+                    accessToken = ""
                 )
             }
         }
