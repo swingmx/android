@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.android.swingmusic.database.data.dao.BaseUrlDao
 import com.android.swingmusic.database.data.dao.LastPlayedTrackDao
 import com.android.swingmusic.database.data.dao.QueueDao
+import com.android.swingmusic.database.data.dao.UserDao
 import com.android.swingmusic.database.data.database.AppDatabase
 import dagger.Module
 import dagger.Provides
@@ -25,6 +26,11 @@ object DatabaseModule {
             AppDatabase::class.java,
             "app_database"
         ).build()
+    }
+
+    @Provides
+    fun provideUserDao(database: AppDatabase): UserDao {
+        return database.userDao()
     }
 
     @Provides

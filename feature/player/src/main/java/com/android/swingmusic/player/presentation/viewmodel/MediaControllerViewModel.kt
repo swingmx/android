@@ -11,13 +11,14 @@ import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
-import com.android.swingmusic.auth.data.tokenmanager.AuthTokenManager
+import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
+import com.android.swingmusic.network.domain.repository.NetworkRepository
 import com.android.swingmusic.player.domain.repository.QueueRepository
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickLyricsIcon
@@ -51,7 +52,8 @@ import kotlin.math.roundToInt
 @HiltViewModel
 class MediaControllerViewModel @Inject constructor(
     private val queueRepository: QueueRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val networkRepository: NetworkRepository
 ) : ViewModel() {
     private var baseUrl: MutableState<String?> = mutableStateOf(null)
     private var accessToken: MutableState<String?> = mutableStateOf(null)
@@ -62,44 +64,37 @@ class MediaControllerViewModel @Inject constructor(
     private var shuffledQueue: MutableList<Track> = mutableListOf()
     private var trackToLog: Track? = null
     private var queueSource: QueueSource = QueueSource.FOLDER // TODO: Use QueueSource enum class
-    private var durationPlayed: Long = 0L //TODO: Manage this within the Playback Service to improve accuracy
+    private var durationPlayed: Long =
+        0L //TODO: Manage this within the Playback Service to improve accuracy
     private val playbackMutex = Mutex()
 
     val playerUiState: MutableState<PlayerUiState> = mutableStateOf(
         PlayerUiState(nowPlayingTrack = null, queue = emptyList())
     )
 
+    /*fun updateFav(index:Int, isFav: Boolean){
+        playerUiState.value.queue[index].isFavorite = isFav
+    }*/
+
     init {
-        saveSampleTokens()
         getBaseUrl()
         getAccessToken()
     }
 
-    private fun saveSampleTokens() {
-        runBlocking(Dispatchers.IO) {
-            val accessToken = ""
-            AuthTokenManager.accessToken = accessToken
-
-            authRepository.storeAuthTokens(
-                accessToken = accessToken,
-                refreshToken = "test",
-            )
-        }
-    }
 
     fun baseUrl() = baseUrl
     fun accessToken() = accessToken
 
     private fun getBaseUrl() {
         runBlocking(Dispatchers.IO) {
-            baseUrl.value = authRepository.getBaseUrl() ?: "https://music.mungaist.com/"
+            baseUrl.value = authRepository.getBaseUrl() ?: "http://192.168.90.41:1970/"
 
             Timber.e("BASE_URL ${baseUrl.value}")
         }
     }
 
     private fun getAccessToken() {
-        accessToken.value = AuthTokenManager.accessToken ?: authRepository.getAccessToken()
+        accessToken.value = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         Timber.e("ACCESS TOKEN -> ${accessToken.value}")
     }
@@ -363,8 +358,13 @@ class MediaControllerViewModel @Inject constructor(
         logReason: String? = ""
     ) {
         track?.let {
-            Timber.tag("LOG")
-            Timber.e("[$logReason]: Played -> ${it.title} -> $durationPlayed sec")
+            viewModelScope.launch {
+                Timber.tag("LOG")
+                Timber.e("[$logReason]: Played -> ${it.title} -> $durationPlayed sec")
+
+                val source = "fo:${track.folder}" // TODO: Fix Track source after implementing nav
+                networkRepository.logLastPlayedTrackToServer(track, durationPlayed.toInt(), source)
+            }
         }
     }
 

@@ -20,4 +20,19 @@ class Converters {
         val type = object : TypeToken<List<TrackArtistEntity>>() {}.type
         return gson.fromJson(value, type)
     }
+
+    // Used for User roles
+    @TypeConverter
+    fun fromStringList(value: List<String>): String {
+        val gson = Gson()
+        val type = object : TypeToken<List<String>>() {}.type
+        return gson.toJson(value, type)
+    }
+
+    @TypeConverter
+    fun toStringList(value: String): List<String> {
+        val gson = Gson()
+        val type = object : TypeToken<List<String>>() {}.type
+        return gson.fromJson(value, type)
+    }
 }

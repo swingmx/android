@@ -48,6 +48,7 @@ android {
 dependencies {
     // Local Modules
     implementation(project(":database"))
+    implementation(project(":uicomponent"))
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")
@@ -58,6 +59,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview:1.6.7")
     implementation("androidx.compose.material3:material3")
+
+    // KMP - QR Code Scanner
+    implementation("network.chaintech:qr-kit:1.0.4")
 
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.11.0")

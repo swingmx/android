@@ -6,6 +6,8 @@ import com.android.swingmusic.database.data.entity.BaseUrlEntity
 import com.android.swingmusic.database.data.entity.LastPlayedTrackEntity
 import com.android.swingmusic.database.data.entity.QueueEntity
 import com.android.swingmusic.database.data.entity.TrackArtistEntity
+import com.android.swingmusic.database.domain.model.User
+import com.android.swingmusic.database.data.entity.UserEntity
 import com.android.swingmusic.database.domain.model.BaseUrl
 import com.android.swingmusic.database.domain.model.LastPlayedTrack
 
@@ -15,6 +17,30 @@ fun BaseUrl.toEntity(): BaseUrlEntity {
 
 fun BaseUrlEntity.toModel(): BaseUrl {
     return BaseUrl(id = id, url = url)
+}
+
+fun UserEntity.toModel(): User {
+    return User(
+        id = id,
+        firstname = firstname,
+        lastname = lastname,
+        email = email,
+        username = username,
+        image = image,
+        roles = roles
+    )
+}
+
+fun User.toEntity(): UserEntity {
+    return UserEntity(
+        id = id,
+        firstname = firstname,
+        lastname = lastname,
+        email = email,
+        username = username,
+        image = image,
+        roles = roles
+    )
 }
 
 fun Track.toEntity(): QueueEntity {

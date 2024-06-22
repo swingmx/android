@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
@@ -43,13 +44,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.presentation.util.createImageRequestWithAuth
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 
 
@@ -61,8 +62,7 @@ fun TrackItem(
     playbackState: PlaybackState = PlaybackState.PAUSED,
     onClickTrackItem: () -> Unit,
     onClickMoreVert: (Track) -> Unit,
-    baseUrl: String,
-    accessToken: String
+    baseUrl: String
 ) {
     val interaction = remember { MutableInteractionSource() }
 
@@ -109,13 +109,9 @@ fun TrackItem(
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
-                        /*model = ImageRequest.Builder(LocalContext.current)
-                            .data("${base_url}img/thumbnail/small/${track.image}")
-                            .build(),*/
-                        createImageRequestWithAuth(
-                            imageUrl = "${baseUrl}img/thumbnail/small/${track.image}",
-                            accessToken = accessToken
-                        ),
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data("${baseUrl}img/thumbnail/small/${track.image}")
+                            .build(),
                         placeholder = painterResource(R.drawable.audio_fallback),
                         fallback = painterResource(R.drawable.audio_fallback),
                         error = painterResource(R.drawable.audio_fallback),
@@ -188,20 +184,21 @@ fun TrackItem(
         }
 
         trackQueueNumber?.let { number ->
-             Box(
-                 modifier = Modifier
-                     .clip(CircleShape)
-                     .wrapContentSize()
-                     .background(MaterialTheme.colorScheme.inverseOnSurface)
-                     .padding(vertical = 2.dp, horizontal = 4.dp),
-                 contentAlignment = Alignment.Center
-             ) {
-                 Text(
-                     text = number.toString(),
-                     color = MaterialTheme.colorScheme.onSurface,
-                     style = MaterialTheme.typography.labelMedium
-                 )
-             }
+            if (!isCurrentTrack)
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .wrapContentSize()
+                        .background(MaterialTheme.colorScheme.inverseOnSurface)
+                        .padding(vertical = 2.dp, horizontal = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = number.toString(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
         }
     }
 }
@@ -229,7 +226,6 @@ fun TrackItemPreview() {
 
     val albumArtists = listOf(lilPeep, juice)
     val artists = listOf(lilPeep, juice)
-    val genre = listOf("Rap", "Emo")
 
     val track = Track(
         album = "Sample Album",
@@ -283,7 +279,6 @@ fun TrackItemPreview() {
 
                     },
                     baseUrl = "",
-                    accessToken = ""
                 )
                 TrackItem(
                     isCurrentTrack = true,
@@ -295,8 +290,7 @@ fun TrackItemPreview() {
                     onClickMoreVert = {
 
                     },
-                    baseUrl = "",
-                    accessToken = ""
+                    baseUrl = ""
                 )
                 TrackItem(
                     isCurrentTrack = false,
@@ -308,7 +302,6 @@ fun TrackItemPreview() {
 
                     },
                     baseUrl = "",
-                    accessToken = ""
                 )
                 TrackItem(
                     isCurrentTrack = true,
@@ -322,7 +315,6 @@ fun TrackItemPreview() {
 
                     },
                     baseUrl = "",
-                    accessToken = ""
                 )
             }
         }

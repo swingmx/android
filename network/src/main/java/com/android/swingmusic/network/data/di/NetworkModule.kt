@@ -1,7 +1,7 @@
 package com.android.swingmusic.network.data.di
 
 import com.android.swingmusic.database.data.dao.BaseUrlDao
-import com.android.swingmusic.network.data.api.service.ApiService
+import com.android.swingmusic.network.data.api.service.NetworkApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,7 +19,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    @Singleton
+   /* @Singleton
     @Provides
     fun providesOkHttpClient(): OkHttpClient {
         val interceptor = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
@@ -30,14 +30,14 @@ object NetworkModule {
             .writeTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .build()
-    }
+    }*/
 
     @Provides
     @Singleton
-    fun providesApiService(okHttpClient: OkHttpClient, baseUrlDao: BaseUrlDao): ApiService {
+    fun providesApiService(okHttpClient: OkHttpClient, baseUrlDao: BaseUrlDao): NetworkApiService {
         // Use a runBlocking block to fetch the URL synchronously
         val baseUrl = runBlocking(Dispatchers.IO) {
-            baseUrlDao.getBaseUrl()?.url ?: "https://music.mungaist.com/"
+            baseUrlDao.getBaseUrl()?.url ?: ""
         }
         Timber.e("BASE URL: $baseUrl")
 
@@ -46,6 +46,6 @@ object NetworkModule {
             .addConverterFactory(GsonConverterFactory.create())
             .client(okHttpClient)
             .build()
-            .create(ApiService::class.java)
+            .create(NetworkApiService::class.java)
     }
 }

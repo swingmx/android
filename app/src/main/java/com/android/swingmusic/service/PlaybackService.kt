@@ -15,7 +15,7 @@ import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import com.android.swingmusic.auth.data.tokenmanager.AuthTokenManager
+import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -37,12 +37,13 @@ class PlaybackService : MediaSessionService() {
             DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
             DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
             DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
-        ).setBackBuffer(30_000, false)
+        ).setBackBuffer(30_000, false) // 30 sec cache
         val loadControl: LoadControl = loadControlBuilder.build()
 
-        val accessToken = authRepository.getAccessToken() ?: ""
-        val dataSourceFactory = CustomDataSourceFactory(this@PlaybackService, accessToken)
+        val accessToken = authRepository.getAccessToken() ?: "TAG: $this SERVICE -> TOKEN NOT FOUND"
+        val dataSourceFactory = CustomDataSourceFactory(this, accessToken)
         val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+
         // val mediaSource = DefaultMediaSourceFactory(dataSourceFactory)
         // val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
         // val mediaSource = DashMediaSource.Factory(dataSourceFactory)
@@ -96,8 +97,8 @@ class PlaybackService : MediaSessionService() {
         }
         // Clear Tokens when they're not needed anymore
         SessionTokenManager.sessionToken = null
-        AuthTokenManager.accessToken = null
-        AuthTokenManager.refreshToken = null
+        AuthTokenHolder.accessToken = null
+        AuthTokenHolder.refreshToken = null
 
         super.onDestroy()
     }

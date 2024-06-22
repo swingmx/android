@@ -2,6 +2,7 @@ package com.android.swingmusic.player.domain.repository
 
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.database.domain.model.LastPlayedTrack
+import com.android.swingmusic.network.domain.model.LogTrackRequest
 
 interface QueueRepository {
     

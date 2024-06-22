@@ -2,7 +2,7 @@ package com.android.swingmusic.auth.data.dto
 
 import com.google.gson.annotations.SerializedName
 
-data class CreateUserResultDto(
+data class UserDto(
     @SerializedName("email")
     val email: String?,
     @SerializedName("firstname")
