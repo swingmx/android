@@ -26,6 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -34,8 +36,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
@@ -45,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
@@ -55,7 +60,6 @@ import com.android.swingmusic.player.presentation.state.PlayerUiState
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.presentation.util.createImageRequestWithAuth
 import com.galaxygoldfish.waveslider.PillThumb
 import com.galaxygoldfish.waveslider.WaveSlider
 import com.galaxygoldfish.waveslider.WaveSliderDefaults
@@ -72,7 +76,6 @@ private fun NowPlaying(
     repeatMode: RepeatMode,
     shuffleMode: ShuffleMode,
     baseUrl: String,
-    accessToken: String,
     onClickArtist: (artistHash: String) -> Unit,
     onToggleRepeatMode: (RepeatMode) -> Unit,
     onClickPrev: () -> Unit,
@@ -105,6 +108,28 @@ private fun NowPlaying(
             track.filepath.substringAfterLast(".").uppercase(Locale.ROOT)
         }
     }
+
+    val inverseOnSurface = MaterialTheme.colorScheme.inverseOnSurface
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val fileTypeBadgeColor by remember {
+        derivedStateOf {
+            when (track.bitrate){
+                in 321..1023 -> Color(0xFF172B2E)
+                in 1024..Int.MAX_VALUE -> Color(0XFF443E30)
+                else -> inverseOnSurface
+            }
+        }
+    }
+    val fileTypeTextColor by remember {
+        derivedStateOf {
+            when (track.bitrate){
+                in 321..1023 -> Color(0XFF33FFEE)
+                in 1024..Int.MAX_VALUE -> Color(0XFFEFE143)
+                else -> onSurface
+            }
+        }
+    }
+    
     val animateWave = playbackState == PlaybackState.PLAYING && isBuffering.not()
     val repeatModeIcon = when (repeatMode) {
         RepeatMode.REPEAT_ONE -> R.drawable.repeat_one
@@ -138,16 +163,10 @@ private fun NowPlaying(
                         .fillMaxWidth()
                         .height(360.dp)
                         .clip(RoundedCornerShape(7)),
-                    model =
-                    /*ImageRequest.Builder(LocalContext.current)
+                    model = ImageRequest.Builder(LocalContext.current)
                         .data("${baseUrl}img/thumbnail/${track.image}")
                         .crossfade(true)
-                        .build(),*/
-                    createImageRequestWithAuth(
-                        imageUrl = "${baseUrl}img/thumbnail/${track.image}",
-                        accessToken = accessToken,
-                        crossfade = true
-                    ),
+                        .build(),
                     placeholder = painterResource(R.drawable.audio_fallback),
                     fallback = painterResource(R.drawable.audio_fallback),
                     error = painterResource(R.drawable.audio_fallback),
@@ -225,7 +244,7 @@ private fun NowPlaying(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Column {
-                    WaveSlider(
+                   /* WaveSlider(
                         modifier = Modifier.height(12.dp),
                         value = seekPosition,
                         onValueChange = { value ->
@@ -245,6 +264,14 @@ private fun NowPlaying(
                             amplitude = 12F,
                             frequency = 0.07F
                         )
+                    )*/
+
+                    Slider(
+                        modifier = Modifier.height(12.dp),
+                        value = seekPosition,
+                        onValueChange = { value ->
+                            onSeekPlayBack(value)
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -252,7 +279,7 @@ private fun NowPlaying(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
+                            .padding(horizontal = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(
@@ -368,24 +395,27 @@ private fun NowPlaying(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(100))
-                    .background(MaterialTheme.colorScheme.inverseOnSurface)
+                    .background(fileTypeBadgeColor)
                     .wrapContentSize()
                     .padding(vertical = 4.dp, horizontal = 8.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = fileType,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        color = fileTypeTextColor
                     )
 
                     Text(
                         text = " • ",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        color = fileTypeTextColor
                     )
 
                     Text(
                         text = "${track.bitrate} Kbps",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        color = fileTypeTextColor
                     )
                 }
             }
@@ -464,7 +494,6 @@ fun NowPlayingScreen(
     val playerUiState: PlayerUiState by mediaControllerViewModel.playerUiState
 
     val baseUrl by remember { mediaControllerViewModel.baseUrl() }
-    val accessToken by remember { mediaControllerViewModel.accessToken() }
 
     SwingMusicTheme(
         navBarColor = if (playerUiState.nowPlayingTrack == null)
@@ -481,7 +510,6 @@ fun NowPlayingScreen(
             shuffleMode = playerUiState.shuffleMode,
             isBuffering = playerUiState.isBuffering,
             baseUrl = baseUrl ?: "",
-            accessToken = accessToken ?: "",
             onClickArtist = {},
             onToggleRepeatMode = {
                 mediaControllerViewModel.onPlayerUiEvent(
@@ -561,30 +589,24 @@ fun FullPlayerPreview() {
         name = "Juice WRLD"
     )
     val young = TrackArtist(
-        artistHash = "juice123",
-        image = "juice.jpg",
+        artistHash = "young123",
+        image = "young.jpg",
         name = "Young Thug"
-    )
-    val weeknd = TrackArtist(
-        artistHash = "juice123",
-        image = "juice.jpg",
-        name = "The Weeknd"
     )
 
     val albumArtists = listOf(lilPeep, juice)
     val artists = listOf(juice, young)
-    val genre = listOf("Rap", "Emo")
 
     val track = Track(
         album = "Sample Album",
         albumTrackArtists = albumArtists,
         albumHash = "albumHash123",
         artistHashes = "artistHashes123",
-        trackArtists = listOf(weeknd),
+        trackArtists = artists,
         bitrate = 320,
         duration = 454, // Sample duration in seconds
         filepath = "/path/to/track.mp3",
-        folder = "/path/to/album",
+        folder = "/path/to/folder",
         image = "/path/to/album/artwork.jpg",
         isFavorite = true,
         title = "Save Your Tears",
@@ -604,7 +626,6 @@ fun FullPlayerPreview() {
             repeatMode = RepeatMode.REPEAT_OFF,
             shuffleMode = ShuffleMode.SHUFFLE_OFF,
             baseUrl = "",
-            accessToken = "",
             onClickArtist = {},
             onToggleRepeatMode = {},
             onResumePlayBackFromError = {},

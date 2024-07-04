@@ -1,8 +1,8 @@
 package com.android.swingmusic.auth.domain.repository
 
 import com.android.swingmusic.auth.data.util.Resource
-import com.android.swingmusic.auth.domain.model.CreateUserResult
 import com.android.swingmusic.auth.domain.model.LogInResult
+import com.android.swingmusic.database.domain.model.User
 
 interface AuthRepository {
 
@@ -14,13 +14,32 @@ interface AuthRepository {
 
     fun getRefreshToken(): String?
 
-    suspend fun storeAuthTokens(accessToken: String, refreshToken: String)
+    suspend fun storeAuthTokens(
+        accessToken: String,
+        refreshToken: String,
+        loggedInAs: String,
+        maxAge: Long
+    )
 
-    fun createUser(username: String, password: String): Resource<CreateUserResult>
+    suspend fun getLoggedInUser(): User?
 
-    fun logInWithUsernameAndPassword(username: String, password: String): Resource<LogInResult>
+    suspend fun storeLoggedInUser(user: User)
 
-    fun processQrCodeData(encoded: String): Pair<String, String> // Pair of <Url, Code>
+    suspend fun createUser(
+        username: String,
+        password: String,
+        email: String,
+        roles: List<String>
+    ): Resource<User>
 
-    fun logInWithQrCode(serverUrl: String, pairCode: String): Resource<LogInResult>
+    suspend fun logInWithUsernameAndPassword(
+        baseUrl: String,
+        username: String,
+        password: String
+    ): Resource<LogInResult>
+
+    /**Should return a Pair of <Url, Code> after decoding the encoded string*/
+    fun processQrCodeData(encoded: String): Pair<String, String>
+
+    suspend fun logInWithQrCode(url: String, pairCode: String): Resource<LogInResult>
 }

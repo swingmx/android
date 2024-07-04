@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,12 +46,12 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.presentation.util.createImageRequestWithAuth
 import kotlin.math.roundToInt
 
 @Composable
@@ -67,7 +68,6 @@ private fun MiniPlayer(
     onSwipeLeft: () -> Unit, //  <<- |
     onSwipeRight: () -> Unit, // | ->>
     baseUrl: String,
-    accessToken: String,
 ) {
     Surface {
         var swipeDistance by remember { mutableFloatStateOf(0F) }
@@ -119,16 +119,10 @@ private fun MiniPlayer(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(RoundedCornerShape(18)),
-                        model =
-                        /*ImageRequest.Builder(LocalContext.current)
-                            .data("$baseUrl${""}img/thumbnail/small/${trackImage}")
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data("${baseUrl}img/thumbnail/small/${trackImage}")
                             .crossfade(true)
-                            .build(),*/
-                        createImageRequestWithAuth(
-                            imageUrl = "${baseUrl}img/thumbnail/small/${trackImage}",
-                            accessToken = accessToken,
-                            crossfade = true
-                        ),
+                            .build(),
                         placeholder = painterResource(R.drawable.audio_fallback),
                         fallback = painterResource(R.drawable.audio_fallback),
                         error = painterResource(R.drawable.audio_fallback),
@@ -195,7 +189,7 @@ private fun MiniPlayer(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp),
-                progress = playbackProgress,
+                progress = { playbackProgress },
                 strokeCap = StrokeCap.Square
             )
         }
@@ -212,7 +206,6 @@ fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel())
     val playerUiState by remember { mediaControllerViewModel.playerUiState }
 
     val baseUrl by remember { mediaControllerViewModel.baseUrl() }
-    val accessToken by remember { mediaControllerViewModel.accessToken() }
 
     playerUiState.nowPlayingTrack?.let { track ->
         MiniPlayer(
@@ -223,7 +216,6 @@ fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel())
             isBuffering = playerUiState.isBuffering,
             playbackProgress = playerUiState.seekPosition,
             baseUrl = baseUrl ?: "",
-            accessToken = accessToken ?: "",
             onClickPlayerItem = {
                 // TODO: Open FullScreen player in a full screen bottom sheet
             },
@@ -255,7 +247,6 @@ fun MiniPlayerPreview() {
     ) {
         MiniPlayer(
             baseUrl = "",
-            accessToken = "",
             trackHash = "abc123",
             trackTitle = "Track title is too large to be displayed",
             trackImage = "https://image",

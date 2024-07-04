@@ -2,7 +2,6 @@ package com.android.swingmusic.player.presentation.reserved
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,12 +53,13 @@ import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewM
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.presentation.util.createImageRequestWithAuth
 
 /**
  * THIS FILE IS RESERVED FOR [ERIC]
  * REASON -> A CUSTOM QUEUE DIFFERENT FROM THE NORMAL ONE
  * */
+
+private interface ERIC
 
 @Reserved("custom queue")
 @Composable
@@ -67,7 +67,6 @@ private fun G_UpNextQueue(
     playingTrackIndex: Int,
     playbackState: PlaybackState,
     baseUrl: String,
-    accessToken: String,
     queue: List<Track>,
     onClickUpNextTrackItem: () -> Unit,
     onClickQueueItem: (index: Int) -> Unit
@@ -170,15 +169,16 @@ private fun G_UpNextQueue(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
-                    modifier = Modifier.padding(start = 12.dp).fillMaxWidth(),
+                    modifier = Modifier
+                        .padding(start = 12.dp)
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
-                        model = createImageRequestWithAuth(
-                            imageUrl = "${baseUrl}img/thumbnail/small/${upNextTrack.image}",
-                            accessToken = accessToken,
-                            crossfade = true
-                        ),
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data("${baseUrl}img/thumbnail/small/${upNextTrack.image}")
+                            .crossfade(true)
+                            .build(),
                         placeholder = painterResource(R.drawable.audio_fallback),
                         fallback = painterResource(R.drawable.audio_fallback),
                         error = painterResource(R.drawable.audio_fallback),
@@ -249,7 +249,6 @@ private fun G_UpNextQueue(
                         isCurrentTrack = index == playingTrackIndex,
                         trackQueueNumber = index + 1,
                         baseUrl = baseUrl,
-                        accessToken = accessToken,
                         onClickTrackItem = {
                             onClickQueueItem(index)
                         },
@@ -270,14 +269,12 @@ fun G_UpNextQueueScreen(mediaControllerViewModel: MediaControllerViewModel = vie
     val playerUiState by remember { mediaControllerViewModel.playerUiState }
 
     val baseUrl by remember { mediaControllerViewModel.baseUrl() }
-    val accessToken by remember { mediaControllerViewModel.accessToken() }
 
     G_UpNextQueue(
         playingTrackIndex = playerUiState.playingTrackIndex,
         playbackState = playerUiState.playbackState,
         queue = playerUiState.queue,
         baseUrl = baseUrl ?: "",
-        accessToken = accessToken ?: "",
         onClickUpNextTrackItem = {
             if (playerUiState.playingTrackIndex == playerUiState.queue.lastIndex) {
                 mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(0))
@@ -299,15 +296,14 @@ fun G_UpNextQueueScreen(mediaControllerViewModel: MediaControllerViewModel = vie
 )
 @Composable
 fun UpNextQueuePreview() {
-    val weeknd = TrackArtist(
+    val juice = TrackArtist(
         artistHash = "juice123",
         image = "juice.jpg",
-        name = "The Weeknd"
+        name = "Juice Wrld"
     )
 
-    val albumArtists = listOf(weeknd)
-    val artists = listOf(weeknd)
-    val genre = listOf("Rap", "Emo")
+    val albumArtists = listOf(juice)
+    val artists = listOf(juice)
 
     val track = Track(
         album = "Sample Album",
@@ -318,10 +314,10 @@ fun UpNextQueuePreview() {
         bitrate = 320,
         duration = 454, // Sample duration in seconds
         filepath = "/path/to/track.mp3",
-        folder = "/path/to/album",
+        folder = "/path/to/folder",
         image = "/path/to/album/artwork.jpg",
         isFavorite = true,
-        title = "Save Your Tears",
+        title = "All Girls the same",
         trackHash = "trackHash123"
     )
 
@@ -337,9 +333,8 @@ fun UpNextQueuePreview() {
             playbackState = PlaybackState.PLAYING,
             queue = queue,
             baseUrl = "",
-            accessToken = "",
             onClickUpNextTrackItem = {},
-            onClickQueueItem = { index: Int -> },
+            onClickQueueItem = { _: Int -> },
         )
     }
 }

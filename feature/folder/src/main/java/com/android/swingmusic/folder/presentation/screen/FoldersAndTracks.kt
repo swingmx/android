@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -63,8 +64,7 @@ private fun FoldersAndTracks(
     onRetry: (FolderUiEvent) -> Unit,
     onClickFolder: (Folder) -> Unit,
     onClickTrackItem: (index: Int, queue: List<Track>) -> Unit,
-    baseUrl: String,
-    accessToken: String
+    baseUrl: String
 ) {
     SwingMusicTheme(
         navBarColor = if (currentTrackHash.isEmpty()) {
@@ -139,7 +139,7 @@ private fun FoldersAndTracks(
                                         MaterialTheme.colorScheme.onSurface else
                                         MaterialTheme.colorScheme.onSurface.copy(alpha = .30F)
                                     Icon(
-                                        imageVector = Icons.Default.KeyboardArrowRight,
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                         tint = tint,
                                         contentDescription = "Arrow Right"
                                     )
@@ -229,6 +229,7 @@ private fun FoldersAndTracks(
                                 track = track,
                                 isCurrentTrack = track.trackHash == currentTrackHash,
                                 playbackState = playbackState,
+                                baseUrl = baseUrl,
                                 onClickTrackItem = {
                                     onClickTrackItem(
                                         index, foldersAndTracksState.foldersAndTracks.tracks
@@ -236,9 +237,7 @@ private fun FoldersAndTracks(
                                 },
                                 onClickMoreVert = {
                                     // TODO: Show context menu
-                                },
-                                baseUrl = baseUrl,
-                                accessToken = accessToken
+                                }
                             )
 
                             if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex) {
@@ -307,11 +306,8 @@ fun FoldersAndTracksScreen(
     val foldersAndTracksState by remember { foldersViewModel.foldersAndTracks }
     val navPaths by remember { foldersViewModel.navPaths }
     val homeDir = remember { foldersViewModel.homeDir }
-
     val playerUiState by remember { mediaControllerViewModel.playerUiState }
-
     val baseUrl by remember { mediaControllerViewModel.baseUrl() }
-    val accessToken by remember { mediaControllerViewModel.accessToken() }
 
     FoldersAndTracks(
         currentFolder = currentFolder,
@@ -320,6 +316,7 @@ fun FoldersAndTracksScreen(
         homeDir = homeDir,
         foldersAndTracksState = foldersAndTracksState,
         navPaths = navPaths,
+        baseUrl = baseUrl ?: "",
         onClickNavPath = { folder ->
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
         },
@@ -338,9 +335,7 @@ fun FoldersAndTracksScreen(
                     queue = queue
                 )
             )
-        },
-        baseUrl = baseUrl ?: "",
-        accessToken = accessToken ?: ""
+        }
     )
 
     val overrideSystemBackNav = currentFolder.path != "\$home"

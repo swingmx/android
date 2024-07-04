@@ -1,9 +1,9 @@
 package com.android.swingmusic.auth.data.mapper
 
-import com.android.swingmusic.auth.data.dto.CreateUserResultDto
+import com.android.swingmusic.auth.data.dto.UserDto
 import com.android.swingmusic.auth.data.dto.LogInResultDto
-import com.android.swingmusic.auth.domain.model.CreateUserResult
 import com.android.swingmusic.auth.domain.model.LogInResult
+import com.android.swingmusic.database.domain.model.User
 
 internal fun LogInResultDto.toModel(): LogInResult {
     return LogInResult(
@@ -14,8 +14,8 @@ internal fun LogInResultDto.toModel(): LogInResult {
     )
 }
 
-internal fun CreateUserResultDto.toModel(): CreateUserResult {
-    return CreateUserResult(
+internal fun UserDto.toModel(): User {
+    return User(
         email = email ?: "",
         firstname = firstname ?: "",
         id = id ?: 0,

@@ -4,12 +4,12 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.android.swingmusic.core.data.mapper.Map.toArtist
 import com.android.swingmusic.core.domain.model.Artist
-import com.android.swingmusic.network.data.api.service.ApiService
+import com.android.swingmusic.network.data.api.service.NetworkApiService
 import retrofit2.HttpException
 import java.io.IOException
 
 class ArtistsSource(
-    private val api: ApiService,
+    private val api: NetworkApiService,
     private val sortBy: String,
     private val sortOrder: Int
 ) :

@@ -12,11 +12,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.android.swingmusic.auth.presentation.event.AuthUiEvent
+import com.android.swingmusic.auth.presentation.screen.LogInWithQrCode
 import com.android.swingmusic.folder.presentation.screen.FoldersAndTracksScreen
 import com.android.swingmusic.player.presentation.compose.MiniPlayer
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
-import com.android.swingmusic.service.SessionTokenManager
 import com.android.swingmusic.service.PlaybackService
+import com.android.swingmusic.service.SessionTokenManager
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
@@ -80,10 +82,11 @@ class MainActivity : ComponentActivity() {
 
                     Surface(modifier = Modifier.padding(it)) {
                         //For testing purposes ONLY
-                        FoldersAndTracksScreen()
+                        // LogInWithQrCode()
+                       FoldersAndTracksScreen()
                         // ArtistsScreen()
                         // NowPlayingScreen()
-                        //UpNextQueueScreen()
+                        // UpNextQueueScreen()
 
                         // @Reserved("Custom")
                         // G_UpNextQueueScreen()

@@ -1,6 +1,6 @@
-package com.android.swingmusic.auth.domain.model
+package com.android.swingmusic.database.domain.model
 
-data class CreateUserResult(
+data class User(
     val email: String,
     val firstname: String,
     val id: Int,
