@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -102,7 +101,7 @@ private fun LoginWithUsernameAndPassword(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-                /*Image(
+                Image(
                     modifier = Modifier
                         .padding(bottom = 24.dp)
                         .clip(CircleShape)
@@ -111,7 +110,7 @@ private fun LoginWithUsernameAndPassword(
                     contentScale = ContentScale.Fit,
                     painter = painterResource(id = R.drawable.artist_fallback),
                     contentDescription = "App Logo"
-                )*/
+                )
 
                 Column(
                     modifier = Modifier
@@ -124,30 +123,6 @@ private fun LoginWithUsernameAndPassword(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .size(48.dp)
-                                .background(colorScheme.inverseOnSurface.copy(alpha = .3F)),
-                            contentScale = ContentScale.Fit,
-                            painter = painterResource(id = R.drawable.artist_fallback),
-                            contentDescription = "App Logo"
-                        )
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Text(text = "Swing Music", style = MaterialTheme.typography.titleMedium)
-                    }
-
-                    HorizontalDivider(modifier = Modifier.height((0.5).dp))
-
                     Spacer(modifier = Modifier.height(24.dp))
 
                     TextField(

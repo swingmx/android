@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.android.swingmusic.auth.presentation.screen.LogInWithQrCode
+import com.android.swingmusic.auth.presentation.screen.LoginScreen
 import com.android.swingmusic.player.presentation.compose.MiniPlayer
 import com.android.swingmusic.player.presentation.reserved.G_UpNextQueueScreen
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
@@ -81,8 +82,8 @@ class MainActivity : ComponentActivity() {
 
                     Surface(modifier = Modifier.padding(it)) {
                         //For testing purposes ONLY
-                         LogInWithQrCode()
-                        // LoginScreen()
+                        // LogInWithQrCode()
+                         LoginScreen()
                         // FoldersAndTracksScreen()
                         // ArtistsScreen()
                         // NowPlayingScreen()
