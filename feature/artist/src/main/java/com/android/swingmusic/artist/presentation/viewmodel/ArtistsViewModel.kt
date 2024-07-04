@@ -22,8 +22,6 @@ class ArtistsViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
     private var baseUrl: MutableState<String?> = mutableStateOf(null)
-    private var accessToken: MutableState<String?> = mutableStateOf(null)
-
     val artistsUiState: MutableState<ArtistsUiState> = mutableStateOf(ArtistsUiState())
 
     val sortByEntries: List<Pair<SortBy, String>> = listOf(
@@ -58,18 +56,12 @@ class ArtistsViewModel @Inject constructor(
 
     init {
         getBaseUrl()
-        getAccessToken()
     }
 
     fun baseUrl() = baseUrl
-    fun accessToken() = accessToken
 
     private fun getBaseUrl() {
         baseUrl.value = authRepository.getBaseUrl()
-    }
-
-    private fun getAccessToken() {
-        accessToken.value = authRepository.getAccessToken()
     }
 
     init {

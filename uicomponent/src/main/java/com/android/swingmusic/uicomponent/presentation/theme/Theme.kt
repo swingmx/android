@@ -80,7 +80,7 @@ private val darkColorScheme = darkColorScheme(
     scrim = dark_scrim,
 )
 
-/** @param [navBarColor] Navigation bar color. null where no change is needed
+/** @param [navBarColor] device navigation bar color. null by default which translates to surface
  * */
 
 @Composable

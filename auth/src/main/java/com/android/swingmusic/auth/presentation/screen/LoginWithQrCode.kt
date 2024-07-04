@@ -7,28 +7,26 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,13 +50,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.swingmusic.auth.R
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import qrscanner.QrScanner
 
@@ -69,28 +65,30 @@ fun LogInWithQrCode(authViewModel: AuthViewModel = viewModel()) {
 
     var encodedString by remember { mutableStateOf("") }
     var startScanner by remember { mutableStateOf(true) }
-    var flashlightOn by remember { mutableStateOf(false) }
-    var launchGallery by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val interactionSrc = remember { MutableInteractionSource() }
     val context = LocalContext.current
 
     var statusTextColor: Color = MaterialTheme.colorScheme.onSurface
-    val statusText =
-        if (authUiState.isLoading) {
-            statusTextColor = MaterialTheme.colorScheme.onSurface
-            "Loading..."
-        } else if (authUiState.authState == AuthState.AUTHENTICATED) {
-            statusTextColor = MaterialTheme.colorScheme.onSurface
-            "Authenticated"
-        } else when (val error = authUiState.authError) {
-            is AuthError.LoginError -> {
-                statusTextColor = MaterialTheme.colorScheme.error
-                error.msg
-            }
-
-            else -> ""
+    val statusText = if (authUiState.isLoading) {
+        statusTextColor = MaterialTheme.colorScheme.onSurface
+        "LOADING..."
+    } else if (authUiState.authState == AuthState.AUTHENTICATED) {
+        statusTextColor = MaterialTheme.colorScheme.onSurface
+        "AUTHENTICATED"
+    } else when (val error = authUiState.authError) {
+        is AuthError.LoginError -> {
+            statusTextColor = MaterialTheme.colorScheme.error
+            error.msg
         }
+
+        else -> ""
+    }
+
+    LaunchedEffect(key1 = authUiState.authState, block = {
+        if (authUiState.authState == AuthState.AUTHENTICATED) {
+            // TODO: Navigate to -> :home
+        }
+    })
 
     Scaffold { paddingValues ->
         Column(
@@ -103,7 +101,7 @@ fun LogInWithQrCode(authViewModel: AuthViewModel = viewModel()) {
             // TODO: Replace this with Swing Music icon
             Image(
                 modifier = Modifier
-                    .padding(top = 24.dp)
+                    .padding(top = 24.dp, bottom = 24.dp)
                     .clip(CircleShape)
                     .size(100.dp)
                     .background(MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .3F)),
@@ -112,14 +110,11 @@ fun LogInWithQrCode(authViewModel: AuthViewModel = viewModel()) {
                 contentDescription = "App Logo"
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             val text = buildAnnotatedString {
                 append("Open Swing Music on the web and go to ")
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                    append("Settings > Pair device ")
+                    append("\nSettings > Pair device ")
                 }
-                append("or select an image from your gallery")
             }
 
             Text(
@@ -130,155 +125,92 @@ fun LogInWithQrCode(authViewModel: AuthViewModel = viewModel()) {
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(42.dp))
 
-            Column(
+            Box(
                 modifier = Modifier
-                    .wrapContentHeight()
-                    .fillMaxWidth(.90F)
-                    .clip(RoundedCornerShape(10))
-                    .background(MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .3F))
-                    .padding(top = 32.dp, bottom = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .size(250.dp)
+                    .clipToBounds()
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = .5F),
+                        RoundedCornerShape(size = 12.dp)
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(250.dp)
-                        .clip(shape = RoundedCornerShape(size = 14.dp))
-                        .clipToBounds()
-                        .border(
-                            2.dp,
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = .5F),
-                            RoundedCornerShape(size = 14.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (startScanner) {
-                        QrScanner(
-                            modifier = Modifier
-                                .clipToBounds()
-                                .clip(shape = RoundedCornerShape(size = 14.dp)),
-                            flashlightOn = flashlightOn,
-                            launchGallery = launchGallery,
-                            onCompletion = {
-                                flashlightOn = false
-                                encodedString = it
-                                startScanner = false
+                if (startScanner) {
+                    QrScanner(
+                        modifier = Modifier
+                            .clipToBounds()
+                            .clip(shape = RoundedCornerShape(size = 14.dp)),
+                        flashlightOn = false,
+                        launchGallery = false,
+                        onCompletion = {
+                            encodedString = it
+                            startScanner = false
 
-                                authViewModel.onAuthUiEvent(AuthUiEvent.LogInWithQrCode(encoded = it))
-                            },
-                            onGalleryCallBackHandler = {
-                                launchGallery = it
-                            },
-                            onFailure = {
-                                coroutineScope.launch {
-                                    if (it.isEmpty()) {
-                                        Toast.makeText(context, "No valid Qr Code detected", LENGTH_SHORT)
-                                            .show()
-                                    } else {
-                                        Toast.makeText(context, it, LENGTH_SHORT).show()
-                                    }
+                            authViewModel.onAuthUiEvent(AuthUiEvent.LogInWithQrCode(encoded = it))
+                        },
+                        onGalleryCallBackHandler = {},
+                        onFailure = {
+                            coroutineScope.launch {
+                                if (it.isEmpty()) {
+                                    Toast.makeText(
+                                        context,
+                                        "No valid Qr Code detected",
+                                        LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Toast.makeText(context, it, LENGTH_SHORT).show()
                                 }
                             }
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .45F))
-                                .clipToBounds()
-                                .clickable {
-                                    authViewModel.onAuthUiEvent(AuthUiEvent.ResetStates)
-
-                                    encodedString = ""
-                                    startScanner = true
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "TAP TO SCAN",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
                         }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Box(
-                    modifier = Modifier
-                        .height(24.dp)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = statusText,
-                        color = statusTextColor.copy(alpha = .84F),
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Box(
-                    modifier = Modifier
-                        .padding(start = 24.dp, end = 24.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.tertiaryContainer,
-                            shape = RoundedCornerShape(25.dp)
-                        )
-                        .wrapContentHeight(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
+                } else {
+                    Box(
                         modifier = Modifier
-                            .padding(vertical = 8.dp, horizontal = 18.dp)
-                            .wrapContentHeight(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .45F))
+                            .clipToBounds()
+                            .clickable {
+                                authViewModel.onAuthUiEvent(AuthUiEvent.ResetStates)
+
+                                encodedString = ""
+                                startScanner = true
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(painter = if (flashlightOn)
-                            painterResource(id = R.drawable.flashlight_on) else
-                            painterResource(id = R.drawable.flashlight_off),
-                            contentDescription = "flash",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable(indication = null, interactionSource = interactionSrc) {
-                                    flashlightOn = !flashlightOn
-                                }
-                        )
-
-                        VerticalDivider(
-                            modifier = Modifier.height(32.dp),
-                            thickness = 1.dp,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .75F)
-                        )
-
-                        Icon(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable(indication = null, interactionSource = interactionSrc) {
-                                    coroutineScope.launch {
-                                        authViewModel.onAuthUiEvent(AuthUiEvent.ResetStates)
-
-                                        startScanner = true
-                                        delay(1000)
-                                        launchGallery = true
-                                    }
-                                },
-                            painter = painterResource(R.drawable.gallery_icon),
-                            contentDescription = "gallery",
+                        Text(
+                            text = "TAP TO SCAN",
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             Box(
-                modifier = Modifier.fillMaxWidth(.3f),
+                modifier = Modifier
+                    .height(24.dp)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = statusText,
+                    color = statusTextColor.copy(alpha = .84F),
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.height(42.dp))
+
+            Box(
+                modifier = Modifier.width(250.dp),
                 contentAlignment = Alignment.Center
             ) {
                 HorizontalDivider()
@@ -293,11 +225,10 @@ fun LogInWithQrCode(authViewModel: AuthViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                modifier = Modifier,
+                modifier = Modifier.widthIn(min = 250.dp),
                 onClick = {
                     // TODO: Navigate to Login with username and password
-                },
-                shape = RoundedCornerShape(4.dp)
+                }
             ) {
                 Text(text = "Login With Username")
             }

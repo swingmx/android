@@ -5,6 +5,7 @@ import com.android.swingmusic.auth.data.datastore.AuthTokensDataStore
 import com.android.swingmusic.auth.data.mapper.toModel
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.data.util.Resource
+import com.android.swingmusic.auth.domain.model.AllUsers
 import com.android.swingmusic.auth.domain.model.CreateUserRequest
 import com.android.swingmusic.auth.domain.model.LogInRequest
 import com.android.swingmusic.auth.domain.model.LogInResult
@@ -70,6 +71,17 @@ class DataAuthRepository @Inject constructor(
         authTokensDataStore.updateAuthTokens(accessToken, refreshToken, loggedInAs, maxAge)
     }
 
+    override suspend fun getAllUsers(baseUrl: String): Resource<AllUsers> {
+        return try {
+            Resource.Loading<AllUsers>()
+
+            val result = authApiService.getAllUsers("$baseUrl/auth/users").toModel()
+            return Resource.Success(data = result)
+        } catch (e: Exception) {
+            Resource.Error(message = "Failed to load users!")
+        }
+    }
+
     override suspend fun getLoggedInUser(): User? {
         return userDao.getLoggedInUser()?.toModel()
     }
@@ -114,22 +126,29 @@ class DataAuthRepository @Inject constructor(
 
             val logInRequest = LogInRequest(username = username, password = password)
             val result = authApiService.logInWithUsernameAndPassword(
-                url = "$baseUrl/auth/pair",
+                url = "$baseUrl/auth/login",
                 logInRequest = logInRequest
             ).toModel()
 
             Resource.Success(result)
 
+        } catch (e: HttpException) {
+            val msg = when (e.code()) {
+                401 -> "INCORRECT PASSWORD!"
+                404 -> "USER NOT FOUND!"
+                else -> "LOGIN FAILED!"
+            }
+            Resource.Error(message = msg)
         } catch (e: Exception) {
-            Resource.Error(message = "Login Failed")
+            Resource.Error(message = "LOGIN FAILED!")
         }
     }
 
     override fun processQrCodeData(encoded: String): Pair<String, String> {
-        // sampleEncodedData = "http://localhost:1970 C0dE1" -> separated by " "
-        val decodedData = encoded.split(Regex(" "), 2)
-        return if (decodedData.size != 2) Pair("", "") // Leave empty to indicate error
-        else Pair(decodedData[0], decodedData[1])
+        //val sampleEncodedData = "http://localhost:1970 C0dE1" -> separated by " "
+        val pattern = " "
+        val decodedData = encoded.split(Regex(pattern), 2)
+        return if (decodedData.size != 2) Pair("", "") else Pair(decodedData[0], decodedData[1])
     }
 
     override suspend fun logInWithQrCode(

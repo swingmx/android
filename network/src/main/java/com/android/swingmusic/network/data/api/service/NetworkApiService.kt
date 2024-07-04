@@ -23,10 +23,9 @@ interface NetworkApiService {
         @Header("Authorization") bearerToken: String,
     ): Any
 
-    // TODO: Add Auth Header to the following methods
-
     @GET("getall/artists")
     suspend fun getAllArtists(
+        @Header("Authorization") bearerToken: String,
         @Query("limit") pageSize: Int = 20,
         @Query("start") startIndex: Int = 0,
         @Query("sortby") sortBy: String,
@@ -35,6 +34,7 @@ interface NetworkApiService {
 
     @GET("getall/artists")
     suspend fun getSampleArtist(
+        @Header("Authorization") bearerToken: String,
         @Query("limit") pageSize: Int = 1,
     ): AllArtistsDto
 }

@@ -58,7 +58,7 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun providesApiService(okHttpClient: OkHttpClient, baseUrlDao: BaseUrlDao): AuthApiService {
+    fun providesAuthApiService(okHttpClient: OkHttpClient, baseUrlDao: BaseUrlDao): AuthApiService {
         val baseUrl = runBlocking(Dispatchers.IO) {
             baseUrlDao.getBaseUrl()?.url ?: "http://default"
         }
