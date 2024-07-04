@@ -10,6 +10,9 @@ import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.LogInWithQrCode
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.LogInWithUsernameAndPassword
+import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnBaseUrlChange
+import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnPasswordChange
+import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnUsernameChange
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.ResetStates
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.state.AuthUiState
@@ -35,7 +38,7 @@ class AuthViewModel @Inject constructor(
     }
 
     // TODO: Call this upon navigating to :home
-    fun getAuthenticatedUser(){
+    fun getAuthenticatedUser() {
 
     }
 
@@ -71,56 +74,66 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun logInWithUsernameAndPassword(username: String, password: String) {
-        viewModelScope.launch {
-            authUiState.value.baseUrl?.let { url ->
+    private fun logInWithUsernameAndPassword() {
+        val baseUrl = authUiState.value.baseUrl
+        val username = authUiState.value.username
+        val password = authUiState.value.password
 
-                if (!validInputUrl(url) || username.isEmpty() || password.isEmpty()) {
-                    authUiState.value = AuthUiState(
+        viewModelScope.launch {
+            if (baseUrl.isNullOrEmpty() || !validInputUrl(baseUrl)) {
+                authUiState.value = authUiState.value.copy(
+                    authState = AuthState.LOGGED_OUT,
+                    isLoading = false,
+                    authError = AuthError.InputError("ENTER A VALID URL")
+                )
+                return@launch
+            }
+
+            if (username.isNullOrEmpty() || password.isNullOrEmpty()) {
+                authUiState.value = authUiState.value.copy(
+                    authState = AuthState.LOGGED_OUT,
+                    isLoading = false,
+                    authError = AuthError.LoginError(msg = "ALL INPUTS ARE REQUIRED")
+                )
+                return@launch
+            }
+
+            val logInResult = authRepository.logInWithUsernameAndPassword(
+                baseUrl = baseUrl, username = username, password = password
+            )
+
+            when (logInResult) {
+                is Resource.Loading -> {
+                    authUiState.value = authUiState.value.copy(
                         authState = AuthState.LOGGED_OUT,
-                        isLoading = false,
-                        authError = AuthError.LoginError(msg = "ALL INPUTS ARE REQUIRED")
+                        isLoading = true,
+                        authError = AuthError.None
                     )
-                    return@launch
                 }
 
-                val logInResult = authRepository.logInWithUsernameAndPassword(
-                    baseUrl = url, username = username, password = password
-                )
+                is Resource.Error -> {
+                    authUiState.value = authUiState.value.copy(
+                        authState = AuthState.LOGGED_OUT,
+                        isLoading = false,
+                        authError = AuthError.LoginError(msg = logInResult.message!!)
+                    )
+                }
 
-                when (logInResult) {
-                    is Resource.Loading -> {
-                        authUiState.value = AuthUiState(
-                            authState = AuthState.LOGGED_OUT,
-                            isLoading = true,
-                            authError = AuthError.None
-                        )
-                    }
+                is Resource.Success -> {
+                    val accessToken = logInResult.data!!.accessToken
+                    val refreshToken = logInResult.data.refreshToken
+                    val mxAge = logInResult.data.maxAge
+                    val loggedInAs = logInResult.data.msg // e.g Logged in as Admin
 
-                    is Resource.Error -> {
-                        authUiState.value = AuthUiState(
-                            authState = AuthState.LOGGED_OUT,
-                            isLoading = false,
-                            authError = AuthError.LoginError(msg = logInResult.message!!)
-                        )
-                    }
+                    authRepository.storeBaseUrl(baseUrl)
+                    authRepository.storeAuthTokens(accessToken, refreshToken, loggedInAs, mxAge)
 
-                    is Resource.Success -> {
-                        val accessToken = logInResult.data!!.accessToken
-                        val refreshToken = logInResult.data.refreshToken
-                        val mxAge = logInResult.data.maxAge
-                        val loggedInAs = logInResult.data.msg // e.g Logged in as Admin
-
-                        authRepository.storeBaseUrl(url)
-                        authRepository.storeAuthTokens(accessToken, refreshToken, loggedInAs, mxAge)
-
-                        authUiState.value = AuthUiState(
-                            authState = AuthState.AUTHENTICATED,
-                            isLoading = false,
-                            authError = AuthError.None,
-                            baseUrl = url
-                        )
-                    }
+                    authUiState.value = authUiState.value.copy(
+                        authState = AuthState.AUTHENTICATED,
+                        isLoading = false,
+                        authError = AuthError.None,
+                        baseUrl = baseUrl
+                    )
                 }
             }
         }
@@ -180,20 +193,9 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun initiateQrCodeScanner() {
-
-    }
-
-    private fun validInputUrl(url: String): Boolean {
-        val urlRegex = Regex("") // TODO: FIX ADD MATCHER REGEX
-        return if (!url.matches(urlRegex)) {
-            authUiState.value = AuthUiState(
-                authState = AuthState.LOGGED_OUT,
-                isLoading = false,
-                authError = AuthError.UrlInputError("ENTER A VALID URL")
-            )
-            false
-        } else true
+    private fun validInputUrl(url: String?): Boolean {
+        val urlRegex = Regex("^(https?|ftp)://[^\\s/$.?#].\\S*$")
+        return url?.matches(urlRegex) == true
     }
 
     fun onAuthUiEvent(event: AuthUiEvent) {
@@ -203,16 +205,35 @@ class AuthViewModel @Inject constructor(
             }
 
             is LogInWithUsernameAndPassword -> {
-
+                logInWithUsernameAndPassword()
             }
 
             is ResetStates -> {
                 resetUiStates()
             }
 
-            else -> {
-
+            is OnBaseUrlChange -> {
+                authUiState.value = authUiState.value.copy(
+                    baseUrl = event.newInput.trim(),
+                    authError = AuthError.None
+                )
             }
+
+            is OnUsernameChange -> {
+                authUiState.value = authUiState.value.copy(
+                    username = event.newInput,
+                    authError = AuthError.None
+                )
+            }
+
+            is OnPasswordChange -> {
+                authUiState.value = authUiState.value.copy(
+                    password = event.newInput,
+                    authError = AuthError.None
+                )
+            }
+
+            else -> {}
         }
     }
 }

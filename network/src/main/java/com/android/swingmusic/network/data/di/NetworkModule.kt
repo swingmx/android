@@ -19,25 +19,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-   /* @Singleton
-    @Provides
-    fun providesOkHttpClient(): OkHttpClient {
-        val interceptor = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
-        return OkHttpClient.Builder()
-            .addInterceptor(interceptor)
-            .callTimeout(15, TimeUnit.SECONDS)
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .build()
-    }*/
-
     @Provides
     @Singleton
-    fun providesApiService(okHttpClient: OkHttpClient, baseUrlDao: BaseUrlDao): NetworkApiService {
-        // Use a runBlocking block to fetch the URL synchronously
+    fun providesNetworkApiService(okHttpClient: OkHttpClient, baseUrlDao: BaseUrlDao): NetworkApiService {
         val baseUrl = runBlocking(Dispatchers.IO) {
-            baseUrlDao.getBaseUrl()?.url ?: ""
+            baseUrlDao.getBaseUrl()?.url ?: "http://default"
         }
         Timber.e("BASE URL: $baseUrl")
 

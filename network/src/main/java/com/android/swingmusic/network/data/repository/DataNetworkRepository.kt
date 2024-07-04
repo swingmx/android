@@ -30,6 +30,7 @@ class DataNetworkRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
     private val authRepository: AuthRepository
 ) : NetworkRepository {
+    // TODO: Split Network Repository. Handle module related methods in the respective module
     override suspend fun getFoldersAndTracks(requestData: FoldersAndTracksRequest): Resource<FoldersAndTracks> {
         return try {
             Resource.Loading<FoldersAndTracks>()
@@ -59,19 +60,30 @@ class DataNetworkRepository @Inject constructor(
     }
 
     override fun getPagingArtists(sortBy: String, sortOrder: Int): Flow<PagingData<Artist>> {
+        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
         return Pager(
             config = PagingConfig(enablePlaceholders = false, pageSize = 20),
             pagingSourceFactory = {
-                ArtistsSource(api = networkApiService, sortBy = sortBy, sortOrder = sortOrder)
+                ArtistsSource(
+                    accessToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}",
+                    api = networkApiService,
+                    sortBy = sortBy,
+                    sortOrder = sortOrder
+                )
             }
         ).flow
     }
 
     override suspend fun getArtistsCount(): Resource<Int> {
+        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
         return try {
             Resource.Loading<Int>()
 
-            Resource.Success(data = networkApiService.getSampleArtist().toAllArtists().total)
+            Resource.Success(
+                data = networkApiService.getSampleArtist(
+                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                ).toAllArtists().total
+            )
         } catch (e: Exception) {
             Resource.Error(message = "Error loading artists")
         }

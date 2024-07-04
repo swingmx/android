@@ -4,6 +4,8 @@ import com.android.swingmusic.auth.presentation.util.AuthError
 
 data class AuthUiState(
     val baseUrl: String? = null,
+    val username: String? = "",
+    val password: String? = "",
     val authState: AuthState = AuthState.LOGGED_OUT,
     val isLoading: Boolean = false,
     val authError: AuthError = AuthError.None

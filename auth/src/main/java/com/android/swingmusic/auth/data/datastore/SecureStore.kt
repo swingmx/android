@@ -6,6 +6,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.inject.Inject
 
+// TODO: Fix this Encryption stuff...
 class SecureStore @Inject constructor(private val keyStore: KeyStore) {
 
     private val KEY_ALIAS = "auth_tokens_key"

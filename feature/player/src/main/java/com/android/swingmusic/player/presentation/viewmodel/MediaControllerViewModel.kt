@@ -56,7 +56,7 @@ class MediaControllerViewModel @Inject constructor(
     private val networkRepository: NetworkRepository
 ) : ViewModel() {
     private var baseUrl: MutableState<String?> = mutableStateOf(null)
-    private var accessToken: MutableState<String?> = mutableStateOf(null)
+   // private var accessToken: MutableState<String?> = mutableStateOf(null)
 
     private val playerListener = PlayerListener()
     private var mediaController: MediaController? = null
@@ -78,26 +78,26 @@ class MediaControllerViewModel @Inject constructor(
 
     init {
         getBaseUrl()
-        getAccessToken()
+       // getAccessToken()
     }
 
 
-    fun baseUrl() = baseUrl
-    fun accessToken() = accessToken
-
+    fun baseUrl(): MutableState<String?> {
+        return baseUrl
+    }
     private fun getBaseUrl() {
         runBlocking(Dispatchers.IO) {
-            baseUrl.value = authRepository.getBaseUrl() ?: "http://192.168.90.41:1970/"
+            baseUrl.value = authRepository.getBaseUrl()
 
-            Timber.e("BASE_URL ${baseUrl.value}")
+            Timber.e("BASE_URL -> ${baseUrl.value}")
         }
     }
 
-    private fun getAccessToken() {
+    /*private fun getAccessToken() {
         accessToken.value = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         Timber.e("ACCESS TOKEN -> ${accessToken.value}")
-    }
+    }*/
 
     fun getMediaController() = mediaController
     fun setMediaController(controller: MediaController) {
