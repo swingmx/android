@@ -31,8 +31,9 @@ interface AuthApiService {
         @Body logInRequest: LogInRequest,
     ): LogInResultDto
 
-    @POST("auth/profile/create")
+    @POST
     suspend fun createUser(
+        @Url baseUrl: String,
         @Header("Authorization") bearerAccessToken: String,
         @Body createUserRequest: CreateUserRequest
     ): UserDto
