@@ -6,6 +6,7 @@ import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toArtist
 import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.database.domain.model.BaseUrl
 import com.android.swingmusic.network.data.api.service.NetworkApiService
 import retrofit2.HttpException
 import java.io.IOException
@@ -14,6 +15,7 @@ class ArtistsSource(
     private val api: NetworkApiService,
     private val sortBy: String,
     private val sortOrder: Int,
+    private val baseUrl: String,
     private val accessToken: String
 ) :
     PagingSource<Int, Artist>() {
@@ -26,6 +28,7 @@ class ArtistsSource(
             val startIndex = nextPageNumber * params.loadSize
 
             val allArtistsDto = api.getAllArtists(
+                baseUrl = baseUrl,
                 bearerToken = accessToken,
                 startIndex = startIndex,
                 sortBy = sortBy,
