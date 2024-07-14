@@ -1,4 +1,4 @@
-package com.android.swingmusic.player.presentation.compose
+package com.android.swingmusic.player.presentation.screen
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +45,6 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.util.PlaybackState
@@ -56,13 +56,12 @@ import kotlin.math.roundToInt
 
 @Composable
 private fun MiniPlayer(
-    trackHash: String,
     trackTitle: String,
     trackImage: String,
     playbackState: PlaybackState,
     isBuffering: Boolean,
     playbackProgress: Float, // also called seekPosition
-    onClickPlayerItem: (hash: String) -> Unit,
+    onClickPlayerItem: () -> Unit,
     onTogglePlaybackState: () -> Unit,
     onResumePlayBackFromError: () -> Unit,
     onSwipeLeft: () -> Unit, //  <<- |
@@ -103,7 +102,7 @@ private fun MiniPlayer(
                         interactionSource = interactions,
                         indication = null
                     ) {
-                        onClickPlayerItem(trackHash)
+                        onClickPlayerItem()
                     }
             ) {
                 // Image, Title
@@ -202,14 +201,15 @@ private fun MiniPlayer(
  * */
 
 @Composable
-fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel()) {
-    val playerUiState by remember { mediaControllerViewModel.playerUiState }
-
-    val baseUrl by remember { mediaControllerViewModel.baseUrl() }
+fun MiniPlayer(
+    mediaControllerViewModel: MediaControllerViewModel,
+    onClickPlayerItem: () -> Unit
+) {
+    val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
+    val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
     playerUiState.nowPlayingTrack?.let { track ->
         MiniPlayer(
-            trackHash = track.trackHash,
             trackTitle = track.title,
             trackImage = track.image,
             playbackState = playerUiState.playbackState,
@@ -217,7 +217,7 @@ fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel())
             playbackProgress = playerUiState.seekPosition,
             baseUrl = baseUrl ?: "",
             onClickPlayerItem = {
-                // TODO: Open FullScreen player in a full screen bottom sheet
+                onClickPlayerItem()
             },
             onTogglePlaybackState = {
                 mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
@@ -237,7 +237,6 @@ fun MiniPlayer(mediaControllerViewModel: MediaControllerViewModel = viewModel())
 
 @Preview(
     uiMode = Configuration.UI_MODE_NIGHT_YES,
-    device = Devices.NEXUS_5,
     showBackground = true,
 )
 @Composable
@@ -247,7 +246,6 @@ fun MiniPlayerPreview() {
     ) {
         MiniPlayer(
             baseUrl = "",
-            trackHash = "abc123",
             trackTitle = "Track title is too large to be displayed",
             trackImage = "https://image",
             playbackState = PlaybackState.PLAYING,

@@ -1,9 +1,10 @@
-package com.android.swingmusic.player.presentation.compose
+package com.android.swingmusic.player.presentation.screen
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,9 +28,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -41,13 +42,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers.RED_DOMINATED_EXAMPLE
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
@@ -56,13 +57,11 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
-import com.android.swingmusic.player.presentation.state.PlayerUiState
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.galaxygoldfish.waveslider.PillThumb
-import com.galaxygoldfish.waveslider.WaveSlider
-import com.galaxygoldfish.waveslider.WaveSliderDefaults
+import com.android.swingmusic.uicomponent.presentation.util.formatDuration
+import com.ramcosta.composedestinations.annotation.Destination
 import java.util.Locale
 
 @Composable
@@ -109,27 +108,20 @@ private fun NowPlaying(
         }
     }
 
+    val isDarkTheme = isSystemInDarkTheme()
     val inverseOnSurface = MaterialTheme.colorScheme.inverseOnSurface
     val onSurface = MaterialTheme.colorScheme.onSurface
-    val fileTypeBadgeColor by remember {
-        derivedStateOf {
-            when (track.bitrate){
-                in 321..1023 -> Color(0xFF172B2E)
-                in 1024..Int.MAX_VALUE -> Color(0XFF443E30)
-                else -> inverseOnSurface
-            }
-        }
+    val fileTypeBadgeColor = when (track.bitrate) {
+        in 321..1023 -> if (isDarkTheme) Color(0xFF172B2E) else Color(0xFFAEFAF4)
+        in 1024..Int.MAX_VALUE -> if (isDarkTheme) Color(0XFF443E30) else Color(0xFFFFFBCC)
+        else -> inverseOnSurface
     }
-    val fileTypeTextColor by remember {
-        derivedStateOf {
-            when (track.bitrate){
-                in 321..1023 -> Color(0XFF33FFEE)
-                in 1024..Int.MAX_VALUE -> Color(0XFFEFE143)
-                else -> onSurface
-            }
-        }
+    val fileTypeTextColor = when (track.bitrate) {
+        in 321..1023 -> if (isDarkTheme) Color(0XFF33FFEE) else Color(0xFF172B2E)
+        in 1024..Int.MAX_VALUE -> if (isDarkTheme) Color(0XFFEFE143) else Color(0xFF221700)
+        else -> onSurface
     }
-    
+
     val animateWave = playbackState == PlaybackState.PLAYING && isBuffering.not()
     val repeatModeIcon = when (repeatMode) {
         RepeatMode.REPEAT_ONE -> R.drawable.repeat_one
@@ -141,23 +133,35 @@ private fun NowPlaying(
         PlaybackState.ERROR -> R.drawable.error
     }
 
-    Scaffold { paddingValues ->
+    Scaffold(
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(16.dp)
+                    .background(MaterialTheme.colorScheme.inverseOnSurface)
+            )
+        }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(paddingValues)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // Artwork, SeekBar...
             Column(
                 modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
                     .wrapContentSize()
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Track Image
+                // Artwork
                 AsyncImage(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -199,7 +203,7 @@ private fun NowPlaying(
                                         modifier = Modifier
                                             .clickable(
                                                 onClick = { onClickArtist(trackArtist.artistHash) },
-                                                indication = null,  // Disables the ripple effect
+                                                indication = null,
                                                 interactionSource = remember { MutableInteractionSource() }
                                             ),
                                         text = trackArtist.name,
@@ -224,10 +228,7 @@ private fun NowPlaying(
 
                     IconButton(
                         modifier = Modifier
-                            .clip(CircleShape)
-                            .background(
-                                MaterialTheme.colorScheme.inverseOnSurface
-                            ),
+                            .clip(CircleShape),
                         onClick = {
                             onToggleFavorite(track.isFavorite)
                         }) {
@@ -244,27 +245,27 @@ private fun NowPlaying(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Column {
-                   /* WaveSlider(
-                        modifier = Modifier.height(12.dp),
-                        value = seekPosition,
-                        onValueChange = { value ->
-                            onSeekPlayBack(value)
-                        },
-                        animationOptions = WaveSliderDefaults.animationOptions(
-                            reverseDirection = false,
-                            flatlineOnDrag = true,
-                            animateWave = animateWave,
-                            reverseFlatline = false
-                        ),
-                        colors = WaveSliderDefaults.colors(
-                            inactiveTrackColor = MaterialTheme.colorScheme.inverseOnSurface
-                        ),
-                        thumb = { PillThumb() },
-                        waveOptions = WaveSliderDefaults.waveOptions(
-                            amplitude = 12F,
-                            frequency = 0.07F
-                        )
-                    )*/
+                    /* WaveSlider(
+                         modifier = Modifier.height(12.dp),
+                         value = seekPosition,
+                         onValueChange = { value ->
+                             onSeekPlayBack(value)
+                         },
+                         animationOptions = WaveSliderDefaults.animationOptions(
+                             reverseDirection = false,
+                             flatlineOnDrag = true,
+                             animateWave = animateWave,
+                             reverseFlatline = false
+                         ),
+                         colors = WaveSliderDefaults.colors(
+                             inactiveTrackColor = MaterialTheme.colorScheme.inverseOnSurface
+                         ),
+                         thumb = { PillThumb() },
+                         waveOptions = WaveSliderDefaults.waveOptions(
+                             amplitude = 12F,
+                             frequency = 0.07F
+                         )
+                     )*/
 
                     Slider(
                         modifier = Modifier.height(12.dp),
@@ -282,16 +283,29 @@ private fun NowPlaying(
                             .padding(horizontal = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text(
-                            text = playbackDuration,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
-                        )
-                        Text(
-                            text = trackDuration,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
-                        )
+                        if (playbackState == PlaybackState.ERROR) {
+                            Text(
+                                text = playbackDuration,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
+                            )
+                            Text(
+                                text = track.duration.formatDuration(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
+                            )
+                        } else {
+                            Text(
+                                text = playbackDuration,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
+                            )
+                            Text(
+                                text = trackDuration,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
+                            )
+                        }
                     }
                 }
 
@@ -306,10 +320,11 @@ private fun NowPlaying(
                         modifier = Modifier
                             .clip(CircleShape)
                             .background(
-                                MaterialTheme.colorScheme.inverseOnSurface
+                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5F)
                             ), onClick = {
                             onClickPrev()
-                        }) {
+                        }
+                    ) {
                         Icon(
                             painter = painterResource(id = R.drawable.prev),
                             contentDescription = "Prev"
@@ -340,8 +355,8 @@ private fun NowPlaying(
                                         .size(70.dp),
                                     painter = painterResource(id = playbackStateIcon),
                                     tint = if (isBuffering)
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .25F) else
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .5F),
+                                        MaterialTheme.colorScheme.onErrorContainer.copy(alpha = .25F) else
+                                        MaterialTheme.colorScheme.onErrorContainer.copy(alpha = .75F),
                                     contentDescription = "Error state"
                                 )
                             } else {
@@ -350,12 +365,12 @@ private fun NowPlaying(
                                         .height(70.dp)
                                         .width(80.dp)
                                         .clip(RoundedCornerShape(32))
-                                        .background(MaterialTheme.colorScheme.onSurface),
+                                        .background(MaterialTheme.colorScheme.secondaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         modifier = Modifier.size(44.dp),
-                                        tint = MaterialTheme.colorScheme.surface,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                         painter = painterResource(id = playbackStateIcon),
                                         contentDescription = "Play/Pause"
                                     )
@@ -367,9 +382,7 @@ private fun NowPlaying(
                                     modifier = Modifier.size(50.dp),
                                     strokeCap = StrokeCap.Round,
                                     strokeWidth = 1.dp,
-                                    color = if (playbackState == PlaybackState.ERROR)
-                                        MaterialTheme.colorScheme.onSurface else
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .75F)
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             }
                         }
@@ -379,12 +392,13 @@ private fun NowPlaying(
                         modifier = Modifier
                             .clip(CircleShape)
                             .background(
-                                MaterialTheme.colorScheme.inverseOnSurface
+                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5F)
                             ), onClick = {
                             onClickNext()
                         }) {
                         Icon(
                             painter = painterResource(id = R.drawable.next),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
                             contentDescription = "Next"
                         )
                     }
@@ -394,32 +408,38 @@ private fun NowPlaying(
             // Bitrate, Track format
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(100))
-                    .background(fileTypeBadgeColor)
+                    .clip(RoundedCornerShape(24))
+                    .background(
+                        if (isDarkTheme) fileTypeTextColor.copy(alpha = .075F) else fileTypeBadgeColor
+                    )
                     .wrapContentSize()
-                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .padding(8.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = fileType,
                         style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
                         color = fileTypeTextColor
                     )
 
                     Text(
                         text = " • ",
                         style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
                         color = fileTypeTextColor
                     )
 
                     Text(
                         text = "${track.bitrate} Kbps",
                         style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
                         color = fileTypeTextColor
                     )
                 }
             }
 
+            // Navigation and Control Icons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -487,18 +507,18 @@ private fun NowPlaying(
 /**
  * Expose a public Composable tied to MediaControllerViewModel
  * **/
+
+@Destination
 @Composable
 fun NowPlayingScreen(
-    mediaControllerViewModel: MediaControllerViewModel = viewModel()
+    mediaControllerViewModel: MediaControllerViewModel,
+    onClickOpenQueue: () -> Unit = {}
 ) {
-    val playerUiState: PlayerUiState by mediaControllerViewModel.playerUiState
-
-    val baseUrl by remember { mediaControllerViewModel.baseUrl() }
+    val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
+    val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
     SwingMusicTheme(
-        navBarColor = if (playerUiState.nowPlayingTrack == null)
-            MaterialTheme.colorScheme.surface else
-            MaterialTheme.colorScheme.inverseOnSurface
+        navBarColor = MaterialTheme.colorScheme.inverseOnSurface
     ) {
         NowPlaying(
             track = playerUiState.nowPlayingTrack,
@@ -557,9 +577,7 @@ fun NowPlayingScreen(
                 )
             },
             onClickQueueIcon = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnClickQueue
-                )
+                onClickOpenQueue()
             },
             onClickMore = {
                 mediaControllerViewModel.onPlayerUiEvent(

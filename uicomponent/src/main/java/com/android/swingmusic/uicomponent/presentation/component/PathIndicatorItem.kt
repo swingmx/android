@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import java.util.Locale
 
 @Composable
@@ -87,9 +88,7 @@ fun PathIndicatorItemPreview() {
         path = "/home"
     )
 
-    SwingMusicTheme(
-        navBarColor = null
-    ) {
+    SwingMusicTheme_Preview {
         Surface {
             Row(
                 modifier = Modifier.fillMaxWidth(),

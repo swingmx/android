@@ -1,7 +1,6 @@
 package com.android.swingmusic.auth.presentation.screen
 
 import android.content.res.Configuration
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,13 +31,13 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -48,16 +47,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
+import com.android.swingmusic.auth.presentation.navigation.AuthNavigator
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.ramcosta.composedestinations.annotation.Destination
 
 @Composable
-private fun LoginWithUsernameAndPassword(
+private fun LoginWithUsername(
     baseUrl: String,
     username: String,
     password: String,
@@ -72,12 +72,12 @@ private fun LoginWithUsernameAndPassword(
     Scaffold(
         topBar = {
             Row(
-                modifier = Modifier.padding(start = 12.dp, top = 4.dp),
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { onClickBack() }) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Arrow Back"
                     )
                 }
@@ -100,15 +100,12 @@ private fun LoginWithUsernameAndPassword(
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-                Image(
+                Icon(
                     modifier = Modifier
                         .padding(bottom = 24.dp)
                         .clip(CircleShape)
-                        .size(80.dp)
-                        .background(MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .3F)),
-                    contentScale = ContentScale.Fit,
-                    painter = painterResource(id = R.drawable.artist_fallback),
+                        .size(80.dp),
+                    painter = painterResource(id = R.drawable.swing_music_logo_round_outlined),
                     contentDescription = "App Logo"
                 )
 
@@ -237,9 +234,13 @@ private fun LoginWithUsernameAndPassword(
     }
 }
 
+@Destination
 @Composable
-fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
-    val authUiState by authViewModel.authUiState
+fun LoginWithUsernameScreen(
+    authViewModel: AuthViewModel,
+    authNavigator: AuthNavigator
+) {
+    val authUiState by authViewModel.authUiState.collectAsState()
     var statusTextColor: Color = MaterialTheme.colorScheme.onSurface
     val statusText = if (authUiState.isLoading) {
         statusTextColor = MaterialTheme.colorScheme.onSurface
@@ -263,11 +264,12 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
 
     LaunchedEffect(key1 = authUiState.authState, block = {
         if (authUiState.authState == AuthState.AUTHENTICATED) {
-            // TODO: Navigate to -> :home
+            // authNavigator.gotoHomeNavGraph()
+            authNavigator.gotoFolderNavGraph()
         }
     })
 
-    LoginWithUsernameAndPassword(
+    LoginWithUsername(
         baseUrl = authUiState.baseUrl ?: "",
         username = authUiState.username ?: "",
         password = authUiState.password ?: "",
@@ -282,7 +284,7 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
         onPasswordChange = {
             authViewModel.onAuthUiEvent(AuthUiEvent.OnPasswordChange(it))
         },
-        onClickBack = { },
+        onClickBack = { authNavigator.gotoLoginWithQrCode() },
         onClickLogIn = { authViewModel.onAuthUiEvent(AuthUiEvent.LogInWithUsernameAndPassword) }
     )
 }
@@ -293,12 +295,12 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
 )
 @Composable
 fun LoginWithUsernamePreview() {
-    SwingMusicTheme {
+    SwingMusicTheme_Preview {
         var baseUrl = remember { "" }
         var username = remember { "" }
         var password = remember { "" }
 
-        LoginWithUsernameAndPassword(
+        LoginWithUsername(
             baseUrl = baseUrl,
             username = username,
             password = password,

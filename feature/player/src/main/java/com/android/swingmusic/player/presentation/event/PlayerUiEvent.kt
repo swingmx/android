@@ -20,8 +20,6 @@ interface PlayerUiEvent {
 
     object OnToggleShuffleMode: PlayerUiEvent
 
-    object OnClickQueue: PlayerUiEvent
-
     object OnClickMore: PlayerUiEvent
 
     object OnRetry: PlayerUiEvent

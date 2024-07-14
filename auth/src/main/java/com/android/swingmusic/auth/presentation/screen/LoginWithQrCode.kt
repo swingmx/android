@@ -1,6 +1,5 @@
 package com.android.swingmusic.auth.presentation.screen
 
-import android.content.res.Configuration
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import androidx.compose.foundation.Image
@@ -22,11 +21,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,22 +47,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
+import com.android.swingmusic.auth.presentation.navigation.AuthNavigator
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.R
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootNavGraph
 import kotlinx.coroutines.launch
 import qrscanner.QrScanner
 
+@Destination
 @Composable
-fun LogInWithQrCode(authViewModel: AuthViewModel = viewModel()) {
-
-    val authUiState by remember { authViewModel.authUiState }
+fun LoginWithQrCode(
+    authViewModel: AuthViewModel,
+    authNavigator: AuthNavigator
+) {
+    val authUiState by authViewModel.authUiState.collectAsState()
 
     var encodedString by remember { mutableStateOf("") }
     var startScanner by remember { mutableStateOf(true) }
@@ -86,7 +90,8 @@ fun LogInWithQrCode(authViewModel: AuthViewModel = viewModel()) {
 
     LaunchedEffect(key1 = authUiState.authState, block = {
         if (authUiState.authState == AuthState.AUTHENTICATED) {
-            // TODO: Navigate to -> :home
+           // authNavigator.gotoHomeNavGraph()
+            authNavigator.gotoFolderNavGraph()
         }
     })
 
@@ -94,19 +99,17 @@ fun LogInWithQrCode(authViewModel: AuthViewModel = viewModel()) {
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(top = 24.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TODO: Replace this with Swing Music icon
-            Image(
+            Icon(
                 modifier = Modifier
-                    .padding(top = 24.dp, bottom = 24.dp)
+                    .padding(bottom = 24.dp)
                     .clip(CircleShape)
-                    .size(100.dp)
-                    .background(MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .3F)),
-                contentScale = ContentScale.Fit,
-                painter = painterResource(id = com.android.swingmusic.uicomponent.R.drawable.artist_fallback),
+                    .size(80.dp),
+                painter = painterResource(id = R.drawable.swing_music_logo_round_outlined),
                 contentDescription = "App Logo"
             )
 
@@ -227,22 +230,11 @@ fun LogInWithQrCode(authViewModel: AuthViewModel = viewModel()) {
             Button(
                 modifier = Modifier.widthIn(min = 250.dp),
                 onClick = {
-                    // TODO: Navigate to Login with username and password
+                    authNavigator.gotoLoginWithUsername()
                 }
             ) {
                 Text(text = "Login With Username")
             }
         }
-    }
-}
-
-@Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
-)
-@Composable
-fun AuthWithQrPreview() {
-    SwingMusicTheme {
-        LogInWithQrCode()
     }
 }

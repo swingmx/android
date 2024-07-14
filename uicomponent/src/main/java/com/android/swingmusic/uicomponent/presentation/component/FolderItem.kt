@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 
 @Composable
 fun FolderItem(
@@ -167,7 +168,7 @@ private fun Int.getFolderHelperText(): String {
 )
 @Composable
 fun FolderItemPreview() {
-    SwingMusicTheme {
+    SwingMusicTheme_Preview {
         Surface {
             Column(modifier = Modifier.fillMaxSize()) {
                 for (count in 0..6) {
@@ -188,12 +189,6 @@ fun FolderItemPreview() {
 
                         }
                     )
-                    if (count < 6) {
-                        /*Divider(
-                            modifier = Modifier.padding(start = 74.dp,end = 12.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                        )*/
-                    }
                 }
             }
         }
