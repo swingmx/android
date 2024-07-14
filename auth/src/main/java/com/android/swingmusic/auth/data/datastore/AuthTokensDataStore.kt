@@ -13,15 +13,13 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class AuthTokensDataStore @Inject constructor(
-    private val context: Context,
-    private val secureStore: SecureStore
+    private val context: Context
 ) {
     private companion object {
         val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_tokens")
 
         val ACCESS_TOKEN = stringPreferencesKey("access_token")
         val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
-        val LOGGED_IN_AS = stringPreferencesKey("logged_in_as")
         val MAX_AGE: Key<Long> = longPreferencesKey("max_age")
     }
 
@@ -35,11 +33,6 @@ class AuthTokensDataStore @Inject constructor(
         token
     }
 
-    val loggedInAs: Flow<String?> = context.dataStore.data.map { data ->
-        val user = data[LOGGED_IN_AS] ?: ""
-        user
-    }
-
     val maxTokenAge: Flow<Long?> = context.dataStore.data.map { data ->
         val age = data[MAX_AGE] ?: 0L
         age
@@ -48,16 +41,11 @@ class AuthTokensDataStore @Inject constructor(
     suspend fun updateAuthTokens(
         accessToken: String,
         refreshToken: String,
-        loggedInAs: String,
         maxAge: Long
     ) {
-        // val encryptedAccessToken = secureStore.encrypt(accessToken)
-        //  val encryptedRefreshToken = secureStore.encrypt(refreshToken)
-
         context.dataStore.edit { data ->
             data[ACCESS_TOKEN] = accessToken
             data[REFRESH_TOKEN] = refreshToken
-            data[LOGGED_IN_AS] = loggedInAs
             data[MAX_AGE] = maxAge
         }
     }
