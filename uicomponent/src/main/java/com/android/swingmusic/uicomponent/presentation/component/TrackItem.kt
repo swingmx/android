@@ -51,6 +51,7 @@ import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 
 
@@ -135,6 +136,7 @@ fun TrackItem(
                 ) {
                     Text(
                         text = track.title,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.sizeIn(maxWidth = 250.dp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -243,11 +245,11 @@ fun TrackItemPreview() {
         trackHash = "trackHash123"
     )
 
-    SwingMusicTheme {
+    SwingMusicTheme_Preview {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column {
                 val demoFolder =
-                    Folder((0..6).random(), (0..6).random(), false, "Sample Folder", "/home")
+                    Folder((0..6).random(), (0..6).random(), false, "Sample Folder", "/folder")
                 FolderItem(
                     folder = demoFolder,
                     onClickFolderItem = {
@@ -305,7 +307,7 @@ fun TrackItemPreview() {
                 )
                 TrackItem(
                     isCurrentTrack = true,
-                    playbackState = PlaybackState.PAUSED,
+                    playbackState = PlaybackState.PLAYING,
                     track = track,
                     trackQueueNumber = 23,
                     onClickTrackItem = {

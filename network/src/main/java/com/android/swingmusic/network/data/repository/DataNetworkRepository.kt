@@ -3,8 +3,8 @@ package com.android.swingmusic.network.data.repository
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder.accessToken
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toAllArtists
 import com.android.swingmusic.core.data.mapper.Map.toFolderAndTracks
@@ -36,9 +36,12 @@ class DataNetworkRepository @Inject constructor(
             Resource.Loading<FoldersAndTracks>()
 
             val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+            val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
             val foldersAndTracksDto =
                 networkApiService.getFoldersAndTracks(
                     requestData = requestData.toFoldersAndTracksRequestDto(),
+                    baseUrl = "${baseUrl}folder",
                     bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
                 )
             Resource.Success(data = foldersAndTracksDto.toFolderAndTracks())
@@ -61,10 +64,13 @@ class DataNetworkRepository @Inject constructor(
 
     override fun getPagingArtists(sortBy: String, sortOrder: Int): Flow<PagingData<Artist>> {
         val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+        val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
         return Pager(
             config = PagingConfig(enablePlaceholders = false, pageSize = 20),
             pagingSourceFactory = {
                 ArtistsSource(
+                    baseUrl = "${baseUrl}getall/artists",
                     accessToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}",
                     api = networkApiService,
                     sortBy = sortBy,
@@ -75,12 +81,15 @@ class DataNetworkRepository @Inject constructor(
     }
 
     override suspend fun getArtistsCount(): Resource<Int> {
+        val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
         val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+
         return try {
             Resource.Loading<Int>()
 
             Resource.Success(
                 data = networkApiService.getSampleArtist(
+                    baseUrl = "${baseUrl}getall/artists",
                     bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
                 ).toAllArtists().total
             )
@@ -95,6 +104,9 @@ class DataNetworkRepository @Inject constructor(
         source: String
     ) {
         try {
+            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+            val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
             val timeStamp = Timestamp.from(Instant.now()).toInstant().epochSecond
             val logRequest = LogTrackRequest(
                 trackhash = track.trackHash,
@@ -102,7 +114,11 @@ class DataNetworkRepository @Inject constructor(
                 timestamp = timeStamp,
                 source = source
             )
-            networkApiService.logLastPlayedTrackToServer(logRequest, "Bearer $accessToken")
+            networkApiService.logLastPlayedTrackToServer(
+                logTrackRequest = logRequest,
+                baseUrl = "${baseUrl}logger/track/log",
+                bearerToken = "Bearer $accessToken"
+            )
 
         } catch (e: HttpException) {
             Timber.e("ERROR LOGGING TRACK TO SERVER")

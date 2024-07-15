@@ -13,9 +13,6 @@ interface QueueEvent {
     data class InsertTrackAtIndex(val track: Track, val index: Int) : QueueEvent
 
     data class SeekToQueueItem(val index: Int) : QueueEvent
-    object PlaUpNextTrack : QueueEvent
-
-    object GetQueueFromDB : QueueEvent
 
     object ClearQueue : QueueEvent
 }

@@ -57,8 +57,9 @@ class PlaybackService : MediaSessionService() {
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
 
-        val intent = packageManager.getLaunchIntentForPackage(packageName)
-        intent?.putExtra("DESTINATION", "NOW_PLAYING_SCREEN")
+        val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            putExtra("SHOW_NOW_PLAYING", true)
+        }
         val pendingIntent =
             PendingIntent.getActivity(this, 0, intent, FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
 

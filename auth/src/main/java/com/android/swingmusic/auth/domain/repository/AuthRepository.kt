@@ -18,7 +18,6 @@ interface AuthRepository {
     suspend fun storeAuthTokens(
         accessToken: String,
         refreshToken: String,
-        loggedInAs: String,
         maxAge: Long
     )
 

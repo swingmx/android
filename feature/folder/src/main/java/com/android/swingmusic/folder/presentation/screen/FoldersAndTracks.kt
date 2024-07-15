@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -35,7 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState
@@ -49,6 +49,7 @@ import com.android.swingmusic.uicomponent.presentation.component.FolderItem
 import com.android.swingmusic.uicomponent.presentation.component.PathIndicatorItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.ramcosta.composedestinations.annotation.Destination
 import java.util.Locale
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -66,13 +67,7 @@ private fun FoldersAndTracks(
     onClickTrackItem: (index: Int, queue: List<Track>) -> Unit,
     baseUrl: String
 ) {
-    SwingMusicTheme(
-        navBarColor = if (currentTrackHash.isEmpty()) {
-            MaterialTheme.colorScheme.surface
-        } else {
-            MaterialTheme.colorScheme.inverseOnSurface
-        }
-    ) {
+    SwingMusicTheme(navBarColor = MaterialTheme.colorScheme.inverseOnSurface) {
         Scaffold(
             topBar = {
                 Text(
@@ -139,7 +134,7 @@ private fun FoldersAndTracks(
                                         MaterialTheme.colorScheme.onSurface else
                                         MaterialTheme.colorScheme.onSurface.copy(alpha = .30F)
                                     Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        imageVector = Icons.Default.KeyboardArrowRight,
                                         tint = tint,
                                         contentDescription = "Arrow Right"
                                     )
@@ -147,6 +142,56 @@ private fun FoldersAndTracks(
                             }
                         }
                     }
+
+                    if (!foldersAndTracksState.isError && !foldersAndTracksState.isLoading) {
+                        // Folders
+                        itemsIndexed(
+                            items = foldersAndTracksState.foldersAndTracks.folders,
+                            key = { _: Int, item: Folder -> item.path }
+                        ) { index, folder ->
+                            FolderItem(
+                                folder = folder,
+                                onClickFolderItem = { clickedFolder ->
+                                    onClickFolder(clickedFolder)
+                                },
+                                onClickMoreVert = {
+
+                                }
+                            )
+
+                            if (index == foldersAndTracksState.foldersAndTracks.folders.lastIndex &&
+                                foldersAndTracksState.foldersAndTracks.tracks.isEmpty()
+                            ) {
+                                Spacer(modifier = Modifier.height(100.dp))
+                            }
+                        }
+
+                        // Tracks
+                        itemsIndexed(
+                            items = foldersAndTracksState.foldersAndTracks.tracks,
+                            key = { _: Int, item: Track -> item.filepath }
+                        ) { index, track ->
+                            TrackItem(
+                                track = track,
+                                isCurrentTrack = track.trackHash == currentTrackHash,
+                                playbackState = playbackState,
+                                baseUrl = baseUrl,
+                                onClickTrackItem = {
+                                    onClickTrackItem(
+                                        index, foldersAndTracksState.foldersAndTracks.tracks
+                                    )
+                                },
+                                onClickMoreVert = {
+                                    // TODO: Show context menu
+                                }
+                            )
+
+                            if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex) {
+                                Spacer(modifier = Modifier.height(100.dp))
+                            }
+                        }
+                    }
+
                     item {
                         if (foldersAndTracksState.isLoading) {
                             Box(
@@ -159,6 +204,7 @@ private fun FoldersAndTracks(
                             }
                         }
                     }
+
                     item {
                         if (foldersAndTracksState.isError) {
                             Box(
@@ -196,52 +242,6 @@ private fun FoldersAndTracks(
                                         Text("RETRY")
                                     }
                                 }
-                            }
-                        }
-                    }
-
-                    if (!foldersAndTracksState.isError && !foldersAndTracksState.isLoading) {
-                        // Folders
-                        itemsIndexed(foldersAndTracksState.foldersAndTracks.folders) { index, folder ->
-                            FolderItem(
-                                folder = folder,
-                                onClickFolderItem = { clickedFolder ->
-                                    onClickFolder(clickedFolder)
-                                },
-                                onClickMoreVert = {
-
-                                }
-                            )
-
-                            if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex &&
-                                foldersAndTracksState.foldersAndTracks.tracks.isEmpty()
-                            ) {
-                                Spacer(modifier = Modifier.height(100.dp))
-                            }
-                        }
-
-                        // Tracks
-                        itemsIndexed(
-                            foldersAndTracksState.foldersAndTracks.tracks,
-                            key = { _: Int, item: Track -> item.filepath }
-                        ) { index, track ->
-                            TrackItem(
-                                track = track,
-                                isCurrentTrack = track.trackHash == currentTrackHash,
-                                playbackState = playbackState,
-                                baseUrl = baseUrl,
-                                onClickTrackItem = {
-                                    onClickTrackItem(
-                                        index, foldersAndTracksState.foldersAndTracks.tracks
-                                    )
-                                },
-                                onClickMoreVert = {
-                                    // TODO: Show context menu
-                                }
-                            )
-
-                            if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex) {
-                                Spacer(modifier = Modifier.height(100.dp))
                             }
                         }
                     }
@@ -297,17 +297,18 @@ private fun FoldersAndTracks(
  *  It basically calls a stateless composable
  *  and provides hoisted states
  */
+@Destination
 @Composable
 fun FoldersAndTracksScreen(
-    foldersViewModel: FoldersViewModel = viewModel(),
-    mediaControllerViewModel: MediaControllerViewModel = viewModel()
+    foldersViewModel: FoldersViewModel = hiltViewModel(),
+    mediaControllerViewModel: MediaControllerViewModel,
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }
     val foldersAndTracksState by remember { foldersViewModel.foldersAndTracks }
     val navPaths by remember { foldersViewModel.navPaths }
     val homeDir = remember { foldersViewModel.homeDir }
-    val playerUiState by remember { mediaControllerViewModel.playerUiState }
-    val baseUrl by remember { mediaControllerViewModel.baseUrl() }
+    val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
+    val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
     FoldersAndTracks(
         currentFolder = currentFolder,

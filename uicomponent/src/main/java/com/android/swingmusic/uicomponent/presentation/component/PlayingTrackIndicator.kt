@@ -11,9 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 
 @Composable
 fun PlayingTrackIndicator(
@@ -54,6 +56,19 @@ fun PlayingTrackIndicator(
                     contentDescription = "Error Icon"
                 )
             }
+        }
+    }
+}
+
+
+@Preview
+@Composable
+fun PlayingTrackIndicatorPreview() {
+    SwingMusicTheme_Preview {
+        Box(
+            modifier = Modifier.size(48.dp)
+        ) {
+            PlayingTrackIndicator(playbackState = PlaybackState.ERROR)
         }
     }
 }

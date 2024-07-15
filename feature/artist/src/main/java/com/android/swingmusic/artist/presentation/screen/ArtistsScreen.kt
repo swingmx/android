@@ -44,11 +44,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.android.swingmusic.artist.presentation.event.ArtistUiEvent
+import com.android.swingmusic.artist.presentation.navigator.ArtistNavigator
 import com.android.swingmusic.artist.presentation.state.ArtistsUiState
 import com.android.swingmusic.artist.presentation.util.pagingItems
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistsViewModel
@@ -58,6 +59,7 @@ import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
 import com.android.swingmusic.uicomponent.presentation.component.SortByChip
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.ramcosta.composedestinations.annotation.Destination
 import com.android.swingmusic.uicomponent.R as UiComponents
 
 @Composable
@@ -183,8 +185,7 @@ private fun Artists(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80F)
                 )
             }
-        }
-    ) { paddingValues ->
+        }) { paddingValues ->
         Surface(modifier = Modifier.padding(paddingValues)) {
             LazyVerticalGrid(
                 modifier = Modifier
@@ -289,9 +290,11 @@ private fun Artists(
 /**
  * This Composable is heavily coupled with ArtistsViewModel. [Artists] Compsable has no ties.
  **/
+@Destination
 @Composable
 fun ArtistsScreen(
-    artistsViewModel: ArtistsViewModel = viewModel()
+    artistsViewModel: ArtistsViewModel = hiltViewModel(),
+    artistNavigator: ArtistNavigator
 ) {
     val pagingArtists =
         artistsViewModel.artistsUiState.value.pagingArtists.collectAsLazyPagingItems()
@@ -301,7 +304,7 @@ fun ArtistsScreen(
     val baseUrl by remember { artistsViewModel.baseUrl() }
 
     SwingMusicTheme(
-        navBarColor = MaterialTheme.colorScheme.surface
+        navBarColor = MaterialTheme.colorScheme.inverseOnSurface
     ) {
         Artists(
             pagingArtists = pagingArtists,

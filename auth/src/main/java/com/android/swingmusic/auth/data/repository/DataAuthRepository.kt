@@ -1,6 +1,7 @@
 package com.android.swingmusic.auth.data.repository
 
 import com.android.swingmusic.auth.data.api.service.AuthApiService
+import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
 import com.android.swingmusic.auth.data.datastore.AuthTokensDataStore
 import com.android.swingmusic.auth.data.mapper.toModel
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
@@ -33,13 +34,19 @@ class DataAuthRepository @Inject constructor(
         if (AuthTokenHolder.accessToken == null) {
             getAccessToken()
         }
+        if (BaseUrlHolder.baseUrl == null) {
+            getBaseUrl()
+        }
     }
 
     override fun getBaseUrl(): String? {
         // TODO: Try async await or validate the use of runBlocking
-        return runBlocking(Dispatchers.IO) {
-            baseUrlDao.getBaseUrl()?.toModel()?.url
+        if (BaseUrlHolder.baseUrl == null) {
+            runBlocking(Dispatchers.IO) {
+                BaseUrlHolder.baseUrl = baseUrlDao.getBaseUrl()?.toModel()?.url
+            }
         }
+        return BaseUrlHolder.baseUrl
     }
 
     override suspend fun storeBaseUrl(url: String) {
@@ -47,8 +54,10 @@ class DataAuthRepository @Inject constructor(
     }
 
     override fun getAccessToken(): String? {
-        runBlocking(Dispatchers.IO) {
-            AuthTokenHolder.accessToken = authTokensDataStore.accessToken.firstOrNull()
+        if (AuthTokenHolder.accessToken == null) {
+            runBlocking(Dispatchers.IO) {
+                AuthTokenHolder.accessToken = authTokensDataStore.accessToken.firstOrNull()
+            }
         }
         return AuthTokenHolder.accessToken
     }
@@ -63,12 +72,11 @@ class DataAuthRepository @Inject constructor(
     override suspend fun storeAuthTokens(
         accessToken: String,
         refreshToken: String,
-        loggedInAs: String,
         maxAge: Long
     ) {
         AuthTokenHolder.accessToken = accessToken
         AuthTokenHolder.refreshToken = refreshToken
-        authTokensDataStore.updateAuthTokens(accessToken, refreshToken, loggedInAs, maxAge)
+        authTokensDataStore.updateAuthTokens(accessToken, refreshToken, maxAge)
     }
 
     override suspend fun getAllUsers(baseUrl: String): Resource<AllUsers> {
@@ -84,6 +92,7 @@ class DataAuthRepository @Inject constructor(
 
     override suspend fun getLoggedInUser(): User? {
         return userDao.getLoggedInUser()?.toModel()
+
     }
 
     override suspend fun storeLoggedInUser(user: User) {
@@ -98,6 +107,7 @@ class DataAuthRepository @Inject constructor(
     ): Resource<User> {
         return try {
             Resource.Loading<User>()
+            val baseUrl = BaseUrlHolder.baseUrl ?: getBaseUrl()
 
             val request = CreateUserRequest(
                 email = email,
@@ -106,6 +116,7 @@ class DataAuthRepository @Inject constructor(
                 roles = roles
             )
             val result = authApiService.createUser(
+                baseUrl = "${baseUrl}auth/profile/create",
                 bearerAccessToken = "Bearer " + (AuthTokenHolder.accessToken ?: getAccessToken()),
                 createUserRequest = request
             ).toModel()

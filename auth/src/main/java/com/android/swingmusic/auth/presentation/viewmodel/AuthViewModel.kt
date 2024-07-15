@@ -1,6 +1,6 @@
 package com.android.swingmusic.auth.presentation.viewmodel
 
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +18,9 @@ import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.state.AuthUiState
 import com.android.swingmusic.auth.presentation.util.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,29 +29,39 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    val authUiState: MutableState<AuthUiState> = mutableStateOf(AuthUiState())
+    private val _isUserLoggedInFlow = MutableStateFlow(false)
+    val isUserLoggedInFlow: Flow<Boolean> get() = _isUserLoggedInFlow
+
+    private val _authUiState: MutableStateFlow<AuthUiState> = MutableStateFlow(AuthUiState())
+    val authUiState: StateFlow<AuthUiState> get() = _authUiState
 
     init {
         getSavedBaseUrl()
     }
 
     // Proceed to :home if token is not null
-    fun getAccessToken(): String? {
-        return AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+    fun isUserLoggedIn(): State<Boolean> {
+        val token = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+        return mutableStateOf(!token.isNullOrEmpty())
     }
 
-    // TODO: Call this upon navigating to :home
-    fun getAuthenticatedUser() {
+    fun updateIsUserLoggedInFlow() {
+        val token = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+        _isUserLoggedInFlow.value = !token.isNullOrEmpty()
+    }
 
+    private suspend fun getAuthenticatedUser() {
+        val user = authRepository.getLoggedInUser()
+        // TODO: Call this at :home, update userUi
     }
 
     private fun resetUiStates() {
-        authUiState.value = AuthUiState()
+        _authUiState.value = AuthUiState()
     }
 
     private fun getSavedBaseUrl() {
         val url = authRepository.getBaseUrl()
-        authUiState.value = authUiState.value.copy(baseUrl = url)
+        _authUiState.value = _authUiState.value.copy(baseUrl = url)
     }
 
     fun storeInputServerUrl(url: String) {
@@ -75,13 +88,13 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun logInWithUsernameAndPassword() {
-        val baseUrl = authUiState.value.baseUrl
-        val username = authUiState.value.username
-        val password = authUiState.value.password
+        val baseUrl = _authUiState.value.baseUrl
+        val username = _authUiState.value.username
+        val password = _authUiState.value.password
 
         viewModelScope.launch {
             if (baseUrl.isNullOrEmpty() || !validInputUrl(baseUrl)) {
-                authUiState.value = authUiState.value.copy(
+                _authUiState.value = _authUiState.value.copy(
                     authState = AuthState.LOGGED_OUT,
                     isLoading = false,
                     authError = AuthError.InputError("ENTER A VALID URL")
@@ -90,7 +103,7 @@ class AuthViewModel @Inject constructor(
             }
 
             if (username.isNullOrEmpty() || password.isNullOrEmpty()) {
-                authUiState.value = authUiState.value.copy(
+                _authUiState.value = _authUiState.value.copy(
                     authState = AuthState.LOGGED_OUT,
                     isLoading = false,
                     authError = AuthError.LoginError(msg = "ALL INPUTS ARE REQUIRED")
@@ -104,7 +117,7 @@ class AuthViewModel @Inject constructor(
 
             when (logInResult) {
                 is Resource.Loading -> {
-                    authUiState.value = authUiState.value.copy(
+                    _authUiState.value = _authUiState.value.copy(
                         authState = AuthState.LOGGED_OUT,
                         isLoading = true,
                         authError = AuthError.None
@@ -112,7 +125,7 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is Resource.Error -> {
-                    authUiState.value = authUiState.value.copy(
+                    _authUiState.value = _authUiState.value.copy(
                         authState = AuthState.LOGGED_OUT,
                         isLoading = false,
                         authError = AuthError.LoginError(msg = logInResult.message!!)
@@ -123,12 +136,11 @@ class AuthViewModel @Inject constructor(
                     val accessToken = logInResult.data!!.accessToken
                     val refreshToken = logInResult.data.refreshToken
                     val mxAge = logInResult.data.maxAge
-                    val loggedInAs = logInResult.data.msg // e.g Logged in as Admin
 
                     authRepository.storeBaseUrl(baseUrl)
-                    authRepository.storeAuthTokens(accessToken, refreshToken, loggedInAs, mxAge)
+                    authRepository.storeAuthTokens(accessToken, refreshToken, mxAge)
 
-                    authUiState.value = authUiState.value.copy(
+                    _authUiState.value = _authUiState.value.copy(
                         authState = AuthState.AUTHENTICATED,
                         isLoading = false,
                         authError = AuthError.None,
@@ -148,7 +160,7 @@ class AuthViewModel @Inject constructor(
             val pairCode = pair.second
 
             if (url.isEmpty() or pairCode.isEmpty()) {
-                authUiState.value = AuthUiState(
+                _authUiState.value = AuthUiState(
                     authState = AuthState.LOGGED_OUT,
                     isLoading = false,
                     authError = AuthError.LoginError("INVALID QR CODE")
@@ -158,7 +170,7 @@ class AuthViewModel @Inject constructor(
 
             when (val qrLogInResult = authRepository.logInWithQrCode(url, pairCode)) {
                 is Resource.Loading -> {
-                    authUiState.value = AuthUiState(
+                    _authUiState.value = AuthUiState(
                         authState = AuthState.LOGGED_OUT,
                         isLoading = true,
                         authError = AuthError.None
@@ -166,7 +178,7 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is Resource.Error -> {
-                    authUiState.value = AuthUiState(
+                    _authUiState.value = AuthUiState(
                         authState = AuthState.LOGGED_OUT,
                         isLoading = false,
                         authError = AuthError.LoginError(msg = qrLogInResult.message!!)
@@ -179,10 +191,10 @@ class AuthViewModel @Inject constructor(
                     val maxAge = qrLogInResult.data.maxAge
                     val loggedInAs = qrLogInResult.data.msg // e.g Logged in as Admin
 
+                    authRepository.storeAuthTokens(accessToken, refreshToken, maxAge)
                     authRepository.storeBaseUrl(url)
-                    authRepository.storeAuthTokens(accessToken, refreshToken, loggedInAs, maxAge)
 
-                    authUiState.value = AuthUiState(
+                    _authUiState.value = AuthUiState(
                         authState = AuthState.AUTHENTICATED,
                         isLoading = false,
                         authError = AuthError.None,
@@ -213,21 +225,21 @@ class AuthViewModel @Inject constructor(
             }
 
             is OnBaseUrlChange -> {
-                authUiState.value = authUiState.value.copy(
+                _authUiState.value = _authUiState.value.copy(
                     baseUrl = event.newInput.trim(),
                     authError = AuthError.None
                 )
             }
 
             is OnUsernameChange -> {
-                authUiState.value = authUiState.value.copy(
+                _authUiState.value = _authUiState.value.copy(
                     username = event.newInput,
                     authError = AuthError.None
                 )
             }
 
             is OnPasswordChange -> {
-                authUiState.value = authUiState.value.copy(
+                _authUiState.value = _authUiState.value.copy(
                     password = event.newInput,
                     authError = AuthError.None
                 )

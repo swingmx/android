@@ -28,6 +28,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import java.util.Locale
 import com.android.swingmusic.uicomponent.R as UiComponents
 
@@ -43,10 +45,13 @@ fun SortByChip(
     } else UiComponents.drawable.arrow_downward
 
     val borderTint = if (isSelected) Color.Transparent else
-        MaterialTheme.colorScheme.onSurface.copy(alpha = .25F)
+        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = .5F)
 
     val bgTint = if (!isSelected) Color.Transparent else
-        MaterialTheme.colorScheme.onSurface.copy(alpha = .25F)
+        MaterialTheme.colorScheme.secondaryContainer
+
+    val textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else
+    MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = .75F)
 
     val formattedLabel by remember {
         derivedStateOf {
@@ -66,7 +71,7 @@ fun SortByChip(
             .clip(RoundedCornerShape(24))
             .background(bgTint)
             .border(
-                width = if (isSelected) 0.dp else (.5).dp,
+                width = if (isSelected) 0.dp else 1.dp,
                 color = borderTint,
                 shape = RoundedCornerShape(24)
             )
@@ -75,7 +80,10 @@ fun SortByChip(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
 
-            Text(text = formattedLabel)
+            Text(
+                text = formattedLabel,
+                color = textColor
+            )
             Spacer(modifier = Modifier.width(4.dp))
             if (isSelected) {
                 Icon(
@@ -92,25 +100,26 @@ fun SortByChip(
 @Composable
 fun SortByChipPreview() {
 
-    Surface {
-        Row(
-            modifier = Modifier.padding(8.dp)
-        ) {
-            SortByChip(
-                labelPair = Pair(SortBy.NAME, "Name"),
-                isSelected = true,
-                sortOrder = SortOrder.ASCENDING
+    SwingMusicTheme_Preview {
+        Surface {
+            Row(
+                modifier = Modifier.padding(8.dp)
             ) {
+                SortByChip(
+                    labelPair = Pair(SortBy.NAME, "Name"),
+                    isSelected = true,
+                    sortOrder = SortOrder.ASCENDING
+                ) {
 
-            }
-            Spacer(modifier = Modifier.width(12.dp))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
 
-            SortByChip(
-                labelPair = Pair(SortBy.NAME, "Name"),
-            ) {
+                SortByChip(
+                    labelPair = Pair(SortBy.NAME, "Name"),
+                ) {
 
+                }
             }
         }
-
     }
 }
