@@ -28,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import java.util.Locale
 import com.android.swingmusic.uicomponent.R as UiComponents
@@ -51,7 +50,7 @@ fun SortByChip(
         MaterialTheme.colorScheme.secondaryContainer
 
     val textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else
-    MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = .75F)
+        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = .75F)
 
     val formattedLabel by remember {
         derivedStateOf {

@@ -1,6 +1,9 @@
 package com.android.swingmusic.auth.presentation.screen
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,10 +20,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,12 +39,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -50,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
 import com.android.swingmusic.auth.presentation.navigation.AuthNavigator
 import com.android.swingmusic.auth.presentation.state.AuthState
+import com.android.swingmusic.auth.presentation.state.AuthUiState
 import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.uicomponent.R
@@ -58,26 +72,66 @@ import com.ramcosta.composedestinations.annotation.Destination
 
 @Composable
 private fun LoginWithUsername(
-    baseUrl: String,
-    username: String,
-    password: String,
-    statusText: String,
-    statusTextColor: Color,
+    authUiState: AuthUiState,
     onBaseUrlChange: (String) -> Unit,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onClickBack: () -> Unit,
     onClickLogIn: () -> Unit
 ) {
+    val baseUrl = authUiState.baseUrl ?: ""
+    val username = authUiState.username ?: ""
+    val password = authUiState.password ?: ""
+
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    val passwordFocusManager = LocalFocusManager.current
+    val passwordFocusRequester = remember { FocusRequester() }
+
+    val isLoading = authUiState.isLoading
+    val authError = authUiState.authError
+    val authState = authUiState.authState
+
+    var statusTextColor: Color = MaterialTheme.colorScheme.onSurface
+    val statusText = if (isLoading) {
+        statusTextColor = MaterialTheme.colorScheme.onSurface
+        "AUTHENTICATING..."
+    } else if (authState == AuthState.AUTHENTICATED) {
+        statusTextColor = MaterialTheme.colorScheme.onSurface
+        "AUTHENTICATED"
+    } else when (authError) {
+        is AuthError.InputError -> {
+            statusTextColor = MaterialTheme.colorScheme.error
+            authError.msg
+        }
+
+        is AuthError.LoginError -> {
+            statusTextColor = MaterialTheme.colorScheme.error
+            authError.msg
+        }
+
+        else -> ""
+    }
+
+    val logInBtnColor by animateColorAsState(
+        targetValue = if (isLoading)
+            MaterialTheme.colorScheme.primary.copy(alpha = .5F) else
+            MaterialTheme.colorScheme.primary, label = "Btn Color",
+        animationSpec = tween()
+    )
+
     Scaffold(
         topBar = {
             Row(
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { onClickBack() }) {
+                IconButton(
+                    onClick = { onClickBack() },
+                    enabled = !isLoading
+                ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         contentDescription = "Arrow Back"
                     )
                 }
@@ -124,6 +178,7 @@ private fun LoginWithUsername(
 
                     TextField(
                         modifier = Modifier.fillMaxWidth(.85F),
+                        enabled = !isLoading,
                         value = baseUrl,
                         onValueChange = {
                             onBaseUrlChange(it)
@@ -144,6 +199,9 @@ private fun LoginWithUsername(
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
                             unfocusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                            disabledIndicatorColor = Color.Transparent,
+                            disabledContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                            disabledTextColor = colorScheme.onSurface
                         )
                     )
 
@@ -151,6 +209,7 @@ private fun LoginWithUsername(
 
                     TextField(
                         modifier = Modifier.fillMaxWidth(.85F),
+                        enabled = !isLoading,
                         value = username,
                         onValueChange = {
                             onUsernameChange(it)
@@ -171,13 +230,19 @@ private fun LoginWithUsername(
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
                             unfocusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                            disabledIndicatorColor = Color.Transparent,
+                            disabledContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                            disabledTextColor = colorScheme.onSurface
                         )
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
                     TextField(
-                        modifier = Modifier.fillMaxWidth(.85F),
+                        modifier = Modifier
+                            .fillMaxWidth(.85F)
+                            .focusRequester(passwordFocusRequester),
+                        enabled = !isLoading,
                         value = password,
                         onValueChange = {
                             onPasswordChange(it)
@@ -191,14 +256,38 @@ private fun LoginWithUsername(
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
                             )
                         },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
                             unfocusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                        )
+                            disabledIndicatorColor = Color.Transparent,
+                            disabledContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                            disabledTextColor = colorScheme.onSurface
+                        ),
+                        trailingIcon = {
+                            val image = if (!isPasswordVisible)
+                                R.drawable.ic_password_visibility else R.drawable.ic_password_visibility_off
+                            IconButton(onClick = {
+                                isPasswordVisible = !isPasswordVisible
+                            }) {
+                                Icon(
+                                    painter = painterResource(id = image),
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    contentDescription = "Toggle Icon"
+                                )
+                            }
+                        },
+                        keyboardActions = KeyboardActions(onDone = {
+                            passwordFocusManager.clearFocus(force = true)
+                        }),
+                        keyboardOptions = KeyboardOptions(
+                            autoCorrect = false,
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
+
                     )
 
                     Spacer(modifier = Modifier.height(40.dp))
@@ -207,6 +296,13 @@ private fun LoginWithUsername(
                         modifier = Modifier
                             .fillMaxWidth(.85F)
                             .heightIn(min = 46.dp),
+                        enabled = !isLoading,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = logInBtnColor,
+                            disabledContainerColor = logInBtnColor,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
                         onClick = { onClickLogIn() }) {
                         Text(text = "Login")
                     }
@@ -214,12 +310,23 @@ private fun LoginWithUsername(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Box(
+                Row(
                     modifier = Modifier
-                        .height(24.dp)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .height(24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(12.dp),
+                            strokeWidth = 1.dp,
+                            strokeCap = StrokeCap.Round
+                        )
+
+                        Spacer(modifier = Modifier.width(12.dp))
+                    }
+
                     Text(
                         text = statusText,
                         color = statusTextColor.copy(alpha = .84F),
@@ -241,26 +348,6 @@ fun LoginWithUsernameScreen(
     authNavigator: AuthNavigator
 ) {
     val authUiState by authViewModel.authUiState.collectAsState()
-    var statusTextColor: Color = MaterialTheme.colorScheme.onSurface
-    val statusText = if (authUiState.isLoading) {
-        statusTextColor = MaterialTheme.colorScheme.onSurface
-        "LOADING..."
-    } else if (authUiState.authState == AuthState.AUTHENTICATED) {
-        statusTextColor = MaterialTheme.colorScheme.onSurface
-        "AUTHENTICATED"
-    } else when (val error = authUiState.authError) {
-        is AuthError.LoginError -> {
-            statusTextColor = MaterialTheme.colorScheme.error
-            error.msg
-        }
-
-        is AuthError.InputError -> {
-            statusTextColor = MaterialTheme.colorScheme.error
-            error.msg
-        }
-
-        else -> ""
-    }
 
     LaunchedEffect(key1 = authUiState.authState, block = {
         if (authUiState.authState == AuthState.AUTHENTICATED) {
@@ -270,11 +357,7 @@ fun LoginWithUsernameScreen(
     })
 
     LoginWithUsername(
-        baseUrl = authUiState.baseUrl ?: "",
-        username = authUiState.username ?: "",
-        password = authUiState.password ?: "",
-        statusText = statusText,
-        statusTextColor = statusTextColor,
+        authUiState = authUiState,
         onBaseUrlChange = {
             authViewModel.onAuthUiEvent(AuthUiEvent.OnBaseUrlChange(it))
         },
@@ -284,9 +367,17 @@ fun LoginWithUsernameScreen(
         onPasswordChange = {
             authViewModel.onAuthUiEvent(AuthUiEvent.OnPasswordChange(it))
         },
-        onClickBack = { authNavigator.gotoLoginWithQrCode() },
+        onClickBack = {
+            authNavigator.gotoLoginWithQrCode()
+            authViewModel.onAuthUiEvent(AuthUiEvent.ClearErrorState)
+        },
         onClickLogIn = { authViewModel.onAuthUiEvent(AuthUiEvent.LogInWithUsernameAndPassword) }
     )
+
+    BackHandler(enabled = !authUiState.isLoading) {
+        authViewModel.onAuthUiEvent(AuthUiEvent.ClearErrorState)
+        authNavigator.gotoLoginWithQrCode()
+    }
 }
 
 @Preview(
@@ -296,16 +387,19 @@ fun LoginWithUsernameScreen(
 @Composable
 fun LoginWithUsernamePreview() {
     SwingMusicTheme_Preview {
-        var baseUrl = remember { "" }
+        var baseUrl = remember { "https://default" }
         var username = remember { "" }
         var password = remember { "" }
 
         LoginWithUsername(
-            baseUrl = baseUrl,
-            username = username,
-            password = password,
-            statusText = "",
-            statusTextColor = Color.Unspecified,
+            authUiState = AuthUiState(
+                baseUrl = baseUrl,
+                username = username,
+                password = password,
+                authState = AuthState.LOGGED_OUT,
+                isLoading = false,
+                authError = AuthError.None
+            ),
             onBaseUrlChange = { baseUrl = it },
             onUsernameChange = { username = it },
             onPasswordChange = { password = it },

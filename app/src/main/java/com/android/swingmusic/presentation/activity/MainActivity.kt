@@ -2,27 +2,19 @@ package com.android.swingmusic.presentation.activity
 
 import android.content.ComponentName
 import android.os.Bundle
-import android.widget.Toast
-import android.widget.Toast.LENGTH_SHORT
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -36,17 +28,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
@@ -57,7 +45,7 @@ import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAnd
 import com.android.swingmusic.home.presentation.destinations.HomeDestination
 import com.android.swingmusic.player.presentation.screen.MiniPlayer
 import com.android.swingmusic.player.presentation.screen.NowPlayingScreen
-import com.android.swingmusic.player.presentation.screen.UpNextQueueScreen
+import com.android.swingmusic.player.presentation.screen.QueueScreen
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.presentation.navigator.BottomNavItem
 import com.android.swingmusic.presentation.navigator.CoreNavigator
@@ -69,12 +57,12 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.dependency
-import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.rememberNavHostEngine
 import com.ramcosta.composedestinations.spec.NavGraphSpec
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -121,16 +109,15 @@ class MainActivity : ComponentActivity() {
             val newBackStackEntry by navController.currentBackStackEntryAsState()
             val route = newBackStackEntry?.destination?.route
 
-            val context = LocalContext.current
             val bottomNavItems: List<BottomNavItem> = listOf(
-                BottomNavItem.Home,
+                // BottomNavItem.Home,
                 BottomNavItem.Folder,
-                BottomNavItem.Album,
-                BottomNavItem.Playlist,
-                BottomNavItem.Artist,
+                // BottomNavItem.Album,
+                // BottomNavItem.Playlist,
+                // BottomNavItem.Artist,
             )
 
-            SwingMusicTheme{
+            SwingMusicTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
@@ -164,52 +151,45 @@ class MainActivity : ComponentActivity() {
                                 val currentSelectedItem by navController.currentScreenAsState(
                                     isUserLoggedIn
                                 )
+                                // REMEMBER: Return NavigationBar when at least 2 items are ready
 
-                                NavigationBar(
-                                    modifier = Modifier,
-                                    containerColor = MaterialTheme.colorScheme.inverseOnSurface
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        bottomNavItems.forEach { item ->
-                                            NavigationBarItem(
-                                                icon = {
-                                                    Icon(
-                                                        painter = painterResource(id = item.icon),
-                                                        contentDescription = null
-                                                    )
-                                                },
-                                                selected = currentSelectedItem == item.navGraph,
-                                                alwaysShowLabel = false,
-                                                label = { Text(text = item.title) },
-                                                onClick = {
-                                                    if (item.navGraph != null) {
-                                                        navController.navigate(
-                                                            item.navGraph!!,
-                                                            fun NavOptionsBuilder.() {
-                                                                launchSingleTop = true
-                                                                restoreState = true
+                                /* NavigationBar(
+                                     modifier = Modifier,
+                                     containerColor = MaterialTheme.colorScheme.inverseOnSurface
+                                 ) {
+                                     Row(
+                                         modifier = Modifier.fillMaxWidth(),
+                                         horizontalArrangement = Arrangement.Center
+                                     ) {
+                                         bottomNavItems.forEach { item ->
+                                             NavigationBarItem(
+                                                 icon = {
+                                                     Icon(
+                                                         painter = painterResource(id = item.icon),
+                                                         contentDescription = null
+                                                     )
+                                                 },
+                                                 selected = currentSelectedItem == item.navGraph,
+                                                 alwaysShowLabel = false,
+                                                 label = { Text(text = item.title) },
+                                                 onClick = {
+                                                     navController.navigate(
+                                                         item.navGraph!!,
+                                                         fun NavOptionsBuilder.() {
+                                                             launchSingleTop = true
+                                                             restoreState = true
 
-                                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                                    saveState = true
-                                                                    inclusive = false
-                                                                }
-                                                            }
-                                                        )
-                                                    } else {
-                                                        Toast.makeText(
-                                                            context,
-                                                            "${item.title} under development",
-                                                            LENGTH_SHORT
-                                                        ).show()
-                                                    }
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
+                                                             popUpTo(navController.graph.findStartDestination().id) {
+                                                                 saveState = true
+                                                                 inclusive = false
+                                                             }
+                                                         }
+                                                     )
+                                                 }
+                                             )
+                                         }
+                                     }
+                                 }*/
                             }
                         }
                     }
@@ -246,21 +226,8 @@ class MainActivity : ComponentActivity() {
                         sheetState = queueBottomSheetState,
                         dragHandle = {}
                     ) {
-                        UpNextQueueScreen(
+                        QueueScreen(
                             mediaControllerViewModel = mediaControllerViewModel,
-                            bottomContent = {
-                                MiniPlayer(
-                                    mediaControllerViewModel = mediaControllerViewModel,
-                                    onClickPlayerItem = {
-                                        coroutineScope.launch { queueBottomSheetState.hide() }
-                                            .invokeOnCompletion {
-                                                if (!queueBottomSheetState.isVisible) {
-                                                    showQueueBottomSheet = false
-                                                }
-                                            }
-                                    }
-                                )
-                            },
                             onClickBack = {
                                 coroutineScope.launch { queueBottomSheetState.hide() }
                                     .invokeOnCompletion {

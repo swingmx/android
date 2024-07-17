@@ -19,6 +19,7 @@ import com.android.swingmusic.network.data.api.service.NetworkApiService
 import com.android.swingmusic.network.domain.model.LogTrackRequest
 import com.android.swingmusic.network.domain.repository.NetworkRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
 import timber.log.Timber
 import java.io.IOException
@@ -31,34 +32,39 @@ class DataNetworkRepository @Inject constructor(
     private val authRepository: AuthRepository
 ) : NetworkRepository {
     // TODO: Split Network Repository. Handle module related methods in the respective module
-    override suspend fun getFoldersAndTracks(requestData: FoldersAndTracksRequest): Resource<FoldersAndTracks> {
-        return try {
-            Resource.Loading<FoldersAndTracks>()
+    override suspend fun getFoldersAndTracks(requestData: FoldersAndTracksRequest): Flow<Resource<FoldersAndTracks>> {
 
-            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-            val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+        return flow {
+            try {
+                emit(Resource.Loading())
 
-            val foldersAndTracksDto =
-                networkApiService.getFoldersAndTracks(
-                    requestData = requestData.toFoldersAndTracksRequestDto(),
-                    baseUrl = "${baseUrl}folder",
-                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+                val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+                val foldersAndTracksDto =
+                    networkApiService.getFoldersAndTracks(
+                        requestData = requestData.toFoldersAndTracksRequestDto(),
+                        baseUrl = "${baseUrl}folder",
+                        bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                    )
+
+                emit(Resource.Success(data = foldersAndTracksDto.toFolderAndTracks()))
+
+            } catch (e: IOException) {
+                emit(
+                    Resource.Error(
+                        message = "Unable to fetch folders\nCheck your connection and try again!"
+                    )
                 )
-            Resource.Success(data = foldersAndTracksDto.toFolderAndTracks())
-        } catch (e: IOException) {
-            Resource.Error(
-                message = e.message
-                    ?: "Unable to fetch folders\nCheck your connection and try again!"
-            )
-
-        } catch (e: HttpException) {
-            Resource.Error(
-                message = "Unable to fetch folders\nCheck your connection and try again!"
-            )
-        } catch (e: Exception) {
-            Resource.Error(
-                message = e.message ?: "An unexpected error occurred!"
-            )
+            } catch (e: HttpException) {
+                emit(
+                    Resource.Error(
+                        message = "Unable to fetch folders\nCheck your connection and try again!"
+                    )
+                )
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "Connection Failed"))
+            }
         }
     }
 
@@ -80,21 +86,25 @@ class DataNetworkRepository @Inject constructor(
         ).flow
     }
 
-    override suspend fun getArtistsCount(): Resource<Int> {
+    override suspend fun getArtistsCount(): Flow<Resource<Int>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
         val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
-        return try {
-            Resource.Loading<Int>()
+        return flow {
+            try {
+                emit(Resource.Loading<Int>())
 
-            Resource.Success(
-                data = networkApiService.getSampleArtist(
-                    baseUrl = "${baseUrl}getall/artists",
-                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
-                ).toAllArtists().total
-            )
-        } catch (e: Exception) {
-            Resource.Error(message = "Error loading artists")
+                emit(
+                    Resource.Success(
+                        data = networkApiService.getSampleArtist(
+                            baseUrl = "${baseUrl}getall/artists",
+                            bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                        ).toAllArtists().total
+                    )
+                )
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "Error loading artists"))
+            }
         }
     }
 
@@ -121,7 +131,7 @@ class DataNetworkRepository @Inject constructor(
             )
 
         } catch (e: HttpException) {
-            Timber.e("ERROR LOGGING TRACK TO SERVER")
+            Timber.e("NETWORK ERROR LOGGING TRACK TO SERVER")
         } catch (e: Exception) {
             Timber.e("ERROR LOGGING TRACK TO SERVER: CAUSED BY -> ${e.message}")
         }

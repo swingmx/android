@@ -13,6 +13,7 @@ import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
 import com.android.swingmusic.network.domain.repository.NetworkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -34,8 +35,9 @@ class ArtistsViewModel @Inject constructor(
 
     private fun getArtistsCount() {
         viewModelScope.launch {
-            val count = networkRepository.getArtistsCount()
-            artistsUiState.value = artistsUiState.value.copy(totalArtists = count)
+            networkRepository.getArtistsCount().collectLatest {
+                artistsUiState.value = artistsUiState.value.copy(totalArtists = it)
+            }
         }
     }
 

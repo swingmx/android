@@ -27,7 +27,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 
 @Composable

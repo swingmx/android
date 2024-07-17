@@ -50,10 +50,8 @@ import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
-
 
 @Composable
 fun TrackItem(
@@ -176,13 +174,13 @@ fun TrackItem(
                 }
             }
 
-            // More Icon
-            IconButton(onClick = { onClickMoreVert(track) }) {
+            // More Icon __ TODO: Return this when contextual menu is ready
+            /*IconButton(onClick = { onClickMoreVert(track) }) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "More Icon"
                 )
-            }
+            }*/
         }
 
         trackQueueNumber?.let { number ->

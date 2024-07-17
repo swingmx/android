@@ -13,6 +13,7 @@ import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.network.domain.repository.NetworkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -42,7 +43,7 @@ class FoldersViewModel @Inject constructor(
                     folders = emptyList(),
                     tracks = emptyList()
                 ),
-                isLoading = true,
+                isLoading = false,
                 isError = false
             )
         )
@@ -55,7 +56,7 @@ class FoldersViewModel @Inject constructor(
                 folders = emptyList(),
                 tracks = emptyList()
             ),
-            isLoading = true,
+            isLoading = false,
             isError = false
         )
     }
@@ -63,42 +64,45 @@ class FoldersViewModel @Inject constructor(
     private fun getFoldersAndTracks(path: String) {
         viewModelScope.launch {
             val request = FoldersAndTracksRequest(path, false)
+            val folderResult = networkRepository.getFoldersAndTracks(request)
 
-            when (val result = networkRepository.getFoldersAndTracks(request)) {
-                is Resource.Success -> {
-                    _foldersAndTracks.value = FoldersAndTracksState(
-                        foldersAndTracks = result.data ?: FoldersAndTracks(
-                            emptyList(),
-                            emptyList()
-                        ),
-                        isLoading = false,
-                        isError = false
-                    )
-                }
-
-                is Resource.Error -> {
-                    _foldersAndTracks.value =
-                        _foldersAndTracks.value.copy(
-                            foldersAndTracks = FoldersAndTracks(
+            folderResult.collectLatest { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        _foldersAndTracks.value = FoldersAndTracksState(
+                            foldersAndTracks = result.data ?: FoldersAndTracks(
                                 emptyList(),
                                 emptyList()
                             ),
                             isLoading = false,
-                            isError = true,
-                            errorMessage = result.message!!
-                        )
-                }
-
-                is Resource.Loading -> {
-                    _foldersAndTracks.value =
-                        _foldersAndTracks.value.copy(
-                            foldersAndTracks = FoldersAndTracks(
-                                emptyList(),
-                                emptyList()
-                            ),
-                            isLoading = true,
                             isError = false
                         )
+                    }
+
+                    is Resource.Error -> {
+                        _foldersAndTracks.value =
+                            _foldersAndTracks.value.copy(
+                                foldersAndTracks = FoldersAndTracks(
+                                    emptyList(),
+                                    emptyList()
+                                ),
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = result.message!!
+                            )
+                    }
+
+                    is Resource.Loading -> {
+                        _foldersAndTracks.value =
+                            _foldersAndTracks.value.copy(
+                                foldersAndTracks = FoldersAndTracks(
+                                    emptyList(),
+                                    emptyList()
+                                ),
+                                isLoading = true,
+                                isError = false
+                            )
+                    }
                 }
             }
         }
