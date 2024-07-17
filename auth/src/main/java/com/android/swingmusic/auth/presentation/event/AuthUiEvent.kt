@@ -12,5 +12,5 @@ interface AuthUiEvent {
 
     data class OnPasswordChange(val newInput: String) : AuthUiEvent
 
-    object ResetStates : AuthUiEvent
+    object ClearErrorState : AuthUiEvent
 }

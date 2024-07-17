@@ -9,11 +9,11 @@ import com.android.swingmusic.core.domain.model.Track
 import kotlinx.coroutines.flow.Flow
 
 interface NetworkRepository {
-    suspend fun getFoldersAndTracks(requestData: FoldersAndTracksRequest): Resource<FoldersAndTracks>
+    suspend fun getFoldersAndTracks(requestData: FoldersAndTracksRequest): Flow<Resource<FoldersAndTracks>>
 
     fun getPagingArtists(sortBy: String, sortOrder: Int): Flow<PagingData<Artist>>
 
-    suspend fun getArtistsCount(): Resource<Int>
+    suspend fun getArtistsCount(): Flow<Resource<Int>>
 
     suspend fun logLastPlayedTrackToServer(track: Track, playDuration: Int, source: String)
 }

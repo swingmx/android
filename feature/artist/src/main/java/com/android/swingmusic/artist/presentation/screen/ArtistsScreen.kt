@@ -303,9 +303,7 @@ fun ArtistsScreen(
 
     val baseUrl by remember { artistsViewModel.baseUrl() }
 
-    SwingMusicTheme(
-        navBarColor = MaterialTheme.colorScheme.inverseOnSurface
-    ) {
+    SwingMusicTheme(navBarColor = MaterialTheme.colorScheme.inverseOnSurface) {
         Artists(
             pagingArtists = pagingArtists,
             artistsUiState = artistsUiState,

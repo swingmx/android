@@ -37,7 +37,6 @@ import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 
 @Composable
@@ -142,12 +141,13 @@ fun FolderItem(
                 }
             }
 
-            IconButton(onClick = { onClickMoreVert(folder) }) {
+            // TODO: Return this when contextual menu is ready
+            /*IconButton(onClick = { onClickMoreVert(folder) }) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "MoreVert"
                 )
-            }
+            }*/
         }
     }
 }

@@ -86,6 +86,7 @@ class CoreNavigator(
     }
 
     // Todo: Remove this after adding home content
+    // REMEMBER: Bug -> Sometimes the app enters ANR state after this method is called
     override fun gotoFolderNavGraph() {
         mediaControllerViewModel.refreshBaseUrl()
         authViewModel.updateIsUserLoggedInFlow() // flow collected in the main activity

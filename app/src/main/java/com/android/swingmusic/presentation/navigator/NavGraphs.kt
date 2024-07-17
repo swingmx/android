@@ -59,18 +59,18 @@ object NavGraphs {
     fun root(isUserLoggedIn: Boolean) = object : NavGraphSpec {
         override val route: String = "root"
 
-        // TODO: Use home as the start route instead of folder
+        // TODO:......Use home as the start route instead of folder
         override val startRoute: Route = if (isUserLoggedIn) folder else auth
 
         override val destinationsByRoute: Map<String, DestinationSpec<*>> = emptyMap()
 
         override val nestedNavGraphs: List<NavGraphSpec> = listOf(
             auth,
-           // home,
-           // playlist,
-           // album,
+            // home,
+            // playlist,
+            // album,
             folder,
-            artist
+            // artist
         )
     }
 }

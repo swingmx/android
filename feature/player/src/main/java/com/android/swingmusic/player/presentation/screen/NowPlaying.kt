@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -226,7 +224,8 @@ private fun NowPlaying(
                         }
                     }
 
-                    IconButton(
+                    // TODO: Return this when fav logic is implemented
+                    /*IconButton(
                         modifier = Modifier
                             .clip(CircleShape),
                         onClick = {
@@ -239,7 +238,7 @@ private fun NowPlaying(
                             painter = painterResource(id = icon),
                             contentDescription = "Favorite"
                         )
-                    }
+                    }*/
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))
@@ -283,29 +282,17 @@ private fun NowPlaying(
                             .padding(horizontal = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        if (playbackState == PlaybackState.ERROR) {
-                            Text(
-                                text = playbackDuration,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
-                            )
-                            Text(
-                                text = track.duration.formatDuration(),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
-                            )
-                        } else {
-                            Text(
-                                text = playbackDuration,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
-                            )
-                            Text(
-                                text = trackDuration,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
-                            )
-                        }
+                        Text(
+                            text = playbackDuration,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
+                        )
+                        Text(
+                            text = if (playbackState == PlaybackState.ERROR)
+                                track.duration.formatDuration() else trackDuration,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
+                        )
                     }
                 }
 
@@ -449,14 +436,15 @@ private fun NowPlaying(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(onClick = {
+                // TODO: Return this when lyrics is ready
+                /*IconButton(onClick = {
                     onClickLyricsIcon()
                 }) {
                     Icon(
                         painter = painterResource(id = R.drawable.lyrics_icon),
                         contentDescription = "Lyrics"
                     )
-                }
+                }*/
 
                 IconButton(onClick = {
                     onToggleRepeatMode(repeatMode)
@@ -491,14 +479,15 @@ private fun NowPlaying(
                     )
                 }
 
-                IconButton(onClick = {
+                // TODO: Return this when contextual menu is ready
+                /*IconButton(onClick = {
                     onClickMore()
                 }) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "More"
                     )
-                }
+                }*/
             }
         }
     }
@@ -517,75 +506,71 @@ fun NowPlayingScreen(
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
-    SwingMusicTheme(
-        navBarColor = MaterialTheme.colorScheme.inverseOnSurface
-    ) {
-        NowPlaying(
-            track = playerUiState.nowPlayingTrack,
-            seekPosition = playerUiState.seekPosition,
-            playbackDuration = playerUiState.playbackDuration,
-            trackDuration = playerUiState.trackDuration,
-            playbackState = playerUiState.playbackState,
-            repeatMode = playerUiState.repeatMode,
-            shuffleMode = playerUiState.shuffleMode,
-            isBuffering = playerUiState.isBuffering,
-            baseUrl = baseUrl ?: "",
-            onClickArtist = {},
-            onToggleRepeatMode = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnToggleRepeatMode
-                )
-            },
-            onClickPrev = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnPrev
-                )
-            },
-            onTogglePlayerState = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnTogglePlayerState
-                )
-            },
-            onResumePlayBackFromError = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnResumePlaybackFromError
-                )
-            },
-            onClickNext = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnNext
-                )
-            },
-            onToggleShuffleMode = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnToggleShuffleMode
-                )
-            },
-            onSeekPlayBack = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnSeekPlayBack(it)
-                )
-            },
-            onClickLyricsIcon = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnClickLyricsIcon
-                )
-            },
-            onToggleFavorite = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnToggleFavorite
-                )
-            },
-            onClickQueueIcon = {
-                onClickOpenQueue()
-            },
-            onClickMore = {
-                mediaControllerViewModel.onPlayerUiEvent(
-                    PlayerUiEvent.OnClickMore
-                )
-            }
-        )
-    }
+    NowPlaying(
+        track = playerUiState.nowPlayingTrack,
+        seekPosition = playerUiState.seekPosition,
+        playbackDuration = playerUiState.playbackDuration,
+        trackDuration = playerUiState.trackDuration,
+        playbackState = playerUiState.playbackState,
+        repeatMode = playerUiState.repeatMode,
+        shuffleMode = playerUiState.shuffleMode,
+        isBuffering = playerUiState.isBuffering,
+        baseUrl = baseUrl ?: "",
+        onClickArtist = {},
+        onToggleRepeatMode = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnToggleRepeatMode
+            )
+        },
+        onClickPrev = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnPrev
+            )
+        },
+        onTogglePlayerState = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnTogglePlayerState
+            )
+        },
+        onResumePlayBackFromError = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnResumePlaybackFromError
+            )
+        },
+        onClickNext = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnNext
+            )
+        },
+        onToggleShuffleMode = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnToggleShuffleMode
+            )
+        },
+        onSeekPlayBack = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnSeekPlayBack(it)
+            )
+        },
+        onClickLyricsIcon = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnClickLyricsIcon
+            )
+        },
+        onToggleFavorite = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnToggleFavorite
+            )
+        },
+        onClickQueueIcon = {
+            onClickOpenQueue()
+        },
+        onClickMore = {
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnClickMore
+            )
+        }
+    )
 }
 
 @Preview(
@@ -631,9 +616,7 @@ fun FullPlayerPreview() {
         trackHash = "trackHash123"
     )
 
-    SwingMusicTheme(
-        navBarColor = null
-    ) {
+    SwingMusicTheme {
         NowPlaying(
             track = track,
             seekPosition = .22F,

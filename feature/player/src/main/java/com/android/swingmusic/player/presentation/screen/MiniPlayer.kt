@@ -52,6 +52,7 @@ import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import kotlin.math.roundToInt
 
 @Composable
@@ -68,10 +69,10 @@ private fun MiniPlayer(
     onSwipeRight: () -> Unit, // | ->>
     baseUrl: String,
 ) {
-    Surface {
-        var swipeDistance by remember { mutableFloatStateOf(0F) }
-        val interactions = remember { MutableInteractionSource() }
+    var swipeDistance by remember { mutableFloatStateOf(0F) }
+    val interactions = remember { MutableInteractionSource() }
 
+    Surface {
         Column(
             modifier = Modifier
                 .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
@@ -91,7 +92,7 @@ private fun MiniPlayer(
                                 } else if (swipeDistance < -50) {
                                     onSwipeLeft()
                                 }
-                                swipeDistance = 0f
+                                swipeDistance = 0F
                             }
                         ) { change, dragAmount ->
                             change.consume()
@@ -241,9 +242,7 @@ fun MiniPlayer(
 )
 @Composable
 fun MiniPlayerPreview() {
-    SwingMusicTheme(
-        navBarColor = Color.Red
-    ) {
+    SwingMusicTheme_Preview{
         MiniPlayer(
             baseUrl = "",
             trackTitle = "Track title is too large to be displayed",

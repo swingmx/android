@@ -13,7 +13,7 @@ import com.android.swingmusic.auth.presentation.event.AuthUiEvent.LogInWithUsern
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnBaseUrlChange
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnPasswordChange
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnUsernameChange
-import com.android.swingmusic.auth.presentation.event.AuthUiEvent.ResetStates
+import com.android.swingmusic.auth.presentation.event.AuthUiEvent.ClearErrorState
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.state.AuthUiState
 import com.android.swingmusic.auth.presentation.util.AuthError
@@ -21,6 +21,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -55,19 +56,15 @@ class AuthViewModel @Inject constructor(
         // TODO: Call this at :home, update userUi
     }
 
-    private fun resetUiStates() {
-        _authUiState.value = AuthUiState()
+    private fun clearErrorState() {
+        _authUiState.value = _authUiState.value.copy(
+            authError = AuthError.None
+        )
     }
 
     private fun getSavedBaseUrl() {
         val url = authRepository.getBaseUrl()
         _authUiState.value = _authUiState.value.copy(baseUrl = url)
-    }
-
-    fun storeInputServerUrl(url: String) {
-        viewModelScope.launch {
-            authRepository.storeBaseUrl(url)
-        }
     }
 
     fun createUser(username: String, password: String, email: String, roles: List<String>) {
@@ -78,11 +75,12 @@ class AuthViewModel @Inject constructor(
                 email = email,
                 roles = roles
             )
-
-            when (createUserResult) {
-                is Resource.Loading -> {}
-                is Resource.Error -> {}
-                is Resource.Success -> {}
+            createUserResult.collectLatest { result ->
+                when (result) {
+                    is Resource.Loading -> {}
+                    is Resource.Error -> {}
+                    is Resource.Success -> {}
+                }
             }
         }
     }
@@ -111,41 +109,44 @@ class AuthViewModel @Inject constructor(
                 return@launch
             }
 
-            val logInResult = authRepository.logInWithUsernameAndPassword(
-                baseUrl = baseUrl, username = username, password = password
+            val result = authRepository.logInWithUsernameAndPassword(
+                baseUrl = baseUrl,
+                username = username,
+                password = password
             )
+            result.collectLatest { logInResult ->
+                when (logInResult) {
+                    is Resource.Loading -> {
+                        _authUiState.value = _authUiState.value.copy(
+                            authState = AuthState.LOGGED_OUT,
+                            isLoading = true,
+                            authError = AuthError.None
+                        )
+                    }
 
-            when (logInResult) {
-                is Resource.Loading -> {
-                    _authUiState.value = _authUiState.value.copy(
-                        authState = AuthState.LOGGED_OUT,
-                        isLoading = true,
-                        authError = AuthError.None
-                    )
-                }
+                    is Resource.Error -> {
+                        _authUiState.value = _authUiState.value.copy(
+                            authState = AuthState.LOGGED_OUT,
+                            isLoading = false,
+                            authError = AuthError.LoginError(msg = logInResult.message!!)
+                        )
+                    }
 
-                is Resource.Error -> {
-                    _authUiState.value = _authUiState.value.copy(
-                        authState = AuthState.LOGGED_OUT,
-                        isLoading = false,
-                        authError = AuthError.LoginError(msg = logInResult.message!!)
-                    )
-                }
+                    is Resource.Success -> {
+                        val accessToken = logInResult.data!!.accessToken
+                        val refreshToken = logInResult.data.refreshToken
+                        val mxAge = logInResult.data.maxAge
 
-                is Resource.Success -> {
-                    val accessToken = logInResult.data!!.accessToken
-                    val refreshToken = logInResult.data.refreshToken
-                    val mxAge = logInResult.data.maxAge
+                        authRepository.storeBaseUrl(baseUrl)
+                        authRepository.storeAuthTokens(accessToken, refreshToken, mxAge)
 
-                    authRepository.storeBaseUrl(baseUrl)
-                    authRepository.storeAuthTokens(accessToken, refreshToken, mxAge)
-
-                    _authUiState.value = _authUiState.value.copy(
-                        authState = AuthState.AUTHENTICATED,
-                        isLoading = false,
-                        authError = AuthError.None,
-                        baseUrl = baseUrl
-                    )
+                        _authUiState.value = _authUiState.value.copy(
+                            authState = AuthState.AUTHENTICATED,
+                            isLoading = false,
+                            authError = AuthError.None,
+                            baseUrl = baseUrl
+                        )
+                    }
                 }
             }
         }
@@ -153,14 +154,14 @@ class AuthViewModel @Inject constructor(
 
     private fun logInWithQrCode(encoded: String) {
         viewModelScope.launch {
-            resetUiStates()
+            clearErrorState()
 
             val pair = authRepository.processQrCodeData(encoded)
             val url = pair.first
             val pairCode = pair.second
 
             if (url.isEmpty() or pairCode.isEmpty()) {
-                _authUiState.value = AuthUiState(
+                _authUiState.value = _authUiState.value.copy(
                     authState = AuthState.LOGGED_OUT,
                     isLoading = false,
                     authError = AuthError.LoginError("INVALID QR CODE")
@@ -168,38 +169,40 @@ class AuthViewModel @Inject constructor(
                 return@launch
             }
 
-            when (val qrLogInResult = authRepository.logInWithQrCode(url, pairCode)) {
-                is Resource.Loading -> {
-                    _authUiState.value = AuthUiState(
-                        authState = AuthState.LOGGED_OUT,
-                        isLoading = true,
-                        authError = AuthError.None
-                    )
-                }
+            val result = authRepository.logInWithQrCode(url, pairCode)
+            result.collectLatest { qrLogInResult ->
+                when (qrLogInResult) {
+                    is Resource.Loading -> {
+                        _authUiState.value = _authUiState.value.copy(
+                            authState = AuthState.LOGGED_OUT,
+                            isLoading = true,
+                            authError = AuthError.None
+                        )
+                    }
 
-                is Resource.Error -> {
-                    _authUiState.value = AuthUiState(
-                        authState = AuthState.LOGGED_OUT,
-                        isLoading = false,
-                        authError = AuthError.LoginError(msg = qrLogInResult.message!!)
-                    )
-                }
+                    is Resource.Error -> {
+                        _authUiState.value = _authUiState.value.copy(
+                            authState = AuthState.LOGGED_OUT,
+                            isLoading = false,
+                            authError = AuthError.LoginError(msg = qrLogInResult.message!!)
+                        )
+                    }
 
-                is Resource.Success -> {
-                    val accessToken = qrLogInResult.data!!.accessToken
-                    val refreshToken = qrLogInResult.data.refreshToken
-                    val maxAge = qrLogInResult.data.maxAge
-                    val loggedInAs = qrLogInResult.data.msg // e.g Logged in as Admin
+                    is Resource.Success -> {
+                        val accessToken = qrLogInResult.data!!.accessToken
+                        val refreshToken = qrLogInResult.data.refreshToken
+                        val maxAge = qrLogInResult.data.maxAge
 
-                    authRepository.storeAuthTokens(accessToken, refreshToken, maxAge)
-                    authRepository.storeBaseUrl(url)
+                        authRepository.storeAuthTokens(accessToken, refreshToken, maxAge)
+                        authRepository.storeBaseUrl(url)
 
-                    _authUiState.value = AuthUiState(
-                        authState = AuthState.AUTHENTICATED,
-                        isLoading = false,
-                        authError = AuthError.None,
-                        baseUrl = url
-                    )
+                        _authUiState.value = _authUiState.value.copy(
+                            authState = AuthState.AUTHENTICATED,
+                            isLoading = false,
+                            authError = AuthError.None,
+                            baseUrl = url
+                        )
+                    }
                 }
             }
         }
@@ -220,8 +223,8 @@ class AuthViewModel @Inject constructor(
                 logInWithUsernameAndPassword()
             }
 
-            is ResetStates -> {
-                resetUiStates()
+            is ClearErrorState -> {
+                clearErrorState()
             }
 
             is OnBaseUrlChange -> {

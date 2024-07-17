@@ -4,6 +4,7 @@ import com.android.swingmusic.auth.data.util.Resource
 import com.android.swingmusic.auth.domain.model.AllUsers
 import com.android.swingmusic.auth.domain.model.LogInResult
 import com.android.swingmusic.database.domain.model.User
+import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
 
@@ -21,7 +22,7 @@ interface AuthRepository {
         maxAge: Long
     )
 
-    suspend fun getAllUsers(baseUrl: String): Resource<AllUsers>
+    suspend fun getAllUsers(baseUrl: String): Flow<Resource<AllUsers>>
 
     suspend fun getLoggedInUser(): User?
 
@@ -32,16 +33,16 @@ interface AuthRepository {
         password: String,
         email: String,
         roles: List<String>
-    ): Resource<User>
+    ): Flow<Resource<User>>
 
     suspend fun logInWithUsernameAndPassword(
         baseUrl: String,
         username: String,
         password: String
-    ): Resource<LogInResult>
+    ): Flow<Resource<LogInResult>>
 
     /**Should return a Pair of <Url, Code> after decoding the encoded string*/
     fun processQrCodeData(encoded: String): Pair<String, String>
 
-    suspend fun logInWithQrCode(url: String, pairCode: String): Resource<LogInResult>
+    suspend fun logInWithQrCode(url: String, pairCode: String): Flow<Resource<LogInResult>>
 }

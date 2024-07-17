@@ -284,10 +284,16 @@ class MediaControllerViewModel @Inject constructor(
             val mediaItems = tracks.mapIndexed { index, track ->
                 createMediaItem(id = index, track = track)
             }
+            val uiRepeatMode = when (_playerUiState.value.repeatMode) {
+                RepeatMode.REPEAT_OFF -> Player.REPEAT_MODE_OFF
+                RepeatMode.REPEAT_ONE -> Player.REPEAT_MODE_ONE
+                RepeatMode.REPEAT_ALL -> Player.REPEAT_MODE_ALL
+            }
             mediaController?.apply {
                 clearMediaItems()
                 addMediaItems(mediaItems)
                 setPlaybackSpeed(1F)
+                repeatMode = uiRepeatMode
                 seekToDefaultPosition(startIndex)
                 if (autoPlay) prepare()
                 playWhenReady = autoPlay
@@ -414,28 +420,44 @@ class MediaControllerViewModel @Inject constructor(
 
                     if (controller.playbackState == Player.STATE_READY) {
                         controller.seekTo(seekPosition)
+                        controller.play()
                     } else {
                         mediaController?.apply {
                             prepare()
                             seekTo(seekPosition)
-                            pause()
+                            play()
                         }
                     }
                 }
 
                 is OnPrev -> {
-                    stabilizeSeekBarProgress()
-                    controller.seekToPrevious()
-                    controller.play()
+                    if (controller.hasPreviousMediaItem()) {
+                        stabilizeSeekBarProgress()
+                        _playerUiState.value = _playerUiState.value.copy(
+                            playbackDuration = "00:00"
+                        )
+                    }
+
+                    with(controller) {
+                        prepare()
+                        seekToPrevious()
+                        play()
+                    }
                 }
 
                 is OnNext -> {
                     if (controller.hasNextMediaItem()) {
                         stabilizeSeekBarProgress()
+                        _playerUiState.value = _playerUiState.value.copy(
+                            playbackDuration = "00:00"
+                        )
                     }
 
-                    controller.seekToNext()
-                    controller.playWhenReady = true
+                    with(controller) {
+                        prepare()
+                        seekToNext()
+                        play()
+                    }
                 }
 
                 is OnTogglePlayerState -> {
@@ -460,7 +482,7 @@ class MediaControllerViewModel @Inject constructor(
                     when (controller.playbackState) {
                         Player.STATE_ENDED -> {
                             controller.prepare()
-                            controller.seekTo(0)
+                            controller.seekTo(0, 0)
                             controller.play()
                         }
 

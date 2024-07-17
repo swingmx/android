@@ -18,10 +18,11 @@ import com.android.swingmusic.database.data.mapper.toModel
 import com.android.swingmusic.database.domain.model.BaseUrl
 import com.android.swingmusic.database.domain.model.User
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import retrofit2.HttpException
-import timber.log.Timber
 import javax.inject.Inject
 
 class DataAuthRepository @Inject constructor(
@@ -79,14 +80,17 @@ class DataAuthRepository @Inject constructor(
         authTokensDataStore.updateAuthTokens(accessToken, refreshToken, maxAge)
     }
 
-    override suspend fun getAllUsers(baseUrl: String): Resource<AllUsers> {
-        return try {
-            Resource.Loading<AllUsers>()
+    override suspend fun getAllUsers(baseUrl: String): Flow<Resource<AllUsers>> {
+        return flow {
+            try {
+                emit(Resource.Loading())
 
-            val result = authApiService.getAllUsers("$baseUrl/auth/users").toModel()
-            return Resource.Success(data = result)
-        } catch (e: Exception) {
-            Resource.Error(message = "Failed to load users!")
+                val result = authApiService.getAllUsers("$baseUrl/auth/users").toModel()
+                emit(Resource.Success(data = result))
+
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "Failed to load users!"))
+            }
         }
     }
 
@@ -104,26 +108,31 @@ class DataAuthRepository @Inject constructor(
         password: String,
         email: String,
         roles: List<String>
-    ): Resource<User> {
-        return try {
-            Resource.Loading<User>()
-            val baseUrl = BaseUrlHolder.baseUrl ?: getBaseUrl()
+    ): Flow<Resource<User>> {
+        return flow {
+            try {
+                emit(Resource.Loading<User>())
 
-            val request = CreateUserRequest(
-                email = email,
-                username = username,
-                password = password,
-                roles = roles
-            )
-            val result = authApiService.createUser(
-                baseUrl = "${baseUrl}auth/profile/create",
-                bearerAccessToken = "Bearer " + (AuthTokenHolder.accessToken ?: getAccessToken()),
-                createUserRequest = request
-            ).toModel()
+                val baseUrl = BaseUrlHolder.baseUrl ?: getBaseUrl()
 
-            Resource.Success(data = result)
-        } catch (e: Exception) {
-            Resource.Error(message = "Failed to create user")
+                val request = CreateUserRequest(
+                    email = email,
+                    username = username,
+                    password = password,
+                    roles = roles
+                )
+                val result = authApiService.createUser(
+                    baseUrl = "${baseUrl}auth/profile/create",
+                    bearerAccessToken = "Bearer " + (AuthTokenHolder.accessToken
+                        ?: getAccessToken()),
+                    createUserRequest = request
+                ).toModel()
+
+                emit(Resource.Success(data = result))
+
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "Failed to create user"))
+            }
         }
     }
 
@@ -131,27 +140,30 @@ class DataAuthRepository @Inject constructor(
         baseUrl: String,
         username: String,
         password: String
-    ): Resource<LogInResult> {
-        return try {
-            Resource.Loading<LogInResult>()
+    ): Flow<Resource<LogInResult>> {
+        return flow {
+            try {
+                emit(Resource.Loading<LogInResult>())
 
-            val logInRequest = LogInRequest(username = username, password = password)
-            val result = authApiService.logInWithUsernameAndPassword(
-                url = "$baseUrl/auth/login",
-                logInRequest = logInRequest
-            ).toModel()
+                val logInRequest = LogInRequest(username = username, password = password)
+                val result = authApiService.logInWithUsernameAndPassword(
+                    url = "$baseUrl/auth/login",
+                    logInRequest = logInRequest
+                ).toModel()
 
-            Resource.Success(result)
+                emit(Resource.Success(result))
 
-        } catch (e: HttpException) {
-            val msg = when (e.code()) {
-                401 -> "INCORRECT PASSWORD!"
-                404 -> "USER NOT FOUND!"
-                else -> "LOGIN FAILED!"
+            } catch (e: HttpException) {
+                val msg = when (e.code()) {
+                    401 -> "INCORRECT PASSWORD!"
+                    404 -> "USER NOT FOUND!"
+                    else -> "LOGIN FAILED!"
+                }
+                emit(Resource.Error(message = msg))
+
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "LOGIN FAILED!"))
             }
-            Resource.Error(message = msg)
-        } catch (e: Exception) {
-            Resource.Error(message = "LOGIN FAILED!")
         }
     }
 
@@ -165,24 +177,25 @@ class DataAuthRepository @Inject constructor(
     override suspend fun logInWithQrCode(
         url: String,
         pairCode: String
-    ): Resource<LogInResult> {
-        return try {
-            Resource.Loading<LogInResult>()
+    ): Flow<Resource<LogInResult>> {
+        return flow {
+            try {
+                emit(Resource.Loading<LogInResult>())
 
-            Timber.e("LOGGING IN... URL -> $url/auth/pair WITH CODE -> $pairCode")
+                val result = authApiService.logInWithQrCode(
+                    url = "$url/auth/pair",
+                    pairCode = pairCode
+                ).toModel()
 
-            val result = authApiService.logInWithQrCode(
-                url = "$url/auth/pair",
-                pairCode = pairCode
-            ).toModel()
+                emit(Resource.Success(data = result))
 
-            Resource.Success(data = result)
-        } catch (e: HttpException) {
+            } catch (e: HttpException) {
 
-            Resource.Error(message = "Pairing Failed")
-        } catch (e: Exception) {
+                emit(Resource.Error(message = "PAIRING FAILED"))
+            } catch (e: Exception) {
 
-            Resource.Error(message = e.message ?: "Pairing Failed")
+                emit(Resource.Error(message = "PAIRING FAILED"))
+            }
         }
     }
 }
