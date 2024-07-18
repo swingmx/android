@@ -26,8 +26,7 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
         }
     }
@@ -56,11 +55,12 @@ dependencies {
     implementation(project(":auth"))
     implementation(project(":core"))
     implementation(project(":network"))
+    implementation(project(":uicomponent"))
+
     implementation(project(":feature:home"))
     implementation(project(":feature:folder"))
     implementation(project(":feature:player"))
     implementation(project(":feature:artist"))
-    implementation(project(":uicomponent"))
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")
@@ -76,12 +76,13 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     testImplementation("junit:junit:4.13.2")
+
     // Hilt DI
     implementation("com.google.dagger:hilt-android:2.50")
     ksp("com.google.dagger:hilt-android-compiler:2.50")
 
     // Hilt Navigation-Compose
-    implementation ("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
