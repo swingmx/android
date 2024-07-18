@@ -9,8 +9,6 @@ import com.android.swingmusic.database.data.entity.QueueEntity
 
 @Dao
 interface QueueDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertQueue(tracks: List<QueueEntity>)
 
     @Transaction
     suspend fun insertQueueInTransaction(tracks: List<QueueEntity>) {
@@ -21,10 +19,9 @@ interface QueueDao {
     @Query("DELETE FROM queue")
     suspend fun clearQueue()
 
-    @Query("SELECT * FROM queue WHERE trackHash = :trackHash")
-    suspend fun getTrack(trackHash: String): QueueEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertQueue(tracks: List<QueueEntity>)
 
     @Query("SELECT * FROM queue")
-    suspend fun getAllTracks(): List<QueueEntity>
-
+    suspend fun getSavedQueue(): List<QueueEntity>
 }

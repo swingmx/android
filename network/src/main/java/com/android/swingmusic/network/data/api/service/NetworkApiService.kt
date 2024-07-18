@@ -3,8 +3,7 @@ package com.android.swingmusic.network.data.api.service
 import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
-import com.android.swingmusic.database.domain.model.BaseUrl
-import com.android.swingmusic.network.domain.model.LogTrackRequest
+import com.android.swingmusic.network.data.dto.LogTrackRequestDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -22,7 +21,7 @@ interface NetworkApiService {
 
     @POST
     suspend fun logLastPlayedTrackToServer(
-        @Body logTrackRequest: LogTrackRequest,
+        @Body logTrackRequest: LogTrackRequestDto,
         @Url baseUrl: String,
         @Header("Authorization") bearerToken: String,
     ): Any

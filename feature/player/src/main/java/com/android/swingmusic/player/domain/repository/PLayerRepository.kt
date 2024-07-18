@@ -2,17 +2,22 @@ package com.android.swingmusic.player.domain.repository
 
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.database.domain.model.LastPlayedTrack
-import com.android.swingmusic.network.domain.model.LogTrackRequest
 
-interface QueueRepository {
-    
+interface PLayerRepository {
+
     suspend fun insertQueue(track: List<Track>)
 
-    suspend fun getAllTracks(): List<Track>
+    suspend fun getSavedQueue(): List<Track>
 
     suspend fun clearQueue()
 
-    suspend fun updateLastPlayedTrack(trackHash: String, indexInQueue: Int, lastPlayPositionMs: Long)
+    suspend fun updateLastPlayedTrack(
+        trackHash: String,
+        indexInQueue: Int,
+        lastPlayPositionMs: Long
+    )
 
     suspend fun getLastPlayedTrack(): LastPlayedTrack?
+
+    suspend fun logLastPlayedTrackToServer(track: Track, playDuration: Int, source: String)
 }
