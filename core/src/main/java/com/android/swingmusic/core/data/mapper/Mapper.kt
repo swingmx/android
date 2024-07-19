@@ -76,7 +76,7 @@ object Map {
         )
     }
 
-    fun FoldersAndTracksDto.toFolderAndTracks(): FoldersAndTracks {
+    fun FoldersAndTracksDto.toModel(): FoldersAndTracks {
         return FoldersAndTracks(
             folders = foldersDto?.map { it.toFolder() } ?: emptyList<Folder>(),
             tracks = tracksDto?.map { it.toTrack() } ?: emptyList<Track>()
