@@ -9,9 +9,9 @@ import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
+import com.android.swingmusic.folder.domain.FolderRepository
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
-import com.android.swingmusic.network.domain.repository.NetworkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FoldersViewModel @Inject constructor(
-    private val networkRepository: NetworkRepository
+    private val folderRepository: FolderRepository
 ) : ViewModel() {
     val homeDir: Folder = Folder(
         path = "\$home",
@@ -64,7 +64,7 @@ class FoldersViewModel @Inject constructor(
     private fun getFoldersAndTracks(path: String) {
         viewModelScope.launch {
             val request = FoldersAndTracksRequest(path, false)
-            val folderResult = networkRepository.getFoldersAndTracks(request)
+            val folderResult = folderRepository.getFoldersAndTracks(request)
 
             folderResult.collectLatest { result ->
                 when (result) {

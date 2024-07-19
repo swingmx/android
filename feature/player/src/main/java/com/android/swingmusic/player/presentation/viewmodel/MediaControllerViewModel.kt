@@ -15,8 +15,7 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
-import com.android.swingmusic.network.domain.repository.NetworkRepository
-import com.android.swingmusic.player.domain.repository.QueueRepository
+import com.android.swingmusic.player.domain.repository.PLayerRepository
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickLyricsIcon
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickMore
@@ -47,9 +46,8 @@ import kotlin.math.roundToInt
 
 @HiltViewModel
 class MediaControllerViewModel @Inject constructor(
-    private val queueRepository: QueueRepository,
-    private val authRepository: AuthRepository,
-    private val networkRepository: NetworkRepository
+    private val pLayerRepository: PLayerRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     private val _baseUrl: MutableStateFlow<String?> = MutableStateFlow(null)
     val baseUrl: StateFlow<String?> get() = _baseUrl
@@ -125,8 +123,8 @@ class MediaControllerViewModel @Inject constructor(
         viewModelScope.launch {
             refreshBaseUrl()
 
-            val savedQueue = queueRepository.getAllTracks()
-            val lastPlayedTrack = queueRepository.getLastPlayedTrack()
+            val savedQueue = pLayerRepository.getSavedQueue()
+            val lastPlayedTrack = pLayerRepository.getLastPlayedTrack()
             val lastPlayedTrackIndex = lastPlayedTrack?.indexInQueue ?: -1
             val lastPlayPositionMs = lastPlayedTrack?.lastPlayPositionMs ?: 0L
 
@@ -232,7 +230,7 @@ class MediaControllerViewModel @Inject constructor(
         viewModelScope.launch {
             if (queue.isEmpty()) return@launch
             try {
-                queueRepository.insertQueue(queue)
+                pLayerRepository.insertQueue(queue)
                 if (playingTrackIndex in queue.indices) {
                     savePlayingTrackToDatabase(
                         track = queue[playingTrackIndex],
@@ -359,7 +357,7 @@ class MediaControllerViewModel @Inject constructor(
 
                 val source = "fo:${track.folder}" // TODO: Fix Track source after implementing nav
                 if (durationPlayedSec >= 5) {
-                    networkRepository.logLastPlayedTrackToServer(
+                    pLayerRepository.logLastPlayedTrackToServer(
                         track,
                         durationPlayedSec.toInt(),
                         source
@@ -387,7 +385,7 @@ class MediaControllerViewModel @Inject constructor(
 
                     viewModelScope.launch {
                         if (indexInQueue in workingQueue.indices) {
-                            queueRepository.updateLastPlayedTrack(
+                            pLayerRepository.updateLastPlayedTrack(
                                 trackHash = track.trackHash,
                                 indexInQueue = indexInQueue,
                                 lastPlayPositionMs = if (it.trackHash == trackToLog?.trackHash) pos else 0
@@ -650,7 +648,7 @@ class MediaControllerViewModel @Inject constructor(
 
             is QueueEvent.ClearQueue -> {
                 viewModelScope.launch {
-                    queueRepository.clearQueue()
+                    pLayerRepository.clearQueue()
 
                     workingQueue.clear()
                     shuffledQueue.clear()

@@ -37,7 +37,7 @@ class PlaybackService : MediaSessionService() {
             DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
             DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
             DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
-        ).setBackBuffer(30_000, false) // 30 sec cache
+        ).setBackBuffer(300_000, false) // 5 min cache
         val loadControl: LoadControl = loadControlBuilder.build()
 
         val accessToken = authRepository.getAccessToken() ?: "TAG: $this SERVICE -> TOKEN NOT FOUND"

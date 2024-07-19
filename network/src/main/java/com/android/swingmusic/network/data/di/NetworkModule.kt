@@ -9,11 +9,9 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -21,7 +19,10 @@ import javax.inject.Singleton
 object NetworkModule {
     @Provides
     @Singleton
-    fun providesNetworkApiService(okHttpClient: OkHttpClient, baseUrlDao: BaseUrlDao): NetworkApiService {
+    fun providesNetworkApiService(
+        okHttpClient: OkHttpClient,
+        baseUrlDao: BaseUrlDao
+    ): NetworkApiService {
         val baseUrl = runBlocking(Dispatchers.IO) {
             baseUrlDao.getBaseUrl()?.url ?: "http://default"
         }

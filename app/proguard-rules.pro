@@ -1,5 +1,3 @@
-# Add project specific ProGuard rules here.
-
 # Retrofit
 -keep class retrofit2.** { *; }
 -keep class okhttp3.** { *; }

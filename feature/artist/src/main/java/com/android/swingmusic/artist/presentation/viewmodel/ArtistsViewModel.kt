@@ -5,13 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
+import com.android.swingmusic.artist.domain.repository.ArtistRepository
 import com.android.swingmusic.artist.presentation.event.ArtistUiEvent
 import com.android.swingmusic.artist.presentation.state.ArtistsUiState
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
-import com.android.swingmusic.network.domain.repository.NetworkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ArtistsViewModel @Inject constructor(
-    private val networkRepository: NetworkRepository,
+    private val artistRepository: ArtistRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
     private var baseUrl: MutableState<String?> = mutableStateOf(null)
@@ -35,7 +35,7 @@ class ArtistsViewModel @Inject constructor(
 
     private fun getArtistsCount() {
         viewModelScope.launch {
-            networkRepository.getArtistsCount().collectLatest {
+            artistRepository.getArtistsCount().collectLatest {
                 artistsUiState.value = artistsUiState.value.copy(totalArtists = it)
             }
         }
@@ -48,7 +48,7 @@ class ArtistsViewModel @Inject constructor(
         }
         viewModelScope.launch {
             artistsUiState.value = artistsUiState.value.copy(
-                pagingArtists = networkRepository.getPagingArtists(
+                pagingArtists = artistRepository.getPagingArtists(
                     sortBy = sortBy,
                     sortOrder = order
                 ).cachedIn(viewModelScope)
