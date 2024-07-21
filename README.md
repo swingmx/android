@@ -2,14 +2,6 @@
 
 This project is currently in its early development stages as the [Swing Music team](https://github.com/orgs/swingmx/people) is diligently working to deliver a beta version as soon as possible.
 
-<!--
-| Task                               | Status |
-|------------------------------------|--------|
-| List Folders                       | ✔ Done |
-| List Tracks within a folder        | ✔ Done |
-| Implement breadcrumb navigation    | ✔ Done |
--->
-
 <table>
   <tr>
     <td>
@@ -29,3 +21,5 @@ This project is currently in its early development stages as the [Swing Music te
     </td>
   </tr>
 </table>
+
+[![wakatime](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d.svg)](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d)
