@@ -5,4 +5,11 @@ plugins {
     id("com.google.dagger.hilt.android") version "2.50" apply false
     id("com.google.devtools.ksp") version "1.9.0-1.0.13" apply false
     id("com.android.library") version "8.2.1" apply false
+
+    id("dev.iurysouza.modulegraph") version "0.10.0"
+}
+
+moduleGraphConfig {
+    readmePath.set("./README.md")
+    heading = "### Module Graph"
 }
