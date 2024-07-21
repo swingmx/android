@@ -25,7 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -60,6 +60,9 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.ramcosta.composedestinations.annotation.Destination
+import ir.mahozad.multiplatform.wavyslider.WaveDirection.HEAD
+import ir.mahozad.multiplatform.wavyslider.material3.WaveAnimationSpecs
+import ir.mahozad.multiplatform.wavyslider.material3.WavySlider
 import java.util.Locale
 
 @Composable
@@ -244,34 +247,19 @@ private fun NowPlaying(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Column {
-                    /* WaveSlider(
-                         modifier = Modifier.height(12.dp),
-                         value = seekPosition,
-                         onValueChange = { value ->
-                             onSeekPlayBack(value)
-                         },
-                         animationOptions = WaveSliderDefaults.animationOptions(
-                             reverseDirection = false,
-                             flatlineOnDrag = true,
-                             animateWave = animateWave,
-                             reverseFlatline = false
-                         ),
-                         colors = WaveSliderDefaults.colors(
-                             inactiveTrackColor = MaterialTheme.colorScheme.inverseOnSurface
-                         ),
-                         thumb = { PillThumb() },
-                         waveOptions = WaveSliderDefaults.waveOptions(
-                             amplitude = 12F,
-                             frequency = 0.07F
-                         )
-                     )*/
-
-                    Slider(
+                    WavySlider(
                         modifier = Modifier.height(12.dp),
                         value = seekPosition,
                         onValueChange = { value ->
                             onSeekPlayBack(value)
-                        }
+                        },
+                        waveLength = 32.dp,
+                        waveHeight = if (animateWave) 8.dp else 0.dp,
+                        waveVelocity = 16.dp to HEAD,
+                        waveThickness = 4.dp,
+                        trackThickness = 4.dp,
+                        incremental = false,
+                        animationSpecs = SliderDefaults.WaveAnimationSpecs
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
