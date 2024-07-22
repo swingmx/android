@@ -87,7 +87,8 @@ dependencies {
     // Pagination
     implementation("androidx.paging:paging-compose:3.3.0")
 
-    //Wavy Slider
+    // Wavy Slider
+    // implementation ("com.github.galaxygoldfish:waveslider:0.0.3")
     implementation("ir.mahozad.multiplatform:wavy-slider:1.3.0")
 
     // Coroutines

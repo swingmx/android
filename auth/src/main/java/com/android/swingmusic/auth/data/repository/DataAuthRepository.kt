@@ -5,12 +5,12 @@ import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
 import com.android.swingmusic.auth.data.datastore.AuthTokensDataStore
 import com.android.swingmusic.auth.data.mapper.toModel
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
-import com.android.swingmusic.auth.data.util.Resource
 import com.android.swingmusic.auth.domain.model.AllUsers
 import com.android.swingmusic.auth.domain.model.CreateUserRequest
 import com.android.swingmusic.auth.domain.model.LogInRequest
 import com.android.swingmusic.auth.domain.model.LogInResult
 import com.android.swingmusic.auth.domain.repository.AuthRepository
+import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.database.data.dao.BaseUrlDao
 import com.android.swingmusic.database.data.dao.UserDao
 import com.android.swingmusic.database.data.mapper.toEntity

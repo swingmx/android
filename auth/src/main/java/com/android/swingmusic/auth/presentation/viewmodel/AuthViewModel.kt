@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
-import com.android.swingmusic.auth.data.util.Resource
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.LogInWithQrCode
@@ -17,6 +16,7 @@ import com.android.swingmusic.auth.presentation.event.AuthUiEvent.ClearErrorStat
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.state.AuthUiState
 import com.android.swingmusic.auth.presentation.util.AuthError
+import com.android.swingmusic.core.data.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -134,8 +134,8 @@ class AuthViewModel @Inject constructor(
 
                     is Resource.Success -> {
                         val accessToken = logInResult.data!!.accessToken
-                        val refreshToken = logInResult.data.refreshToken
-                        val mxAge = logInResult.data.maxAge
+                        val refreshToken = logInResult.data!!.refreshToken
+                        val mxAge = logInResult.data!!.maxAge
 
                         authRepository.storeBaseUrl(baseUrl)
                         authRepository.storeAuthTokens(accessToken, refreshToken, mxAge)
@@ -190,8 +190,8 @@ class AuthViewModel @Inject constructor(
 
                     is Resource.Success -> {
                         val accessToken = qrLogInResult.data!!.accessToken
-                        val refreshToken = qrLogInResult.data.refreshToken
-                        val maxAge = qrLogInResult.data.maxAge
+                        val refreshToken = qrLogInResult.data!!.refreshToken
+                        val maxAge = qrLogInResult.data!!.maxAge
 
                         authRepository.storeAuthTokens(accessToken, refreshToken, maxAge)
                         authRepository.storeBaseUrl(url)

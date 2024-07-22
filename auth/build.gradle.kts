@@ -43,6 +43,7 @@ android {
 dependencies {
     // Local Modules
     implementation(project(":database"))
+    implementation(project(":core"))
     implementation(project(":uicomponent"))
 
     // Core
@@ -57,7 +58,6 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-
 
     // KMP - QR Code Scanner
     implementation("network.chaintech:qr-kit:1.0.4")
