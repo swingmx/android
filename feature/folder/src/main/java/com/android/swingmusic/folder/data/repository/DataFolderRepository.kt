@@ -32,7 +32,7 @@ class DataFolderRepository @Inject constructor(
                 val foldersAndTracksDto =
                     networkApiService.getFoldersAndTracks(
                         requestData = requestData.toFoldersAndTracksRequestDto(),
-                        baseUrl = "${baseUrl}folder",
+                        url = "${baseUrl}folder",
                         bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
                     )
 
