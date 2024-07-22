@@ -3,6 +3,7 @@ package com.android.swingmusic.network.data.api.service
 import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
+import com.android.swingmusic.network.data.dto.AddFavoriteRequest
 import com.android.swingmusic.network.data.dto.LogTrackRequestDto
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -15,20 +16,20 @@ interface NetworkApiService {
     @POST
     suspend fun getFoldersAndTracks(
         @Body requestData: FoldersAndTracksRequestDto,
-        @Url baseUrl: String,
+        @Url url: String,
         @Header("Authorization") bearerToken: String,
     ): FoldersAndTracksDto
 
     @POST
     suspend fun logLastPlayedTrackToServer(
         @Body logTrackRequest: LogTrackRequestDto,
-        @Url baseUrl: String,
+        @Url url: String,
         @Header("Authorization") bearerToken: String,
     ): Any
 
     @GET
     suspend fun getAllArtists(
-        @Url baseUrl: String,
+        @Url url: String,
         @Header("Authorization") bearerToken: String,
         @Query("limit") pageSize: Int = 20,
         @Query("start") startIndex: Int = 0,
@@ -38,8 +39,22 @@ interface NetworkApiService {
 
     @GET
     suspend fun getSampleArtist(
-        @Url baseUrl: String,
+        @Url url: String,
         @Header("Authorization") bearerToken: String,
         @Query("limit") pageSize: Int = 1,
     ): AllArtistsDto
+
+    @POST
+    suspend fun addFavorite(
+        @Url url: String,
+        @Body addFavoriteRequest: AddFavoriteRequest,
+        @Header("Authorization") bearerToken: String,
+    ): Any
+
+    @POST
+    suspend fun removeFavorite(
+        @Url url: String,
+        @Body addFavoriteRequest: AddFavoriteRequest,
+        @Header("Authorization") bearerToken: String,
+    ): Any
 }

@@ -3,6 +3,7 @@ package com.android.swingmusic.player.data.repository
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
+import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.database.data.dao.LastPlayedTrackDao
 import com.android.swingmusic.database.data.dao.QueueDao
@@ -10,9 +11,12 @@ import com.android.swingmusic.database.data.mapper.toEntity
 import com.android.swingmusic.database.data.mapper.toModel
 import com.android.swingmusic.database.domain.model.LastPlayedTrack
 import com.android.swingmusic.network.data.api.service.NetworkApiService
+import com.android.swingmusic.network.data.dto.AddFavoriteRequest
 import com.android.swingmusic.network.data.mapper.toDto
 import com.android.swingmusic.network.domain.model.LogTrackRequest
 import com.android.swingmusic.player.domain.repository.PLayerRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
 import timber.log.Timber
 import java.sql.Timestamp
@@ -76,7 +80,7 @@ class DataPLayerRepository @Inject constructor(
 
             networkApiService.logLastPlayedTrackToServer(
                 logTrackRequest = logRequest,
-                baseUrl = "${baseUrl}logger/track/log",
+                url = "${baseUrl}logger/track/log",
                 bearerToken = "Bearer $accessToken"
             )
 
@@ -84,6 +88,69 @@ class DataPLayerRepository @Inject constructor(
             Timber.e("NETWORK ERROR LOGGING TRACK TO SERVER")
         } catch (e: Exception) {
             Timber.e("ERROR LOGGING TRACK TO SERVER: CAUSED BY -> ${e.message}")
+        }
+    }
+
+    override suspend fun addTrackToFavorite(trackHash: String): Flow<Resource<Boolean>> {
+        return flow {
+            try {
+                emit(Resource.Loading())
+
+                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+                val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+                networkApiService.addFavorite(
+                    url = "${baseUrl}favorites/add",
+                    addFavoriteRequest = AddFavoriteRequest(hash = trackHash, type = "track"),
+                    bearerToken = "Bearer $accessToken"
+                )
+
+                Timber.e(message = "♥ ADDED TRACK [$trackHash] TO FAVORITE")
+
+                emit(Resource.Success(data = true))
+
+            } catch (e: HttpException) {
+
+                Timber.e(message = "FAILED TO ADD TRACK TO FAVORITE")
+
+                emit(Resource.Error(message = "FAILED TO ADD TRACK TO FAVORITE"))
+
+            } catch (e: Exception) {
+
+                Timber.e(message = "FAILED TO ADD TRACK TO FAVORITE")
+
+                emit(Resource.Error(message = "FAILED TO ADD TRACK TO FAVORITE"))
+            }
+        }
+    }
+
+    override suspend fun removeTrackFromFavorite(trackHash: String): Flow<Resource<Boolean>> {
+        return flow {
+            try {
+                emit(Resource.Loading())
+
+                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+                val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+                networkApiService.removeFavorite(
+                    url = "${baseUrl}favorites/remove",
+                    addFavoriteRequest = AddFavoriteRequest(hash = trackHash, type = "track"),
+                    bearerToken = "Bearer $accessToken"
+                )
+                Timber.e(message = "\uD83D\uDC94 REMOVED TRACK [$trackHash] FROM FAVORITES")
+
+                emit(Resource.Success(data = true))
+
+            } catch (e: HttpException) {
+                Timber.e(message = "FAILED TO REMOVE TRACK FROM FAVORITE")
+
+                emit(Resource.Error(message = "FAILED TO REMOVE TRACK FROM FAVORITE"))
+
+            } catch (e: Exception) {
+                Timber.e(message = "FAILED TO REMOVE TRACK FROM FAVORITE")
+
+                emit(Resource.Error(message = "FAILED TO REMOVE TRACK FROM FAVORITE"))
+            }
         }
     }
 }

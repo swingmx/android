@@ -10,7 +10,7 @@ import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toAllArtists
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Artist
-import com.android.swingmusic.network.data.api.paging.ArtistsSource
+import com.android.swingmusic.artist.data.paging.ArtistsSource
 import com.android.swingmusic.network.data.api.service.NetworkApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -50,7 +50,7 @@ class DataArtistRepository @Inject constructor(
                 emit(
                     Resource.Success(
                         data = networkApiService.getSampleArtist(
-                            baseUrl = "${baseUrl}getall/artists",
+                            url = "${baseUrl}getall/artists",
                             bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
                         ).toAllArtists().total
                     )

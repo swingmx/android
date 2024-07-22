@@ -1,8 +1,8 @@
 package com.android.swingmusic.auth.domain.repository
 
-import com.android.swingmusic.auth.data.util.Resource
 import com.android.swingmusic.auth.domain.model.AllUsers
 import com.android.swingmusic.auth.domain.model.LogInResult
+import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.database.domain.model.User
 import kotlinx.coroutines.flow.Flow
 

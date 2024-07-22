@@ -12,7 +12,7 @@ data class Track(
     val filepath: String,
     val folder: String,
     val image: String,
-    val isFavorite: Boolean,
+    var isFavorite: Boolean,
     val title: String,
     val trackHash: String
 )
