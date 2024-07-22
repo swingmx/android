@@ -10,6 +10,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import com.android.swingmusic.auth.domain.repository.AuthRepository
+import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
@@ -36,6 +37,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -67,10 +69,6 @@ class MediaControllerViewModel @Inject constructor(
         PlayerUiState(nowPlayingTrack = null, queue = emptyList())
     )
     val playerUiState: StateFlow<PlayerUiState> get() = _playerUiState
-
-    /*fun updateFav(index:Int, isFav: Boolean){
-        _playerUiState.value.queue[index].isFavorite = isFav
-    }*/
 
     init {
         refreshBaseUrl()
@@ -395,7 +393,91 @@ class MediaControllerViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Timber.e("ERROR CAUSED BY $e")
+            Timber.e("ERROR SAVING TRACK PROGRESS CAUSED BY $e")
+        }
+    }
+
+    private fun toggleTrackFavorite(trackHash: String, isFavorite: Boolean) {
+        viewModelScope.launch {
+            // Optimistically update the UI
+            _playerUiState.value = _playerUiState.value.copy(
+                nowPlayingTrack = _playerUiState.value.nowPlayingTrack?.copy(isFavorite = !isFavorite),
+                queue = _playerUiState.value.queue.map { track ->
+                    if (track.trackHash == trackHash) {
+                        track.copy(isFavorite = !isFavorite)
+                    } else {
+                        track
+                    }
+                }
+            )
+
+            // Optimistically update Queue
+            workingQueue = workingQueue.map { track ->
+                if (track.trackHash == trackHash) {
+                    track.copy(isFavorite = !isFavorite)
+                } else {
+                    track
+                }
+            }.toMutableList()
+
+            shuffledQueue = shuffledQueue.map { track ->
+                if (track.trackHash == trackHash) {
+                    track.copy(isFavorite = !isFavorite)
+                } else {
+                    track
+                }
+            }.toMutableList()
+
+            val request = if (isFavorite) {
+                pLayerRepository.removeTrackFromFavorite(trackHash)
+            } else {
+                pLayerRepository.addTrackToFavorite(trackHash)
+            }
+
+            request.collectLatest {
+                when (it) {
+                    is Resource.Loading -> {}
+
+                    is Resource.Success -> {
+                        if (_playerUiState.value.nowPlayingTrack?.trackHash == trackHash) {
+                            _playerUiState.value = _playerUiState.value.copy(
+                                nowPlayingTrack = _playerUiState.value.nowPlayingTrack
+                                    ?.copy(isFavorite = !isFavorite)
+                            )
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        // Revert the optimistic updates in case of an error
+                        _playerUiState.value = _playerUiState.value.copy(
+                            nowPlayingTrack = _playerUiState.value.nowPlayingTrack?.copy(isFavorite = isFavorite),
+                            queue = _playerUiState.value.queue.map { track ->
+                                if (track.trackHash == trackHash) {
+                                    track.copy(isFavorite = isFavorite)
+                                } else {
+                                    track
+                                }
+                            }
+                        )
+
+                        workingQueue = workingQueue.map { track ->
+                            if (track.trackHash == trackHash) {
+                                track.copy(isFavorite = isFavorite)
+                            } else {
+                                track
+                            }
+                        }.toMutableList()
+
+                        shuffledQueue = shuffledQueue.map { track ->
+                            if (track.trackHash == trackHash) {
+                                track.copy(isFavorite = isFavorite)
+                            } else {
+                                track
+                            }
+                        }.toMutableList()
+                    }
+                }
+            }
         }
     }
 
@@ -493,7 +575,9 @@ class MediaControllerViewModel @Inject constructor(
                     controller.playWhenReady = true
                 }
 
-                is OnToggleFavorite -> {}
+                is OnToggleFavorite -> {
+                    toggleTrackFavorite(event.trackHash, event.isFavorite)
+                }
 
                 is OnClickLyricsIcon -> {}
 
