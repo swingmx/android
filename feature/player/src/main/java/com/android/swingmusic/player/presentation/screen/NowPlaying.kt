@@ -60,7 +60,7 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.ramcosta.composedestinations.annotation.Destination
-import ir.mahozad.multiplatform.wavyslider.WaveDirection.HEAD
+import ir.mahozad.multiplatform.wavyslider.WaveDirection
 import ir.mahozad.multiplatform.wavyslider.material3.WaveAnimationSpecs
 import ir.mahozad.multiplatform.wavyslider.material3.WavySlider
 import java.util.Locale
@@ -86,7 +86,7 @@ private fun NowPlaying(
     onSeekPlayBack: (Float) -> Unit,
     onClickMore: () -> Unit,
     onClickLyricsIcon: () -> Unit,
-    onToggleFavorite: (Boolean) -> Unit,
+    onToggleFavorite: (Boolean, String) -> Unit,
     onClickQueueIcon: () -> Unit
 ) {
     if (track == null) {
@@ -227,12 +227,11 @@ private fun NowPlaying(
                         }
                     }
 
-                    // TODO: Return this when fav logic is implemented
-                    /*IconButton(
+                    IconButton(
                         modifier = Modifier
                             .clip(CircleShape),
                         onClick = {
-                            onToggleFavorite(track.isFavorite)
+                            onToggleFavorite(track.isFavorite, track.trackHash)
                         }) {
                         val icon =
                             if (track.isFavorite) R.drawable.fav_filled
@@ -241,7 +240,7 @@ private fun NowPlaying(
                             painter = painterResource(id = icon),
                             contentDescription = "Favorite"
                         )
-                    }*/
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))
@@ -254,13 +253,35 @@ private fun NowPlaying(
                             onSeekPlayBack(value)
                         },
                         waveLength = 32.dp,
-                        waveHeight = if (animateWave) 8.dp else 0.dp,
-                        waveVelocity = 16.dp to HEAD,
+                        waveHeight = 8.dp,
+                        waveVelocity = (if (animateWave) 16.dp else 0.dp) to WaveDirection.HEAD,
                         waveThickness = 4.dp,
                         trackThickness = 4.dp,
                         incremental = false,
                         animationSpecs = SliderDefaults.WaveAnimationSpecs
                     )
+
+                    /* WaveSlider(
+                         modifier = Modifier.height(12.dp),
+                         value = seekPosition,
+                         onValueChange = { value ->
+                             onSeekPlayBack(value)
+                         },
+                         waveOptions = WaveSliderDefaults.waveOptions(
+                             amplitude = 12F,
+                             frequency = 0.07F
+                         ),
+                         thumb = { PillThumb() },
+                         animationOptions = WaveSliderDefaults.animationOptions(
+                             reverseDirection = false,
+                             flatlineOnDrag = true,
+                             animateWave = animateWave,
+                             reverseFlatline = false
+                         ),
+                         colors = WaveSliderDefaults.colors(
+                             inactiveTrackColor = MaterialTheme.colorScheme.inverseOnSurface
+                         )
+                     )*/
 
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -545,9 +566,9 @@ fun NowPlayingScreen(
                 PlayerUiEvent.OnClickLyricsIcon
             )
         },
-        onToggleFavorite = {
+        onToggleFavorite = { isFavorite, trackHash ->
             mediaControllerViewModel.onPlayerUiEvent(
-                PlayerUiEvent.OnToggleFavorite
+                PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)
             )
         },
         onClickQueueIcon = {
@@ -624,7 +645,7 @@ fun FullPlayerPreview() {
             onToggleShuffleMode = {},
             onSeekPlayBack = {},
             onClickLyricsIcon = {},
-            onToggleFavorite = {},
+            onToggleFavorite = { _, _ -> },
             onClickQueueIcon = {},
             onClickMore = {}
         )
