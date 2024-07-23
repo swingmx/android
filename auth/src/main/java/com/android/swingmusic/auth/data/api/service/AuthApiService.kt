@@ -33,8 +33,14 @@ interface AuthApiService {
 
     @POST
     suspend fun createUser(
-        @Url baseUrl: String,
+        @Url url: String,
         @Header("Authorization") bearerAccessToken: String,
         @Body createUserRequest: CreateUserRequest
     ): UserDto
+
+    @POST
+    suspend fun refreshTokens(
+        @Url url: String,
+        @Header("Authorization") bearerRefreshToken: String
+    ): LogInResultDto
 }
