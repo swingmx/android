@@ -72,10 +72,14 @@ dependencies {
     ksp("com.google.dagger:hilt-android-compiler:2.50")
 
     // Hilt Navigation-Compose
-    implementation ("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     //Prefs Datastore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // WorkManger
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.2.0")
 
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
