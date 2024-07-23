@@ -22,6 +22,8 @@ interface AuthRepository {
         maxAge: Long
     )
 
+    suspend fun getFreshTokensFromServer(): LogInResult?
+
     suspend fun getAllUsers(baseUrl: String): Flow<Resource<AllUsers>>
 
     suspend fun getLoggedInUser(): User?
@@ -45,4 +47,5 @@ interface AuthRepository {
     fun processQrCodeData(encoded: String): Pair<String, String>
 
     suspend fun logInWithQrCode(url: String, pairCode: String): Flow<Resource<LogInResult>>
+
 }

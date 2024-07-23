@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import retrofit2.HttpException
+import timber.log.Timber
 import javax.inject.Inject
 
 class DataAuthRepository @Inject constructor(
@@ -80,6 +81,26 @@ class DataAuthRepository @Inject constructor(
         authTokensDataStore.updateAuthTokens(accessToken, refreshToken, maxAge)
     }
 
+    override suspend fun getFreshTokensFromServer(): LogInResult? {
+        return try {
+            val refreshToken = getRefreshToken()
+            val baseUrl = BaseUrlHolder.baseUrl ?: getBaseUrl()
+
+            val result = authApiService.refreshTokens(
+                url = "$baseUrl/auth/refresh",
+                bearerRefreshToken = "Bearer $refreshToken"
+            )
+
+            result.toModel()
+        } catch (e: Exception) {
+            Timber.e(message = "Failed to load users!")
+            null
+        } catch (e: HttpException) {
+            Timber.e(message = "Connection Failed!")
+            null
+        }
+    }
+
     override suspend fun getAllUsers(baseUrl: String): Flow<Resource<AllUsers>> {
         return flow {
             try {
@@ -90,6 +111,8 @@ class DataAuthRepository @Inject constructor(
 
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Failed to load users!"))
+            } catch (e: HttpException) {
+                emit(Resource.Error(message = "Connection Failed!"))
             }
         }
     }
@@ -122,7 +145,7 @@ class DataAuthRepository @Inject constructor(
                     roles = roles
                 )
                 val result = authApiService.createUser(
-                    baseUrl = "${baseUrl}auth/profile/create",
+                    url = "${baseUrl}auth/profile/create",
                     bearerAccessToken = "Bearer " + (AuthTokenHolder.accessToken
                         ?: getAccessToken()),
                     createUserRequest = request
