@@ -1,6 +1,7 @@
 package com.android.swingmusic.auth.data.workmanager
 
 import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -14,10 +15,14 @@ fun scheduleTokenRefreshWork(context: Context) {
         .setRequiresBatteryNotLow(true)
         .build()
 
-    val tokenRefreshWorkRequest =
-        PeriodicWorkRequestBuilder<TokenRefreshWorker>(21, TimeUnit.DAYS)
-            .setConstraints(constraints)
-            .build()
+    val tokenRefreshWorkRequest = PeriodicWorkRequestBuilder<TokenRefreshWorker>(21, TimeUnit.DAYS)
+        .setConstraints(constraints)
+        .setBackoffCriteria(
+            BackoffPolicy.EXPONENTIAL,
+            1,
+            TimeUnit.HOURS
+        )
+        .build()
 
     WorkManager.getInstance(context)
         .enqueueUniquePeriodicWork(
