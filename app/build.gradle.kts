@@ -96,6 +96,10 @@ dependencies {
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
 
+    // WorkManger
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")

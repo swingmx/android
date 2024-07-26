@@ -38,6 +38,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
+import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
@@ -94,6 +95,8 @@ class MainActivity : ComponentActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        scheduleTokenRefreshWork(applicationContext)
 
         setContent {
             val isUserLoggedIn by authViewModel.isUserLoggedIn()
