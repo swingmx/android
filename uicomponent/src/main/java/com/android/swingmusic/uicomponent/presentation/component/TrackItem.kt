@@ -108,6 +108,7 @@ fun TrackItem(
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
+                        modifier = Modifier.fillMaxSize(),
                         model = ImageRequest.Builder(LocalContext.current)
                             .data("${baseUrl}img/thumbnail/small/${track.image}")
                             .build(),
@@ -115,8 +116,7 @@ fun TrackItem(
                         fallback = painterResource(R.drawable.audio_fallback),
                         error = painterResource(R.drawable.audio_fallback),
                         contentDescription = "Track Image",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        contentScale = ContentScale.Crop
                     )
 
                     if (isCurrentTrack) {

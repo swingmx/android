@@ -143,7 +143,6 @@ private fun LoginWithUsername(
                     text = "Login"
                 )
             }
-
         }
     ) { paddingValues ->
         Box(
@@ -157,9 +156,8 @@ private fun LoginWithUsername(
                 Icon(
                     modifier = Modifier
                         .padding(bottom = 24.dp)
-                        .clip(CircleShape)
-                        .size(80.dp),
-                    painter = painterResource(id = R.drawable.swing_music_logo_round_outlined),
+                        .size(60.dp),
+                    painter = painterResource(id = R.drawable.swing_music_logo_outlined),
                     contentDescription = "App Logo"
                 )
 
