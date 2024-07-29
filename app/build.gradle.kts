@@ -64,7 +64,7 @@ dependencies {
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
 
     // Compose
     implementation(platform("androidx.compose:compose-bom:2023.08.00"))
@@ -108,8 +108,8 @@ dependencies {
     // implementation("io.github.raamcosta.compose-destinations:bottom-sheet:1.9.63")
 
     // Media3-Player
-    implementation("androidx.media3:media3-exoplayer:1.3.1")
-    implementation("androidx.media3:media3-session:1.3.1")
+    implementation("androidx.media3:media3-exoplayer:1.4.0")
+    implementation("androidx.media3:media3-session:1.4.0")
 
     // implementation("androidx.media3:media3-exoplayer-hls:1.3.1")
     // implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
@@ -118,10 +118,10 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
 
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
 }
 
 kotlin {

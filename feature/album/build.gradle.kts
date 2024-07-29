@@ -6,18 +6,19 @@ plugins {
 }
 
 android {
-    namespace = "com.android.swingmusic.folder"
+    namespace = "com.android.swingmusic.album"
     compileSdk = 34
 
     defaultConfig {
         minSdk = 26
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
         }
     }
     compileOptions {
@@ -27,26 +28,9 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.0"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
 }
 
 dependencies {
-    // Local Modules
-    implementation(project(":auth"))
-    implementation(project(":core"))
-    implementation(project(":network"))
-    implementation(project(":uicomponent"))
-    implementation(project(":feature:player"))
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")
@@ -83,20 +67,6 @@ dependencies {
     implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
-}
-
-kotlin {
-    sourceSets {
-        debug {
-            kotlin.srcDir("build/generated/ksp/debug/kotlin")
-        }
-        release {
-            kotlin.srcDir("build/generated/ksp/release/kotlin")
-        }
-    }
-}
-
-ksp {
-    arg("compose-destinations.mode", "destinations")
-    arg("compose-destinations.moduleName", "feature:folder")
+    // Pagination
+    implementation ("androidx.paging:paging-compose:3.3.1")
 }
