@@ -51,8 +51,8 @@ dependencies {
     implementation("com.jakewharton.timber:timber:5.0.1")
 
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
     // Pagination
-    implementation ("androidx.paging:paging-compose:3.2.1")
+    implementation ("androidx.paging:paging-compose:3.3.1")
 }
