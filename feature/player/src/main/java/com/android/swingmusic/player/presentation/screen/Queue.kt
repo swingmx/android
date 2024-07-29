@@ -48,12 +48,13 @@ import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
+import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -64,6 +65,7 @@ private fun Queue(
     playbackState: PlaybackState,
     baseUrl: String,
     onClickBack: () -> Unit,
+    onTogglePlayerState: () -> Unit,
     onClickQueueItem: (index: Int) -> Unit
 ) {
     val lazyColumnState = rememberLazyListState()
@@ -137,9 +139,9 @@ private fun Queue(
                             .padding(12.dp)
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.inverseOnSurface)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14F))
                             .clickable {
-                                onClickQueueItem(playingTrackIndex)
+                                onTogglePlayerState()
                             }
                             .padding(8.dp),
                         contentAlignment = Alignment.CenterStart,
@@ -260,6 +262,7 @@ fun QueueScreen(
         playbackState = playerUiState.playbackState,
         baseUrl = baseUrl ?: "",
         onClickBack = { onClickBack() },
+        onTogglePlayerState = { mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState) },
         onClickQueueItem = { index: Int ->
             mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(index))
         }
@@ -304,7 +307,7 @@ fun UpNextQueuePreview() {
         track.copy(title = "One Right Now", trackHash = "one")
     )
 
-    SwingMusicTheme {
+    SwingMusicTheme_Preview {
         Queue(
             playingTrackIndex = 1,
             playingTrack = track,
@@ -312,6 +315,7 @@ fun UpNextQueuePreview() {
             queue = queue,
             baseUrl = "",
             onClickBack = {},
+            onTogglePlayerState = {},
             onClickQueueItem = { },
         )
     }

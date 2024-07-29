@@ -1,6 +1,10 @@
 package com.android.swingmusic.player.presentation.screen
 
 import android.content.res.Configuration
+import androidx.compose.animation.core.EaseOutQuad
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -57,12 +61,12 @@ import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.slider.WaveAnimationSpecs
+import com.android.swingmusic.uicomponent.presentation.component.slider.WaveDirection
+import com.android.swingmusic.uicomponent.presentation.component.slider.WavySlider
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.ramcosta.composedestinations.annotation.Destination
-import ir.mahozad.multiplatform.wavyslider.WaveDirection
-import ir.mahozad.multiplatform.wavyslider.material3.WaveAnimationSpecs
-import ir.mahozad.multiplatform.wavyslider.material3.WavySlider
 import java.util.Locale
 
 @Composable
@@ -258,30 +262,12 @@ private fun NowPlaying(
                         waveThickness = 4.dp,
                         trackThickness = 4.dp,
                         incremental = false,
-                        animationSpecs = SliderDefaults.WaveAnimationSpecs
+                        animationSpecs = WaveAnimationSpecs(
+                            waveHeightAnimationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            waveVelocityAnimationSpec = tween(durationMillis = 2000, easing = LinearOutSlowInEasing),
+                            waveStartSpreadAnimationSpec = tween(durationMillis = 100, easing = EaseOutQuad)
+                        )
                     )
-
-                    /* WaveSlider(
-                         modifier = Modifier.height(12.dp),
-                         value = seekPosition,
-                         onValueChange = { value ->
-                             onSeekPlayBack(value)
-                         },
-                         waveOptions = WaveSliderDefaults.waveOptions(
-                             amplitude = 12F,
-                             frequency = 0.07F
-                         ),
-                         thumb = { PillThumb() },
-                         animationOptions = WaveSliderDefaults.animationOptions(
-                             reverseDirection = false,
-                             flatlineOnDrag = true,
-                             animateWave = animateWave,
-                             reverseFlatline = false
-                         ),
-                         colors = WaveSliderDefaults.colors(
-                             inactiveTrackColor = MaterialTheme.colorScheme.inverseOnSurface
-                         )
-                     )*/
 
                     Spacer(modifier = Modifier.height(12.dp))
 

@@ -11,19 +11,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Inject
 
-/*
-class TokenRefreshWorkerFactory(
-    val authRepository: AuthRepository
-) : WorkerFactory() {
-    override fun createWorker(
-        appContext: Context,
-        workerClassName: String,
-        workerParameters: WorkerParameters
-    ): ListenableWorker {
-        return TokenRefreshWorker(appContext, workerParameters, authRepository)
-    }
-}
-*/
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
