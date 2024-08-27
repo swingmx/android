@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
-import java.util.Locale
 import com.android.swingmusic.uicomponent.R as UiComponents
 
 @Composable
@@ -54,12 +53,20 @@ fun SortByChip(
 
     val formattedLabel by remember {
         derivedStateOf {
-            when (labelPair.second.lowercase(Locale.getDefault())) {
-                "name" -> "Name"
-                "trackcount" -> "Tracks"
-                "albumcount" -> "Albums"
-                "duration" -> "Duration"
-                "created_date" -> "Date"
+            when (labelPair.first) {
+                SortBy.DURATION -> "Duration"
+                SortBy.CREATED_DATE -> "Date Added"
+                SortBy.PLAY_COUNT -> "No. Of Plays"
+                SortBy.PLAY_DURATION -> "Play Duration"
+                SortBy.LAST_PLAYED -> "Last Played"
+                SortBy.NO_OF_TRACKS -> "No. Of Tracks"
+
+                SortBy.TITLE -> "Title"
+                SortBy.ALBUM_ARTISTS -> "Artists"
+                SortBy.DATE -> "Year Released"
+
+                SortBy.NAME -> "Name"
+                SortBy.NO_OF_ALBUMS -> "Albums"
                 else -> "Label"
             }
         }
@@ -105,7 +112,7 @@ fun SortByChipPreview() {
                 modifier = Modifier.padding(8.dp)
             ) {
                 SortByChip(
-                    labelPair = Pair(SortBy.NAME, "Name"),
+                    labelPair = Pair(SortBy.TITLE, "Name"),
                     isSelected = true,
                     sortOrder = SortOrder.ASCENDING
                 ) {

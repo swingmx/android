@@ -18,12 +18,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -119,220 +118,223 @@ private fun LoginWithUsername(
         animationSpec = tween()
     )
 
-    Scaffold(
-        topBar = {
-            Row(
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { onClickBack() },
-                    enabled = !isLoading
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        contentDescription = "Arrow Back"
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Text(
-                    style = MaterialTheme.typography.headlineSmall,
-                    text = "Login"
-                )
-            }
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxHeight(.9F)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    modifier = Modifier
-                        .padding(bottom = 24.dp)
-                        .size(60.dp),
-                    painter = painterResource(id = R.drawable.swing_music_logo_outlined),
-                    contentDescription = "App Logo"
-                )
-
-                Column(
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .fillMaxWidth(.84F)
-                        .wrapContentHeight()
-                        .clip(RoundedCornerShape(10))
-                        .background(MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .3F))
-                        .padding(bottom = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    TextField(
-                        modifier = Modifier.fillMaxWidth(.85F),
-                        enabled = !isLoading,
-                        value = baseUrl,
-                        onValueChange = {
-                            onBaseUrlChange(it)
-                        },
-                        shape = RoundedCornerShape(16),
-                        singleLine = true,
-                        placeholder = {
-                            Text(
-                                text = "Type or paste the server url",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
-                            )
-                        },
-                        visualTransformation = VisualTransformation.None,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                            unfocusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                            disabledIndicatorColor = Color.Transparent,
-                            disabledContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                            disabledTextColor = colorScheme.onSurface
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    TextField(
-                        modifier = Modifier.fillMaxWidth(.85F),
-                        enabled = !isLoading,
-                        value = username,
-                        onValueChange = {
-                            onUsernameChange(it)
-                        },
-                        shape = RoundedCornerShape(16),
-                        singleLine = true,
-                        placeholder = {
-                            Text(
-                                text = "Username",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
-                            )
-                        },
-                        visualTransformation = VisualTransformation.None,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                            unfocusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                            disabledIndicatorColor = Color.Transparent,
-                            disabledContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                            disabledTextColor = colorScheme.onSurface
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    TextField(
-                        modifier = Modifier
-                            .fillMaxWidth(.85F)
-                            .focusRequester(passwordFocusRequester),
-                        enabled = !isLoading,
-                        value = password,
-                        onValueChange = {
-                            onPasswordChange(it)
-                        },
-                        shape = RoundedCornerShape(16),
-                        singleLine = true,
-                        placeholder = {
-                            Text(
-                                text = "Password",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
-                            )
-                        },
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                            unfocusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                            disabledIndicatorColor = Color.Transparent,
-                            disabledContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
-                            disabledTextColor = colorScheme.onSurface
-                        ),
-                        trailingIcon = {
-                            val image = if (!isPasswordVisible)
-                                R.drawable.ic_password_visibility else R.drawable.ic_password_visibility_off
-                            IconButton(onClick = {
-                                isPasswordVisible = !isPasswordVisible
-                            }) {
-                                Icon(
-                                    painter = painterResource(id = image),
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    contentDescription = "Toggle Icon"
-                                )
-                            }
-                        },
-                        keyboardActions = KeyboardActions(onDone = {
-                            passwordFocusManager.clearFocus(force = true)
-                        }),
-                        keyboardOptions = KeyboardOptions(
-                            autoCorrect = false,
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        ),
-                        visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
-
-                    )
-
-                    Spacer(modifier = Modifier.height(40.dp))
-
-                    Button(
-                        modifier = Modifier
-                            .fillMaxWidth(.85F)
-                            .heightIn(min = 46.dp),
-                        enabled = !isLoading,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = logInBtnColor,
-                            disabledContainerColor = logInBtnColor,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            disabledContentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        onClick = { onClickLogIn() }) {
-                        Text(text = "Login")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
+    Scaffold {
+        Scaffold(
+            modifier = Modifier.padding(it),
+            topBar = {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                    modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(12.dp),
-                            strokeWidth = 1.dp,
-                            strokeCap = StrokeCap.Round
+                    IconButton(
+                        onClick = { onClickBack() },
+                        enabled = !isLoading
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            contentDescription = "Arrow Back"
                         )
-
-                        Spacer(modifier = Modifier.width(12.dp))
                     }
+
+                    Spacer(modifier = Modifier.width(16.dp))
 
                     Text(
-                        text = statusText,
-                        color = statusTextColor.copy(alpha = .84F),
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        style = MaterialTheme.typography.headlineSmall,
+                        text = "Login"
                     )
+                }
+            }
+        ) { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxHeight(.9F)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        modifier = Modifier
+                            .padding(bottom = 24.dp)
+                            .size(60.dp),
+                        painter = painterResource(id = R.drawable.swing_music_logo_outlined),
+                        contentDescription = "App Logo"
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .wrapContentHeight()
+                            .fillMaxWidth(.84F)
+                            .wrapContentHeight()
+                            .clip(RoundedCornerShape(10))
+                            .background(MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .3F))
+                            .padding(bottom = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        TextField(
+                            modifier = Modifier.fillMaxWidth(.85F),
+                            enabled = !isLoading,
+                            value = baseUrl,
+                            onValueChange = { value ->
+                                onBaseUrlChange(value)
+                            },
+                            shape = RoundedCornerShape(16),
+                            singleLine = true,
+                            placeholder = {
+                                Text(
+                                    text = "Type or paste the server url",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
+                                )
+                            },
+                            visualTransformation = VisualTransformation.None,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                                unfocusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                                disabledIndicatorColor = Color.Transparent,
+                                disabledContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                                disabledTextColor = colorScheme.onSurface
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        TextField(
+                            modifier = Modifier.fillMaxWidth(.85F),
+                            enabled = !isLoading,
+                            value = username,
+                            onValueChange = { value ->
+                                onUsernameChange(value)
+                            },
+                            shape = RoundedCornerShape(16),
+                            singleLine = true,
+                            placeholder = {
+                                Text(
+                                    text = "Username",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
+                                )
+                            },
+                            visualTransformation = VisualTransformation.None,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                                unfocusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                                disabledIndicatorColor = Color.Transparent,
+                                disabledContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                                disabledTextColor = colorScheme.onSurface
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        TextField(
+                            modifier = Modifier
+                                .fillMaxWidth(.85F)
+                                .focusRequester(passwordFocusRequester),
+                            enabled = !isLoading,
+                            value = password,
+                            onValueChange = { value ->
+                                onPasswordChange(value)
+                            },
+                            shape = RoundedCornerShape(16),
+                            singleLine = true,
+                            placeholder = {
+                                Text(
+                                    text = "Password",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5F)
+                                )
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                                unfocusedContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                                disabledIndicatorColor = Color.Transparent,
+                                disabledContainerColor = colorScheme.onPrimaryContainer.copy(alpha = .1F),
+                                disabledTextColor = colorScheme.onSurface
+                            ),
+                            trailingIcon = {
+                                val image = if (!isPasswordVisible)
+                                    R.drawable.ic_password_visibility else R.drawable.ic_password_visibility_off
+                                IconButton(onClick = {
+                                    isPasswordVisible = !isPasswordVisible
+                                }) {
+                                    Icon(
+                                        painter = painterResource(id = image),
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        contentDescription = "Toggle Icon"
+                                    )
+                                }
+                            },
+                            keyboardActions = KeyboardActions(onDone = {
+                                passwordFocusManager.clearFocus(force = true)
+                            }),
+                            keyboardOptions = KeyboardOptions(
+                                autoCorrect = false,
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done
+                            ),
+                            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
+
+                        )
+
+                        Spacer(modifier = Modifier.height(40.dp))
+
+                        Button(
+                            modifier = Modifier
+                                .fillMaxWidth(.85F)
+                                .heightIn(min = 46.dp),
+                            enabled = !isLoading,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = logInBtnColor,
+                                disabledContainerColor = logInBtnColor,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                disabledContentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            onClick = { onClickLogIn() }) {
+                            Text(text = "Login")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(12.dp),
+                                strokeWidth = 1.dp,
+                                strokeCap = StrokeCap.Round
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+                        }
+
+                        Text(
+                            text = statusText,
+                            color = statusTextColor.copy(alpha = .84F),
+                            style = MaterialTheme.typography.labelSmall,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
@@ -357,17 +359,17 @@ fun LoginWithUsernameScreen(
     LoginWithUsername(
         authUiState = authUiState,
         onBaseUrlChange = {
-            authViewModel.onAuthUiEvent(AuthUiEvent.OnBaseUrlChange(it))
+            authViewModel.onAuthUiEvent(AuthUiEvent.OnBaseUrlChange(it.trim()))
         },
         onUsernameChange = {
-            authViewModel.onAuthUiEvent(AuthUiEvent.OnUsernameChange(it))
+            authViewModel.onAuthUiEvent(AuthUiEvent.OnUsernameChange(it.trim()))
         },
         onPasswordChange = {
-            authViewModel.onAuthUiEvent(AuthUiEvent.OnPasswordChange(it))
+            authViewModel.onAuthUiEvent(AuthUiEvent.OnPasswordChange(it.trim()))
         },
         onClickBack = {
-            authNavigator.gotoLoginWithQrCode()
             authViewModel.onAuthUiEvent(AuthUiEvent.ClearErrorState)
+            authNavigator.gotoLoginWithQrCode()
         },
         onClickLogIn = { authViewModel.onAuthUiEvent(AuthUiEvent.LogInWithUsernameAndPassword) }
     )

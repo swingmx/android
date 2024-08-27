@@ -1,10 +1,14 @@
 package com.android.swingmusic.presentation.navigator
 
+import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
+import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.destinations.HomeDestination
+import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
+import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.ramcosta.composedestinations.dynamic.routedIn
 import com.ramcosta.composedestinations.spec.DestinationSpec
 import com.ramcosta.composedestinations.spec.NavGraphSpec
@@ -41,7 +45,20 @@ object NavGraphs {
 
         override val destinationsByRoute: Map<String, DestinationSpec<*>> =
             listOf<DestinationSpec<*>>(
-                FoldersAndTracksScreenDestination
+                FoldersAndTracksScreenDestination,
+                AlbumWithInfoScreenDestination
+            ).routedIn(this).associateBy { it.route }
+    }
+
+    val player = object : NavGraphSpec {
+        override val route: String = "player"
+
+        override val startRoute: Route = NowPlayingScreenDestination routedIn this
+
+        override val destinationsByRoute: Map<String, DestinationSpec<*>> =
+            listOf<DestinationSpec<*>>(
+                NowPlayingScreenDestination,
+                QueueScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -56,6 +73,18 @@ object NavGraphs {
             ).routedIn(this).associateBy { it.route }
     }
 
+    val album = object : NavGraphSpec {
+        override val route: String = "album"
+
+        override val startRoute: Route = AllAlbumScreenDestination routedIn this
+
+        override val destinationsByRoute: Map<String, DestinationSpec<*>> =
+            listOf<DestinationSpec<*>>(
+                AllAlbumScreenDestination,
+                AlbumWithInfoScreenDestination,
+            ).routedIn(this).associateBy { it.route }
+    }
+
     fun root(isUserLoggedIn: Boolean) = object : NavGraphSpec {
         override val route: String = "root"
 
@@ -67,10 +96,11 @@ object NavGraphs {
         override val nestedNavGraphs: List<NavGraphSpec> = listOf(
             auth,
             // home,
+            player,
             // playlist,
-            // album,
+            album,
             folder,
-            // artist
+            artist
         )
     }
 }

@@ -13,5 +13,5 @@ import javax.inject.Singleton
 abstract class ArtistRepositoryModule {
     @Binds
     @Singleton
-    abstract fun bindDataArtistRepository(artistRepository: DataArtistRepository): ArtistRepository
+    abstract fun bindDataArtistRepository(dataArtistRepository: DataArtistRepository): ArtistRepository
 }

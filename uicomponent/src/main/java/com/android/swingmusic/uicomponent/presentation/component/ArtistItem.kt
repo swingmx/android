@@ -22,11 +22,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 
 @Composable
@@ -34,7 +36,7 @@ fun ArtistItem(
     modifier: Modifier,
     artist: Artist,
     baseUrl: String,
-    onClick: (Artist) -> Unit
+    onClick: (artistHash: String) -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -48,7 +50,7 @@ fun ArtistItem(
         AsyncImage(
             modifier = modifier
                 .clip(CircleShape)
-                .clickable { onClick(artist) }
+                .clickable { onClick(artist.artisthash) }
                 .border(
                     width = (.1).dp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
@@ -87,7 +89,7 @@ fun ArtistItem(
     }
 }
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE)
 @Composable
 fun ArtistItemPreview() {
     fun generateDummyArtist(): Artist {

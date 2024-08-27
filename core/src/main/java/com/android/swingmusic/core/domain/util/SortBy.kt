@@ -1,12 +1,17 @@
 package com.android.swingmusic.core.domain.util
 
 enum class SortBy {
-    TITLE,
-    ARTIST,
-    YEAR_RELEASED,
-    NAME,
-    NO_OF_TRACKS,
-    N0_OF_ALBUMS,
     DURATION,
-    DATE_ADDED
+    CREATED_DATE,
+    PLAY_COUNT,
+    PLAY_DURATION,
+    LAST_PLAYED,
+    NO_OF_TRACKS,
+
+    TITLE,
+    ALBUM_ARTISTS,
+    DATE,
+
+    NAME,
+    NO_OF_ALBUMS,
 }

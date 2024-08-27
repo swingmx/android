@@ -1,42 +1,48 @@
 package com.android.swingmusic.presentation.activity
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
@@ -45,8 +51,8 @@ import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.destinations.HomeDestination
 import com.android.swingmusic.player.presentation.screen.MiniPlayer
-import com.android.swingmusic.player.presentation.screen.NowPlayingScreen
-import com.android.swingmusic.player.presentation.screen.QueueScreen
+import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
+import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.presentation.navigator.BottomNavItem
 import com.android.swingmusic.presentation.navigator.CoreNavigator
@@ -58,12 +64,12 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.dependency
+import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.rememberNavHostEngine
 import com.ramcosta.composedestinations.spec.NavGraphSpec
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -71,14 +77,9 @@ class MainActivity : ComponentActivity() {
     private val authViewModel: AuthViewModel by viewModels<AuthViewModel>()
 
     private lateinit var controllerFuture: ListenableFuture<MediaController>
-    private var showNowPlayingOnStart = false
 
-    /** Show NowPlaying since intents.extras is only non-null when app
-     * is initiated from the media Notification.
-     * Refer to pending intent defined in [PlaybackService] */
     override fun onStart() {
         super.onStart()
-        showNowPlayingOnStart = intent.getBooleanExtra("SHOW_NOW_PLAYING", false)
 
         val isUserLoggedIn by authViewModel.isUserLoggedIn()
         lifecycleScope.launch {
@@ -90,22 +91,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(
-        ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class
-    )
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         scheduleTokenRefreshWork(applicationContext)
 
         setContent {
             val isUserLoggedIn by authViewModel.isUserLoggedIn()
-            val coroutineScope = rememberCoroutineScope()
-            var showNowPlayingBottomSheet by rememberSaveable { mutableStateOf(showNowPlayingOnStart) }
-            val nowPlayingBottomSheetState = rememberModalBottomSheetState(true)
-
-            var showQueueBottomSheet by rememberSaveable { mutableStateOf(false) }
-            val queueBottomSheetState = rememberModalBottomSheetState(true)
 
             // val navController = rememberAnimatedNavController()
             val navController = rememberNavController()
@@ -115,9 +110,9 @@ class MainActivity : ComponentActivity() {
             val bottomNavItems: List<BottomNavItem> = listOf(
                 // BottomNavItem.Home,
                 BottomNavItem.Folder,
-                // BottomNavItem.Album,
+                BottomNavItem.Album,
                 // BottomNavItem.Playlist,
-                // BottomNavItem.Artist,
+                BottomNavItem.Artist,
             )
 
             SwingMusicTheme {
@@ -131,13 +126,15 @@ class MainActivity : ComponentActivity() {
                             // Show mini player if route is NOT one of...
                             if ((route in listOf<String>(
                                     "auth/${LoginWithQrCodeDestination.route}",
-                                    "auth/${LoginWithUsernameScreenDestination.route}"
+                                    "auth/${LoginWithUsernameScreenDestination.route}",
+                                    "player/${NowPlayingScreenDestination.route}",
+                                    "player/${QueueScreenDestination.route}"
                                 )).not()
                             ) {
                                 MiniPlayer(
                                     mediaControllerViewModel = mediaControllerViewModel,
                                     onClickPlayerItem = {
-                                        showNowPlayingBottomSheet = true
+                                        navController.navigate("player/${NowPlayingScreenDestination.route}")
                                     }
                                 )
                             }
@@ -146,7 +143,7 @@ class MainActivity : ComponentActivity() {
                             if (route in listOf(
                                     "home/${HomeDestination.route}",
                                     "folder/${FoldersAndTracksScreenDestination.route}",
-                                    // "album/${AlbumsScreenDestination.route}",
+                                    "album/${AllAlbumScreenDestination.route}",
                                     // "playlist/${PlaylistsScreenDestination.route}",
                                     "artist/${ArtistsScreenDestination.route}",
                                 )
@@ -154,91 +151,54 @@ class MainActivity : ComponentActivity() {
                                 val currentSelectedItem by navController.currentScreenAsState(
                                     isUserLoggedIn
                                 )
-                                // REMEMBER: Return NavigationBar when at least 2 items are ready
 
-                                /* NavigationBar(
-                                     modifier = Modifier,
-                                     containerColor = MaterialTheme.colorScheme.inverseOnSurface
-                                 ) {
-                                     Row(
-                                         modifier = Modifier.fillMaxWidth(),
-                                         horizontalArrangement = Arrangement.Center
-                                     ) {
-                                         bottomNavItems.forEach { item ->
-                                             NavigationBarItem(
-                                                 icon = {
-                                                     Icon(
-                                                         painter = painterResource(id = item.icon),
-                                                         contentDescription = null
-                                                     )
-                                                 },
-                                                 selected = currentSelectedItem == item.navGraph,
-                                                 alwaysShowLabel = false,
-                                                 label = { Text(text = item.title) },
-                                                 onClick = {
-                                                     navController.navigate(
-                                                         item.navGraph!!,
-                                                         fun NavOptionsBuilder.() {
-                                                             launchSingleTop = true
-                                                             restoreState = true
+                                NavigationBar(
+                                    modifier = Modifier,
+                                    containerColor = MaterialTheme.colorScheme.inverseOnSurface
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        bottomNavItems.forEach { item ->
+                                            NavigationBarItem(
+                                                icon = {
+                                                    Icon(
+                                                        painter = painterResource(id = item.icon),
+                                                        contentDescription = null
+                                                    )
+                                                },
+                                                selected = currentSelectedItem == item.navGraph,
+                                                alwaysShowLabel = false,
+                                                label = { Text(text = item.title) },
+                                                onClick = {
+                                                    navController.navigate(
+                                                        item.navGraph!!,
+                                                        fun NavOptionsBuilder.() {
+                                                            launchSingleTop = true
+                                                            restoreState = true
 
-                                                             popUpTo(navController.graph.findStartDestination().id) {
-                                                                 saveState = true
-                                                                 inclusive = false
-                                                             }
-                                                         }
-                                                     )
-                                                 }
-                                             )
-                                         }
-                                     }
-                                 }*/
+                                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                                saveState = true
+                                                                inclusive = false
+                                                            }
+                                                        }
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 ) {
-                    Surface(modifier = Modifier.padding(it)) {
+                    Surface {
                         SwingMusicAppNavigation(
                             isUserLoggedIn = isUserLoggedIn,
                             navController = navController,
                             authViewModel = authViewModel,
                             mediaControllerViewModel = mediaControllerViewModel
-                        )
-                    }
-                }
-
-                /**--------------------------- Player BottomSheet ------------------------------- */
-                if (showNowPlayingBottomSheet) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showNowPlayingBottomSheet = false },
-                        sheetState = nowPlayingBottomSheetState,
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        dragHandle = {}
-                    ) {
-                        NowPlayingScreen(
-                            mediaControllerViewModel = mediaControllerViewModel,
-                            onClickOpenQueue = { showQueueBottomSheet = true }
-                        )
-                    }
-                }
-
-                /**--------------------------- Queue BottomSheet -------------------------------- */
-                if (showQueueBottomSheet) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showQueueBottomSheet = false },
-                        sheetState = queueBottomSheetState,
-                        dragHandle = {}
-                    ) {
-                        QueueScreen(
-                            mediaControllerViewModel = mediaControllerViewModel,
-                            onClickBack = {
-                                coroutineScope.launch { queueBottomSheetState.hide() }
-                                    .invokeOnCompletion {
-                                        if (!queueBottomSheetState.isVisible) {
-                                            showQueueBottomSheet = false
-                                        }
-                                    }
-                            }
                         )
                     }
                 }

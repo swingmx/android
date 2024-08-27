@@ -58,9 +58,11 @@ fun TrackItem(
     track: Track,
     trackQueueNumber: Int? = null,
     isCurrentTrack: Boolean = false,
+    showMenuIcon: Boolean = false,
     playbackState: PlaybackState = PlaybackState.PAUSED,
     onClickTrackItem: () -> Unit,
     onClickMoreVert: (Track) -> Unit,
+    menuContent: @Composable () -> Unit = {},
     baseUrl: String
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -174,13 +176,16 @@ fun TrackItem(
                 }
             }
 
-            // More Icon __ TODO: Return this when contextual menu is ready
-            /*IconButton(onClick = { onClickMoreVert(track) }) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "More Icon"
-                )
-            }*/
+            if (showMenuIcon) {
+                IconButton(onClick = { onClickMoreVert(track) }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More Icon"
+                    ).also {
+                        menuContent()
+                    }
+                }
+            }
         }
 
         trackQueueNumber?.let { number ->

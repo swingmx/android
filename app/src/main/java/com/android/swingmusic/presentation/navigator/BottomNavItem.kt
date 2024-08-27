@@ -24,7 +24,7 @@ sealed class BottomNavItem(
     data object Album : BottomNavItem(
         title = "Albums",
         icon = UiComponent.drawable.ic_album,
-        navGraph = null
+        navGraph = NavGraphs.album
     )
 
     data object Playlist : BottomNavItem(
