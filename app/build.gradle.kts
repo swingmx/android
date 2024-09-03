@@ -56,14 +56,16 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":network"))
     implementation(project(":uicomponent"))
-
+    // Feature Modules
     implementation(project(":feature:home"))
     implementation(project(":feature:folder"))
     implementation(project(":feature:player"))
     implementation(project(":feature:artist"))
+    implementation(project(":feature:album"))
 
     // Core
-    implementation("androidx.core:core-ktx:1.13.1")
+   // implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.activity:activity-ktx:1.9.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
 
     // Compose

@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface ArtistRepository {
 
-    fun getPagingArtists(sortBy: String, sortOrder: Int): Flow<PagingData<Artist>>
-
     suspend fun getArtistsCount(): Flow<Resource<Int>>
+
+    fun getPagingArtists(sortBy: String, sortOrder: Int): Flow<PagingData<Artist>>
 }

@@ -1,9 +1,12 @@
 package com.android.swingmusic.network.data.api.service
 
+import com.android.swingmusic.core.data.dto.AlbumWithInfoDto
+import com.android.swingmusic.core.data.dto.AllAlbumsDto
 import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.network.data.dto.AddFavoriteRequest
+import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
 import com.android.swingmusic.network.data.dto.LogTrackRequestDto
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -38,7 +41,7 @@ interface NetworkApiService {
     ): AllArtistsDto
 
     @GET
-    suspend fun getSampleArtist(
+    suspend fun getArtistsCount( // used to get the total artists value
         @Url url: String,
         @Header("Authorization") bearerToken: String,
         @Query("limit") pageSize: Int = 1,
@@ -57,4 +60,28 @@ interface NetworkApiService {
         @Body addFavoriteRequest: AddFavoriteRequest,
         @Header("Authorization") bearerToken: String,
     ): Any
+
+    @GET
+    suspend fun getAlbumsCount( // used to get the total albums value
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") pageSize: Int = 1,
+    ): AllAlbumsDto
+
+    @GET
+    suspend fun getAllAlbums(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") pageSize: Int = 20,
+        @Query("start") startIndex: Int = 0,
+        @Query("sortby") sortBy: String,
+        @Query("reverse") sortOrder: Int
+    ): AllAlbumsDto
+
+    @POST
+    suspend fun getAlbumWithInfo(
+        @Url url: String,
+        @Body albumHashRequest: AlbumHashRequestDto,
+        @Header("Authorization") bearerToken: String,
+    ): AlbumWithInfoDto
 }

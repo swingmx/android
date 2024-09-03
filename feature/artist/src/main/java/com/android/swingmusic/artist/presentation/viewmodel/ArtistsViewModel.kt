@@ -25,12 +25,15 @@ class ArtistsViewModel @Inject constructor(
     private var baseUrl: MutableState<String?> = mutableStateOf(null)
     val artistsUiState: MutableState<ArtistsUiState> = mutableStateOf(ArtistsUiState())
 
-    val sortByEntries: List<Pair<SortBy, String>> = listOf(
-        Pair(SortBy.DURATION, "duration"),
-        Pair(SortBy.NAME, "name"),
+    val sortArtistsByEntries: List<Pair<SortBy, String>> = listOf(
         Pair(SortBy.NO_OF_TRACKS, "trackcount"),
-        Pair(SortBy.N0_OF_ALBUMS, "albumcount"),
-        Pair(SortBy.DATE_ADDED, "created_date")
+        Pair(SortBy.NAME, "name"),
+        Pair(SortBy.DURATION, "duration"),
+        Pair(SortBy.NO_OF_ALBUMS, "albumcount"),
+        Pair(SortBy.CREATED_DATE, "created_date"),
+        Pair(SortBy.PLAY_DURATION, "playduration"),
+        Pair(SortBy.PLAY_COUNT, "playcount"),
+        Pair(SortBy.LAST_PLAYED, "lastplayed")
     )
 
     private fun getArtistsCount() {
