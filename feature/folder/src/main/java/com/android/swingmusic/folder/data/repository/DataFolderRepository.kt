@@ -36,7 +36,7 @@ class DataFolderRepository @Inject constructor(
                         bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
                     )
 
-                emit(Resource.Success(data = foldersAndTracksDto.toModel().sort()))
+                emit(Resource.Success(data = foldersAndTracksDto.toModel()))
 
             } catch (e: IOException) {
                 emit(

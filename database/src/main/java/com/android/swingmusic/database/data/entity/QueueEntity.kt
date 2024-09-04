@@ -10,7 +10,7 @@ data class QueueEntity(
     val trackHash: String,
     val album: String,
     val albumHash: String,
-    val artistHashes: String,
+    val artistHashes: List<String>,
     val bitrate: Int,
     val duration: Int,
     val filepath: String,
@@ -19,5 +19,7 @@ data class QueueEntity(
     val isFavorite: Boolean,
     val title: String,
     val albumTrackArtists: List<TrackArtistEntity>,
-    val trackArtists: List<TrackArtistEntity>
+    val trackArtists: List<TrackArtistEntity>,
+    val disc: Int,
+    val trackNumber: Int
 )

@@ -7,11 +7,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.album.domain.AlbumRepository
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
+import com.android.swingmusic.album.presentation.state.AlbumInfoWithGroupedTracks
 import com.android.swingmusic.album.presentation.state.AlbumWithInfoState
-import com.android.swingmusic.auth.domain.repository.AuthRepository
+import com.android.swingmusic.core.data.util.Resource
+import com.android.swingmusic.core.domain.model.AlbumWithInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,7 +25,44 @@ class AlbumWithInfoViewModel @Inject constructor(
         mutableStateOf(AlbumWithInfoState())
     val albumWithInfoState: State<AlbumWithInfoState> get() = _albumWithInfoState
 
-    // TODO: handle events
+    // TODO: handle this screen specific events
+
+    private fun updateAlbumInfoState(resource: Resource<AlbumWithInfo>) {
+        when (resource) {
+            is Resource.Success -> {
+                val groupedTracks = resource.data?.tracks
+                    ?.sortedBy { track -> track.trackNumber }
+                    ?.groupBy { track -> track.disc }
+                    ?.toSortedMap()
+
+                val orderedTracks = groupedTracks?.values?.flatten() ?: emptyList()
+
+                _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                    orderedTracks = orderedTracks ,
+                    infoResource = Resource.Success(
+                        data = AlbumInfoWithGroupedTracks(
+                            albumInfo = resource.data?.albumInfo,
+                            groupedTracks = groupedTracks ?: emptyMap()
+                        )
+                    )
+                )
+            }
+
+            is Resource.Loading -> {
+                _albumWithInfoState.value =
+                    _albumWithInfoState.value.copy(infoResource = Resource.Loading())
+            }
+
+            else -> {
+                _albumWithInfoState.value =
+                    _albumWithInfoState.value.copy(
+                        infoResource = Resource.Error(
+                            message = resource.message!!
+                        )
+                    )
+            }
+        }
+    }
 
     fun onAlbumWithInfoUiEvent(event: AlbumWithInfoUiEvent) {
         when (event) {
@@ -36,8 +73,7 @@ class AlbumWithInfoViewModel @Inject constructor(
 
                     val result = albumRepository.getAlbumWithInfo(event.albumHash)
                     result.collectLatest {
-                        _albumWithInfoState.value =
-                            _albumWithInfoState.value.copy(albumWithInfo = it)
+                        updateAlbumInfoState(it)
                     }
                 }
             }
@@ -47,8 +83,7 @@ class AlbumWithInfoViewModel @Inject constructor(
                     val result =
                         albumRepository.getAlbumWithInfo(_albumWithInfoState.value.albumHash ?: "")
                     result.collectLatest {
-                        _albumWithInfoState.value =
-                            _albumWithInfoState.value.copy(albumWithInfo = it)
+                        updateAlbumInfoState(it)
                     }
                 }
             }

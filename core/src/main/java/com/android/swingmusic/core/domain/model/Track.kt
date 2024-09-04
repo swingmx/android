@@ -5,7 +5,7 @@ data class Track(
     val album: String,
     val albumTrackArtists: List<TrackArtist>,
     val albumHash: String,
-    val artistHashes: String,
+    val artistHashes: List<String>,
     val trackArtists: List<TrackArtist>,
     val bitrate: Int,
     val duration: Int,
@@ -14,5 +14,7 @@ data class Track(
     val image: String,
     var isFavorite: Boolean,
     val title: String,
-    val trackHash: String
+    val trackHash: String,
+    val disc: Int,
+    val trackNumber: Int,
 )

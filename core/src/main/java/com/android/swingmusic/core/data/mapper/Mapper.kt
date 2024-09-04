@@ -66,7 +66,7 @@ object Map {
             album = album ?: "",
             albumTrackArtists = albumTrackArtistDtos?.map { it.toArtist() } ?: emptyList(),
             albumHash = albumHash ?: "",
-            artistHashes = artistHashes ?: "",
+            artistHashes = artistHashes ?: emptyList(),
             trackArtists = artistsDto?.map { it.toArtist() } ?: emptyList(),
             bitrate = bitrate ?: 0,
             duration = duration ?: 0,
@@ -75,7 +75,9 @@ object Map {
             image = image ?: "",
             isFavorite = isFavorite ?: false,
             title = title ?: "",
-            trackHash = trackHash ?: ""
+            trackHash = trackHash ?: "",
+            disc = disc ?: 1,
+            trackNumber = trackNumber ?: 1,
         )
     }
 
@@ -103,7 +105,8 @@ object Map {
     fun FoldersAndTracksRequest.toFoldersAndTracksRequestDto(): FoldersAndTracksRequestDto {
         return FoldersAndTracksRequestDto(
             folder = folder,
-            tracksOnly = tracksOnly
+            tracksOnly = tracksOnly,
+            limit = limit
         )
     }
 

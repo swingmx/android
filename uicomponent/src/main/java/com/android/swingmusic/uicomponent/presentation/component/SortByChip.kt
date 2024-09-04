@@ -43,13 +43,13 @@ fun SortByChip(
     } else UiComponents.drawable.arrow_downward
 
     val borderTint = if (isSelected) Color.Transparent else
-        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = .5F)
+        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = .75F)
 
     val bgTint = if (!isSelected) Color.Transparent else
         MaterialTheme.colorScheme.secondaryContainer
 
     val textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else
-        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = .75F)
+        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 1F)
 
     val formattedLabel by remember {
         derivedStateOf {
@@ -77,12 +77,12 @@ fun SortByChip(
             .clip(RoundedCornerShape(24))
             .background(bgTint)
             .border(
-                width = if (isSelected) 0.dp else 1.dp,
+                width = if (isSelected) 0.dp else (0.35).dp,
                 color = borderTint,
                 shape = RoundedCornerShape(24)
             )
             .clickable { onClick(labelPair) }
-            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
 
@@ -105,14 +105,13 @@ fun SortByChip(
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun SortByChipPreview() {
-
     SwingMusicTheme_Preview {
         Surface {
             Row(
                 modifier = Modifier.padding(8.dp)
             ) {
                 SortByChip(
-                    labelPair = Pair(SortBy.TITLE, "Name"),
+                    labelPair = Pair(SortBy.TITLE, "Title"),
                     isSelected = true,
                     sortOrder = SortOrder.ASCENDING
                 ) {

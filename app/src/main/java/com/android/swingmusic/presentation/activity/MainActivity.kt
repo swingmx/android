@@ -42,6 +42,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
@@ -112,7 +113,7 @@ class MainActivity : ComponentActivity() {
                 BottomNavItem.Folder,
                 BottomNavItem.Album,
                 // BottomNavItem.Playlist,
-                BottomNavItem.Artist,
+               // BottomNavItem.Artist,
             )
 
             SwingMusicTheme {

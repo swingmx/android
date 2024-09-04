@@ -18,7 +18,7 @@ interface PlayerUiEvent {
 
     object OnToggleRepeatMode : PlayerUiEvent
 
-    object OnToggleShuffleMode : PlayerUiEvent
+    data class OnToggleShuffleMode(val isAlbumSource: Boolean = false) : PlayerUiEvent
 
     object OnClickMore : PlayerUiEvent
 

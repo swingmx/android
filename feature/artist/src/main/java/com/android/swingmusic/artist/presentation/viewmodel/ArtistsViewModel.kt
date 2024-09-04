@@ -95,10 +95,13 @@ class ArtistsViewModel @Inject constructor(
                         sortOrder = newOrder
                     )
                 } else {
-                    artistsUiState.value = artistsUiState.value.copy(sortBy = event.sortByPair)
+                    artistsUiState.value = artistsUiState.value.copy(
+                        sortBy = event.sortByPair,
+                        sortOrder = SortOrder.DESCENDING
+                    )
                     getPagingArtists(
                         sortBy = event.sortByPair.second,
-                        sortOrder = artistsUiState.value.sortOrder
+                        sortOrder = SortOrder.DESCENDING
                     )
                 }
             }

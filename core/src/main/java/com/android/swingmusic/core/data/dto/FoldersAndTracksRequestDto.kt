@@ -6,5 +6,7 @@ data class FoldersAndTracksRequestDto(
     @SerializedName("folder")
     val folder: String?,
     @SerializedName("tracks_only")
-    val tracksOnly: Boolean?
+    val tracksOnly: Boolean?,
+    @SerializedName("limit")
+    val limit: Int,
 )

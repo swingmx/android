@@ -102,10 +102,13 @@ class AllAlbumsViewModel @Inject constructor(
                         sortOrder = newOrder
                     )
                 } else {
-                    _allAlbumsUiState.value = _allAlbumsUiState.value.copy(sortBy = event.sortByPair)
+                    _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
+                        sortBy = event.sortByPair,
+                        sortOrder = SortOrder.DESCENDING
+                    )
                     getPagingAlbums(
                         sortBy = event.sortByPair.second,
-                        sortOrder = _allAlbumsUiState.value.sortOrder
+                        sortOrder = SortOrder.DESCENDING
                     )
                 }
             }
