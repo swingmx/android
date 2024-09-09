@@ -280,7 +280,7 @@ fun QueueScreen(
     wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
 )
 @Composable
-fun UpNextQueuePreview() {
+fun QueuePreview() {
     val juice = TrackArtist(
         artistHash = "juice123",
         image = "juice.jpg",
@@ -294,7 +294,7 @@ fun UpNextQueuePreview() {
         album = "Sample Album",
         albumTrackArtists = albumArtists,
         albumHash = "albumHash123",
-        artistHashes = "artistHashes123",
+        artistHashes = listOf("artistHashes123"),
         trackArtists = artists,
         bitrate = 320,
         duration = 454, // Sample duration in seconds
@@ -303,7 +303,9 @@ fun UpNextQueuePreview() {
         image = "/path/to/album/artwork.jpg",
         isFavorite = true,
         title = "All Girls are the same",
-        trackHash = "trackHash123"
+        trackHash = "trackHash123",
+        disc = 1,
+        trackNumber = 1
     )
 
     val queue = mutableListOf(

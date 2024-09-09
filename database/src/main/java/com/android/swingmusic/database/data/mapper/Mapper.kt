@@ -6,10 +6,10 @@ import com.android.swingmusic.database.data.entity.BaseUrlEntity
 import com.android.swingmusic.database.data.entity.LastPlayedTrackEntity
 import com.android.swingmusic.database.data.entity.QueueEntity
 import com.android.swingmusic.database.data.entity.TrackArtistEntity
-import com.android.swingmusic.database.domain.model.User
 import com.android.swingmusic.database.data.entity.UserEntity
 import com.android.swingmusic.database.domain.model.BaseUrl
 import com.android.swingmusic.database.domain.model.LastPlayedTrack
+import com.android.swingmusic.database.domain.model.User
 
 fun BaseUrl.toEntity(): BaseUrlEntity {
     return BaseUrlEntity(url = url)
@@ -57,7 +57,9 @@ fun Track.toEntity(): QueueEntity {
         isFavorite = this.isFavorite,
         title = this.title,
         albumTrackArtists = this.albumTrackArtists.map { it.toEntity() },
-        trackArtists = this.trackArtists.map { it.toEntity() }
+        trackArtists = this.trackArtists.map { it.toEntity() },
+        disc = this.disc,
+        trackNumber = this.trackNumber
     )
 }
 
@@ -83,7 +85,9 @@ fun QueueEntity.toModel(): Track {
         isFavorite = this.isFavorite,
         title = this.title,
         albumTrackArtists = this.albumTrackArtists.map { it.toModel() },
-        trackArtists = this.trackArtists.map { it.toModel() }
+        trackArtists = this.trackArtists.map { it.toModel() },
+        disc = this.disc,
+        trackNumber = this.trackNumber
     )
 }
 

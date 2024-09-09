@@ -57,6 +57,7 @@ import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 fun TrackItem(
     track: Track,
     trackQueueNumber: Int? = null,
+    isAlbumTrack: Boolean = false,
     isCurrentTrack: Boolean = false,
     showMenuIcon: Boolean = false,
     playbackState: PlaybackState = PlaybackState.PAUSED,
@@ -78,7 +79,7 @@ fun TrackItem(
         Row(
             modifier = Modifier
                 .background(
-                    color = if (isCurrentTrack)
+                    color = if (isCurrentTrack && !isAlbumTrack)
                         MaterialTheme.colorScheme.onSurface.copy(alpha = .14F) else
                         Color.Unspecified
                 )
@@ -188,7 +189,7 @@ fun TrackItem(
             }
         }
 
-        trackQueueNumber?.let { number ->
+        /*trackQueueNumber?.let { number ->
             if (!isCurrentTrack)
                 Box(
                     modifier = Modifier
@@ -204,7 +205,7 @@ fun TrackItem(
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
-        }
+        }*/
     }
 }
 
@@ -236,7 +237,7 @@ fun TrackItemPreview() {
         album = "Sample Album",
         albumTrackArtists = albumArtists,
         albumHash = "albumHash123",
-        artistHashes = "artistHashes123",
+        artistHashes = listOf("artistHashes123"),
         trackArtists = artists,
         bitrate = 320,
         duration = 454, // Sample duration in seconds
@@ -245,7 +246,9 @@ fun TrackItemPreview() {
         image = "/path/to/album/artwork.jpg",
         isFavorite = true,
         title = "Sample Track",
-        trackHash = "trackHash123"
+        trackHash = "trackHash123",
+        disc = 1,
+        trackNumber = 1
     )
 
     SwingMusicTheme_Preview {
@@ -285,6 +288,7 @@ fun TrackItemPreview() {
                     },
                     baseUrl = "",
                 )
+
                 TrackItem(
                     isCurrentTrack = true,
                     playbackState = PlaybackState.PAUSED,

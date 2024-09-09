@@ -7,7 +7,7 @@ data class AlbumInfo(
     val baseTitle: String,
     val color: String,
     val createdDate: Int,
-    val date: Int,
+    val date: Long,
     val duration: Int,
     val favUserIds: List<Any>,
     val genreHashes: String,
@@ -22,5 +22,5 @@ data class AlbumInfo(
     val title: String,
     val trackCount: Int,
     val type: String,
-    val versions: List<Any>
+    val versions: List<String>
 )

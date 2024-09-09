@@ -47,6 +47,7 @@ import com.android.swingmusic.album.presentation.navigator.AlbumNavigator
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState
+import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
@@ -382,7 +383,7 @@ fun FoldersAndTracksScreen(
             onClickTrackItem = { index: Int, queue: List<Track> ->
                 mediaControllerViewModel.onQueueEvent(
                     QueueEvent.RecreateQueue(
-                        source = currentFolder.path,
+                        source = QueueSource.FOLDER(path = currentFolder.path),
                         clickedTrackIndex = index,
                         queue = queue
                     )

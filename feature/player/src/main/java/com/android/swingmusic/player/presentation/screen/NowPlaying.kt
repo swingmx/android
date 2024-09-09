@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,7 +30,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
@@ -66,6 +67,7 @@ import com.android.swingmusic.uicomponent.presentation.component.slider.WaveAnim
 import com.android.swingmusic.uicomponent.presentation.component.slider.WaveDirection
 import com.android.swingmusic.uicomponent.presentation.component.slider.WavySlider
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.ramcosta.composedestinations.annotation.Destination
 import java.util.Locale
@@ -140,6 +142,7 @@ private fun NowPlaying(
     }
 
     Scaffold(
+        modifier = Modifier.background(MaterialTheme.colorScheme.surface),
         bottomBar = {
             Box(
                 modifier = Modifier
@@ -149,9 +152,44 @@ private fun NowPlaying(
             )
         }
     ) { paddingValues ->
+
+        AsyncImage(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(),
+            model = ImageRequest.Builder(LocalContext.current)
+                .data("${baseUrl}img/thumbnail/${track.image}")
+                .crossfade(true)
+                .transformations(
+                    listOf(
+                        BlurTransformation(
+                            scale = 0.25f,
+                            radius = 25
+                        )
+                    )
+                )
+                .build(),
+            contentDescription = "Track Image",
+            contentScale = ContentScale.Crop
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(1F)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface.copy(alpha = .75F),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 1F),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 1F)
+                        )
+                    )
+                )
+        )
+
         Column(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
                 .padding(paddingValues)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -160,7 +198,6 @@ private fun NowPlaying(
             // Artwork, SeekBar...
             Column(
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface)
                     .wrapContentSize()
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -266,7 +303,7 @@ private fun NowPlaying(
                         animationSpecs = WaveAnimationSpecs(
                             waveHeightAnimationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
                             waveVelocityAnimationSpec = tween(durationMillis = 2000, easing = LinearOutSlowInEasing),
-                            waveStartSpreadAnimationSpec = tween(durationMillis = 100, easing = EaseOutQuad)
+                            waveStartSpreadAnimationSpec = tween(durationMillis = 0, easing = EaseOutQuad)
                         )
                     )
 
@@ -540,7 +577,7 @@ fun NowPlayingScreen(
         },
         onToggleShuffleMode = {
             mediaControllerViewModel.onPlayerUiEvent(
-                PlayerUiEvent.OnToggleShuffleMode
+                PlayerUiEvent.OnToggleShuffleMode()
             )
         },
         onSeekPlayBack = {
@@ -600,7 +637,7 @@ fun FullPlayerPreview() {
         album = "Sample Album",
         albumTrackArtists = albumArtists,
         albumHash = "albumHash123",
-        artistHashes = "artistHashes123",
+        artistHashes = listOf("artistHashes123"),
         trackArtists = artists,
         bitrate = 320,
         duration = 454, // Sample duration in seconds
@@ -609,7 +646,9 @@ fun FullPlayerPreview() {
         image = "/path/to/album/artwork.jpg",
         isFavorite = true,
         title = "Save Your Tears",
-        trackHash = "trackHash123"
+        trackHash = "trackHash123",
+        disc = 1,
+        trackNumber = 1
     )
 
     SwingMusicTheme {

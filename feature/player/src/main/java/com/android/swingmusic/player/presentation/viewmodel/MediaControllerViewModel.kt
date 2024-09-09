@@ -28,7 +28,6 @@ import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnSeekPlay
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnToggleFavorite
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnTogglePlayerState
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnToggleRepeatMode
-import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnToggleShuffleMode
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.state.PlayerUiState
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
@@ -59,7 +58,7 @@ class MediaControllerViewModel @Inject constructor(
     private var workingQueue: MutableList<Track> = mutableListOf()
     private var shuffledQueue: MutableList<Track> = mutableListOf()
     private var trackToLog: Track? = null
-    private var queueSource: QueueSource = QueueSource.FOLDER // TODO: Use QueueSource enum classes
+    private var queueSource: QueueSource = QueueSource.UNKNOWN
 
     //TODO: Manage durationPlayed within the Playback Service to improve accuracy and data integrity
     private var durationPlayedSec: Long = 0L
@@ -122,6 +121,8 @@ class MediaControllerViewModel @Inject constructor(
             refreshBaseUrl()
 
             val savedQueue = pLayerRepository.getSavedQueue()
+            // TODO: Get saved queue's source
+           // val savedQueueSource = pLayerRepository.getSavedQueueSource()
             val lastPlayedTrack = pLayerRepository.getLastPlayedTrack()
             val lastPlayedTrackIndex = lastPlayedTrack?.indexInQueue ?: -1
             val lastPlayPositionMs = lastPlayedTrack?.lastPlayPositionMs ?: 0L
@@ -221,6 +222,11 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
+    fun initQueueFromAlbum(albumTracks: List<Track>, albumHash: String) {
+        queueSource = QueueSource.ALBUM(albumHash)
+        workingQueue = albumTracks.toMutableList()
+    }
+
     private fun updateQueueInDatabase(
         queue: List<Track>,
         playingTrackIndex: Int
@@ -242,9 +248,9 @@ class MediaControllerViewModel @Inject constructor(
     }
 
     private fun createMediaItem(id: Int, track: Track): MediaItem {
-        val path = "${_baseUrl.value}file/${track.trackHash}/legacy?filepath=${track.filepath}"
-        val encodedPath = Uri.encode(path, "#/:;?&=+$,@!*()^.<>_-")
-        val uri = Uri.parse(encodedPath)
+        val encodedFilePath = Uri.encode(track.filepath)
+        val uriString = "${_baseUrl.value}file/${track.trackHash}/legacy?filepath=$encodedFilePath"
+        val uri = Uri.parse(uriString)
 
         val artworkUri = Uri.parse("${_baseUrl.value}img/thumbnail/${track.image}")
         val artists = track.trackArtists.joinToString(", ") { it.name }
@@ -312,8 +318,8 @@ class MediaControllerViewModel @Inject constructor(
     private fun createNewQueue(
         tracks: List<Track>,
         startIndex: Int,
-        source: QueueSource = QueueSource.FOLDER, // TODO: Confirm possible sources
-        autoPlay: Boolean
+        source: QueueSource,
+        autoPlay: Boolean = true
     ) {
         /** If working queue is empty at this point, then it means no queue was found in the db
          * which also means [PlayerListener] is not added yet */
@@ -353,12 +359,22 @@ class MediaControllerViewModel @Inject constructor(
                 Timber.tag("LOG")
                 Timber.d("[$logReason]: Played -> [${it.title}] -> $durationPlayedSec sec -> Remote")
 
-                val source = "fo:${track.folder}" // TODO: Fix Track source after implementing nav
+                val sourcePath = when (val source = queueSource) {
+                    is QueueSource.ALBUM -> "al:${source.albumHash}"
+                    is QueueSource.ARTIST -> "ar:${source.artistHash}"
+                    is QueueSource.FOLDER -> "fo:${source.path}"
+                    is QueueSource.PLAYLIST -> "pl:${source.id}"
+                    is QueueSource.QUERY -> "q:${source.query}"
+                    is QueueSource.FAVORITE -> "favorite"
+                    is QueueSource.UNKNOWN -> ""
+                    else -> ""
+                }
+
                 if (durationPlayedSec >= 5) {
                     pLayerRepository.logLastPlayedTrackToServer(
                         track,
                         durationPlayedSec.toInt(),
-                        source
+                        sourcePath
                     )
                 } else {
                     Timber.tag("LOG")
@@ -604,7 +620,7 @@ class MediaControllerViewModel @Inject constructor(
                     )
                 }
 
-                is OnToggleShuffleMode -> {
+                is PlayerUiEvent.OnToggleShuffleMode -> {
                     logRecentlyPlayedTrackToServer(
                         track = trackToLog,
                         durationPlayedSec = durationPlayedSec,
@@ -618,7 +634,7 @@ class MediaControllerViewModel @Inject constructor(
 
                         // Handle shuffle mode manually (not directly via MediaController)
                         // Save 0th track immediately even in error state
-                        if (newShuffleMode == ShuffleMode.SHUFFLE_ON) {
+                        if (newShuffleMode == ShuffleMode.SHUFFLE_ON || event.isAlbumSource) {
                             shuffledQueue = workingQueue.shuffled().toMutableList()
 
                             _playerUiState.value = _playerUiState.value.copy(
@@ -668,9 +684,8 @@ class MediaControllerViewModel @Inject constructor(
     fun onQueueEvent(event: QueueEvent) {
         when (event) {
             is QueueEvent.RecreateQueue -> {
-                // TODO: Check source with when()
                 if (
-                    (_playerUiState.value.nowPlayingTrack?.folder == event.source) &&
+                    event.source == queueSource &&
                     (_playerUiState.value.playbackState != PlaybackState.ERROR) &&
                     (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_OFF) &&
                     (_playerUiState.value.queue == event.queue)
@@ -685,7 +700,8 @@ class MediaControllerViewModel @Inject constructor(
                     createNewQueue(
                         tracks = event.queue,
                         startIndex = event.clickedTrackIndex,
-                        autoPlay = true
+                        autoPlay = true,
+                        source = event.source
                     )
                 }
 

@@ -17,7 +17,7 @@ data class AlbumInfoDto(
     @SerializedName("created_date")
     val createdDate: Int?,
     @SerializedName("date")
-    val date: Int?,
+    val date: Long?,
     @SerializedName("duration")
     val duration: Int?,
     @SerializedName("fav_userids")
@@ -47,5 +47,5 @@ data class AlbumInfoDto(
     @SerializedName("type")
     val type: String?,
     @SerializedName("versions")
-    val versions: List<Any>?
+    val versions: List<String>?
 )
