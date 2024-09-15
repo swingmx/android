@@ -102,9 +102,9 @@ private fun AllAlbums(
 
     var isGridCountMenuExpanded by remember { mutableStateOf(false) }
 
-    Scaffold {
+    Scaffold { pv ->
         Scaffold(
-            modifier = Modifier.padding(it),
+            modifier = Modifier.padding(pv),
             topBar = {
                 Column(verticalArrangement = Arrangement.Center) {
                     Row(
@@ -356,7 +356,7 @@ private fun getAlbumCountHelperText(count: Int): String {
         0 -> "No albums found!"
         1 -> "You have 1 album in your library"
         else -> {
-            val formattedCount = count.toString().reversed().chunked(3).joinToString(",").reversed()
+            val formattedCount = count.toString().reversed().chunked(3).joinToString(" ,").reversed()
             "You have $formattedCount albums in your library"
         }
     }

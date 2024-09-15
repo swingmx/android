@@ -13,4 +13,5 @@ data class AlbumWithInfoState(
 data class AlbumInfoWithGroupedTracks(
     val albumInfo: AlbumInfo?,
     val groupedTracks: Map<Int, List<Track>>,
+    val copyright: String?
 )

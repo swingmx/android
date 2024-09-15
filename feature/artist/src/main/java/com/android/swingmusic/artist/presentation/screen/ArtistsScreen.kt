@@ -329,7 +329,7 @@ private fun getArtistCountHelperText(count: Int): String {
         0 -> "No artists found!"
         1 -> "You have 1 artist in your library"
         else -> {
-            val formattedCount = count.toString().reversed().chunked(3).joinToString(",").reversed()
+            val formattedCount = count.toString().reversed().chunked(3).joinToString(" ,").reversed()
             "You have $formattedCount artists in your library"
         }
     }

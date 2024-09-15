@@ -103,11 +103,9 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.2.0")
 
     // Navigation
-    implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
+    // implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
+    implementation("io.github.raamcosta.compose-destinations:animations-core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
-
-    // V2 only: for bottom sheet destination support, also add
-    // implementation("io.github.raamcosta.compose-destinations:bottom-sheet:1.9.63")
 
     // Media3-Player
     implementation("androidx.media3:media3-exoplayer:1.4.0")

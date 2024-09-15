@@ -38,11 +38,12 @@ class AlbumWithInfoViewModel @Inject constructor(
                 val orderedTracks = groupedTracks?.values?.flatten() ?: emptyList()
 
                 _albumWithInfoState.value = _albumWithInfoState.value.copy(
-                    orderedTracks = orderedTracks ,
+                    orderedTracks = orderedTracks,
                     infoResource = Resource.Success(
                         data = AlbumInfoWithGroupedTracks(
                             albumInfo = resource.data?.albumInfo,
-                            groupedTracks = groupedTracks ?: emptyMap()
+                            groupedTracks = groupedTracks ?: emptyMap(),
+                            copyright = resource.data?.copyright ?: ""
                         )
                     )
                 )
@@ -60,6 +61,66 @@ class AlbumWithInfoViewModel @Inject constructor(
                             message = resource.message!!
                         )
                     )
+            }
+        }
+    }
+
+    private fun toggleAlbumFavorite(albumHash: String, isFavorite: Boolean) {
+        viewModelScope.launch {
+            // Optimistically update the UI
+            _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                infoResource = Resource.Success(
+                    AlbumInfoWithGroupedTracks(
+                        albumInfo = _albumWithInfoState.value.infoResource.data?.albumInfo?.copy(
+                            isFavorite = !isFavorite
+                        ),
+                        groupedTracks = _albumWithInfoState.value.infoResource.data?.groupedTracks
+                            ?: emptyMap(),
+                        copyright = _albumWithInfoState.value.infoResource.data?.copyright
+                    )
+                )
+            )
+
+            val request = if (isFavorite) {
+                albumRepository.removeAlbumFromFavorite(albumHash)
+            } else {
+                albumRepository.addAlbumToFavorite(albumHash)
+            }
+
+            request.collectLatest {
+                when (it) {
+                    is Resource.Loading -> {}
+
+                    is Resource.Success -> {
+                        _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                            infoResource = Resource.Success(
+                                AlbumInfoWithGroupedTracks(
+                                    albumInfo = _albumWithInfoState.value.infoResource.data?.albumInfo?.copy(
+                                        isFavorite = it.data ?: false
+                                    ),
+                                    groupedTracks = _albumWithInfoState.value.infoResource.data?.groupedTracks
+                                        ?: emptyMap(),
+                                    copyright = _albumWithInfoState.value.infoResource.data?.copyright
+                                )
+                            )
+                        )
+                    }
+
+                    is Resource.Error -> {
+                        _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                            infoResource = Resource.Success(
+                                AlbumInfoWithGroupedTracks(
+                                    albumInfo = _albumWithInfoState.value.infoResource.data?.albumInfo?.copy(
+                                        isFavorite = isFavorite
+                                    ),
+                                    groupedTracks = _albumWithInfoState.value.infoResource.data?.groupedTracks
+                                        ?: emptyMap(),
+                                    copyright = _albumWithInfoState.value.infoResource.data?.copyright
+                                )
+                            )
+                        )
+                    }
+                }
             }
         }
     }
@@ -86,6 +147,10 @@ class AlbumWithInfoViewModel @Inject constructor(
                         updateAlbumInfoState(it)
                     }
                 }
+            }
+
+            is AlbumWithInfoUiEvent.OnToggleAlbumFavorite -> {
+                toggleAlbumFavorite(event.albumHash, event.isFavorite)
             }
 
             else -> {}

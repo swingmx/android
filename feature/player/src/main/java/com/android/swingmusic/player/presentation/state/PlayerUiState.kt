@@ -14,6 +14,6 @@ data class PlayerUiState(
     val playbackDuration: String = "00:00",
     val trackDuration: String = "00:00",
     val isBuffering: Boolean = false,
-    val repeatMode: RepeatMode = RepeatMode.REPEAT_OFF,
+    val repeatMode: RepeatMode = RepeatMode.REPEAT_ALL,
     val shuffleMode: ShuffleMode = ShuffleMode.SHUFFLE_OFF
 )

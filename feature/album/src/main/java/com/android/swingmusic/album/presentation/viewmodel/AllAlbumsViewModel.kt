@@ -32,15 +32,15 @@ class AllAlbumsViewModel @Inject constructor(
     val allAlbumsUiState: State<AllAlbumsUiState> = _allAlbumsUiState
 
     val sortAlbumsByEntries: List<Pair<SortBy, String>> = listOf(
+        Pair(SortBy.LAST_PLAYED, "lastplayed"),
+        Pair(SortBy.TITLE, "title"),
+        Pair(SortBy.ALBUM_ARTISTS, "albumartists"),
         Pair(SortBy.DATE, "date"),
         Pair(SortBy.NO_OF_TRACKS, "trackcount"),
         Pair(SortBy.DURATION, "duration"),
-        Pair(SortBy.TITLE, "title"),
         Pair(SortBy.CREATED_DATE, "created_date"),
         Pair(SortBy.PLAY_DURATION, "playduration"),
         Pair(SortBy.PLAY_COUNT, "playcount"),
-        Pair(SortBy.LAST_PLAYED, "lastplayed"),
-        Pair(SortBy.ALBUM_ARTISTS, "albumartists"),
     )
 
     private fun getAlbumCount() {
