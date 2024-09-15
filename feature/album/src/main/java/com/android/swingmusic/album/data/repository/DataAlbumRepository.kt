@@ -14,9 +14,12 @@ import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.AlbumWithInfo
 import com.android.swingmusic.network.data.api.service.NetworkApiService
+import com.android.swingmusic.network.data.dto.AddFavoriteRequest
 import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import retrofit2.HttpException
+import retrofit2.Response
 import javax.inject.Inject
 
 class DataAlbumRepository @Inject constructor(
@@ -81,6 +84,56 @@ class DataAlbumRepository @Inject constructor(
 
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error loading album details"))
+            }
+        }
+    }
+
+    override suspend fun addAlbumToFavorite(albumHash: String): Flow<Resource<Boolean>> {
+        return flow {
+            try {
+                emit(Resource.Loading())
+
+                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+                val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+                networkApiService.addFavorite(
+                    url = "${baseUrl}favorites/add",
+                    addFavoriteRequest = AddFavoriteRequest(hash = albumHash, type = "album"),
+                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                )
+
+                emit(Resource.Success(data = true)) // isFavorite = true
+
+            } catch (e: HttpException) {
+                emit(Resource.Error(message = "FAILED TO ADD ALBUM TO FAVORITE"))
+
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "FAILED TO ADD ALBUM TO FAVORITE"))
+            }
+        }
+    }
+
+    override suspend fun removeAlbumFromFavorite(albumHash: String): Flow<Resource<Boolean>> {
+        return flow {
+            try {
+                emit(Resource.Loading())
+
+                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+                val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+                networkApiService.addFavorite(
+                    url = "${baseUrl}favorites/remove",
+                    addFavoriteRequest = AddFavoriteRequest(hash = albumHash, type = "album"),
+                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                )
+
+                emit(Resource.Success(data = false)) // isFavorite = false
+
+            } catch (e: HttpException) {
+                emit(Resource.Error(message = "FAILED TO REMOVE ALBUM FROM FAVORITE"))
+
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "FAILED TO REMOVE ALBUM FROM FAVORITE"))
             }
         }
     }

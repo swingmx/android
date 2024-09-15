@@ -458,7 +458,7 @@ class MediaControllerViewModel @Inject constructor(
                         if (_playerUiState.value.nowPlayingTrack?.trackHash == trackHash) {
                             _playerUiState.value = _playerUiState.value.copy(
                                 nowPlayingTrack = _playerUiState.value.nowPlayingTrack
-                                    ?.copy(isFavorite = !isFavorite)
+                                    ?.copy(isFavorite = it.data ?: false)
                             )
                         }
                     }

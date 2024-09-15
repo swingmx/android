@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,6 +35,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -56,9 +59,9 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.ramcosta.composedestinations.annotation.Destination
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Queue(
     queue: List<Track>,
@@ -79,39 +82,72 @@ private fun Queue(
     }
 
     Scaffold { outerPadding ->
+        AsyncImage(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(1F),
+            model = ImageRequest.Builder(LocalContext.current)
+                .data("${baseUrl}img/thumbnail/${playingTrack?.image}")
+                .crossfade(true)
+                .transformations(
+                    listOf(
+                        BlurTransformation(
+                            scale = 0.25f,
+                            radius = 25
+                        )
+                    )
+                )
+                .build(),
+            contentDescription = "Track Image",
+            contentScale = ContentScale.Crop
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(1F)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface.copy(alpha = .75F),
+                            MaterialTheme.colorScheme.surface.copy(alpha = .95F),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 1F),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 1F),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 1F)
+                        )
+                    )
+                )
+        )
+
         Scaffold(
             modifier = Modifier
                 .padding(outerPadding)
-                .background(MaterialTheme.colorScheme.surface)
                 .fillMaxSize(),
+            containerColor = Color.Transparent,
             topBar = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surface)
-                            .padding(
-                                bottom = 4.dp,
-                                start = 16.dp,
-                            ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { onClickBack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Arrow Back"
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Text(
-                            text = "Now Playing",
-                            style = MaterialTheme.typography.headlineMedium
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            bottom = 4.dp,
+                            start = 16.dp,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { onClickBack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Arrow Back"
                         )
                     }
-                }
 
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(
+                        text = "Now Playing",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                }
             }, bottomBar = {
                 Box(
                     modifier = Modifier
@@ -121,12 +157,98 @@ private fun Queue(
                 )
             }
         ) { paddingValues ->
+            if(playingTrack != null){
+                Box(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .padding(12.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14F))
+                        .clickable {
+                            onTogglePlayerState()
+                        }
+                        .padding(8.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(0.8F),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data("${baseUrl}img/thumbnail/small/${playingTrack.image}")
+                                    .crossfade(true)
+                                    .build(),
+                                placeholder = painterResource(R.drawable.audio_fallback),
+                                fallback = painterResource(R.drawable.audio_fallback),
+                                error = painterResource(R.drawable.audio_fallback),
+                                contentDescription = "Track Image",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                            )
+
+                            Column(modifier = Modifier.padding(horizontal = 12.dp)) {
+                                Text(
+                                    text = playingTrack.title,
+                                    modifier = Modifier.sizeIn(maxWidth = 300.dp),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val artists =
+                                        playingTrack.trackArtists.joinToString(", ") { it.name }
+
+                                    Text(
+                                        text = artists,
+                                        modifier = Modifier.sizeIn(maxWidth = 185.dp),
+                                        color = MaterialTheme.colorScheme.onSurface.copy(
+                                            alpha = .80F
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+
+                        // Sound Bars
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .padding(end = 8.dp)
+                        ) {
+                            if (playbackState == PlaybackState.PLAYING) {
+                                SoundSignalBars(animate = true)
+                            } else {
+                                SoundSignalBars(animate = false)
+                            }
+                        }
+                    }
+                }
+            }
+
             LazyColumn(
                 state = lazyColumnState,
                 modifier = Modifier
+                    .background(Color.Transparent)
                     .padding(paddingValues)
+                    .padding(top = 100.dp)
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
             ) {
 
                 if (playingTrack == null) {
@@ -134,93 +256,6 @@ private fun Queue(
 
                     }
                 } else {
-                    // Now Playing Track
-                    stickyHeader {
-                        Box(
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.surface)
-                                .padding(12.dp)
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14F))
-                                .clickable {
-                                    onTogglePlayerState()
-                                }
-                                .padding(8.dp),
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.8F),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(LocalContext.current)
-                                            .data("${baseUrl}img/thumbnail/small/${playingTrack.image}")
-                                            .crossfade(true)
-                                            .build(),
-                                        placeholder = painterResource(R.drawable.audio_fallback),
-                                        fallback = painterResource(R.drawable.audio_fallback),
-                                        error = painterResource(R.drawable.audio_fallback),
-                                        contentDescription = "Track Image",
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(60.dp)
-                                            .clip(RoundedCornerShape(6.dp))
-                                    )
-
-                                    Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                                        Text(
-                                            text = playingTrack.title,
-                                            modifier = Modifier.sizeIn(maxWidth = 300.dp),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = Bold,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            val artists =
-                                                playingTrack.trackArtists.joinToString(", ") { it.name }
-
-                                            Text(
-                                                text = artists,
-                                                modifier = Modifier.sizeIn(maxWidth = 185.dp),
-                                                color = MaterialTheme.colorScheme.onSurface.copy(
-                                                    alpha = .80F
-                                                ),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // Sound Bars
-                                Box(
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .padding(end = 8.dp)
-                                ) {
-                                    if (playbackState == PlaybackState.PLAYING) {
-                                        SoundSignalBars(animate = true)
-                                    } else {
-                                        SoundSignalBars(animate = false)
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-
                     itemsIndexed(
                         items = queue,
                         key = { index: Int, track: Track -> "$index${track.filepath}" }

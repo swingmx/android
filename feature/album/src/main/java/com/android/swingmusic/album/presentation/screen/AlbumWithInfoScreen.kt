@@ -29,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -92,6 +91,7 @@ fun AlbumWithInfo(
     sortedTracks: List<Track>,
     playbackState: PlaybackState,
     albumInfo: AlbumInfo,
+    copyright: String,
     albumTracks: Map<Int, List<Track>>,
     baseUrl: String,
     onClickBack: () -> Unit,
@@ -109,11 +109,7 @@ fun AlbumWithInfo(
     val interaction = remember { MutableInteractionSource() }
     val listState = rememberLazyListState()
 
-    Scaffold(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.surface)
-            .fillMaxSize(),
-    ) {
+    Scaffold {
         LazyColumn(
             modifier = Modifier
                 .padding()
@@ -189,10 +185,9 @@ fun AlbumWithInfo(
                                 )
                             }
 
-                            IconButton(
-                                modifier = Modifier
-                                    .clip(CircleShape),
-                                // .background(iconColor),
+                            // TODO: Show album menu
+                            /*IconButton(
+                                modifier = Modifier.clip(CircleShape),
                                 onClick = {
                                     onClickMore()
                                 }
@@ -201,7 +196,7 @@ fun AlbumWithInfo(
                                     imageVector = Icons.Default.MoreVert,
                                     contentDescription = "Back Arrow"
                                 )
-                            }
+                            }*/
                         }
 
                         AsyncImage(
@@ -216,7 +211,7 @@ fun AlbumWithInfo(
                                     shape = RoundedCornerShape(8)
                                 ),
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data("${baseUrl}img/thumbnail/medium/${albumInfo.image}")
+                                .data("${baseUrl}img/thumbnail/${albumInfo.image}")
                                 .crossfade(true)
                                 .build(),
                             placeholder = painterResource(R.drawable.audio_fallback),
@@ -350,10 +345,19 @@ fun AlbumWithInfo(
                             item {
                                 val icon = if (albumInfo.isFavorite) R.drawable.fav_filled
                                 else R.drawable.fav_not_filled
-                                Icon(
-                                    painter = painterResource(id = icon),
-                                    contentDescription = "Favorite"
-                                )
+                                IconButton(
+                                    onClick = {
+                                        onToggleFavorite(
+                                            albumInfo.isFavorite,
+                                            albumInfo.albumHash
+                                        )
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = icon),
+                                        contentDescription = "Favorite"
+                                    )
+                                }
                             }
 
                             item {
@@ -390,6 +394,10 @@ fun AlbumWithInfo(
             item {
                 Spacer(modifier = Modifier.height(12.dp))
             }
+
+            // TODO: Edit to scroll to the Playing Track if this Album is the source
+            // of the currently playing track...
+            // Alternatively, scroll once (if applicable) then preserve the UI state after navigation.
 
             albumTracks.forEach { (discNumber, tracks) ->
                 item {
@@ -460,23 +468,80 @@ fun AlbumWithInfo(
                     }
 
                     if (track.filepath == sortedTracks.last().filepath) {
-                        Spacer(modifier = Modifier.height(12.dp))
+                        LazyRow(
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .padding(end = 12.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface
+                                        )
+                                        .padding(
+                                            horizontal = 12.dp,
+                                            vertical = 8.dp
+                                        )
+                                ) {
+                                    Text(
+                                        text = when {
+                                            albumInfo.genres.size > 1 -> "Genres"
+                                            albumInfo.genres.size == 1 -> "Genre"
+                                            else -> "No Genres"
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.surface
+                                    )
+                                }
+                            }
+
+                            items(albumInfo.genres) { genre ->
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 12.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.tertiary
+                                        )
+                                        .padding(
+                                            horizontal = 12.dp,
+                                            vertical = 8.dp
+                                        )
+
+                                ) {
+                                    Text(
+                                        text = genre.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onTertiary,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
                         Column {
                             Row(
                                 modifier = Modifier.padding(horizontal = 20.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = albumInfo.date.formatDate("MMMM d, yyyy"),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    text = albumInfo.date.formatDate("MMMM d, yyyy").uppercase(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .padding(12.dp)
+                                        .padding(horizontal = 12.dp)
                                         .size(4.dp)
                                         .clip(CircleShape)
                                         .background(
@@ -484,16 +549,16 @@ fun AlbumWithInfo(
                                         )
                                 )
                                 Text(
-                                    text = albumInfo.trackCount.formattedTrackCount(),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    text = albumInfo.trackCount.formattedTrackCount().uppercase(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .padding(12.dp)
+                                        .padding(horizontal = 12.dp)
                                         .size(4.dp)
                                         .clip(CircleShape)
                                         .background(
@@ -501,67 +566,25 @@ fun AlbumWithInfo(
                                         )
                                 )
                                 Text(
-                                    text = albumInfo.duration.formattedAlbumDuration(),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
+                                    text = albumInfo.duration.formattedAlbumDuration().uppercase(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
 
-                            LazyRow(
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (albumInfo.genres.isNotEmpty()) {
-                                    item {
-                                        Box(
-                                            modifier = Modifier
-                                                .background(MaterialTheme.colorScheme.surface)
-                                                .padding(end = 12.dp)
-                                                .clip(CircleShape)
-                                                .background(
-                                                    MaterialTheme.colorScheme.onSurface
-                                                )
-                                                .padding(
-                                                    horizontal = 12.dp,
-                                                    vertical = 8.dp
-                                                )
-                                        ) {
-                                            Text(
-                                                text = if (albumInfo.genres.size > 1) "Genres" else "Genre",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.surface
-                                            )
-                                        }
-                                    }
-                                }
+                            Spacer(modifier = Modifier.height(4.dp))
 
-                                items(albumInfo.genres) { genre ->
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(end = 12.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                MaterialTheme.colorScheme.tertiary
-                                            )
-                                            .padding(
-                                                horizontal = 12.dp,
-                                                vertical = 8.dp
-                                            )
-
-                                    ) {
-                                        Text(
-                                            text = genre.name,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onTertiary,
-                                            fontWeight = FontWeight.SemiBold,
-                                        )
-                                    }
-                                }
-                            }
+                            Text(
+                                modifier = Modifier.padding(horizontal = 20.dp),
+                                text = copyright.uppercase(),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(150.dp))
@@ -636,6 +659,7 @@ fun AlbumWithInfoScreen(
                     sortedTracks = albumWithInfoState.orderedTracks,
                     playbackState = playerUiState.playbackState,
                     albumInfo = albumWithInfoState.infoResource.data?.albumInfo!!,
+                    copyright = albumWithInfoState.infoResource.data?.copyright!!,
                     albumTracks = albumWithInfoState.infoResource.data!!.groupedTracks,
                     baseUrl = baseUrl ?: "https://default",
                     onClickBack = { albumNavigator.navigateBack() },
@@ -679,7 +703,12 @@ fun AlbumWithInfoScreen(
                         )
                     },
                     onToggleFavorite = { isFavorite, albumHash ->
-
+                        albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                            AlbumWithInfoUiEvent.OnToggleAlbumFavorite(
+                                isFavorite,
+                                albumHash
+                            )
+                        )
                     }
                 )
             }
@@ -846,12 +875,13 @@ fun AlbumWithInfoScreenPreview() {
 
     SwingMusicTheme_Preview {
         AlbumWithInfo(
-            currentTrack = tracks[1],
+            currentTrack = tracks[5],
             sortedTracks = tracks,
             playbackState = PlaybackState.PLAYING,
             albumInfo = albumInfo,
+            copyright = "© 2018 Republic Records",
             albumTracks = mapOf(
-                1 to listOf(tracks[0], tracks[1], tracks[5])
+                1 to listOf(tracks[1], tracks[5])
             ),
             baseUrl = "",
             onClickBack = {},

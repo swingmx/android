@@ -18,10 +18,9 @@ fun Int.formatDuration(): String {
 }
 
 fun Int.formattedAlbumDuration(): String {
-    val totalMinutes = this / 60
+    val totalMinutes = (this + 30) / 60
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
-    val seconds = this % 60
 
     return buildString {
         if (hours > 0) {
@@ -32,11 +31,7 @@ fun Int.formattedAlbumDuration(): String {
             if (hours > 0) append(" ")
             append("${minutes}min")
         }
-        if (seconds > 0) {
-            if (hours > 0 || minutes > 0) append(" ")
-            append("${seconds}sec")
-        }
-    }.ifEmpty { "0sec" }
+    }.ifEmpty { "0min" }
 }
 
 

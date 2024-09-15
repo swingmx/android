@@ -23,12 +23,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.lifecycleScope
@@ -42,7 +42,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
@@ -55,18 +54,19 @@ import com.android.swingmusic.player.presentation.screen.MiniPlayer
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
-import com.android.swingmusic.presentation.navigator.BottomNavItem
-import com.android.swingmusic.presentation.navigator.CoreNavigator
-import com.android.swingmusic.presentation.navigator.NavGraphs
+import com.android.swingmusic.presentation.navigator.*
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.service.SessionTokenManager
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
+import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
+import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
 import com.ramcosta.composedestinations.navigation.navigate
-import com.ramcosta.composedestinations.rememberNavHostEngine
 import com.ramcosta.composedestinations.spec.NavGraphSpec
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -113,7 +113,7 @@ class MainActivity : ComponentActivity() {
                 BottomNavItem.Folder,
                 BottomNavItem.Album,
                 // BottomNavItem.Playlist,
-               // BottomNavItem.Artist,
+                // BottomNavItem.Artist,
             )
 
             SwingMusicTheme {
@@ -246,6 +246,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterialNavigationApi::class)
 @ExperimentalAnimationApi
 @Composable
 internal fun SwingMusicAppNavigation(
@@ -254,12 +255,100 @@ internal fun SwingMusicAppNavigation(
     authViewModel: AuthViewModel,
     mediaControllerViewModel: MediaControllerViewModel
 ) {
-    val navHostEngineNoAnim = rememberNavHostEngine()
-    /* val bottomSheetNavigator = rememberBottomSheetNavigator()
-     navController.navigatorProvider.addNavigator(bottomSheetNavigator) */
+    // val navHostEngineNoAnim = rememberNavHostEngine()
+    val animatedNavHostEngine = rememberAnimatedNavHostEngine(
+        navHostContentAlignment = Alignment.TopCenter,
+        rootDefaultAnimations = RootNavGraphDefaultAnimations.ACCOMPANIST_FADING, // default `rootDefaultAnimations` means no animations
+        defaultAnimationsForNestedNavGraph = mapOf(
+            NavGraphs.auth to NestedNavGraphDefaultAnimations(
+                enterTransition = {
+                    scaleInEnterTransition()
+                },
+                exitTransition = {
+                    scaleOutExitTransition()
+                },
+                popEnterTransition = {
+                    scaleInPopEnterTransition()
+                },
+                popExitTransition = {
+                    scaleOutPopExitTransition()
+                }
+            ),
+            NavGraphs.home to NestedNavGraphDefaultAnimations(
+                enterTransition = {
+                    scaleInEnterTransition()
+                },
+                exitTransition = {
+                    scaleOutExitTransition()
+                },
+                popEnterTransition = {
+                    scaleInPopEnterTransition()
+                },
+                popExitTransition = {
+                    scaleOutPopExitTransition()
+                }
+            ),
+            NavGraphs.folder to NestedNavGraphDefaultAnimations(
+                enterTransition = {
+                    scaleInEnterTransition()
+                },
+                exitTransition = {
+                    scaleOutExitTransition()
+                },
+                popEnterTransition = {
+                    scaleInPopEnterTransition()
+                },
+                popExitTransition = {
+                    scaleOutPopExitTransition()
+                }
+            ),
+            NavGraphs.player to NestedNavGraphDefaultAnimations(
+                enterTransition = {
+                    scaleInEnterTransition()
+                },
+                exitTransition = {
+                    scaleOutExitTransition()
+                },
+                popEnterTransition = {
+                    scaleInPopEnterTransition()
+                },
+                popExitTransition = {
+                    scaleOutPopExitTransition()
+                }
+            ),
+            NavGraphs.album to NestedNavGraphDefaultAnimations(
+                enterTransition = {
+                    scaleInEnterTransition()
+                },
+                exitTransition = {
+                    scaleOutExitTransition()
+                },
+                popEnterTransition = {
+                    scaleInPopEnterTransition()
+                },
+                popExitTransition = {
+                    scaleOutPopExitTransition()
+                }
+            ),
+            NavGraphs.artist to NestedNavGraphDefaultAnimations(
+                enterTransition = {
+                    scaleInEnterTransition()
+                },
+                exitTransition = {
+                    scaleOutExitTransition()
+                },
+                popEnterTransition = {
+                    scaleInPopEnterTransition()
+                },
+                popExitTransition = {
+                    scaleOutPopExitTransition()
+                }
+            )
+        )
+    )
 
     DestinationsNavHost(
-        engine = navHostEngineNoAnim,
+        engine = animatedNavHostEngine,
         navController = navController,
         navGraph = NavGraphs.root(isUserLoggedIn),
         dependenciesContainerBuilder = {

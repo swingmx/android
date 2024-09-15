@@ -67,6 +67,7 @@ import com.android.swingmusic.uicomponent.presentation.component.slider.WaveAnim
 import com.android.swingmusic.uicomponent.presentation.component.slider.WaveDirection
 import com.android.swingmusic.uicomponent.presentation.component.slider.WavySlider
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.ramcosta.composedestinations.annotation.Destination
@@ -156,7 +157,7 @@ private fun NowPlaying(
         AsyncImage(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(),
+                .fillMaxHeight(1F),
             model = ImageRequest.Builder(LocalContext.current)
                 .data("${baseUrl}img/thumbnail/${track.image}")
                 .crossfade(true)
@@ -651,14 +652,14 @@ fun FullPlayerPreview() {
         trackNumber = 1
     )
 
-    SwingMusicTheme {
+    SwingMusicTheme_Preview {
         NowPlaying(
             track = track,
             seekPosition = .22F,
             playbackDuration = "01:23",
             trackDuration = "02:59",
             playbackState = PlaybackState.PLAYING,
-            isBuffering = true,
+            isBuffering = false,
             repeatMode = RepeatMode.REPEAT_OFF,
             shuffleMode = ShuffleMode.SHUFFLE_OFF,
             baseUrl = "",

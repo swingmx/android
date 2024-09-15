@@ -105,20 +105,12 @@ class DataPLayerRepository @Inject constructor(
                     bearerToken = "Bearer $accessToken"
                 )
 
-                Timber.e(message = "♥ ADDED TRACK [$trackHash] TO FAVORITE")
-
                 emit(Resource.Success(data = true))
 
             } catch (e: HttpException) {
-
-                Timber.e(message = "FAILED TO ADD TRACK TO FAVORITE")
-
                 emit(Resource.Error(message = "FAILED TO ADD TRACK TO FAVORITE"))
 
             } catch (e: Exception) {
-
-                Timber.e(message = "FAILED TO ADD TRACK TO FAVORITE")
-
                 emit(Resource.Error(message = "FAILED TO ADD TRACK TO FAVORITE"))
             }
         }
@@ -137,18 +129,12 @@ class DataPLayerRepository @Inject constructor(
                     addFavoriteRequest = AddFavoriteRequest(hash = trackHash, type = "track"),
                     bearerToken = "Bearer $accessToken"
                 )
-                Timber.e(message = "\uD83D\uDC94 REMOVED TRACK [$trackHash] FROM FAVORITES")
-
-                emit(Resource.Success(data = true))
+                emit(Resource.Success(data = false))
 
             } catch (e: HttpException) {
-                Timber.e(message = "FAILED TO REMOVE TRACK FROM FAVORITE")
-
                 emit(Resource.Error(message = "FAILED TO REMOVE TRACK FROM FAVORITE"))
 
             } catch (e: Exception) {
-                Timber.e(message = "FAILED TO REMOVE TRACK FROM FAVORITE")
-
                 emit(Resource.Error(message = "FAILED TO REMOVE TRACK FROM FAVORITE"))
             }
         }

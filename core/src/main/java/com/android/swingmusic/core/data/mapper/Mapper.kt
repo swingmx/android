@@ -218,7 +218,8 @@ object Map {
                 type = "",
                 versions = emptyList()
             ),
-            tracks = tracks?.map { it.toTrack() } ?: emptyList()
+            tracks = tracks?.map { it.toTrack() } ?: emptyList(),
+            copyright = copyright ?: ""
         )
     }
 }

@@ -12,4 +12,8 @@ interface AlbumRepository {
     suspend fun getPagingAlbums(sortBy: String, sortOrder: Int): Flow<PagingData<Album>>
 
     suspend fun getAlbumWithInfo(albumHash: String): Flow<Resource<AlbumWithInfo>>
+
+    suspend fun addAlbumToFavorite(albumHash: String): Flow<Resource<Boolean>>
+
+    suspend fun removeAlbumFromFavorite(albumHash: String): Flow<Resource<Boolean>>
 }
