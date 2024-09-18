@@ -58,14 +58,16 @@ class MediaControllerViewModel @Inject constructor(
     private var workingQueue: MutableList<Track> = mutableListOf()
     private var shuffledQueue: MutableList<Track> = mutableListOf()
     private var trackToLog: Track? = null
-    private var queueSource: QueueSource = QueueSource.UNKNOWN
 
     //TODO: Manage durationPlayed within the Playback Service to improve accuracy and data integrity
     private var durationPlayedSec: Long = 0L
     private val playbackMutex = Mutex()
 
     private val _playerUiState: MutableStateFlow<PlayerUiState> = MutableStateFlow(
-        PlayerUiState(nowPlayingTrack = null, queue = emptyList())
+        PlayerUiState(
+            nowPlayingTrack = null,
+            queue = emptyList()
+        )
     )
     val playerUiState: StateFlow<PlayerUiState> get() = _playerUiState
 
@@ -89,7 +91,14 @@ class MediaControllerViewModel @Inject constructor(
     fun reconnectMediaController(controller: MediaController) {
         mediaController = controller
 
+        val repeatMode = when (mediaController?.repeatMode) {
+            Player.REPEAT_MODE_ALL -> RepeatMode.REPEAT_ALL
+            Player.REPEAT_MODE_ONE -> RepeatMode.REPEAT_ONE
+            Player.REPEAT_MODE_OFF -> RepeatMode.REPEAT_OFF
+            else -> RepeatMode.REPEAT_OFF
+        }
         durationPlayedSec = (controller.currentPosition.div(1000))
+        _playerUiState.value = _playerUiState.value.copy(repeatMode = repeatMode)
         initQueue(isOnSessionReconnect = true)
     }
 
@@ -110,6 +119,7 @@ class MediaControllerViewModel @Inject constructor(
                 // Hit db every 5 seconds the player is playing
                 savePlayingTrackToDatabase(
                     track = _playerUiState.value.nowPlayingTrack,
+                    source = _playerUiState.value.source,
                     indexInQueue = _playerUiState.value.playingTrackIndex
                 )
             }
@@ -121,11 +131,13 @@ class MediaControllerViewModel @Inject constructor(
             refreshBaseUrl()
 
             val savedQueue = pLayerRepository.getSavedQueue()
-            // TODO: Get saved queue's source
-           // val savedQueueSource = pLayerRepository.getSavedQueueSource()
             val lastPlayedTrack = pLayerRepository.getLastPlayedTrack()
+
             val lastPlayedTrackIndex = lastPlayedTrack?.indexInQueue ?: -1
             val lastPlayPositionMs = lastPlayedTrack?.lastPlayPositionMs ?: 0L
+            val lastPlayedQueueSource = lastPlayedTrack?.source ?: QueueSource.UNKNOWN
+
+            _playerUiState.value = _playerUiState.value.copy(source = lastPlayedQueueSource)
 
             // Init the working queue
             workingQueue = savedQueue.toMutableList()
@@ -165,6 +177,7 @@ class MediaControllerViewModel @Inject constructor(
                             Timber.e("ON SESSION RECONNECTION: INDEX != LAST PLAYED  TRACK INDEX")
                             savePlayingTrackToDatabase(
                                 track = workingQueue[index],
+                                source = lastPlayedQueueSource,
                                 indexInQueue = index
                             )
                         }
@@ -222,8 +235,9 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
-    fun initQueueFromAlbum(albumTracks: List<Track>, albumHash: String) {
-        queueSource = QueueSource.ALBUM(albumHash)
+    fun initQueueFromAlbum(albumTracks: List<Track>, albumHash: String, name: String) {
+        _playerUiState.value =
+            _playerUiState.value.copy(source = QueueSource.ALBUM(albumHash, name))
         workingQueue = albumTracks.toMutableList()
     }
 
@@ -238,7 +252,9 @@ class MediaControllerViewModel @Inject constructor(
                 if (playingTrackIndex in queue.indices) {
                     savePlayingTrackToDatabase(
                         track = queue[playingTrackIndex],
-                        indexInQueue = playingTrackIndex
+                        source = _playerUiState.value.source,
+                        indexInQueue = playingTrackIndex,
+                        ignorePlayPosition = true
                     )
                 }
             } catch (e: Exception) {
@@ -346,7 +362,7 @@ class MediaControllerViewModel @Inject constructor(
 
         // Update the Track to Log in case of a Transition or Shuffle/End
         trackToLog = workingQueue[startIndex]
-        queueSource = source
+        _playerUiState.value = _playerUiState.value.copy(source = source)
     }
 
     fun logRecentlyPlayedTrackToServer(
@@ -359,7 +375,7 @@ class MediaControllerViewModel @Inject constructor(
                 Timber.tag("LOG")
                 Timber.d("[$logReason]: Played -> [${it.title}] -> $durationPlayedSec sec -> Remote")
 
-                val sourcePath = when (val source = queueSource) {
+                val sourcePath = when (val source = _playerUiState.value.source) {
                     is QueueSource.ALBUM -> "al:${source.albumHash}"
                     is QueueSource.ARTIST -> "ar:${source.artistHash}"
                     is QueueSource.FOLDER -> "fo:${source.path}"
@@ -388,6 +404,7 @@ class MediaControllerViewModel @Inject constructor(
         track: Track?,
         indexInQueue: Int,
         lastPlayPositionMs: Long? = null,
+        source: QueueSource = QueueSource.UNKNOWN,
         ignorePlayPosition: Boolean = false
     ) {
         try {
@@ -402,6 +419,7 @@ class MediaControllerViewModel @Inject constructor(
                             pLayerRepository.updateLastPlayedTrack(
                                 trackHash = track.trackHash,
                                 indexInQueue = indexInQueue,
+                                source = source,
                                 lastPlayPositionMs = if (it.trackHash == trackToLog?.trackHash) pos else 0
                             )
                         }
@@ -648,7 +666,13 @@ class MediaControllerViewModel @Inject constructor(
                                 startIndex = 0
                             )
 
-                            savePlayingTrackToDatabase(shuffledQueue[0], 0, 0L, true)
+                            savePlayingTrackToDatabase(
+                                shuffledQueue[0],
+                                0,
+                                0L,
+                                _playerUiState.value.source,
+                                true
+                            )
                             trackToLog = shuffledQueue[0]
                         } else {
                             _playerUiState.value = _playerUiState.value.copy(
@@ -662,7 +686,13 @@ class MediaControllerViewModel @Inject constructor(
                                 startIndex = 0
                             )
 
-                            savePlayingTrackToDatabase(workingQueue[0], 0, 0L, true)
+                            savePlayingTrackToDatabase(
+                                workingQueue[0],
+                                0,
+                                0L,
+                                _playerUiState.value.source,
+                                true
+                            )
                             trackToLog = workingQueue[0]
                         }
                     }
@@ -685,7 +715,7 @@ class MediaControllerViewModel @Inject constructor(
         when (event) {
             is QueueEvent.RecreateQueue -> {
                 if (
-                    event.source == queueSource &&
+                    event.source == _playerUiState.value.source &&
                     (_playerUiState.value.playbackState != PlaybackState.ERROR) &&
                     (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_OFF) &&
                     (_playerUiState.value.queue == event.queue)
@@ -835,6 +865,7 @@ class MediaControllerViewModel @Inject constructor(
 
                         savePlayingTrackToDatabase(
                             track = _playerUiState.value.nowPlayingTrack,
+                            source = _playerUiState.value.source,
                             indexInQueue = _playerUiState.value.playingTrackIndex
                         )
                     }
@@ -881,6 +912,7 @@ class MediaControllerViewModel @Inject constructor(
                             savePlayingTrackToDatabase(
                                 track = _playerUiState.value.nowPlayingTrack,
                                 indexInQueue = trackIndex,
+                                source = _playerUiState.value.source,
                                 lastPlayPositionMs = durationPlayedSec * 1000L
                             )
                         }
