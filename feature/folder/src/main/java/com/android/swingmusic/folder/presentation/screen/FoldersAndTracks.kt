@@ -383,7 +383,10 @@ fun FoldersAndTracksScreen(
             onClickTrackItem = { index: Int, queue: List<Track> ->
                 mediaControllerViewModel.onQueueEvent(
                     QueueEvent.RecreateQueue(
-                        source = QueueSource.FOLDER(path = currentFolder.path),
+                        source = QueueSource.FOLDER(
+                            path = currentFolder.path,
+                            name = currentFolder.name
+                        ),
                         clickedTrackIndex = index,
                         queue = queue
                     )

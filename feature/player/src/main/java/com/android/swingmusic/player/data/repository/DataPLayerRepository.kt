@@ -5,6 +5,7 @@ import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.database.data.dao.LastPlayedTrackDao
 import com.android.swingmusic.database.data.dao.QueueDao
 import com.android.swingmusic.database.data.mapper.toEntity
@@ -46,12 +47,14 @@ class DataPLayerRepository @Inject constructor(
     override suspend fun updateLastPlayedTrack(
         trackHash: String,
         indexInQueue: Int,
+        source: QueueSource,
         lastPlayPositionMs: Long
     ) {
         lastPlayedTrackDao.insertLastPlayedTrack(
             LastPlayedTrack(
                 trackHash = trackHash,
                 indexInQueue = indexInQueue,
+                source = source,
                 lastPlayPositionMs = lastPlayPositionMs
             ).toEntity()
         )

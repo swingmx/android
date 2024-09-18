@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
@@ -57,6 +58,7 @@ import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
+import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
@@ -66,16 +68,18 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.slider.WaveAnimationSpecs
 import com.android.swingmusic.uicomponent.presentation.component.slider.WaveDirection
 import com.android.swingmusic.uicomponent.presentation.component.slider.WavySlider
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
+import com.android.swingmusic.uicomponent.presentation.util.getName
+import com.android.swingmusic.uicomponent.presentation.util.getSourceType
 import com.ramcosta.composedestinations.annotation.Destination
 import java.util.Locale
 
 @Composable
 private fun NowPlaying(
     track: Track?,
+    playingFrom: QueueSource,
     seekPosition: Float = 0F,
     playbackDuration: String,
     trackDuration: String,
@@ -203,7 +207,56 @@ private fun NowPlaying(
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "PLAYING FROM",
+                        fontWeight = FontWeight.Bold,
+                        style = TextStyle(
+                            fontSize = 10.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6F)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = playingFrom.getSourceType(),
+                            style = TextStyle(
+                                fontSize = 11.sp
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94F)
+                        )
+
+                        if (playingFrom.getName().isNotEmpty()){
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .size(4.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .36F))
+                            )
+
+                            Text(
+                                text = playingFrom.getName(),
+                                style = TextStyle(
+                                    fontSize = 11.sp
+                                ),
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94F)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
                 // Artwork
                 AsyncImage(
@@ -302,9 +355,18 @@ private fun NowPlaying(
                         trackThickness = 4.dp,
                         incremental = false,
                         animationSpecs = WaveAnimationSpecs(
-                            waveHeightAnimationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                            waveVelocityAnimationSpec = tween(durationMillis = 2000, easing = LinearOutSlowInEasing),
-                            waveStartSpreadAnimationSpec = tween(durationMillis = 0, easing = EaseOutQuad)
+                            waveHeightAnimationSpec = tween(
+                                durationMillis = 300,
+                                easing = FastOutSlowInEasing
+                            ),
+                            waveVelocityAnimationSpec = tween(
+                                durationMillis = 2000,
+                                easing = LinearOutSlowInEasing
+                            ),
+                            waveStartSpreadAnimationSpec = tween(
+                                durationMillis = 0,
+                                easing = EaseOutQuad
+                            )
                         )
                     )
 
@@ -551,6 +613,7 @@ fun NowPlayingScreen(
         isBuffering = playerUiState.isBuffering,
         baseUrl = baseUrl ?: "",
         onClickArtist = {},
+        playingFrom = playerUiState.source,
         onToggleRepeatMode = {
             mediaControllerViewModel.onPlayerUiEvent(
                 PlayerUiEvent.OnToggleRepeatMode
@@ -655,6 +718,7 @@ fun FullPlayerPreview() {
     SwingMusicTheme_Preview {
         NowPlaying(
             track = track,
+            playingFrom = QueueSource.ALBUM("hash", "Sample Khalid Album"),
             seekPosition = .22F,
             playbackDuration = "01:23",
             trackDuration = "02:59",

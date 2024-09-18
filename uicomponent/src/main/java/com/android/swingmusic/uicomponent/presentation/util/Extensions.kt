@@ -1,5 +1,6 @@
 package com.android.swingmusic.uicomponent.presentation.util
 
+import com.android.swingmusic.core.domain.util.QueueSource
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -40,4 +41,28 @@ fun Long.formatDate(pattern: String): String {
     val formatter = DateTimeFormatter.ofPattern(pattern)
         .withZone(ZoneId.systemDefault())
     return formatter.format(instant)
+}
+
+fun QueueSource.getSourceType(): String {
+    return when (this) {
+        is QueueSource.ALBUM -> "Album"
+        is QueueSource.ARTIST -> "Artist"
+        is QueueSource.FOLDER -> "Folder"
+        is QueueSource.PLAYLIST -> "Playlist"
+        is QueueSource.QUERY -> "Query"
+        QueueSource.FAVORITE -> "Favorite"
+        QueueSource.UNKNOWN -> "Unknown"
+        else -> "Unknown"
+    }
+}
+
+fun QueueSource.getName(): String {
+    return when (this) {
+        is QueueSource.ALBUM -> this.name
+        is QueueSource.ARTIST -> this.name
+        is QueueSource.FOLDER -> this.name
+        is QueueSource.PLAYLIST -> this.name
+        is QueueSource.QUERY -> this.name
+        else -> ""
+    }
 }

@@ -2,6 +2,12 @@ package com.android.swingmusic.album.presentation.screen
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -617,12 +624,17 @@ fun AlbumWithInfoScreen(
     SwingMusicTheme {
         when (albumWithInfoState.infoResource) {
             is Resource.Loading -> {
-                // TODO: Use Shimmer Loader
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    // TODO: Read this from settings
+                    val shimmer = false
+                    if (shimmer) {
+                        ShimmerLoadingAlbumScreen()
+                    } else {
+                        CircularProgressIndicator()
+                    }
                 }
             }
 
@@ -673,7 +685,11 @@ fun AlbumWithInfoScreen(
                         if (queue.isNotEmpty()) {
                             mediaControllerViewModel.onQueueEvent(
                                 QueueEvent.RecreateQueue(
-                                    source = QueueSource.ALBUM(albumHash),
+                                    source = QueueSource.ALBUM(
+                                        albumHash = albumHash,
+                                        name = albumWithInfoState.infoResource.data?.albumInfo?.title
+                                            ?: ""
+                                    ),
                                     clickedTrackIndex = 0,
                                     queue = queue
                                 )
@@ -684,8 +700,10 @@ fun AlbumWithInfoScreen(
                         if (albumWithInfoState.orderedTracks.isNotEmpty()) {
                             mediaControllerViewModel.initQueueFromAlbum(
                                 albumTracks = albumWithInfoState.orderedTracks,
-                                albumHash = albumHash
+                                albumHash = albumHash,
+                                name = albumWithInfoState.infoResource.data?.albumInfo?.title ?: ""
                             )
+
                             mediaControllerViewModel.onPlayerUiEvent(
                                 PlayerUiEvent.OnToggleShuffleMode(
                                     isAlbumSource = true
@@ -696,7 +714,11 @@ fun AlbumWithInfoScreen(
                     onClickAlbumTrack = { index, queue ->
                         mediaControllerViewModel.onQueueEvent(
                             QueueEvent.RecreateQueue(
-                                source = QueueSource.ALBUM(albumHash),
+                                source = QueueSource.ALBUM(
+                                    albumHash,
+                                    name = albumWithInfoState.infoResource.data?.albumInfo?.title
+                                        ?: ""
+                                ),
                                 clickedTrackIndex = index,
                                 queue = queue
                             )
@@ -892,5 +914,122 @@ fun AlbumWithInfoScreenPreview() {
             onShuffle = {},
             onToggleFavorite = { isFavorite, albumHash -> }
         )
+    }
+
+}
+
+@Composable
+fun ShimmerLoadingAlbumScreen() {
+    val shimmerColors = listOf(
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05F),
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.11F),
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07F),
+    )
+
+    val transition = rememberInfiniteTransition(label = "album art shimmer")
+    val translateAnim = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ), label = "album art anim"
+    )
+
+    val brush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset.Zero,
+        end = Offset(x = translateAnim.value, y = translateAnim.value)
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(top = 72.dp)
+                .size(220.dp)
+                .clip(RoundedCornerShape(8))
+                .background(brush)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Box(
+            modifier = Modifier
+                .height(24.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(2))
+                .background(brush)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Box(
+            modifier = Modifier
+                .height(12.dp)
+                .fillMaxWidth(.75F)
+                .clip(RoundedCornerShape(2))
+                .background(brush)
+        )
+
+        Spacer(modifier = Modifier.height(50.dp))
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .height(6.dp)
+                    .fillMaxWidth(.25F)
+                    .clip(RoundedCornerShape(2))
+                    .background(brush)
+            )
+        }
+
+        repeat(3) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Box(
+                modifier = Modifier
+                    .height(48.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(2))
+                    .background(brush)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(48.dp))
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .height(12.dp)
+                    .fillMaxWidth(1F)
+                    .clip(RoundedCornerShape(2))
+                    .background(brush)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Box(
+                modifier = Modifier
+                    .height(12.dp)
+                    .fillMaxWidth(1F)
+                    .clip(RoundedCornerShape(2))
+                    .background(brush)
+            )
+        }
+    }
+}
+
+@Preview(
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun ShimmerPreview() {
+    SwingMusicTheme_Preview {
+        //  ShimmerLoadingAlbumScreen()
     }
 }
