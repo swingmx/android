@@ -42,7 +42,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
+import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
@@ -76,6 +78,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val mediaControllerViewModel: MediaControllerViewModel by viewModels<MediaControllerViewModel>()
     private val authViewModel: AuthViewModel by viewModels<AuthViewModel>()
+    private val albumWithInfoViewModel: AlbumWithInfoViewModel by viewModels<AlbumWithInfoViewModel>()
 
     private lateinit var controllerFuture: ListenableFuture<MediaController>
 
@@ -140,13 +143,21 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // Show BottomBar Navigation if route is one of...
-                            if (route in listOf(
-                                    "home/${HomeDestination.route}",
+                            // Show BottomBar Navigation if route is not one of...
+                            if (route !in listOf(
+                                    /*"home/${HomeDestination.route}",
+                                    "player/${QueueScreenDestination.route}",
                                     "folder/${FoldersAndTracksScreenDestination.route}",
+                                    "folder/${AlbumWithInfoScreenDestination.route}",
                                     "album/${AllAlbumScreenDestination.route}",
+                                    "album/${AlbumWithInfoScreenDestination.route}",
                                     // "playlist/${PlaylistsScreenDestination.route}",
-                                    "artist/${ArtistsScreenDestination.route}",
+                                    "artist/${ArtistsScreenDestination.route}",*/
+
+                                    "auth/${LoginWithQrCodeDestination.route}",
+                                    "auth/${LoginWithUsernameScreenDestination.route}",
+                                    "player/${NowPlayingScreenDestination.route}",
+                                    "player/${QueueScreenDestination.route}"
                                 )
                             ) {
                                 val currentSelectedItem by navController.currentScreenAsState(
@@ -199,7 +210,8 @@ class MainActivity : ComponentActivity() {
                             isUserLoggedIn = isUserLoggedIn,
                             navController = navController,
                             authViewModel = authViewModel,
-                            mediaControllerViewModel = mediaControllerViewModel
+                            mediaControllerViewModel = mediaControllerViewModel,
+                            albumWithInfoViewModel = albumWithInfoViewModel
                         )
                     }
                 }
@@ -253,6 +265,7 @@ internal fun SwingMusicAppNavigation(
     isUserLoggedIn: Boolean,
     navController: NavHostController,
     authViewModel: AuthViewModel,
+    albumWithInfoViewModel: AlbumWithInfoViewModel,
     mediaControllerViewModel: MediaControllerViewModel
 ) {
     // val navHostEngineNoAnim = rememberNavHostEngine()
@@ -354,6 +367,7 @@ internal fun SwingMusicAppNavigation(
         dependenciesContainerBuilder = {
             dependency(authViewModel)
             dependency(mediaControllerViewModel)
+            dependency(albumWithInfoViewModel)
             dependency(
                 CoreNavigator(
                     navGraph = navBackStackEntry.destination.getNavGraph(isUserLoggedIn),

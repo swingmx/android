@@ -127,6 +127,10 @@ class AlbumWithInfoViewModel @Inject constructor(
 
     fun onAlbumWithInfoUiEvent(event: AlbumWithInfoUiEvent) {
         when (event) {
+            is AlbumWithInfoUiEvent.ResetState -> {
+                _albumWithInfoState.value = AlbumWithInfoState()
+            }
+
             is AlbumWithInfoUiEvent.OnLoadAlbumWithInfo -> {
                 viewModelScope.launch {
                     _albumWithInfoState.value =
