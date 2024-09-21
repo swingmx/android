@@ -44,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -65,7 +66,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
@@ -605,7 +605,7 @@ fun AlbumWithInfo(
 @Destination
 @Composable
 fun AlbumWithInfoScreen(
-    albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
+    albumWithInfoViewModel: AlbumWithInfoViewModel,
     mediaControllerViewModel: MediaControllerViewModel,
     albumNavigator: AlbumNavigator,
     albumHash: String,
@@ -615,10 +615,12 @@ fun AlbumWithInfoScreen(
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
-    SideEffect {
-        albumWithInfoViewModel.onAlbumWithInfoUiEvent(
-            AlbumWithInfoUiEvent.OnLoadAlbumWithInfo(albumHash)
-        )
+    LaunchedEffect(key1 = true) {
+        if (albumWithInfoState.infoResource !is Resource.Success) {
+            albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                AlbumWithInfoUiEvent.OnLoadAlbumWithInfo(albumHash)
+            )
+        }
     }
 
     SwingMusicTheme {

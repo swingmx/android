@@ -53,10 +53,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
 import com.android.swingmusic.album.presentation.event.AlbumsUiEvent
 import com.android.swingmusic.album.presentation.navigator.AlbumNavigator
 import com.android.swingmusic.album.presentation.state.AllAlbumsUiState
 import com.android.swingmusic.album.presentation.util.pagingAlbums
+import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
 import com.android.swingmusic.album.presentation.viewmodel.AllAlbumsViewModel
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Album
@@ -306,6 +308,7 @@ private fun AllAlbums(
 @Composable
 fun AllAlbumScreen(
     allAlbumsViewModel: AllAlbumsViewModel = hiltViewModel(),
+    albumWithInfoViewModel: AlbumWithInfoViewModel,
     albumNavigator: AlbumNavigator
 ) {
     val pagingAlbums =
@@ -331,6 +334,7 @@ fun AllAlbumScreen(
                 allAlbumsViewModel.onAlbumsUiEvent(AlbumsUiEvent.OnSortBy(pair))
             },
             onClickAlbumItem = {
+                albumWithInfoViewModel.onAlbumWithInfoUiEvent(AlbumWithInfoUiEvent.ResetState)
                 albumNavigator.gotoAlbumWithInfo(albumHash = it)
             },
             onRetry = {
@@ -356,7 +360,8 @@ private fun getAlbumCountHelperText(count: Int): String {
         0 -> "No albums found!"
         1 -> "You have 1 album in your library"
         else -> {
-            val formattedCount = count.toString().reversed().chunked(3).joinToString(" ,").reversed()
+            val formattedCount =
+                count.toString().reversed().chunked(3).joinToString(" ,").reversed()
             "You have $formattedCount albums in your library"
         }
     }

@@ -1,7 +1,6 @@
 package com.android.swingmusic.player.presentation.screen
 
 import android.content.res.Configuration
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,15 +15,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,17 +35,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
+import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.navigator.PlayerNavigator
@@ -60,11 +59,14 @@ import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
+import com.android.swingmusic.uicomponent.presentation.util.getName
+import com.android.swingmusic.uicomponent.presentation.util.getSourceType
 import com.ramcosta.composedestinations.annotation.Destination
 
 @Composable
 private fun Queue(
     queue: List<Track>,
+    source: QueueSource,
     playingTrackIndex: Int,
     playingTrack: Track?,
     playbackState: PlaybackState,
@@ -75,6 +77,7 @@ private fun Queue(
 ) {
     val lazyColumnState = rememberLazyListState()
 
+    // scroll past the playing track by one item to keep colored cards far apart at first
     LaunchedEffect(key1 = Unit) {
         if ((playingTrackIndex - 1) in queue.indices) {
             lazyColumnState.scrollToItem((playingTrackIndex - 1))
@@ -130,19 +133,11 @@ private fun Queue(
                         .fillMaxWidth()
                         .padding(
                             bottom = 4.dp,
-                            start = 16.dp,
+                            top = 16.dp,
+                            start = 12.dp,
                         ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { onClickBack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Arrow Back"
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
                     Text(
                         text = "Now Playing",
                         style = MaterialTheme.typography.headlineMedium
@@ -157,85 +152,126 @@ private fun Queue(
                 )
             }
         ) { paddingValues ->
-            if(playingTrack != null){
-                Box(
+            if (playingTrack != null) {
+                Column(
                     modifier = Modifier
                         .padding(paddingValues)
-                        .padding(12.dp)
+                        .padding(horizontal = 12.dp)
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14F))
-                        .clickable {
-                            onTogglePlayerState()
-                        }
-                        .padding(8.dp),
-                    contentAlignment = Alignment.CenterStart,
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(0.8F),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data("${baseUrl}img/thumbnail/small/${playingTrack.image}")
-                                    .crossfade(true)
-                                    .build(),
-                                placeholder = painterResource(R.drawable.audio_fallback),
-                                fallback = painterResource(R.drawable.audio_fallback),
-                                error = painterResource(R.drawable.audio_fallback),
-                                contentDescription = "Track Image",
-                                contentScale = ContentScale.Crop,
+                        Text(
+                            text = source.getSourceType(),
+                            style = TextStyle(
+                                fontSize = 11.sp
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94F)
+                        )
+
+                        if (source.getName().isNotEmpty()) {
+                            Box(
                                 modifier = Modifier
-                                    .size(60.dp)
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 8.dp)
+                                    .size(4.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .36F))
                             )
 
-                            Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                                Text(
-                                    text = playingTrack.title,
-                                    modifier = Modifier.sizeIn(maxWidth = 300.dp),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                            Text(
+                                text = source.getName(),
+                                style = TextStyle(
+                                    fontSize = 11.sp
+                                ),
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94F)
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = 16.dp)
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14F))
+                            .clickable {
+                                onTogglePlayerState()
+                            }
+                            .padding(8.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.8F),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data("${baseUrl}img/thumbnail/small/${playingTrack.image}")
+                                        .crossfade(true)
+                                        .build(),
+                                    placeholder = painterResource(R.drawable.audio_fallback),
+                                    fallback = painterResource(R.drawable.audio_fallback),
+                                    error = painterResource(R.drawable.audio_fallback),
+                                    contentDescription = "Track Image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(6.dp))
                                 )
 
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    val artists =
-                                        playingTrack.trackArtists.joinToString(", ") { it.name }
-
+                                Column(modifier = Modifier.padding(horizontal = 12.dp)) {
                                     Text(
-                                        text = artists,
-                                        modifier = Modifier.sizeIn(maxWidth = 185.dp),
-                                        color = MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = .80F
-                                        ),
-                                        style = MaterialTheme.typography.bodySmall,
+                                        text = playingTrack.title,
+                                        modifier = Modifier.sizeIn(maxWidth = 300.dp),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = Bold,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        val artists =
+                                            playingTrack.trackArtists.joinToString(", ") { it.name }
+
+                                        Text(
+                                            text = artists,
+                                            modifier = Modifier.sizeIn(maxWidth = 185.dp),
+                                            color = MaterialTheme.colorScheme.onSurface.copy(
+                                                alpha = .80F
+                                            ),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        // Sound Bars
-                        Box(
-                            modifier = Modifier
-                                .size(50.dp)
-                                .padding(end = 8.dp)
-                        ) {
-                            if (playbackState == PlaybackState.PLAYING) {
-                                SoundSignalBars(animate = true)
-                            } else {
-                                SoundSignalBars(animate = false)
+                            // Sound Bars
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .padding(end = 8.dp)
+                            ) {
+                                if (playbackState == PlaybackState.PLAYING) {
+                                    SoundSignalBars(animate = true)
+                                } else {
+                                    SoundSignalBars(animate = false)
+                                }
                             }
                         }
                     }
@@ -247,18 +283,15 @@ private fun Queue(
                 modifier = Modifier
                     .background(Color.Transparent)
                     .padding(paddingValues)
-                    .padding(top = 100.dp)
+                    .padding(top = 128.dp)
                     .fillMaxSize()
             ) {
-
                 if (playingTrack == null) {
-                    item {
-
-                    }
+                    item {}
                 } else {
                     itemsIndexed(
                         items = queue,
-                        key = { index: Int, track: Track -> "$index${track.filepath}" }
+                        key = { index: Int, track: Track -> "$index:${track.filepath}" }
                     ) { index, track ->
                         TrackItem(
                             track = track,
@@ -297,6 +330,7 @@ fun QueueScreen(
 
     Queue(
         queue = playerUiState.queue,
+        source = playerUiState.source,
         playingTrackIndex = playerUiState.playingTrackIndex,
         playingTrack = playerUiState.nowPlayingTrack,
         playbackState = playerUiState.playbackState,
@@ -351,7 +385,8 @@ fun QueuePreview() {
 
     SwingMusicTheme_Preview {
         Queue(
-            playingTrackIndex = 1,
+            playingTrackIndex = 0,
+            source = QueueSource.ALBUM("hash", "Sample Khalid Album"),
             playingTrack = track,
             playbackState = PlaybackState.PLAYING,
             queue = queue,

@@ -79,7 +79,6 @@ import java.util.Locale
 @Composable
 private fun NowPlaying(
     track: Track?,
-    playingFrom: QueueSource,
     seekPosition: Float = 0F,
     playbackDuration: String,
     trackDuration: String,
@@ -207,62 +206,12 @@ private fun NowPlaying(
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "PLAYING FROM",
-                        fontWeight = FontWeight.Bold,
-                        style = TextStyle(
-                            fontSize = 10.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6F)
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = playingFrom.getSourceType(),
-                            style = TextStyle(
-                                fontSize = 11.sp
-                            ),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94F)
-                        )
-
-                        if (playingFrom.getName().isNotEmpty()){
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .size(4.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .36F))
-                            )
-
-                            Text(
-                                text = playingFrom.getName(),
-                                style = TextStyle(
-                                    fontSize = 11.sp
-                                ),
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94F)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Artwork
                 AsyncImage(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(360.dp)
+                        .size(356.dp)
                         .clip(RoundedCornerShape(7)),
                     model = ImageRequest.Builder(LocalContext.current)
                         .data("${baseUrl}img/thumbnail/${track.image}")
@@ -613,7 +562,6 @@ fun NowPlayingScreen(
         isBuffering = playerUiState.isBuffering,
         baseUrl = baseUrl ?: "",
         onClickArtist = {},
-        playingFrom = playerUiState.source,
         onToggleRepeatMode = {
             mediaControllerViewModel.onPlayerUiEvent(
                 PlayerUiEvent.OnToggleRepeatMode
@@ -718,7 +666,6 @@ fun FullPlayerPreview() {
     SwingMusicTheme_Preview {
         NowPlaying(
             track = track,
-            playingFrom = QueueSource.ALBUM("hash", "Sample Khalid Album"),
             seekPosition = .22F,
             playbackDuration = "01:23",
             trackDuration = "02:59",

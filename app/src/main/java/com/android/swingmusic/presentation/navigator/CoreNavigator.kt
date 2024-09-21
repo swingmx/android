@@ -22,7 +22,7 @@ class CoreNavigator(
     private val authViewModel: AuthViewModel
 ) : AuthNavigator,
     AlbumNavigator,
-        PlayerNavigator
+    PlayerNavigator
 {
     /**----------------------------------- Auth Navigator ----------------------------------------*/
     override fun gotoLoginWithUsername() {
@@ -117,7 +117,13 @@ class CoreNavigator(
         val targetDestination = AlbumWithInfoScreenDestination(albumHash)
 
         if (currentDestination != targetDestination.route) {
-            navController.navigate(targetDestination within navGraph)
+            navController.navigate(
+                targetDestination within navGraph,
+                fun NavOptionsBuilder.() {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            )
         }
     }
 
