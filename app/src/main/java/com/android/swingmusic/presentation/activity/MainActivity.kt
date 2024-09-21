@@ -116,7 +116,7 @@ class MainActivity : ComponentActivity() {
                 BottomNavItem.Folder,
                 BottomNavItem.Album,
                 // BottomNavItem.Playlist,
-                // BottomNavItem.Artist,
+                BottomNavItem.Artist,
             )
 
             SwingMusicTheme {
@@ -128,12 +128,12 @@ class MainActivity : ComponentActivity() {
 
                         Column(modifier = Modifier.fillMaxWidth()) {
                             // Show mini player if route is NOT one of...
-                            if ((route in listOf<String>(
+                            if ((route !in listOf<String>(
                                     "auth/${LoginWithQrCodeDestination.route}",
                                     "auth/${LoginWithUsernameScreenDestination.route}",
                                     "player/${NowPlayingScreenDestination.route}",
                                     "player/${QueueScreenDestination.route}"
-                                )).not()
+                                ))
                             ) {
                                 MiniPlayer(
                                     mediaControllerViewModel = mediaControllerViewModel,
@@ -145,15 +145,6 @@ class MainActivity : ComponentActivity() {
 
                             // Show BottomBar Navigation if route is not one of...
                             if (route !in listOf(
-                                    /*"home/${HomeDestination.route}",
-                                    "player/${QueueScreenDestination.route}",
-                                    "folder/${FoldersAndTracksScreenDestination.route}",
-                                    "folder/${AlbumWithInfoScreenDestination.route}",
-                                    "album/${AllAlbumScreenDestination.route}",
-                                    "album/${AlbumWithInfoScreenDestination.route}",
-                                    // "playlist/${PlaylistsScreenDestination.route}",
-                                    "artist/${ArtistsScreenDestination.route}",*/
-
                                     "auth/${LoginWithQrCodeDestination.route}",
                                     "auth/${LoginWithUsernameScreenDestination.route}",
                                     "player/${NowPlayingScreenDestination.route}",
