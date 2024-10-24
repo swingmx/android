@@ -49,6 +49,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.android.swingmusic.artist.presentation.event.ArtistUiEvent
+import com.android.swingmusic.artist.presentation.navigator.ArtistNavigator
 import com.android.swingmusic.artist.presentation.state.ArtistsUiState
 import com.android.swingmusic.artist.presentation.util.pagingArtists
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistsViewModel
@@ -67,6 +68,7 @@ private fun Artists(
     artistsUiState: ArtistsUiState,
     sortByPairs: List<Pair<SortBy, String>>,
     onUpdateGridCount: (Int) -> Unit,
+    onNavigateToInfo: (String) -> Unit,
     onSortBy: (Pair<SortBy, String>) -> Unit,
     onRetry: () -> Unit,
     baseUrl: String
@@ -94,6 +96,7 @@ private fun Artists(
 
     var isGridCountMenuExpanded by remember { mutableStateOf(false) }
 
+    // TODO: Add pinch to reduce Grid count... as seen in Google Photos
     Scaffold {
         Scaffold(
             modifier = Modifier.padding(it),
@@ -222,8 +225,8 @@ private fun Artists(
                                 modifier = Modifier.fillMaxSize(),
                                 artist = artist,
                                 baseUrl = baseUrl,
-                                onClick = {
-
+                                onClick = { artistHash ->
+                                    onNavigateToInfo(artistHash)
                                 }
                             )
                         }
@@ -295,6 +298,7 @@ private fun Artists(
 @Destination
 @Composable
 fun ArtistsScreen(
+    navigator: ArtistNavigator,
     artistsViewModel: ArtistsViewModel = hiltViewModel()
 ) {
     val pagingArtists =
@@ -318,6 +322,9 @@ fun ArtistsScreen(
             },
             onRetry = {
                 artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnRetry)
+            },
+            onNavigateToInfo = {
+                navigator.gotoArtistInfo(it)
             }
         )
     }
@@ -329,7 +336,8 @@ private fun getArtistCountHelperText(count: Int): String {
         0 -> "No artists found!"
         1 -> "You have 1 artist in your library"
         else -> {
-            val formattedCount = count.toString().reversed().chunked(3).joinToString(" ,").reversed()
+            val formattedCount =
+                count.toString().reversed().chunked(3).joinToString(" ,").reversed()
             "You have $formattedCount artists in your library"
         }
     }

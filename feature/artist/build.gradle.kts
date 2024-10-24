@@ -47,6 +47,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":network"))
     implementation(project(":uicomponent"))
+    implementation(project(":feature:player"))
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")
@@ -85,6 +86,9 @@ dependencies {
 
     // Pagination
     implementation ("androidx.paging:paging-compose:3.3.1")
+
+    // Coil Image Loader
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
 
 kotlin {

@@ -131,6 +131,11 @@ class AlbumWithInfoViewModel @Inject constructor(
                 _albumWithInfoState.value = AlbumWithInfoState()
             }
 
+            is AlbumWithInfoUiEvent.OnUpdateAlbumHash -> {
+                _albumWithInfoState.value =
+                    _albumWithInfoState.value.copy(albumHash = event.albumHash)
+            }
+
             is AlbumWithInfoUiEvent.OnLoadAlbumWithInfo -> {
                 viewModelScope.launch {
                     _albumWithInfoState.value =

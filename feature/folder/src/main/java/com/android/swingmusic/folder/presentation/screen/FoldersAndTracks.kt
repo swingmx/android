@@ -43,7 +43,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
 import com.android.swingmusic.album.presentation.navigator.AlbumNavigator
+import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState
@@ -192,7 +194,7 @@ private fun FoldersAndTracks(
                         ) { index, track ->
                             TrackItem(
                                 track = track,
-                                showMenuIcon = true,
+                                showMenuIcon = false, // TODO: set true after fixing AlbumInfo bug
                                 isCurrentTrack = track.trackHash == currentTrackHash,
                                 playbackState = playbackState,
                                 baseUrl = baseUrl,
@@ -349,6 +351,7 @@ private fun FoldersAndTracks(
 fun FoldersAndTracksScreen(
     foldersViewModel: FoldersViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
+    albumWithInfoViewModel: AlbumWithInfoViewModel,
     albumNavigator: AlbumNavigator
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }
@@ -378,6 +381,9 @@ fun FoldersAndTracksScreen(
                 foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
             },
             onGoToTrackAlbum = { albumHash ->
+                albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                    AlbumWithInfoUiEvent.OnUpdateAlbumHash(albumHash)
+                )
                 albumNavigator.gotoAlbumWithInfo(albumHash)
             },
             onClickTrackItem = { index: Int, queue: List<Track> ->

@@ -3,9 +3,12 @@ package com.android.swingmusic.core.data.mapper
 import com.android.swingmusic.core.data.dto.AlbumDto
 import com.android.swingmusic.core.data.dto.AlbumInfoDto
 import com.android.swingmusic.core.data.dto.AlbumWithInfoDto
+import com.android.swingmusic.core.data.dto.AlbumsAndAppearancesDto
 import com.android.swingmusic.core.data.dto.AllAlbumsDto
 import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.ArtistDto
+import com.android.swingmusic.core.data.dto.ArtistExpandedDto
+import com.android.swingmusic.core.data.dto.ArtistInfoDto
 import com.android.swingmusic.core.data.dto.DirDto
 import com.android.swingmusic.core.data.dto.DirListDto
 import com.android.swingmusic.core.data.dto.FolderDto
@@ -18,9 +21,12 @@ import com.android.swingmusic.core.data.dto.TrackDto
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.AlbumInfo
 import com.android.swingmusic.core.domain.model.AlbumWithInfo
+import com.android.swingmusic.core.domain.model.AlbumsAndAppearances
 import com.android.swingmusic.core.domain.model.AllAlbums
 import com.android.swingmusic.core.domain.model.AllArtists
 import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.core.domain.model.ArtistExpanded
+import com.android.swingmusic.core.domain.model.ArtistInfo
 import com.android.swingmusic.core.domain.model.Dir
 import com.android.swingmusic.core.domain.model.DirList
 import com.android.swingmusic.core.domain.model.Folder
@@ -34,7 +40,7 @@ import com.android.swingmusic.core.domain.model.TrackArtist
 object Map {
     fun ArtistDto.toArtist(): Artist {
         return Artist(
-            artisthash = artisthash ?: "",
+            artistHash = artisthash ?: "",
             name = name ?: "",
             colors = colors ?: emptyList(),
             createdDate = createdDate ?: 0.0,
@@ -220,6 +226,58 @@ object Map {
             ),
             tracks = tracks?.map { it.toTrack() } ?: emptyList(),
             copyright = copyright ?: ""
+        )
+    }
+
+    // AlbumsAndAppearancesDto to AlbumsAndAppearances
+    fun AlbumsAndAppearancesDto.toAlbumsAndAppearances(): AlbumsAndAppearances {
+        return AlbumsAndAppearances(
+            albums = albums?.map { it.toAlbum() } ?: emptyList(),
+            appearances = appearances?.map { it.toAlbum() } ?: emptyList(),
+            artistName = artistName ?: "",
+            compilations = compilations?.map { it.toAlbum() } ?: emptyList(),
+            singlesAndEps = singlesAndEps?.map { it.toAlbum() } ?: emptyList()
+        )
+    }
+
+    // ArtistExpandedDto to ArtistExpanded
+    private fun ArtistExpandedDto.toArtistExpanded(): ArtistExpanded {
+        return ArtistExpanded(
+            albumCount = albumcount ?: 0,
+            artistHash = artisthash ?: "",
+            color = color ?: "",
+            duration = duration ?: 0,
+            genres = genres?.map { it.toGenre() } ?: emptyList(),
+            image = image ?: "",
+            isFavorite = isFavorite ?: false,
+            name = name ?: "",
+            trackCount = trackcount ?: 0
+        )
+    }
+
+    // ArtistInfoDto to ArtistInfo
+    fun ArtistInfoDto.toArtistInfo(): ArtistInfo {
+        return ArtistInfo(
+            albumsAndAppearances = albumsAndAppearancesDto?.toAlbumsAndAppearances()
+                ?: AlbumsAndAppearances(
+                    albums = emptyList(),
+                    appearances = emptyList(),
+                    artistName = "",
+                    compilations = emptyList(),
+                    singlesAndEps = emptyList()
+                ),
+            artist = artistExpandedDto?.toArtistExpanded() ?: ArtistExpanded(
+                albumCount = 0,
+                artistHash = "",
+                color = "",
+                duration = 0,
+                genres = emptyList(),
+                image = "",
+                isFavorite = false,
+                name = "",
+                trackCount = 0
+            ),
+            tracks = tracks?.map { it.toTrack() } ?: emptyList()
         )
     }
 }

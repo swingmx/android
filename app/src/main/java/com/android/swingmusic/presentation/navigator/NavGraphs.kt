@@ -2,6 +2,7 @@ package com.android.swingmusic.presentation.navigator
 
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
@@ -69,7 +70,8 @@ object NavGraphs {
 
         override val destinationsByRoute: Map<String, DestinationSpec<*>> =
             listOf<DestinationSpec<*>>(
-                ArtistsScreenDestination
+                ArtistsScreenDestination,
+                ArtistInfoScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 

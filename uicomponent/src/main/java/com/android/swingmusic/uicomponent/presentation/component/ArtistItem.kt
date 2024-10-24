@@ -1,7 +1,6 @@
 package com.android.swingmusic.uicomponent.presentation.component
 
 import android.content.res.Configuration
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -28,7 +27,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 
 @Composable
@@ -50,12 +48,7 @@ fun ArtistItem(
         AsyncImage(
             modifier = modifier
                 .clip(CircleShape)
-                .clickable { onClick(artist.artisthash) }
-                .border(
-                    width = (.1).dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
-                    shape = CircleShape
-                ),
+                .clickable { onClick(artist.artistHash) },
             model = ImageRequest.Builder(LocalContext.current)
                 .data("${baseUrl}img/artist/medium/${artist.image}")
                 .crossfade(true)
@@ -89,7 +82,7 @@ fun ArtistItem(
     }
 }
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE)
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE)
 @Composable
 fun ArtistItemPreview() {
     fun generateDummyArtist(): Artist {
