@@ -6,6 +6,7 @@ import com.android.swingmusic.core.domain.model.Track
 
 data class AlbumWithInfoState(
     val albumHash: String? = null,
+    val reloadRequired: Boolean = true,
     val orderedTracks: List<Track> = emptyList(),
     val infoResource: Resource<AlbumInfoWithGroupedTracks> = Resource.Loading(),
 )

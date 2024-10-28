@@ -5,6 +5,7 @@ import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.ArtistInfo
 
 data class ArtistInfoState(
+    val requiresReload: Boolean = true,
     val infoResource: Resource<ArtistInfo> = Resource.Loading(),
     val similarArtistsResource: Resource<List<Artist>> = Resource.Loading()
 )

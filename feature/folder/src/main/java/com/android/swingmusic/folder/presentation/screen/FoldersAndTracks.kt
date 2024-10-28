@@ -6,13 +6,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -21,23 +19,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -57,6 +59,7 @@ import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.BottomSheetItem
 import com.android.swingmusic.uicomponent.presentation.component.FolderItem
 import com.android.swingmusic.uicomponent.presentation.component.PathIndicatorItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
@@ -64,7 +67,7 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.ramcosta.composedestinations.annotation.Destination
 import java.util.Locale
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun FoldersAndTracks(
     currentFolder: Folder,
@@ -80,7 +83,10 @@ private fun FoldersAndTracks(
     onGoToTrackAlbum: (albumHash: String) -> Unit,
     baseUrl: String
 ) {
-    var expandedMenuIndex by remember { mutableStateOf<Int?>(null) }
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var clickedTrack: Track? by remember { mutableStateOf(null) }
 
     // use a double scaffold to take advantage of padding values since the app uses full screen mode
     Scaffold { it ->
@@ -109,6 +115,48 @@ private fun FoldersAndTracks(
                 LaunchedEffect(key1 = currentFolder) {
                     val index = navPaths.indexOf(currentFolder)
                     pathsLazyRowState.animateScrollToItem(if (index >= 0) index else 0)
+                }
+                if (showBottomSheet) {
+                    ModalBottomSheet(
+                        sheetState = sheetState,
+                        onDismissRequest = {
+                            showBottomSheet = false
+                        },
+                        dragHandle = null,
+                        scrimColor = Color.Black.copy(alpha = .75F),
+                        tonalElevation = 16.dp
+                    ) {
+                        clickedTrack?.let { track ->
+                            Column {
+                                TrackItem(
+                                    track = track,
+                                    onClickTrackItem = {},
+                                    onClickMoreVert = {},
+                                    baseUrl = baseUrl
+                                )
+
+                                HorizontalDivider()
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        BottomSheetItem(
+                            label = "Go to Album",
+                            scope = scope,
+                            sheetState = sheetState,
+                            iconPainter = painterResource(id = R.drawable.ic_album),
+                            clickedTrack = clickedTrack,
+                            onClick = { track ->
+                                onGoToTrackAlbum(track.albumHash)
+                            },
+                            onHideBottomSheet = { hide ->
+                                showBottomSheet = !hide
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(50.dp))
+                    }
                 }
 
                 LazyColumn(
@@ -194,7 +242,7 @@ private fun FoldersAndTracks(
                         ) { index, track ->
                             TrackItem(
                                 track = track,
-                                showMenuIcon = false, // TODO: set true after fixing AlbumInfo bug
+                                showMenuIcon = true, // TODO: set true after fixing AlbumInfo bug
                                 isCurrentTrack = track.trackHash == currentTrackHash,
                                 playbackState = playbackState,
                                 baseUrl = baseUrl,
@@ -204,34 +252,8 @@ private fun FoldersAndTracks(
                                     )
                                 },
                                 onClickMoreVert = {
-                                    expandedMenuIndex = index
-                                },
-                                menuContent = {
-                                    if (expandedMenuIndex == index) {
-                                        DropdownMenu(
-                                            expanded = true,
-                                            onDismissRequest = { expandedMenuIndex = null }
-                                        ) {
-                                            DropdownMenuItem(
-                                                onClick = {
-                                                    onGoToTrackAlbum(track.albumHash)
-                                                    expandedMenuIndex = null
-                                                },
-                                                text = {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Icon(
-                                                            painter = painterResource(id = R.drawable.ic_album),
-                                                            contentDescription = "Album Icon"
-                                                        )
-
-                                                        Spacer(modifier = Modifier.width(12.dp))
-
-                                                        Text("Go to Album")
-                                                    }
-                                                }
-                                            )
-                                        }
-                                    }
+                                    clickedTrack = it
+                                    showBottomSheet = true
                                 }
                             )
 
@@ -350,8 +372,8 @@ private fun FoldersAndTracks(
 @Composable
 fun FoldersAndTracksScreen(
     foldersViewModel: FoldersViewModel = hiltViewModel(),
+    albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
-    albumWithInfoViewModel: AlbumWithInfoViewModel,
     albumNavigator: AlbumNavigator
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }

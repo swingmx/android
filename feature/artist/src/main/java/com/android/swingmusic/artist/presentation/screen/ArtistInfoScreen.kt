@@ -22,7 +22,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -83,7 +86,30 @@ private fun ArtistInfo(
 ) {
     val clickInteractionSource = remember { MutableInteractionSource() }
 
-    Scaffold {
+    Scaffold(
+        topBar = {
+            Row(
+                modifier = Modifier
+                    .padding(top = 24.dp)
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                IconButton(
+                    modifier = Modifier
+                        .clip(CircleShape),
+                    onClick = {
+                        // onClickBack()
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back Arrow"
+                    )
+                }
+            }
+        }
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -672,7 +698,7 @@ private fun ArtistInfo(
             }
 
             item {
-                Spacer(modifier = Modifier.height(200.dp))
+                Spacer(modifier = Modifier.height(100.dp))
             }
         }
     }
@@ -691,10 +717,15 @@ fun ArtistInfoScreen(
     val similarArtists = if (artistInfoState.value.similarArtistsResource is Resource.Success)
         artistInfoState.value.similarArtistsResource.data else emptyList()
 
-    LaunchedEffect(key1 = true) {
-        artistHashViewModel.onArtistInfoUiEvent(
-            event = ArtistInfoUiEvent.OnInit(artistHash)
-        )
+    LaunchedEffect(
+        key1 = artistHash,
+        key2 = artistInfoState.value.requiresReload
+    ) {
+        if (artistInfoState.value.requiresReload) {
+            artistHashViewModel.onArtistInfoUiEvent(
+                event = ArtistInfoUiEvent.OnLoadArtistInfo(artistHash)
+            )
+        }
     }
 
     SwingMusicTheme {
@@ -720,10 +751,16 @@ fun ArtistInfoScreen(
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        Button(onClick = {
-                            // TODO: Retry
-                        }) {
-                            Text(text = "Retry")
+                        Button(
+                            onClick = {
+                                // TODO: Retry
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.onSurface,
+                                contentColor = MaterialTheme.colorScheme.surface
+                            )
+                        ) {
+                            Text(text = "RETRY")
                         }
                     }
                 }

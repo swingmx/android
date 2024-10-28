@@ -34,7 +34,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -65,11 +64,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
 import com.android.swingmusic.album.presentation.navigator.AlbumNavigator
 import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
+import com.android.swingmusic.artist.presentation.navigator.ArtistNavigator
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumInfo
 import com.android.swingmusic.core.domain.model.Artist
@@ -285,14 +286,6 @@ fun AlbumWithInfo(
 
                                 Spacer(modifier = Modifier.width(4.dp))
                             }
-
-                            item {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                    contentDescription = "Arrow forward"
-                                )
-                            }
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -378,7 +371,7 @@ fun AlbumWithInfo(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 IconButton(
                                     modifier = Modifier
-                                        .clip(CircleShape)
+                                        .clip(RoundedCornerShape(32))
                                         .background(MaterialTheme.colorScheme.primary),
                                     onClick = {
                                         onPlay(sortedTracks)
@@ -592,7 +585,7 @@ fun AlbumWithInfo(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(150.dp))
+                        Spacer(modifier = Modifier.height(100.dp))
                     }
                 }
             }
@@ -603,19 +596,22 @@ fun AlbumWithInfo(
 @Destination
 @Composable
 fun AlbumWithInfoScreen(
-    albumWithInfoViewModel: AlbumWithInfoViewModel,
+    albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
     albumNavigator: AlbumNavigator,
+    artistNavigator: ArtistNavigator,
     albumHash: String,
 ) {
-    val albumWithInfoState by albumWithInfoViewModel.albumWithInfoState
+    val albumWithInfoState by albumWithInfoViewModel.albumWithInfoState.collectAsState()
 
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
-
-    LaunchedEffect(key1 = albumWithInfoState.albumHash) {
-        if (albumWithInfoState.infoResource !is Resource.Success) {
+    LaunchedEffect(
+        key1 = albumWithInfoState.albumHash,
+        key2 = albumWithInfoState.reloadRequired
+    ) {
+        if (albumWithInfoState.reloadRequired) {
             albumWithInfoViewModel.onAlbumWithInfoUiEvent(
                 AlbumWithInfoUiEvent.OnLoadAlbumWithInfo(albumHash)
             )
@@ -680,7 +676,7 @@ fun AlbumWithInfoScreen(
 
                     },
                     onClickArtist = { artistHash ->
-
+                        artistNavigator.gotoArtistInfo(artistHash)
                     },
                     onPlay = { queue ->
                         if (queue.isNotEmpty()) {
