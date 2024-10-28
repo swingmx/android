@@ -122,7 +122,7 @@ class CoreNavigator(
             navController.navigate(
                 targetDestination within navGraph,
                 fun NavOptionsBuilder.() {
-                    launchSingleTop = true
+                    launchSingleTop = false
                     restoreState = true
                 }
             )
@@ -151,7 +151,7 @@ class CoreNavigator(
             navController.navigate(
                 targetDestination within navGraph,
                 fun NavOptionsBuilder.() {
-                    launchSingleTop = true
+                    launchSingleTop = false
                     restoreState = true
                 }
             )

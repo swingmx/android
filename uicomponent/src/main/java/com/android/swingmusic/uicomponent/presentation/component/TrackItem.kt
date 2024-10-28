@@ -56,14 +56,12 @@ import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 @Composable
 fun TrackItem(
     track: Track,
-    trackQueueNumber: Int? = null,
     isAlbumTrack: Boolean = false,
     isCurrentTrack: Boolean = false,
     showMenuIcon: Boolean = false,
     playbackState: PlaybackState = PlaybackState.PAUSED,
     onClickTrackItem: () -> Unit,
     onClickMoreVert: (Track) -> Unit,
-    menuContent: @Composable () -> Unit = {},
     baseUrl: String
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -182,9 +180,7 @@ fun TrackItem(
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "More Icon"
-                    ).also {
-                        menuContent()
-                    }
+                    )
                 }
             }
         }
@@ -279,7 +275,6 @@ fun TrackItemPreview() {
                     isCurrentTrack = false,
                     playbackState = PlaybackState.PAUSED,
                     track = track,
-                    trackQueueNumber = 1,
                     onClickTrackItem = {
 
                     },
@@ -316,7 +311,6 @@ fun TrackItemPreview() {
                     isCurrentTrack = true,
                     playbackState = PlaybackState.PLAYING,
                     track = track,
-                    trackQueueNumber = 23,
                     onClickTrackItem = {
 
                     },

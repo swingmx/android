@@ -297,7 +297,6 @@ private fun Queue(
                             track = track,
                             playbackState = playbackState,
                             isCurrentTrack = index == playingTrackIndex,
-                            trackQueueNumber = index + 1,
                             baseUrl = baseUrl,
                             onClickTrackItem = {
                                 onClickQueueItem(index)

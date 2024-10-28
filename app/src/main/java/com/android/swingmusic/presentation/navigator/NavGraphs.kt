@@ -47,7 +47,8 @@ object NavGraphs {
         override val destinationsByRoute: Map<String, DestinationSpec<*>> =
             listOf<DestinationSpec<*>>(
                 FoldersAndTracksScreenDestination,
-                AlbumWithInfoScreenDestination
+                AlbumWithInfoScreenDestination,
+                ArtistInfoScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -84,6 +85,7 @@ object NavGraphs {
             listOf<DestinationSpec<*>>(
                 AllAlbumScreenDestination,
                 AlbumWithInfoScreenDestination,
+                ArtistInfoScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
