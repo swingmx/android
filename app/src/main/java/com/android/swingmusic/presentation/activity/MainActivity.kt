@@ -43,15 +43,12 @@ import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
-import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
-import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
-import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
-import com.android.swingmusic.home.presentation.destinations.HomeDestination
 import com.android.swingmusic.player.presentation.screen.MiniPlayer
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
@@ -106,7 +103,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val isUserLoggedIn by authViewModel.isUserLoggedIn()
 
-            // val navController = rememberAnimatedNavController()
             val navController = rememberNavController()
             val newBackStackEntry by navController.currentBackStackEntryAsState()
             val route = newBackStackEntry?.destination?.route
@@ -138,7 +134,13 @@ class MainActivity : ComponentActivity() {
                                 MiniPlayer(
                                     mediaControllerViewModel = mediaControllerViewModel,
                                     onClickPlayerItem = {
-                                        navController.navigate("player/${NowPlayingScreenDestination.route}")
+                                        navController.navigate(
+                                            "player/${NowPlayingScreenDestination.route}",
+                                            fun NavOptionsBuilder.() {
+                                                launchSingleTop = false
+                                                restoreState = true
+                                            }
+                                        )
                                     }
                                 )
                             }
@@ -148,7 +150,17 @@ class MainActivity : ComponentActivity() {
                                     "auth/${LoginWithQrCodeDestination.route}",
                                     "auth/${LoginWithUsernameScreenDestination.route}",
                                     "player/${NowPlayingScreenDestination.route}",
-                                    "player/${QueueScreenDestination.route}"
+                                    "player/${QueueScreenDestination.route}",
+
+                                    // Hide on album details Screens
+                                    "folder/${AlbumWithInfoScreenDestination.route}",
+                                    "album/${AlbumWithInfoScreenDestination.route}",
+                                    "artist/${AlbumWithInfoScreenDestination.route}",
+
+                                    // Hide on artist details Screens
+                                    "folder/${ArtistInfoScreenDestination.route}",
+                                    "album/${ArtistInfoScreenDestination.route}",
+                                    "artist/${ArtistInfoScreenDestination.route}"
                                 )
                             ) {
                                 val currentSelectedItem by navController.currentScreenAsState(
