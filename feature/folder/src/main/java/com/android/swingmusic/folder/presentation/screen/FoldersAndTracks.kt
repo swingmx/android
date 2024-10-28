@@ -372,8 +372,8 @@ private fun FoldersAndTracks(
 @Composable
 fun FoldersAndTracksScreen(
     foldersViewModel: FoldersViewModel = hiltViewModel(),
+    albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
-    albumWithInfoViewModel: AlbumWithInfoViewModel,
     albumNavigator: AlbumNavigator
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }

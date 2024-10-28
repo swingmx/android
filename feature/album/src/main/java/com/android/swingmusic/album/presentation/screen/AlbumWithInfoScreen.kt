@@ -64,6 +64,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
@@ -595,7 +596,7 @@ fun AlbumWithInfo(
 @Destination
 @Composable
 fun AlbumWithInfoScreen(
-    albumWithInfoViewModel: AlbumWithInfoViewModel,
+    albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
     albumNavigator: AlbumNavigator,
     artistNavigator: ArtistNavigator,

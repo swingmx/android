@@ -308,7 +308,7 @@ private fun AllAlbums(
 @Composable
 fun AllAlbumScreen(
     allAlbumsViewModel: AllAlbumsViewModel = hiltViewModel(),
-    albumWithInfoViewModel: AlbumWithInfoViewModel,
+    albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     albumNavigator: AlbumNavigator
 ) {
     val pagingAlbums =

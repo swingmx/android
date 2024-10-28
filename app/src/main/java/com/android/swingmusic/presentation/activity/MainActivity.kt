@@ -43,7 +43,6 @@ import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
-import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
@@ -75,7 +74,6 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val mediaControllerViewModel: MediaControllerViewModel by viewModels<MediaControllerViewModel>()
     private val authViewModel: AuthViewModel by viewModels<AuthViewModel>()
-    private val albumWithInfoViewModel: AlbumWithInfoViewModel by viewModels<AlbumWithInfoViewModel>()
 
     private lateinit var controllerFuture: ListenableFuture<MediaController>
 
@@ -213,8 +211,7 @@ class MainActivity : ComponentActivity() {
                             isUserLoggedIn = isUserLoggedIn,
                             navController = navController,
                             authViewModel = authViewModel,
-                            mediaControllerViewModel = mediaControllerViewModel,
-                            albumWithInfoViewModel = albumWithInfoViewModel
+                            mediaControllerViewModel = mediaControllerViewModel
                         )
                     }
                 }
@@ -268,10 +265,8 @@ internal fun SwingMusicAppNavigation(
     isUserLoggedIn: Boolean,
     navController: NavHostController,
     authViewModel: AuthViewModel,
-    albumWithInfoViewModel: AlbumWithInfoViewModel,
     mediaControllerViewModel: MediaControllerViewModel
 ) {
-    // val navHostEngineNoAnim = rememberNavHostEngine()
     val animatedNavHostEngine = rememberAnimatedNavHostEngine(
         navHostContentAlignment = Alignment.TopCenter,
         rootDefaultAnimations = RootNavGraphDefaultAnimations.ACCOMPANIST_FADING, // default `rootDefaultAnimations` means no animations
@@ -370,7 +365,6 @@ internal fun SwingMusicAppNavigation(
         dependenciesContainerBuilder = {
             dependency(authViewModel)
             dependency(mediaControllerViewModel)
-            dependency(albumWithInfoViewModel)
             dependency(
                 CoreNavigator(
                     navGraph = navBackStackEntry.destination.getNavGraph(isUserLoggedIn),
