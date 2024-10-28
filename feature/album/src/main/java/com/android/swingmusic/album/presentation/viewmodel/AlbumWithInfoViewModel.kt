@@ -12,6 +12,8 @@ import com.android.swingmusic.album.presentation.state.AlbumWithInfoState
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumWithInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,9 +23,9 @@ class AlbumWithInfoViewModel @Inject constructor(
     private val albumRepository: AlbumRepository
 ) : ViewModel() {
 
-    private val _albumWithInfoState: MutableState<AlbumWithInfoState> =
-        mutableStateOf(AlbumWithInfoState())
-    val albumWithInfoState: State<AlbumWithInfoState> get() = _albumWithInfoState
+    private val _albumWithInfoState: MutableStateFlow<AlbumWithInfoState> =
+        MutableStateFlow(AlbumWithInfoState())
+    val albumWithInfoState: StateFlow<AlbumWithInfoState> get() = _albumWithInfoState
 
     // TODO: handle this screen specific events
 
@@ -38,6 +40,7 @@ class AlbumWithInfoViewModel @Inject constructor(
                 val orderedTracks = groupedTracks?.values?.flatten() ?: emptyList()
 
                 _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                    reloadRequired = false,
                     orderedTracks = orderedTracks,
                     infoResource = Resource.Success(
                         data = AlbumInfoWithGroupedTracks(
@@ -133,7 +136,10 @@ class AlbumWithInfoViewModel @Inject constructor(
 
             is AlbumWithInfoUiEvent.OnUpdateAlbumHash -> {
                 _albumWithInfoState.value =
-                    _albumWithInfoState.value.copy(albumHash = event.albumHash)
+                    _albumWithInfoState.value.copy(
+                        albumHash = event.albumHash,
+                        reloadRequired = true
+                    )
             }
 
             is AlbumWithInfoUiEvent.OnLoadAlbumWithInfo -> {
