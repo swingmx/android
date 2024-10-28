@@ -2,22 +2,24 @@ package com.android.swingmusic.uicomponent.presentation.component
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -44,12 +46,15 @@ import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.android.swingmusic.uicomponent.presentation.util.Screen
+import com.android.swingmusic.uicomponent.presentation.util.formatDate
 
 @Composable
 fun AlbumItem(
     modifier: Modifier,
     screen: Screen = Screen.ALL_ALBUMS,
     album: Album,
+    albumArtistHash: String = "",
+    showDate: Boolean = true,
     baseUrl: String,
     onClick: (albumHash: String) -> Unit
 ) {
@@ -57,6 +62,13 @@ fun AlbumItem(
 
     val versionContainerColor = if (isDarkTheme) Color(0x26DACC32) else Color(0x3D744F00)
     val versionTextColor = if (isDarkTheme) Color(0xFFDACC32) else Color(0xFF744E00)
+
+    val otherAlbumArtists: String? = remember {
+        album.albumArtists
+            .takeIf { it.size > 1 || (it.size == 1 && it.first().artistHash != albumArtistHash) }
+            ?.filterNot { it.artistHash == albumArtistHash }
+            ?.joinToString { it.name }
+    }
 
     val interactionSource = remember { MutableInteractionSource() }
     Column(
@@ -78,12 +90,7 @@ fun AlbumItem(
         AsyncImage(
             modifier = modifier
                 .clip(RoundedCornerShape(10))
-                .clickable { onClick(album.albumHash) }
-                .border(
-                    width = (.1).dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
-                    shape = RoundedCornerShape(10)
-                ),
+                .clickable { onClick(album.albumHash) },
             model = ImageRequest.Builder(LocalContext.current)
                 .data("${baseUrl}img/thumbnail/medium/${album.image}")
                 .crossfade(true)
@@ -95,12 +102,7 @@ fun AlbumItem(
             contentScale = ContentScale.FillWidth,
         )
 
-        if (album.helpText.isNotEmpty()
-            && (screen ==
-                    Screen.ALL_ALBUMS ||
-                    screen == Screen.HOME ||
-                    screen == Screen.SEARCH)
-        ) {
+        if (album.helpText.isNotEmpty() && (screen != Screen.ARTIST)) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = album.helpText,
@@ -135,37 +137,82 @@ fun AlbumItem(
             }
         } else {
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = album.helpText,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
-            )
-        }
 
-        if (album.versions.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow {
-                items(album.versions) { version ->
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .clip(RoundedCornerShape(14))
-                            .background(versionContainerColor)
-                            .padding(horizontal = 5.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = version.uppercase(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            fontWeight = FontWeight.SemiBold,
-                            style = TextStyle(
-                                fontSize = 10.sp,
-                                color = versionTextColor
-                            )
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if(showDate) {
+                    Text(
+                        text = album.date.toLong().formatDate("yyyy"),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                    )
+                }
+
+                if (otherAlbumArtists.isNullOrEmpty().not()) {
+                    if (showDate) {
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .5F))
                         )
                     }
+
+                    Text(
+                        text = otherAlbumArtists ?: "",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        LazyRow {
+            items(album.versions) { version ->
+                Box(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .clip(RoundedCornerShape(14))
+                        .background(versionContainerColor)
+                        .padding(horizontal = 5.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = version.uppercase(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.SemiBold,
+                        style = TextStyle(
+                            fontSize = 10.sp,
+                            color = versionTextColor
+                        )
+                    )
+                }
+            }
+            item {
+                Box(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .clip(RoundedCornerShape(14))
+                        .background(Color.Transparent)
+                        .padding(horizontal = 5.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = " ",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.SemiBold,
+                        style = TextStyle(
+                            fontSize = 10.sp,
+                            color = versionTextColor
+                        )
+                    )
                 }
             }
         }
@@ -181,15 +228,19 @@ fun AlbumItemPreview() {
         0.0,
         "",
         "",
-        "Juice Wrld"
+        "Artist 1"
     )
     val album = Album(
-        albumArtists = listOf(albumArtists),
+        albumArtists = listOf(
+            albumArtists,
+            albumArtists.copy(name = "Artist 2"),
+            albumArtists.copy(name = "Artist 3")
+        ),
         albumHash = "hash",
         colors = emptyList(),
         createdDate = 0.0,
-        date = 0,
-        helpText = "12 Tracks",
+        date = 698764,
+        helpText = "2020",
         image = "",
         title = "Death Race For Love",
         versions = listOf("bonus edition")
@@ -203,10 +254,10 @@ fun AlbumItemPreview() {
                 columns = GridCells.Fixed(2),
                 state = rememberLazyGridState(),
             ) {
-                items(3) {
+                items(1) {
                     AlbumItem(
                         modifier = Modifier.fillMaxWidth(),
-                        screen = Screen.ARTIST,
+                        screen = Screen.ALL_ALBUMS,
                         album = album,
                         baseUrl = "",
                         onClick = {}
@@ -215,8 +266,8 @@ fun AlbumItemPreview() {
                 item {
                     AlbumItem(
                         modifier = Modifier.fillMaxWidth(),
-                        screen = Screen.SEARCH,
-                        album = album.copy(versions = emptyList()),
+                        screen = Screen.ARTIST,
+                        album = album,
                         baseUrl = "",
                         onClick = {}
                     )

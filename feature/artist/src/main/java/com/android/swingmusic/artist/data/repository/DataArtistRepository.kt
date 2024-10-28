@@ -3,14 +3,17 @@ package com.android.swingmusic.artist.data.repository
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.android.swingmusic.artist.data.paging.ArtistsPagingSource
 import com.android.swingmusic.artist.domain.repository.ArtistRepository
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toAllArtists
+import com.android.swingmusic.core.data.mapper.Map.toArtist
+import com.android.swingmusic.core.data.mapper.Map.toArtistInfo
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Artist
-import com.android.swingmusic.artist.data.paging.ArtistsPagingSource
+import com.android.swingmusic.core.domain.model.ArtistInfo
 import com.android.swingmusic.network.data.api.service.NetworkApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -59,5 +62,49 @@ class DataArtistRepository @Inject constructor(
                 )
             }
         ).flow
+    }
+
+    override fun getArtistInfo(artistHash: String): Flow<Resource<ArtistInfo>> {
+        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+        val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+        return flow {
+            try {
+                emit(Resource.Loading())
+
+                emit(
+                    Resource.Success(
+                        data = networkApiService.getArtistInfo(
+                            url = "${baseUrl}artist/$artistHash",
+                            bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                        ).toArtistInfo()
+                    )
+                )
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "Error loading artist info"))
+            }
+        }
+    }
+
+    override fun getSimilarArtists(artistHash: String): Flow<Resource<List<Artist>>> {
+        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+        val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+        return flow {
+            try {
+                emit(Resource.Loading())
+
+                emit(
+                    Resource.Success(
+                        data = networkApiService.getSimilarArtists(
+                            url = "${baseUrl}artist/${artistHash}/similar",
+                            bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                        ).map { it.toArtist() }
+                    )
+                )
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "Error loading similar artists"))
+            }
+        }
     }
 }

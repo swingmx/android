@@ -45,7 +45,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -119,7 +118,6 @@ fun AlbumWithInfo(
     Scaffold {
         LazyColumn(
             modifier = Modifier
-                .padding()
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface),
             state = listState,
@@ -272,7 +270,7 @@ fun AlbumWithInfo(
                                         interactionSource = interaction,
                                         indication = null
                                     ) {
-                                        onClickArtist(artist.artisthash)
+                                        onClickArtist(artist.artistHash)
                                     },
                                     text = artist.name,
                                     style = MaterialTheme.typography.bodyMedium,
@@ -615,7 +613,8 @@ fun AlbumWithInfoScreen(
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
-    LaunchedEffect(key1 = true) {
+
+    LaunchedEffect(key1 = albumWithInfoState.albumHash) {
         if (albumWithInfoState.infoResource !is Resource.Success) {
             albumWithInfoViewModel.onAlbumWithInfoUiEvent(
                 AlbumWithInfoUiEvent.OnLoadAlbumWithInfo(albumHash)
@@ -757,7 +756,7 @@ fun AlbumWithInfoScreenPreview() {
     val trackArtist = TrackArtist(artistHash = "hash-2", name = "Khalid", image = "")
     val albumArtist = Artist(
         name = "Khalid",
-        artisthash = "hash",
+        artistHash = "hash",
         colors = emptyList(),
         createdDate = 1.0,
         helpText = "2 days ago",

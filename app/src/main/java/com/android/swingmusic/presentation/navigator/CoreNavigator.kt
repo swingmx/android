@@ -4,6 +4,8 @@ import androidx.navigation.NavController
 import androidx.navigation.NavOptionsBuilder
 import com.android.swingmusic.album.presentation.navigator.AlbumNavigator
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
+import com.android.swingmusic.artist.presentation.navigator.ArtistNavigator
+import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
 import com.android.swingmusic.auth.presentation.navigation.AuthNavigator
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
@@ -22,8 +24,8 @@ class CoreNavigator(
     private val authViewModel: AuthViewModel
 ) : AuthNavigator,
     AlbumNavigator,
-    PlayerNavigator
-{
+    PlayerNavigator,
+    ArtistNavigator {
     /**----------------------------------- Auth Navigator ----------------------------------------*/
     override fun gotoLoginWithUsername() {
         val currentDestination = navController.currentDestination?.route
@@ -138,6 +140,21 @@ class CoreNavigator(
 
         if (currentDestination != targetDestination.route) {
             navController.navigate(targetDestination within navGraph)
+        }
+    }
+
+    override fun gotoArtistInfo(artistHash: String) {
+        val currentDestination = navController.currentDestination?.route
+        val targetDestination = ArtistInfoScreenDestination(artistHash)
+
+        if (currentDestination != targetDestination.route) {
+            navController.navigate(
+                targetDestination within navGraph,
+                fun NavOptionsBuilder.() {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            )
         }
     }
 }

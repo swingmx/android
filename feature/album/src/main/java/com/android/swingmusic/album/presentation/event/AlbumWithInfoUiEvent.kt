@@ -4,6 +4,8 @@ interface AlbumWithInfoUiEvent {
 
     data class OnLoadAlbumWithInfo(val albumHash: String) : AlbumWithInfoUiEvent
 
+    data class OnUpdateAlbumHash(val albumHash: String) : AlbumWithInfoUiEvent
+
     object OnRefreshAlbumInfo : AlbumWithInfoUiEvent
 
     object ResetState: AlbumWithInfoUiEvent

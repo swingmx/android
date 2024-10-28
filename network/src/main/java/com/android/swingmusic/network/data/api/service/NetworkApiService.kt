@@ -3,6 +3,8 @@ package com.android.swingmusic.network.data.api.service
 import com.android.swingmusic.core.data.dto.AlbumWithInfoDto
 import com.android.swingmusic.core.data.dto.AllAlbumsDto
 import com.android.swingmusic.core.data.dto.AllArtistsDto
+import com.android.swingmusic.core.data.dto.ArtistDto
+import com.android.swingmusic.core.data.dto.ArtistInfoDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.network.data.dto.AddFavoriteRequest
@@ -41,7 +43,8 @@ interface NetworkApiService {
     ): AllArtistsDto
 
     @GET
-    suspend fun getArtistsCount( // used to get the total artists value
+    suspend fun getArtistsCount(
+        // used to get the total artists value
         @Url url: String,
         @Header("Authorization") bearerToken: String,
         @Query("limit") pageSize: Int = 1,
@@ -62,7 +65,8 @@ interface NetworkApiService {
     ): Any
 
     @GET
-    suspend fun getAlbumsCount( // used to get the total albums value
+    suspend fun getAlbumsCount(
+        // used to get the total albums value
         @Url url: String,
         @Header("Authorization") bearerToken: String,
         @Query("limit") pageSize: Int = 1,
@@ -84,4 +88,18 @@ interface NetworkApiService {
         @Body albumHashRequest: AlbumHashRequestDto,
         @Header("Authorization") bearerToken: String,
     ): AlbumWithInfoDto
+
+    @GET
+    suspend fun getArtistInfo(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("tracklimit") trackLimit: Int = -1,
+        @Query("all") returnAllAlbums: Boolean = true,
+    ): ArtistInfoDto
+
+    @GET
+    suspend fun getSimilarArtists(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): List<ArtistDto>
 }
