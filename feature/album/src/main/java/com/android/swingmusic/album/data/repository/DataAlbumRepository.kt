@@ -14,12 +14,11 @@ import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.AlbumWithInfo
 import com.android.swingmusic.network.data.api.service.NetworkApiService
-import com.android.swingmusic.network.data.dto.AddFavoriteRequest
+import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
 import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
-import retrofit2.Response
 import javax.inject.Inject
 
 class DataAlbumRepository @Inject constructor(
@@ -98,7 +97,7 @@ class DataAlbumRepository @Inject constructor(
 
                 networkApiService.addFavorite(
                     url = "${baseUrl}favorites/add",
-                    addFavoriteRequest = AddFavoriteRequest(hash = albumHash, type = "album"),
+                    toggleFavoriteRequest = ToggleFavoriteRequest(hash = albumHash, type = "album"),
                     bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
                 )
 
@@ -121,9 +120,9 @@ class DataAlbumRepository @Inject constructor(
                 val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
-                networkApiService.addFavorite(
+                networkApiService.removeFavorite(
                     url = "${baseUrl}favorites/remove",
-                    addFavoriteRequest = AddFavoriteRequest(hash = albumHash, type = "album"),
+                    toggleFavoriteRequest = ToggleFavoriteRequest(hash = albumHash, type = "album"),
                     bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
                 )
 

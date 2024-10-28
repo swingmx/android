@@ -83,6 +83,7 @@ private fun ArtistInfo(
     similarArtists: List<Artist>,
     playbackState: PlaybackState,
     currentTrack: Track?,
+    onToggleFavorite: (String, Boolean) -> Unit,
 ) {
     val clickInteractionSource = remember { MutableInteractionSource() }
 
@@ -234,10 +235,10 @@ private fun ArtistInfo(
                                 else R.drawable.fav_not_filled
                                 IconButton(
                                     onClick = {
-                                        /*onToggleFavorite(
-                                            albumInfo.isFavorite,
-                                            albumInfo.albumHash
-                                        )*/
+                                        onToggleFavorite(
+                                            artistInfo.artist.artistHash,
+                                            artistInfo.artist.isFavorite
+                                        )
                                     }
                                 ) {
                                     Icon(
@@ -279,42 +280,43 @@ private fun ArtistInfo(
                 }
             }
 
+            if (artistInfo.tracks.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .padding(top = 24.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Tracks",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
 
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillParentMaxWidth()
-                        .padding(top = 24.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Tracks",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    if (artistInfo.tracks.size > 4) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                        if (artistInfo.tracks.size > 4) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .clickable(
+                                        interactionSource = clickInteractionSource,
+                                        indication = null
+                                    ) {
+                                        // TODO: Add click action
+                                    }
+                            ) {
+                                Text(
+                                    text = "View All",
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
                                 )
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                                .clickable(
-                                    interactionSource = clickInteractionSource,
-                                    indication = null
-                                ) {
-                                    // TODO: Add click action
-                                }
-                        ) {
-                            Text(
-                                text = "View All",
-                                fontWeight = FontWeight.SemiBold,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
-                            )
+                            }
                         }
                     }
                 }
@@ -709,11 +711,11 @@ private fun ArtistInfo(
 fun ArtistInfoScreen(
     artistHash: String,
     mediaControllerViewModel: MediaControllerViewModel,
-    artistHashViewModel: ArtistInfoViewModel = hiltViewModel()
+    artistInfoViewModel: ArtistInfoViewModel = hiltViewModel()
 ) {
     val baseUrl = mediaControllerViewModel.baseUrl
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
-    val artistInfoState = artistHashViewModel.artistInfoState
+    val artistInfoState = artistInfoViewModel.artistInfoState.collectAsState()
     val similarArtists = if (artistInfoState.value.similarArtistsResource is Resource.Success)
         artistInfoState.value.similarArtistsResource.data else emptyList()
 
@@ -722,7 +724,7 @@ fun ArtistInfoScreen(
         key2 = artistInfoState.value.requiresReload
     ) {
         if (artistInfoState.value.requiresReload) {
-            artistHashViewModel.onArtistInfoUiEvent(
+            artistInfoViewModel.onArtistInfoUiEvent(
                 event = ArtistInfoUiEvent.OnLoadArtistInfo(artistHash)
             )
         }
@@ -772,7 +774,15 @@ fun ArtistInfoScreen(
                     artistInfo = res.data!!,
                     similarArtists = similarArtists ?: emptyList(),
                     playbackState = playerUiState.playbackState,
-                    currentTrack = playerUiState.nowPlayingTrack
+                    currentTrack = playerUiState.nowPlayingTrack,
+                    onToggleFavorite = { artistHash, isFavorite ->
+                        artistInfoViewModel.onArtistInfoUiEvent(
+                            ArtistInfoUiEvent.OnToggleArtistFavorite(
+                                artistHash = artistHash,
+                                isFavorite = isFavorite
+                            )
+                        )
+                    }
                 )
             }
         }
@@ -1171,7 +1181,8 @@ fun ArtistInfoPreview() {
                     image = "",
                     name = "Sample Artist"
                 ),
-            )
+            ),
+            onToggleFavorite = { _, _ -> }
         )
     }
 }
