@@ -15,4 +15,8 @@ interface ArtistRepository {
     fun getArtistInfo(artistHash: String): Flow<Resource<ArtistInfo>>
 
     fun getSimilarArtists(artistHash: String): Flow<Resource<List<Artist>>>
+
+    suspend fun addArtistToFavorite(artistHash: String): Flow<Resource<Boolean>>
+
+    suspend fun removeArtistFromFavorite(artistHash: String): Flow<Resource<Boolean>>
 }

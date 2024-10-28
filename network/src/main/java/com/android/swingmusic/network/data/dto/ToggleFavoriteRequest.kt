@@ -1,6 +1,6 @@
 package com.android.swingmusic.network.data.dto
 
-data class AddFavoriteRequest(
+data class ToggleFavoriteRequest(
     val hash: String,
     val type: String
 )

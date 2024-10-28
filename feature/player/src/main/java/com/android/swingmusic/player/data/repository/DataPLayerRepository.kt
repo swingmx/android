@@ -12,7 +12,7 @@ import com.android.swingmusic.database.data.mapper.toEntity
 import com.android.swingmusic.database.data.mapper.toModel
 import com.android.swingmusic.database.domain.model.LastPlayedTrack
 import com.android.swingmusic.network.data.api.service.NetworkApiService
-import com.android.swingmusic.network.data.dto.AddFavoriteRequest
+import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
 import com.android.swingmusic.network.data.mapper.toDto
 import com.android.swingmusic.network.domain.model.LogTrackRequest
 import com.android.swingmusic.player.domain.repository.PLayerRepository
@@ -104,7 +104,7 @@ class DataPLayerRepository @Inject constructor(
 
                 networkApiService.addFavorite(
                     url = "${baseUrl}favorites/add",
-                    addFavoriteRequest = AddFavoriteRequest(hash = trackHash, type = "track"),
+                    toggleFavoriteRequest = ToggleFavoriteRequest(hash = trackHash, type = "track"),
                     bearerToken = "Bearer $accessToken"
                 )
 
@@ -129,7 +129,7 @@ class DataPLayerRepository @Inject constructor(
 
                 networkApiService.removeFavorite(
                     url = "${baseUrl}favorites/remove",
-                    addFavoriteRequest = AddFavoriteRequest(hash = trackHash, type = "track"),
+                    toggleFavoriteRequest = ToggleFavoriteRequest(hash = trackHash, type = "track"),
                     bearerToken = "Bearer $accessToken"
                 )
                 emit(Resource.Success(data = false))

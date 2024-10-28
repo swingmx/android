@@ -6,9 +6,7 @@ interface ArtistInfoUiEvent {
 
     data class OnLoadArtistInfo(val artistHash: String) : ArtistInfoUiEvent
 
-    object OnBackPress: ArtistInfoUiEvent
-
-    data class OnToggleArtistFavorite(val isFavorite: Boolean): ArtistInfoUiEvent
+    data class OnToggleArtistFavorite(val artistHash: String, val isFavorite: Boolean): ArtistInfoUiEvent
 
     data class OnShuffle(val tracks: List<Track>): ArtistInfoUiEvent
 

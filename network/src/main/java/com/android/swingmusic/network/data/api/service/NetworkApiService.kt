@@ -7,7 +7,7 @@ import com.android.swingmusic.core.data.dto.ArtistDto
 import com.android.swingmusic.core.data.dto.ArtistInfoDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
-import com.android.swingmusic.network.data.dto.AddFavoriteRequest
+import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
 import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
 import com.android.swingmusic.network.data.dto.LogTrackRequestDto
 import retrofit2.http.Body
@@ -53,14 +53,14 @@ interface NetworkApiService {
     @POST
     suspend fun addFavorite(
         @Url url: String,
-        @Body addFavoriteRequest: AddFavoriteRequest,
+        @Body toggleFavoriteRequest: ToggleFavoriteRequest,
         @Header("Authorization") bearerToken: String,
     ): Any
 
     @POST
     suspend fun removeFavorite(
         @Url url: String,
-        @Body addFavoriteRequest: AddFavoriteRequest,
+        @Body toggleFavoriteRequest: ToggleFavoriteRequest,
         @Header("Authorization") bearerToken: String,
     ): Any
 
