@@ -45,7 +45,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
@@ -58,7 +57,6 @@ import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
-import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
@@ -71,8 +69,6 @@ import com.android.swingmusic.uicomponent.presentation.component.slider.WavySlid
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
-import com.android.swingmusic.uicomponent.presentation.util.getName
-import com.android.swingmusic.uicomponent.presentation.util.getSourceType
 import com.ramcosta.composedestinations.annotation.Destination
 import java.util.Locale
 
@@ -589,7 +585,9 @@ fun NowPlayingScreen(
         },
         onToggleShuffleMode = {
             mediaControllerViewModel.onPlayerUiEvent(
-                PlayerUiEvent.OnToggleShuffleMode()
+                PlayerUiEvent.OnToggleShuffleMode(
+                    toggleShuffle = true
+                )
             )
         },
         onSeekPlayBack = {

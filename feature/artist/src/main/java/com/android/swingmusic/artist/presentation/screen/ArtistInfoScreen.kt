@@ -64,6 +64,9 @@ import com.android.swingmusic.core.domain.model.Genre
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
+import com.android.swingmusic.core.domain.util.QueueSource
+import com.android.swingmusic.player.presentation.event.PlayerUiEvent
+import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
@@ -84,6 +87,9 @@ private fun ArtistInfo(
     playbackState: PlaybackState,
     currentTrack: Track?,
     onToggleFavorite: (String, Boolean) -> Unit,
+    onShuffle: () -> Unit,
+    onPlayAllTracks: () -> Unit,
+    onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit
 ) {
     val clickInteractionSource = remember { MutableInteractionSource() }
 
@@ -250,7 +256,7 @@ private fun ArtistInfo(
 
                             item {
                                 IconButton(onClick = {
-                                    // onShuffle()
+                                    onShuffle()
                                 }) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.shuffle),
@@ -265,7 +271,7 @@ private fun ArtistInfo(
                                         .clip(RoundedCornerShape(32))
                                         .background(MaterialTheme.colorScheme.primary),
                                     onClick = {
-                                        // onPlay()
+                                        onPlayAllTracks()
                                     }
                                 ) {
                                     Icon(
@@ -324,12 +330,15 @@ private fun ArtistInfo(
 
             itemsIndexed(
                 items = artistInfo.tracks.take(4),
-                key = { index: Int, item: Track -> item.filepath }
+                key = { index: Int, item: Track -> item.filepath + index }
             ) { index, track ->
                 TrackItem(
                     track = track,
                     onClickTrackItem = {
-
+                        onClickArtistTrack(
+                            artistInfo.tracks,
+                            index
+                        )
                     },
                     onClickMoreVert = { clickedTrack ->
 
@@ -782,6 +791,55 @@ fun ArtistInfoScreen(
                                 isFavorite = isFavorite
                             )
                         )
+                    },
+                    onShuffle = {
+                        val tracks = artistInfoState.value.infoResource.data?.tracks
+                        if (tracks?.isNotEmpty() == true) {
+                            mediaControllerViewModel.initQueueFromGivenSource(
+                                tracks = tracks,
+                                source = QueueSource.ARTIST(
+                                    artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
+                                        ?: "",
+                                    name = artistInfoState.value.infoResource.data?.artist?.name
+                                        ?: ""
+                                )
+                            )
+
+                            mediaControllerViewModel.onPlayerUiEvent(
+                                PlayerUiEvent.OnToggleShuffleMode()
+                            )
+                        }
+                    },
+                    onPlayAllTracks = {
+                        val queue = artistInfoState.value.infoResource.data?.tracks
+                        if (queue?.isNotEmpty() == true) {
+                            mediaControllerViewModel.onQueueEvent(
+                                QueueEvent.RecreateQueue(
+                                    source = QueueSource.ARTIST(
+                                        artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
+                                            ?: "",
+                                        name = artistInfoState.value.infoResource.data?.artist?.name
+                                            ?: ""
+                                    ),
+                                    clickedTrackIndex = 0,
+                                    queue = queue
+                                )
+                            )
+                        }
+                    },
+                    onClickArtistTrack = { queue, index ->
+                        mediaControllerViewModel.onQueueEvent(
+                            QueueEvent.RecreateQueue(
+                                source = QueueSource.ARTIST(
+                                    artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
+                                        ?: "",
+                                    name = artistInfoState.value.infoResource.data?.artist?.name
+                                        ?: ""
+                                ),
+                                clickedTrackIndex = index,
+                                queue = queue
+                            )
+                        )
                     }
                 )
             }
@@ -1182,7 +1240,10 @@ fun ArtistInfoPreview() {
                     name = "Sample Artist"
                 ),
             ),
-            onToggleFavorite = { _, _ -> }
+            onToggleFavorite = { _, _ -> },
+            onShuffle = {},
+            onPlayAllTracks = {},
+            onClickArtistTrack = {_, _ -> }
         )
     }
 }
