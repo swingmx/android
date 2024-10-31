@@ -27,7 +27,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Create Release
-      id: create_release
+      id: create_release 
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
@@ -38,13 +38,9 @@ jobs:
           early pre beta do not expect everything to be working
         draft: false
         prerelease: true
-    - name: Upload Release Asset
-      id: upload-release-asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: ./app/build/outputd/apk/debug/
-        asset_name: app-debug.apk       
-        asset_content_type: application/apk
+        name: Releases
+        path: |
+          app/build/outputs/apk/release/app-release-unsigned.apk
