@@ -26,21 +26,15 @@ jobs:
       run: ./gradlew build
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Create Release
-      id: create_release 
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-      with:
-        tag_name: ${{ github.run_id }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          early pre beta do not expect everything to be working
-        draft: false
-        prerelease: true
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
       with:
         name: Releases
         path: |
           app/build/outputs/apk/release/app-release-unsigned.apk
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: "app/build/outputs/apk/release/app-release-unsigned.apk"
+        tag: v${{ github.run_number }}
+        token: ${{ secrets.TOKEN }}  
