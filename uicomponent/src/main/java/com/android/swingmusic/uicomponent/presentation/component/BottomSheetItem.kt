@@ -46,7 +46,7 @@ fun BottomSheetItem(
                     }
                 }
         }
-        .padding(horizontal = 20.dp, vertical = 16.dp)
+        .padding(all = 12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(

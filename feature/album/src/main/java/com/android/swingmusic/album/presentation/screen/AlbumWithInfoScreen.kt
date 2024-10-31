@@ -695,16 +695,17 @@ fun AlbumWithInfoScreen(
                     },
                     onShuffle = {
                         if (albumWithInfoState.orderedTracks.isNotEmpty()) {
-                            mediaControllerViewModel.initQueueFromAlbum(
-                                albumTracks = albumWithInfoState.orderedTracks,
-                                albumHash = albumHash,
-                                name = albumWithInfoState.infoResource.data?.albumInfo?.title ?: ""
+                            mediaControllerViewModel.initQueueFromGivenSource(
+                                tracks = albumWithInfoState.orderedTracks,
+                                source = QueueSource.ALBUM(
+                                    albumHash = albumHash,
+                                    name = albumWithInfoState.infoResource.data?.albumInfo?.title
+                                        ?: ""
+                                )
                             )
 
                             mediaControllerViewModel.onPlayerUiEvent(
-                                PlayerUiEvent.OnToggleShuffleMode(
-                                    isAlbumSource = true
-                                )
+                                PlayerUiEvent.OnToggleShuffleMode()
                             )
                         }
                     },
@@ -712,7 +713,7 @@ fun AlbumWithInfoScreen(
                         mediaControllerViewModel.onQueueEvent(
                             QueueEvent.RecreateQueue(
                                 source = QueueSource.ALBUM(
-                                    albumHash,
+                                    albumHash = albumHash,
                                     name = albumWithInfoState.infoResource.data?.albumInfo?.title
                                         ?: ""
                                 ),

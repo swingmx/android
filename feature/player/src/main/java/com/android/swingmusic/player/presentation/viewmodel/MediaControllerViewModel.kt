@@ -235,10 +235,12 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
-    fun initQueueFromAlbum(albumTracks: List<Track>, albumHash: String, name: String) {
+
+    fun initQueueFromGivenSource(tracks: List<Track>, source: QueueSource) {
         _playerUiState.value =
-            _playerUiState.value.copy(source = QueueSource.ALBUM(albumHash, name))
-        workingQueue = albumTracks.toMutableList()
+            _playerUiState.value.copy(source = source)
+        workingQueue = tracks.toMutableList()
+        shuffledQueue = mutableListOf()
     }
 
     private fun updateQueueInDatabase(
@@ -652,7 +654,7 @@ class MediaControllerViewModel @Inject constructor(
 
                         // Handle shuffle mode manually (not directly via MediaController)
                         // Save 0th track immediately even in error state
-                        if (newShuffleMode == ShuffleMode.SHUFFLE_ON || event.isAlbumSource) {
+                        if (newShuffleMode == ShuffleMode.SHUFFLE_ON || event.toggleShuffle.not()) {
                             shuffledQueue = workingQueue.shuffled().toMutableList()
 
                             _playerUiState.value = _playerUiState.value.copy(

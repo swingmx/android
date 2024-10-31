@@ -24,8 +24,6 @@ class AlbumWithInfoViewModel @Inject constructor(
         MutableStateFlow(AlbumWithInfoState())
     val albumWithInfoState: StateFlow<AlbumWithInfoState> get() = _albumWithInfoState
 
-    // TODO: handle this screen specific events
-
     private fun updateAlbumInfoState(resource: Resource<AlbumWithInfo>) {
         when (resource) {
             is Resource.Success -> {

@@ -146,18 +146,6 @@ class ArtistInfoViewModel @Inject constructor(
                 toggleArtistFavorite(event.artistHash, event.isFavorite)
             }
 
-            is ArtistInfoUiEvent.OnShuffle -> {
-                // Handle shuffle action for tracks
-            }
-
-            is ArtistInfoUiEvent.OnPlayAllTracks -> {
-                // Handle playing all tracks
-            }
-
-            is ArtistInfoUiEvent.OnPlaySingleTrack -> {
-                // Handle playing a single track
-            }
-
             is ArtistInfoUiEvent.OnViewAllTracks -> {
                 // Handle viewing all tracks of artist
             }

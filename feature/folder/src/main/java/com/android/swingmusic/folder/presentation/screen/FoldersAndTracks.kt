@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
@@ -119,27 +121,28 @@ private fun FoldersAndTracks(
                 if (showBottomSheet) {
                     ModalBottomSheet(
                         sheetState = sheetState,
+                        shape = RoundedCornerShape(16.dp),
                         onDismissRequest = {
                             showBottomSheet = false
                         },
                         dragHandle = null,
                         scrimColor = Color.Black.copy(alpha = .75F),
-                        tonalElevation = 16.dp
+                        tonalElevation = 16.dp,
                     ) {
                         clickedTrack?.let { track ->
                             Column {
-                                TrackItem(
-                                    track = track,
-                                    onClickTrackItem = {},
-                                    onClickMoreVert = {},
-                                    baseUrl = baseUrl
-                                )
+                                Box(modifier = Modifier.offset(x = (-8).dp)) {
+                                    TrackItem(
+                                        track = track,
+                                        onClickTrackItem = {},
+                                        onClickMoreVert = {},
+                                        baseUrl = baseUrl
+                                    )
+                                }
 
                                 HorizontalDivider()
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(8.dp))
 
                         BottomSheetItem(
                             label = "Go to Album",
@@ -155,7 +158,7 @@ private fun FoldersAndTracks(
                             }
                         )
 
-                        Spacer(modifier = Modifier.height(50.dp))
+                        Spacer(modifier = Modifier.height(48.dp))
                     }
                 }
 

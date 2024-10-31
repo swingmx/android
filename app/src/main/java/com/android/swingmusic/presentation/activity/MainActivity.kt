@@ -8,11 +8,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -31,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -42,12 +48,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
+import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
+import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.player.presentation.screen.MiniPlayer
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
@@ -113,6 +120,32 @@ class MainActivity : ComponentActivity() {
                 BottomNavItem.Artist,
             )
 
+            // Show BottomBar Navigation if route is ONE of...
+            val showBottomNav = route in listOf(
+                "folder/${FoldersAndTracksScreenDestination.route}",
+                "album/${AllAlbumScreenDestination.route}",
+                "artist/${ArtistsScreenDestination.route}"
+            )
+
+            val bottomNavHeight by animateDpAsState(
+                targetValue = if (showBottomNav) 80.dp else 0.dp,
+                animationSpec = tween(durationMillis = 300),
+                label = "Bottom Nav Height"
+            )
+
+            // Show Spacer below MiniPlayer if route NOT one of...
+            val showSpacer = route !in listOf(
+                "folder/${FoldersAndTracksScreenDestination.route}",
+                "album/${AllAlbumScreenDestination.route}",
+                "artist/${ArtistsScreenDestination.route}",
+            )
+
+            val spacerHeight by animateDpAsState(
+                targetValue = if (showSpacer) 24.dp else 0.dp,
+                animationSpec = tween(durationMillis = 300),
+                label = "Bottom Nav Height"
+            )
+
             SwingMusicTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -120,7 +153,9 @@ class MainActivity : ComponentActivity() {
                         // show mini player on home, folder, artist and when btm nav is visible
                         // show btm nav on home, folder, ,
 
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             // Show mini player if route is NOT one of...
                             if ((route !in listOf<String>(
                                     "auth/${LoginWithQrCodeDestination.route}",
@@ -141,65 +176,54 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                 )
+
+                                Box(
+                                    modifier = Modifier
+                                        .height(spacerHeight)
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.inverseOnSurface)
+                                )
                             }
 
-                            // Show BottomBar Navigation if route is not one of...
-                            if (route !in listOf(
-                                    "auth/${LoginWithQrCodeDestination.route}",
-                                    "auth/${LoginWithUsernameScreenDestination.route}",
-                                    "player/${NowPlayingScreenDestination.route}",
-                                    "player/${QueueScreenDestination.route}",
+                            val currentSelectedItem by navController.currentScreenAsState(
+                                isUserLoggedIn
+                            )
 
-                                    // Hide on album details Screens
-                                    "folder/${AlbumWithInfoScreenDestination.route}",
-                                    "album/${AlbumWithInfoScreenDestination.route}",
-                                    "artist/${AlbumWithInfoScreenDestination.route}",
-
-                                    // Hide on artist details Screens
-                                    "folder/${ArtistInfoScreenDestination.route}",
-                                    "album/${ArtistInfoScreenDestination.route}",
-                                    "artist/${ArtistInfoScreenDestination.route}"
-                                )
+                            NavigationBar(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(bottomNavHeight),
+                                containerColor = MaterialTheme.colorScheme.inverseOnSurface
                             ) {
-                                val currentSelectedItem by navController.currentScreenAsState(
-                                    isUserLoggedIn
-                                )
-
-                                NavigationBar(
-                                    modifier = Modifier,
-                                    containerColor = MaterialTheme.colorScheme.inverseOnSurface
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        bottomNavItems.forEach { item ->
-                                            NavigationBarItem(
-                                                icon = {
-                                                    Icon(
-                                                        painter = painterResource(id = item.icon),
-                                                        contentDescription = null
-                                                    )
-                                                },
-                                                selected = currentSelectedItem == item.navGraph,
-                                                alwaysShowLabel = false,
-                                                label = { Text(text = item.title) },
-                                                onClick = {
-                                                    navController.navigate(
-                                                        item.navGraph!!,
-                                                        fun NavOptionsBuilder.() {
-                                                            launchSingleTop = true
-                                                            restoreState = true
-
-                                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                                saveState = true
-                                                                inclusive = false
-                                                            }
+                                    bottomNavItems.forEach { item ->
+                                        NavigationBarItem(
+                                            icon = {
+                                                Icon(
+                                                    painter = painterResource(id = item.icon),
+                                                    contentDescription = null
+                                                )
+                                            },
+                                            selected = currentSelectedItem == item.navGraph,
+                                            alwaysShowLabel = false,
+                                            label = { Text(text = item.title) },
+                                            onClick = {
+                                                navController.navigate(
+                                                    item.navGraph!!,
+                                                    fun NavOptionsBuilder.() {
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                        popUpTo(navController.graph.findStartDestination().id) {
+                                                            saveState = true
+                                                            inclusive = false
                                                         }
-                                                    )
-                                                }
-                                            )
-                                        }
+                                                    }
+                                                )
+                                            }
+                                        )
                                     }
                                 }
                             }
