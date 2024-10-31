@@ -61,4 +61,5 @@ dependencies {
 
     // Coil Image Loader
     implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("androidx.appcompat:appcompat:1.3.1")
 }
