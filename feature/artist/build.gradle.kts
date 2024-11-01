@@ -54,7 +54,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
 
     // Compose
-    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    implementation(platform("androidx.compose:compose-bom:2024.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -85,7 +85,7 @@ dependencies {
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
     // Pagination
-    implementation ("androidx.paging:paging-compose:3.3.1")
+    implementation ("androidx.paging:paging-compose")
 
     // Coil Image Loader
     implementation("io.coil-kt:coil-compose:2.6.0")

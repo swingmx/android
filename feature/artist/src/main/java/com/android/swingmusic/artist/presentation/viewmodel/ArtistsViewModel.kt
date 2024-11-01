@@ -121,6 +121,16 @@ class ArtistsViewModel @Inject constructor(
                     getArtistsCount()
                 }
             }
+
+            is ArtistUiEvent.OnPullToRefresh -> {
+                val sortBy = artistsUiState.value.sortBy
+                val sortOrder = artistsUiState.value.sortOrder
+
+                getPagingArtists(
+                    sortBy = sortBy.second,
+                    sortOrder = sortOrder
+                )
+            }
         }
     }
 }

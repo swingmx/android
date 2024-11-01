@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -80,6 +81,7 @@ private fun FoldersAndTracks(
     navPaths: List<Folder>,
     onClickNavPath: (Folder) -> Unit,
     onRetry: (FolderUiEvent) -> Unit,
+    onPullToRefresh: (FolderUiEvent) -> Unit,
     onClickFolder: (Folder) -> Unit,
     onClickTrackItem: (index: Int, queue: List<Track>) -> Unit,
     onGoToTrackAlbum: (albumHash: String) -> Unit,
@@ -89,6 +91,8 @@ private fun FoldersAndTracks(
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+
+    var showOnRefreshIndicator by remember { mutableStateOf(false) }
 
     // use a double scaffold to take advantage of padding values since the app uses full screen mode
     Scaffold { it ->
@@ -106,255 +110,275 @@ private fun FoldersAndTracks(
                 )
             }
         ) { paddingValues ->
-            Surface(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
+            PullToRefreshBox(
+                modifier = Modifier.fillMaxSize(),
+                isRefreshing = showOnRefreshIndicator,
+                onRefresh = {
+                    showOnRefreshIndicator = true
+
+                    val event = FolderUiEvent.OnClickFolder(currentFolder)
+                    onPullToRefresh(event)
+                },
             ) {
-                val lazyColumnState = rememberLazyListState()
-                val pathsLazyRowState = rememberLazyListState()
-
-                LaunchedEffect(key1 = currentFolder) {
-                    val index = navPaths.indexOf(currentFolder)
-                    pathsLazyRowState.animateScrollToItem(if (index >= 0) index else 0)
-                }
-                if (showBottomSheet) {
-                    ModalBottomSheet(
-                        sheetState = sheetState,
-                        shape = RoundedCornerShape(16.dp),
-                        onDismissRequest = {
-                            showBottomSheet = false
-                        },
-                        dragHandle = null,
-                        scrimColor = Color.Black.copy(alpha = .75F),
-                        tonalElevation = 16.dp,
-                    ) {
-                        clickedTrack?.let { track ->
-                            Column {
-                                Box(modifier = Modifier.offset(x = (-8).dp)) {
-                                    TrackItem(
-                                        track = track,
-                                        onClickTrackItem = {},
-                                        onClickMoreVert = {},
-                                        baseUrl = baseUrl
-                                    )
-                                }
-
-                                HorizontalDivider()
-                            }
-                        }
-
-                        BottomSheetItem(
-                            label = "Go to Album",
-                            scope = scope,
-                            sheetState = sheetState,
-                            iconPainter = painterResource(id = R.drawable.ic_album),
-                            clickedTrack = clickedTrack,
-                            onClick = { track ->
-                                onGoToTrackAlbum(track.albumHash)
-                            },
-                            onHideBottomSheet = { hide ->
-                                showBottomSheet = !hide
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(48.dp))
-                    }
-                }
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    state = lazyColumnState
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
                 ) {
-                    // Navigation Paths
-                    stickyHeader {
-                        LazyRow(
-                            state = pathsLazyRowState,
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.surface)
-                                .fillMaxWidth()
-                                .padding(start = 9.dp, top = 4.dp, bottom = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    val lazyColumnState = rememberLazyListState()
+                    val pathsLazyRowState = rememberLazyListState()
+
+                    LaunchedEffect(key1 = currentFolder) {
+                        val index = navPaths.indexOf(currentFolder)
+                        pathsLazyRowState.animateScrollToItem(if (index >= 0) index else 0)
+                    }
+                    if (showBottomSheet) {
+                        ModalBottomSheet(
+                            sheetState = sheetState,
+                            shape = RoundedCornerShape(16.dp),
+                            onDismissRequest = {
+                                showBottomSheet = false
+                            },
+                            dragHandle = null,
+                            scrimColor = Color.Black.copy(alpha = .75F),
+                            tonalElevation = 16.dp,
                         ) {
-                            // Always display a root dir item
-                            item {
-                                PathIndicatorItem(
-                                    folder = homeDir,
-                                    isRootPath = true,
-                                    isCurrentPath = homeDir.path == currentFolder.path,
-                                    onClick = { navFolder ->
-                                        onClickNavPath(navFolder)
+                            clickedTrack?.let { track ->
+                                Column {
+                                    Box(modifier = Modifier.offset(x = (-8).dp)) {
+                                        TrackItem(
+                                            track = track,
+                                            onClickTrackItem = {},
+                                            onClickMoreVert = {},
+                                            baseUrl = baseUrl
+                                        )
                                     }
-                                )
+
+                                    HorizontalDivider()
+                                }
                             }
 
-                            itemsIndexed(navPaths) { index, folder ->
-                                // Ignore home dir because it is already displayed
-                                if (folder.path != "\$home") {
+                            BottomSheetItem(
+                                label = "Go to Album",
+                                scope = scope,
+                                sheetState = sheetState,
+                                iconPainter = painterResource(id = R.drawable.ic_album),
+                                clickedTrack = clickedTrack,
+                                onClick = { track ->
+                                    onGoToTrackAlbum(track.albumHash)
+                                },
+                                onHideBottomSheet = { hide ->
+                                    showBottomSheet = !hide
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(48.dp))
+                        }
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        state = lazyColumnState
+                    ) {
+                        // Navigation Paths
+                        stickyHeader {
+                            LazyRow(
+                                state = pathsLazyRowState,
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .fillMaxWidth()
+                                    .padding(start = 9.dp, top = 4.dp, bottom = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Always display a root dir item
+                                item {
                                     PathIndicatorItem(
-                                        folder = folder,
-                                        isCurrentPath = folder.path == currentFolder.path,
+                                        folder = homeDir,
+                                        isRootPath = true,
+                                        isCurrentPath = homeDir.path == currentFolder.path,
                                         onClick = { navFolder ->
                                             onClickNavPath(navFolder)
                                         }
                                     )
                                 }
-                                if (navPaths.size != 1 &&
-                                    index != navPaths.lastIndex
+
+                                itemsIndexed(navPaths) { index, folder ->
+                                    // Ignore home dir because it is already displayed
+                                    if (folder.path != "\$home") {
+                                        PathIndicatorItem(
+                                            folder = folder,
+                                            isCurrentPath = folder.path == currentFolder.path,
+                                            onClick = { navFolder ->
+                                                onClickNavPath(navFolder)
+                                            }
+                                        )
+                                    }
+                                    if (navPaths.size != 1 &&
+                                        index != navPaths.lastIndex
+                                    ) {
+                                        val tint =
+                                            if (navPaths[index + 1].path == currentFolder.path)
+                                                MaterialTheme.colorScheme.onSurface else
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = .30F)
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                            tint = tint,
+                                            contentDescription = "Arrow Right"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!foldersAndTracksState.isError && !foldersAndTracksState.isLoading) {
+                            showOnRefreshIndicator = false
+
+                            // Folders
+                            itemsIndexed(
+                                items = foldersAndTracksState.foldersAndTracks.folders,
+                                key = { _: Int, item: Folder -> item.path }
+                            ) { index, folder ->
+                                FolderItem(
+                                    folder = folder,
+                                    onClickFolderItem = { clickedFolder ->
+                                        onClickFolder(clickedFolder)
+                                    },
+                                    onClickMoreVert = {
+
+                                    }
+                                )
+
+                                if (index == foldersAndTracksState.foldersAndTracks.folders.lastIndex &&
+                                    foldersAndTracksState.foldersAndTracks.tracks.isEmpty()
                                 ) {
-                                    val tint = if (navPaths[index + 1].path == currentFolder.path)
-                                        MaterialTheme.colorScheme.onSurface else
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .30F)
-                                    Icon(
-                                        imageVector = Icons.Default.KeyboardArrowRight,
-                                        tint = tint,
-                                        contentDescription = "Arrow Right"
-                                    )
+                                    Spacer(modifier = Modifier.height(150.dp))
+                                }
+                            }
+
+                            // Tracks
+                            itemsIndexed(
+                                items = foldersAndTracksState.foldersAndTracks.tracks,
+                                key = { _: Int, item: Track -> item.filepath }
+                            ) { index, track ->
+                                TrackItem(
+                                    track = track,
+                                    showMenuIcon = true, // TODO: set true after fixing AlbumInfo bug
+                                    isCurrentTrack = track.trackHash == currentTrackHash,
+                                    playbackState = playbackState,
+                                    baseUrl = baseUrl,
+                                    onClickTrackItem = {
+                                        onClickTrackItem(
+                                            index, foldersAndTracksState.foldersAndTracks.tracks
+                                        )
+                                    },
+                                    onClickMoreVert = {
+                                        clickedTrack = it
+                                        showBottomSheet = true
+                                    }
+                                )
+
+                                if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex) {
+                                    Spacer(modifier = Modifier.height(150.dp))
                                 }
                             }
                         }
-                    }
 
-                    if (!foldersAndTracksState.isError && !foldersAndTracksState.isLoading) {
-                        // Folders
-                        itemsIndexed(
-                            items = foldersAndTracksState.foldersAndTracks.folders,
-                            key = { _: Int, item: Folder -> item.path }
-                        ) { index, folder ->
-                            FolderItem(
-                                folder = folder,
-                                onClickFolderItem = { clickedFolder ->
-                                    onClickFolder(clickedFolder)
-                                },
-                                onClickMoreVert = {
-
+                        item {
+                            if (foldersAndTracksState.isLoading) {
+                                if (!showOnRefreshIndicator) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(24.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(strokeCap = StrokeCap.Round)
+                                    }
                                 }
-                            )
-
-                            if (index == foldersAndTracksState.foldersAndTracks.folders.lastIndex &&
-                                foldersAndTracksState.foldersAndTracks.tracks.isEmpty()
-                            ) {
-                                Spacer(modifier = Modifier.height(150.dp))
                             }
                         }
 
-                        // Tracks
-                        itemsIndexed(
-                            items = foldersAndTracksState.foldersAndTracks.tracks,
-                            key = { _: Int, item: Track -> item.filepath }
-                        ) { index, track ->
-                            TrackItem(
-                                track = track,
-                                showMenuIcon = true, // TODO: set true after fixing AlbumInfo bug
-                                isCurrentTrack = track.trackHash == currentTrackHash,
-                                playbackState = playbackState,
-                                baseUrl = baseUrl,
-                                onClickTrackItem = {
-                                    onClickTrackItem(
-                                        index, foldersAndTracksState.foldersAndTracks.tracks
-                                    )
-                                },
-                                onClickMoreVert = {
-                                    clickedTrack = it
-                                    showBottomSheet = true
+                        item {
+                            if (foldersAndTracksState.isError) {
+                                showOnRefreshIndicator = false
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillParentMaxHeight()
+                                        .padding(bottom = 48.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(16.dp)
+                                            .fillMaxWidth(),
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        val capsFirst =
+                                            foldersAndTracksState.errorMessage.replaceFirstChar {
+                                                it.titlecase(Locale.ROOT)
+                                            }
+
+                                        Text(
+                                            text = capsFirst,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = TextAlign.Center,
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        Button(onClick = {
+                                            val event = FolderUiEvent.OnClickFolder(currentFolder)
+                                            onRetry(event)
+                                        }) {
+                                            Text("RETRY")
+                                        }
+                                    }
                                 }
-                            )
-
-                            if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex) {
-                                Spacer(modifier = Modifier.height(150.dp))
                             }
                         }
-                    }
 
-                    item {
-                        if (foldersAndTracksState.isLoading) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(24.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(strokeCap = StrokeCap.Round)
-                            }
-                        }
-                    }
+                        if (
+                            foldersAndTracksState.foldersAndTracks.folders.isEmpty() &&
+                            foldersAndTracksState.foldersAndTracks.tracks.isEmpty() &&
+                            !foldersAndTracksState.isError &&
+                            !foldersAndTracksState.isLoading
+                        ) {
+                            showOnRefreshIndicator = false
 
-                    item {
-                        if (foldersAndTracksState.isError) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .fillParentMaxHeight()
-                                    .padding(bottom = 48.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
+                            // This could mean the root directory is not configured or current directory is empty
+                            item {
                                 Column(
                                     modifier = Modifier
                                         .padding(16.dp)
-                                        .fillMaxWidth(),
+                                        .fillParentMaxSize()
+                                        .padding(bottom = 48.dp),
                                     verticalArrangement = Arrangement.Center,
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    val capsFirst =
-                                        foldersAndTracksState.errorMessage.replaceFirstChar {
-                                            it.titlecase(Locale.ROOT)
-                                        }
-
                                     Text(
-                                        text = capsFirst,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        textAlign = TextAlign.Center,
+                                        text = "This directory is empty!",
                                         style = MaterialTheme.typography.bodyLarge
                                     )
 
-                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Spacer(modifier = Modifier.height(24.dp))
 
-                                    Button(onClick = {
-                                        val event = FolderUiEvent.OnClickFolder(currentFolder)
-                                        onRetry(event)
-                                    }) {
-                                        Text("RETRY")
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (
-                        foldersAndTracksState.foldersAndTracks.folders.isEmpty() &&
-                        foldersAndTracksState.foldersAndTracks.tracks.isEmpty() &&
-                        !foldersAndTracksState.isError &&
-                        !foldersAndTracksState.isLoading
-                    ) {
-                        // This could mean the root directory is not configured or current directory is empty
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillParentMaxSize()
-                                    .padding(bottom = 48.dp),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "This directory is empty!",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-
-                                Spacer(modifier = Modifier.height(24.dp))
-
-                                if (currentFolder.path == "\$home") {
-                                    Button(onClick = {
-                                        // TODO:Add Configure Dir Event
-                                    }) {
-                                        Text("Configure Root Directory")
-                                    }
-                                } else {
-                                    OutlinedButton(onClick = {
-                                        val event = FolderUiEvent.OnClickFolder(currentFolder)
-                                        onRetry(event)
-                                    }) {
-                                        Text("RETRY")
+                                    if (currentFolder.path == "\$home") {
+                                        Button(onClick = {
+                                            // TODO:Add Configure Dir Event
+                                        }) {
+                                            Text("Configure Root Directory")
+                                        }
+                                    } else {
+                                        OutlinedButton(onClick = {
+                                            val event = FolderUiEvent.OnClickFolder(currentFolder)
+                                            onRetry(event)
+                                        }) {
+                                            Text("RETRY")
+                                        }
                                     }
                                 }
                             }
@@ -399,6 +423,10 @@ fun FoldersAndTracksScreen(
                 foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
             },
             onRetry = { event ->
+                foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
+                mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnRetry)
+            },
+            onPullToRefresh = { event ->
                 foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
                 mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnRetry)
             },

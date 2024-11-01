@@ -30,6 +30,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -108,6 +109,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val isUserLoggedIn by authViewModel.isUserLoggedIn()
 
+            val playerState = mediaControllerViewModel.playerUiState.collectAsState()
+
             val navController = rememberNavController()
             val newBackStackEntry by navController.currentBackStackEntryAsState()
             val route = newBackStackEntry?.destination?.route
@@ -141,9 +144,9 @@ class MainActivity : ComponentActivity() {
             )
 
             val spacerHeight by animateDpAsState(
-                targetValue = if (showSpacer) 24.dp else 0.dp,
+                targetValue = if (showSpacer) 0.dp else 0.dp, // TODO: Fix Anim 24.dp <-> 12.dp
                 animationSpec = tween(durationMillis = 300),
-                label = "Bottom Nav Height"
+                label = "Spacer Height"
             )
 
             SwingMusicTheme {
@@ -177,53 +180,56 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
 
-                                Box(
-                                    modifier = Modifier
-                                        .height(spacerHeight)
-                                        .fillMaxWidth()
-                                        .background(MaterialTheme.colorScheme.inverseOnSurface)
-                                )
+                                // Show spacer only when there's a playing track
+                                playerState.value.nowPlayingTrack?.let {
+                                    Box(
+                                        modifier = Modifier
+                                            .height(16.dp)
+                                            .fillMaxWidth()
+                                            .background(MaterialTheme.colorScheme.inverseOnSurface)
+                                    )
+                                }
                             }
 
                             val currentSelectedItem by navController.currentScreenAsState(
                                 isUserLoggedIn
                             )
-
-                            NavigationBar(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(bottomNavHeight),
-                                containerColor = MaterialTheme.colorScheme.inverseOnSurface
-                            ) {
-                                Row(
+                            
+                            if (showBottomNav) {
+                                NavigationBar(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.Center
+                                    containerColor = MaterialTheme.colorScheme.inverseOnSurface
                                 ) {
-                                    bottomNavItems.forEach { item ->
-                                        NavigationBarItem(
-                                            icon = {
-                                                Icon(
-                                                    painter = painterResource(id = item.icon),
-                                                    contentDescription = null
-                                                )
-                                            },
-                                            selected = currentSelectedItem == item.navGraph,
-                                            alwaysShowLabel = false,
-                                            label = { Text(text = item.title) },
-                                            onClick = {
-                                                navController.navigate(
-                                                    item.navGraph!!,
-                                                    fun NavOptionsBuilder.() {
-                                                        launchSingleTop = true
-                                                        restoreState = true
-                                                        popUpTo(navController.graph.findStartDestination().id) {
-                                                            saveState = true
-                                                            inclusive = false
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        bottomNavItems.forEach { item ->
+                                            NavigationBarItem(
+                                                icon = {
+                                                    Icon(
+                                                        painter = painterResource(id = item.icon),
+                                                        contentDescription = null
+                                                    )
+                                                },
+                                                selected = currentSelectedItem == item.navGraph,
+                                                alwaysShowLabel = false,
+                                                label = { Text(text = item.title) },
+                                                onClick = {
+                                                    navController.navigate(
+                                                        item.navGraph!!,
+                                                        fun NavOptionsBuilder.() {
+                                                            launchSingleTop = true
+                                                            restoreState = true
+                                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                                saveState = true
+                                                                inclusive = false
+                                                            }
                                                         }
-                                                    }
-                                                )
-                                            }
-                                        )
+                                                    )
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }

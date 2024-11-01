@@ -11,6 +11,7 @@ import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumsAndAppearances
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
+import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -168,6 +169,11 @@ class ArtistInfoViewModel @Inject constructor(
 
             is ArtistInfoUiEvent.OnClickSimilarArtist -> {
                 // Handle similar artist click event
+            }
+
+            is ArtistInfoUiEvent.OnRefresh -> {
+                getArtistInfo(event.artistHash)
+                getSimilarArtists(event.artistHash)
             }
 
             else -> {
