@@ -132,9 +132,6 @@ private fun MiniPlayer(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    /* AnimatedContent(
-                         targetState = (swipeDistance.toInt() != 0), label = "anim",
-                     ) {*/
                     Text(
                         text = trackTitle,
                         maxLines = 1,
@@ -145,7 +142,6 @@ private fun MiniPlayer(
                             MaterialTheme.colorScheme.onSurface.copy(alpha = .25F) else
                             MaterialTheme.colorScheme.onSurface.copy(alpha = .84F)
                     )
-                    //   }
                 }
 
                 // Player State Indicator

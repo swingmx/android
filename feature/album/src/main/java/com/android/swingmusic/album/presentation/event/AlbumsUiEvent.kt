@@ -10,4 +10,6 @@ interface AlbumsUiEvent {
     data class OnUpdateGridCount(val newCount: Int) : AlbumsUiEvent
 
     object OnRetry : AlbumsUiEvent
+
+    object OnPullToRefresh : AlbumsUiEvent
 }

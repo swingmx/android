@@ -128,6 +128,16 @@ class AllAlbumsViewModel @Inject constructor(
                     getAlbumCount()
                 }
             }
+
+            is AlbumsUiEvent.OnPullToRefresh -> {
+                val sortBy = _allAlbumsUiState.value.sortBy
+                val sortOrder = _allAlbumsUiState.value.sortOrder
+
+                getPagingAlbums(
+                    sortBy = sortBy.second,
+                    sortOrder = sortOrder
+                )
+            }
         }
     }
 }
