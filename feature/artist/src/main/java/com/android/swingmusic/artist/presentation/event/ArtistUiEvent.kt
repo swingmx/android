@@ -11,4 +11,6 @@ interface ArtistUiEvent {
     data class OnUpdateGridCount(val newCount: Int) : ArtistUiEvent
 
     object OnRetry : ArtistUiEvent
+
+    object OnPullToRefresh : ArtistUiEvent
 }

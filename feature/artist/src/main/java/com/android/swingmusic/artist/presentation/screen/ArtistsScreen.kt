@@ -25,12 +25,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -62,6 +64,7 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.ramcosta.composedestinations.annotation.Destination
 import com.android.swingmusic.uicomponent.R as UiComponents
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Artists(
     pagingArtists: LazyPagingItems<Artist>,
@@ -71,6 +74,7 @@ private fun Artists(
     onNavigateToInfo: (String) -> Unit,
     onSortBy: (Pair<SortBy, String>) -> Unit,
     onRetry: () -> Unit,
+    onPullToRefresh: () -> Unit,
     baseUrl: String
 ) {
     val gridState = rememberLazyGridState()
@@ -95,6 +99,7 @@ private fun Artists(
     }
 
     var isGridCountMenuExpanded by remember { mutableStateOf(false) }
+    var showOnRefreshIndicator by remember { mutableStateOf(false) }
 
     // TODO: Add pinch to reduce Grid count... as seen in Google Photos
     Scaffold {
@@ -191,96 +196,108 @@ private fun Artists(
                 }
             }) { paddingValues ->
             Surface(modifier = Modifier.padding(paddingValues)) {
-                LazyVerticalGrid(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp),
-                    columns = GridCells.Fixed(artistsUiState.gridCount),
-                    state = gridState,
+                PullToRefreshBox(
+                    isRefreshing = showOnRefreshIndicator,
+                    onRefresh = {
+                        showOnRefreshIndicator = true
+                        onPullToRefresh()
+                    },
                 ) {
-                    item(span = { GridItemSpan(artistsUiState.gridCount) }) {
-                        LazyRow(
-                            modifier = Modifier
-                                .padding(horizontal = 4.dp, vertical = 12.dp)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            items(sortByPairs) { pair ->
-                                SortByChip(
-                                    labelPair = pair,
-                                    sortOrder = artistsUiState.sortOrder,
-                                    isSelected = artistsUiState.sortBy == pair
-                                ) { clickedPair ->
-                                    onSortBy(clickedPair)
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                            }
-                        }
-                    }
-
-                    if (pagingArtists.loadState.refresh is LoadState.NotLoading) {
-                        pagingArtists(pagingArtists) { artist ->
-                            if (artist == null) return@pagingArtists
-                            ArtistItem(
-                                modifier = Modifier.fillMaxSize(),
-                                artist = artist,
-                                baseUrl = baseUrl,
-                                onClick = { artistHash ->
-                                    onNavigateToInfo(artistHash)
-                                }
-                            )
-                        }
-                    }
-
-                    loadingState?.let {
+                    LazyVerticalGrid(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
+                        columns = GridCells.Fixed(artistsUiState.gridCount),
+                        state = gridState,
+                    ) {
                         item(span = { GridItemSpan(artistsUiState.gridCount) }) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                            LazyRow(
+                                modifier = Modifier
+                                    .padding(horizontal = 4.dp, vertical = 12.dp)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-
-                                Column(
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxSize()
-                                        .padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(text = "Loading artists...")
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    CircularProgressIndicator()
+                                items(sortByPairs) { pair ->
+                                    SortByChip(
+                                        labelPair = pair,
+                                        sortOrder = artistsUiState.sortOrder,
+                                        isSelected = artistsUiState.sortBy == pair
+                                    ) { clickedPair ->
+                                        onSortBy(clickedPair)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
                                 }
                             }
                         }
-                    }
 
-                    errorState?.let {
-                        item(span = { GridItemSpan(artistsUiState.gridCount) }) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxSize()
-                                        .padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                        if (pagingArtists.loadState.refresh is LoadState.NotLoading) {
+                            showOnRefreshIndicator = false
+
+                            pagingArtists(pagingArtists) { artist ->
+                                if (artist == null) return@pagingArtists
+                                ArtistItem(
+                                    modifier = Modifier.fillMaxSize(),
+                                    artist = artist,
+                                    baseUrl = baseUrl,
+                                    onClick = { artistHash ->
+                                        onNavigateToInfo(artistHash)
+                                    }
+                                )
+                            }
+                        }
+
+                        loadingState?.let {
+                            if (!showOnRefreshIndicator) {
+                                item(span = { GridItemSpan(artistsUiState.gridCount) }) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+
+                                        Column(
+                                            modifier = Modifier
+                                                .padding(16.dp)
+                                                .fillMaxSize()
+                                                .padding(12.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(text = "Loading artists...")
+
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            CircularProgressIndicator()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        errorState?.let {
+                            item(span = { GridItemSpan(artistsUiState.gridCount) }) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = it.error.message!!,
-                                        textAlign = TextAlign.Center
-                                    )
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(16.dp)
+                                            .fillMaxSize()
+                                            .padding(12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = it.error.message!!,
+                                            textAlign = TextAlign.Center
+                                        )
 
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                        Spacer(modifier = Modifier.height(8.dp))
 
-                                    Button(onClick = {
-                                        pagingArtists.retry()
-                                        onRetry()
-                                    }) {
-                                        Text(text = "RETRY")
+                                        Button(onClick = {
+                                            pagingArtists.retry()
+                                            onRetry()
+                                        }) {
+                                            Text(text = "RETRY")
+                                        }
                                     }
                                 }
                             }
@@ -322,6 +339,9 @@ fun ArtistsScreen(
             },
             onRetry = {
                 artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnRetry)
+            },
+            onPullToRefresh = {
+                artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnPullToRefresh)
             },
             onNavigateToInfo = {
                 navigator.gotoArtistInfo(it)
