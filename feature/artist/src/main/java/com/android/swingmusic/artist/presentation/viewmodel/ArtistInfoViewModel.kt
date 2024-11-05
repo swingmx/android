@@ -1,7 +1,5 @@
 package com.android.swingmusic.artist.presentation.viewmodel
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.artist.domain.repository.ArtistRepository
@@ -11,7 +9,6 @@ import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumsAndAppearances
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
-import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +21,8 @@ import javax.inject.Inject
 class ArtistInfoViewModel @Inject constructor(
     private val artistRepository: ArtistRepository
 ) : ViewModel() {
-    private val _artistInfoState: MutableStateFlow<ArtistInfoState> = MutableStateFlow(ArtistInfoState())
+    private val _artistInfoState: MutableStateFlow<ArtistInfoState> =
+        MutableStateFlow(ArtistInfoState())
     val artistInfoState: StateFlow<ArtistInfoState> = _artistInfoState
 
     private fun getArtistInfo(artistHash: String) {
@@ -147,33 +145,29 @@ class ArtistInfoViewModel @Inject constructor(
                 toggleArtistFavorite(event.artistHash, event.isFavorite)
             }
 
-            is ArtistInfoUiEvent.OnViewAllTracks -> {
-                // Handle viewing all tracks of artist
-            }
-
-            is ArtistInfoUiEvent.OnViewAllAlbums -> {
-                // Handle viewing all albums of artist
-            }
-
-            is ArtistInfoUiEvent.OnViewAllEPAndSingles -> {
-                // Handle viewing all EPs and singles of artist
-            }
-
-            is ArtistInfoUiEvent.OnViewAllAppearances -> {
-                // Handle viewing all appearances of artist
-            }
-
-            is ArtistInfoUiEvent.OnClickAlbum -> {
-                // Handle album click event
-            }
-
-            is ArtistInfoUiEvent.OnClickSimilarArtist -> {
-                // Handle similar artist click event
-            }
-
             is ArtistInfoUiEvent.OnRefresh -> {
                 getArtistInfo(event.artistHash)
                 getSimilarArtists(event.artistHash)
+            }
+
+            is ArtistInfoUiEvent.OnUpdateArtistHash -> {
+
+                val currentState = _artistInfoState.value
+                val currentInfo = currentState.infoResource.data
+
+                currentInfo?.let { info ->
+                    _artistInfoState.value = currentState.copy(
+                        infoResource = Resource.Success(
+                            data = info.copy(
+                                artist = info.artist.copy(artistHash = event.artistHash),
+                                albumsAndAppearances = info.albumsAndAppearances,
+                                tracks = info.tracks
+                            )
+                        )
+                    )
+                }
+
+                onArtistInfoUiEvent(ArtistInfoUiEvent.OnLoadArtistInfo(event.artistHash))
             }
 
             else -> {

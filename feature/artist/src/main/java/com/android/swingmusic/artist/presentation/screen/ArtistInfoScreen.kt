@@ -93,7 +93,8 @@ private fun ArtistInfo(
     onToggleFavorite: (String, Boolean) -> Unit,
     onShuffle: () -> Unit,
     onPlayAllTracks: () -> Unit,
-    onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit
+    onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit,
+    onClickSimilarArtist: (artistHash: String) -> Unit
 ) {
     val clickInteractionSource = remember { MutableInteractionSource() }
 
@@ -705,7 +706,9 @@ private fun ArtistInfo(
                                 modifier = Modifier.fillMaxWidth(),
                                 artist = artist,
                                 baseUrl = baseUrl,
-                                onClick = {}
+                                onClick = { artistHash ->
+                                    onClickSimilarArtist(artistHash)
+                                }
                             )
                         }
                     }
@@ -741,7 +744,9 @@ fun ArtistInfoScreen(
     ) {
         if (artistInfoState.value.requiresReload) {
             artistInfoViewModel.onArtistInfoUiEvent(
-                event = ArtistInfoUiEvent.OnLoadArtistInfo(artistHash)
+                event = ArtistInfoUiEvent.OnLoadArtistInfo(
+                    artistInfoState.value.infoResource.data?.artist?.artistHash ?: artistHash
+                )
             )
         }
     }
@@ -755,7 +760,8 @@ fun ArtistInfoScreen(
 
                 artistInfoViewModel.onArtistInfoUiEvent(
                     ArtistInfoUiEvent.OnRefresh(
-                        artistHash = artistHash
+                        artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
+                            ?: artistHash
                     )
                 )
             },
@@ -869,6 +875,11 @@ fun ArtistInfoScreen(
                                     clickedTrackIndex = index,
                                     queue = queue
                                 )
+                            )
+                        },
+                        onClickSimilarArtist = {
+                            artistInfoViewModel.onArtistInfoUiEvent(
+                                ArtistInfoUiEvent.OnUpdateArtistHash(it)
                             )
                         }
                     )
@@ -1274,7 +1285,8 @@ fun ArtistInfoPreview() {
             onToggleFavorite = { _, _ -> },
             onShuffle = {},
             onPlayAllTracks = {},
-            onClickArtistTrack = { _, _ -> }
+            onClickArtistTrack = { _, _ -> },
+            onClickSimilarArtist = {}
         )
     }
 }
