@@ -184,7 +184,7 @@ class MainActivity : ComponentActivity() {
                                 playerState.value.nowPlayingTrack?.let {
                                     Box(
                                         modifier = Modifier
-                                            .height(16.dp)
+                                            .height(24.dp)
                                             .fillMaxWidth()
                                             .background(MaterialTheme.colorScheme.inverseOnSurface)
                                     )

@@ -10,6 +10,7 @@ import com.android.swingmusic.auth.presentation.navigation.AuthNavigator
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.player.presentation.navigator.PlayerNavigator
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
@@ -25,7 +26,8 @@ class CoreNavigator(
 ) : AuthNavigator,
     AlbumNavigator,
     PlayerNavigator,
-    ArtistNavigator {
+    ArtistNavigator,
+    CommonNavigator {
     /**----------------------------------- Auth Navigator ----------------------------------------*/
     override fun gotoLoginWithUsername() {
         val currentDestination = navController.currentDestination?.route
