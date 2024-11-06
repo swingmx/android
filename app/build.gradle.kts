@@ -62,6 +62,8 @@ dependencies {
     implementation(project(":feature:player"))
     implementation(project(":feature:artist"))
     implementation(project(":feature:album"))
+    // Common Feature
+    implementation(project(":feature:common"))
 
     // Core
    // implementation("androidx.core:core-ktx:1.13.1")

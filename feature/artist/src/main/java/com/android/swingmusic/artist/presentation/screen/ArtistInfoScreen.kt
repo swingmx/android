@@ -58,6 +58,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.AlbumsAndAppearances
@@ -93,6 +94,7 @@ private fun ArtistInfo(
     onToggleFavorite: (String, Boolean) -> Unit,
     onShuffle: () -> Unit,
     onPlayAllTracks: () -> Unit,
+    onClickAlbum: (albumHash: String) -> Unit,
     onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit,
     onClickSimilarArtist: (artistHash: String) -> Unit
 ) {
@@ -413,7 +415,9 @@ private fun ArtistInfo(
                                 albumArtistHash = artistInfo.artist.artistHash,
                                 album = album,
                                 baseUrl = baseUrl,
-                                onClick = {}
+                                onClick = {
+                                    onClickAlbum(it)
+                                }
                             )
                         }
                     }
@@ -478,7 +482,9 @@ private fun ArtistInfo(
                                 albumArtistHash = artistInfo.artist.artistHash,
                                 album = album,
                                 baseUrl = baseUrl,
-                                onClick = {}
+                                onClick = {
+                                    onClickAlbum(it)
+                                }
                             )
                         }
                     }
@@ -543,7 +549,9 @@ private fun ArtistInfo(
                                 albumArtistHash = artistInfo.artist.artistHash,
                                 album = album,
                                 baseUrl = baseUrl,
-                                onClick = {}
+                                onClick = {
+                                    onClickAlbum(it)
+                                }
                             )
                         }
                     }
@@ -608,7 +616,9 @@ private fun ArtistInfo(
                                 showDate = false,
                                 album = album,
                                 baseUrl = baseUrl,
-                                onClick = {}
+                                onClick = {
+                                    onClickAlbum(it)
+                                }
                             )
                         }
                     }
@@ -728,7 +738,8 @@ private fun ArtistInfo(
 fun ArtistInfoScreen(
     artistHash: String,
     mediaControllerViewModel: MediaControllerViewModel,
-    artistInfoViewModel: ArtistInfoViewModel = hiltViewModel()
+    artistInfoViewModel: ArtistInfoViewModel = hiltViewModel(),
+    commonNavigator: CommonNavigator
 ) {
     val baseUrl = mediaControllerViewModel.baseUrl
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
@@ -862,6 +873,9 @@ fun ArtistInfoScreen(
                                     )
                                 )
                             }
+                        },
+                        onClickAlbum = {
+                            commonNavigator.gotoAlbumWithInfo(it)
                         },
                         onClickArtistTrack = { queue, index ->
                             mediaControllerViewModel.onQueueEvent(
@@ -1285,6 +1299,7 @@ fun ArtistInfoPreview() {
             onToggleFavorite = { _, _ -> },
             onShuffle = {},
             onPlayAllTracks = {},
+            onClickAlbum = {},
             onClickArtistTrack = { _, _ -> },
             onClickSimilarArtist = {}
         )
