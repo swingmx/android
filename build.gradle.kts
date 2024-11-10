@@ -1,3 +1,6 @@
+import dev.iurysouza.modulegraph.LinkText
+import dev.iurysouza.modulegraph.Theme
+
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
     id("com.android.application") version "8.2.1" apply false
@@ -12,4 +15,8 @@ plugins {
 moduleGraphConfig {
     readmePath.set("./README.md")
     heading = "### Module Graph"
+    showFullPath.set(true)
+    linkText.set(LinkText.CONFIGURATION)
+    setStyleByModuleType.set(true)
+    theme.set(Theme.DARK)
 }
