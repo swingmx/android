@@ -34,6 +34,14 @@ This project is currently in its early development stages as the [Swing Music te
 }%%
 
 graph LR
+  subgraph :feature
+    :feature:home["home"]
+    :feature:artist["artist"]
+    :feature:player["player"]
+    :feature:common["common"]
+    :feature:folder["folder"]
+    :feature:album["album"]
+  end
   :feature:home -- debugAndroidTestCompileClasspath --> :auth
   :feature:home -- debugAndroidTestCompileClasspath --> :core
   :feature:home -- debugAndroidTestCompileClasspath --> :network
