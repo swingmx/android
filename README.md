@@ -29,7 +29,7 @@ This project is currently in its early development stages as the [Swing Music te
 ```mermaid
 %%{
   init: {
-    'theme': 'neutral'
+    'theme': 'dark'
   }
 }%%
 
@@ -38,7 +38,9 @@ graph LR
     :feature:home["home"]
     :feature:artist["artist"]
     :feature:player["player"]
+    :feature:common["common"]
     :feature:folder["folder"]
+    :feature:album["album"]
   end
   :feature:home --> :auth
   :feature:home --> :core
@@ -48,6 +50,8 @@ graph LR
   :feature:artist --> :core
   :feature:artist --> :network
   :feature:artist --> :uicomponent
+  :feature:artist --> :feature:player
+  :feature:artist --> :feature:common
   :uicomponent --> :core
   :feature:player --> :auth
   :feature:player --> :core
@@ -55,12 +59,14 @@ graph LR
   :feature:player --> :network
   :feature:player --> :uicomponent
   :auth --> :database
+  :auth --> :core
   :auth --> :uicomponent
   :feature:folder --> :auth
   :feature:folder --> :core
   :feature:folder --> :network
   :feature:folder --> :uicomponent
   :feature:folder --> :feature:player
+  :feature:folder --> :feature:album
   :network --> :auth
   :network --> :core
   :network --> :database
@@ -72,5 +78,29 @@ graph LR
   :app --> :feature:folder
   :app --> :feature:player
   :app --> :feature:artist
+  :app --> :feature:album
+  :app --> :feature:common
   :database --> :core
+  :feature:album --> :auth
+  :feature:album --> :core
+  :feature:album --> :network
+  :feature:album --> :uicomponent
+  :feature:album --> :feature:player
+  :feature:album --> :feature:artist
+
+classDef android-library fill:#3BD482,stroke:#fff,stroke-width:2px,color:#fff;
+classDef android-application fill:#2C4162,stroke:#fff,stroke-width:2px,color:#fff;
+class :feature:home android-library
+class :auth android-library
+class :core android-library
+class :network android-library
+class :uicomponent android-library
+class :feature:artist android-library
+class :feature:player android-library
+class :feature:common android-library
+class :database android-library
+class :feature:folder android-library
+class :feature:album android-library
+class :app android-application
+
 ```
