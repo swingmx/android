@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Swing Music"
+
 // App Module
 include(":app")
 

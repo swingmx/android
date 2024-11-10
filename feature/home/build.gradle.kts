@@ -46,10 +46,6 @@ dependencies {
     implementation(project(":network"))
     implementation(project(":uicomponent"))
 
-    /* implementation(project(":feature:player"))
-    implementation(project(":feature:folder"))
-    implementation(project(":feature:artist"))*/
-
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
 

@@ -82,7 +82,7 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
-    // Navigation
+    // Raamcosta Navigation
     implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
