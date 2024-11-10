@@ -94,6 +94,7 @@ private fun ArtistInfo(
     onToggleFavorite: (String, Boolean) -> Unit,
     onShuffle: () -> Unit,
     onPlayAllTracks: () -> Unit,
+    onClickBack: () -> Unit,
     onClickAlbum: (albumHash: String) -> Unit,
     onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit,
     onClickSimilarArtist: (artistHash: String) -> Unit
@@ -113,7 +114,7 @@ private fun ArtistInfo(
                     modifier = Modifier
                         .clip(CircleShape),
                     onClick = {
-                        // onClickBack()
+                        onClickBack()
                     }
                 ) {
                     Icon(
@@ -739,7 +740,7 @@ fun ArtistInfoScreen(
     artistHash: String,
     mediaControllerViewModel: MediaControllerViewModel,
     artistInfoViewModel: ArtistInfoViewModel = hiltViewModel(),
-    commonNavigator: CommonNavigator
+    navigator: CommonNavigator
 ) {
     val baseUrl = mediaControllerViewModel.baseUrl
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
@@ -831,6 +832,9 @@ fun ArtistInfoScreen(
                         similarArtists = similarArtists ?: emptyList(),
                         playbackState = playerUiState.playbackState,
                         currentTrack = playerUiState.nowPlayingTrack,
+                        onClickBack = {
+                            navigator.navigateBack()
+                        },
                         onToggleFavorite = { artistHash, isFavorite ->
                             artistInfoViewModel.onArtistInfoUiEvent(
                                 ArtistInfoUiEvent.OnToggleArtistFavorite(
@@ -875,7 +879,7 @@ fun ArtistInfoScreen(
                             }
                         },
                         onClickAlbum = {
-                            commonNavigator.gotoAlbumWithInfo(it)
+                            navigator.gotoAlbumWithInfo(it)
                         },
                         onClickArtistTrack = { queue, index ->
                             mediaControllerViewModel.onQueueEvent(
@@ -1296,6 +1300,7 @@ fun ArtistInfoPreview() {
                     name = "Sample Artist"
                 ),
             ),
+            onClickBack = {},
             onToggleFavorite = { _, _ -> },
             onShuffle = {},
             onPlayAllTracks = {},

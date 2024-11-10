@@ -1,6 +1,21 @@
 package com.android.swingmusic.common.presentation.navigator
 
 interface CommonNavigator {
+
+    fun gotoLoginWithUsername()
+
+    fun gotoLoginWithQrCode()
+
+    fun gotoHomeNavGraph()
+
+    // Todo: Remove this after adding home content
+    fun gotoFolderNavGraph()
+
     fun gotoAlbumWithInfo(albumHash: String)
-    // TODO: Add all other navigators here
+
+    fun navigateBack()
+
+    fun gotoQueueScreen()
+
+    fun gotoArtistInfo(artistHash: String)
 }

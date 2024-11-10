@@ -51,10 +51,10 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.android.swingmusic.artist.presentation.event.ArtistUiEvent
-import com.android.swingmusic.artist.presentation.navigator.ArtistNavigator
 import com.android.swingmusic.artist.presentation.state.ArtistsUiState
 import com.android.swingmusic.artist.presentation.util.pagingArtists
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistsViewModel
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.util.SortBy
@@ -315,7 +315,7 @@ private fun Artists(
 @Destination
 @Composable
 fun ArtistsScreen(
-    navigator: ArtistNavigator,
+    navigator: CommonNavigator,
     artistsViewModel: ArtistsViewModel = hiltViewModel()
 ) {
     val pagingArtists =

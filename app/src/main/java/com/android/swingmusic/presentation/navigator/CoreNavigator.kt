@@ -2,16 +2,12 @@ package com.android.swingmusic.presentation.navigator
 
 import androidx.navigation.NavController
 import androidx.navigation.NavOptionsBuilder
-import com.android.swingmusic.album.presentation.navigator.AlbumNavigator
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
-import com.android.swingmusic.artist.presentation.navigator.ArtistNavigator
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
-import com.android.swingmusic.auth.presentation.navigation.AuthNavigator
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
-import com.android.swingmusic.player.presentation.navigator.PlayerNavigator
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.ramcosta.composedestinations.dynamic.within
@@ -23,11 +19,7 @@ class CoreNavigator(
     private val navController: NavController,
     private val mediaControllerViewModel: MediaControllerViewModel,
     private val authViewModel: AuthViewModel
-) : AuthNavigator,
-    AlbumNavigator,
-    PlayerNavigator,
-    ArtistNavigator,
-    CommonNavigator {
+) : CommonNavigator {
     /**----------------------------------- Auth Navigator ----------------------------------------*/
     override fun gotoLoginWithUsername() {
         val currentDestination = navController.currentDestination?.route

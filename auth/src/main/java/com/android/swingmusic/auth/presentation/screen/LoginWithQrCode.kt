@@ -52,10 +52,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
-import com.android.swingmusic.auth.presentation.navigation.AuthNavigator
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.uicomponent.R
 import com.ramcosta.composedestinations.annotation.Destination
 import kotlinx.coroutines.launch
@@ -65,7 +65,7 @@ import qrscanner.QrScanner
 @Composable
 fun LoginWithQrCode(
     authViewModel: AuthViewModel,
-    authNavigator: AuthNavigator
+    authNavigator: CommonNavigator
 ) {
     val authUiState by authViewModel.authUiState.collectAsState()
 

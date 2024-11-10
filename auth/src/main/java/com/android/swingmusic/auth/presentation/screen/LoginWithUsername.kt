@@ -60,11 +60,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
-import com.android.swingmusic.auth.presentation.navigation.AuthNavigator
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.state.AuthUiState
 import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.ramcosta.composedestinations.annotation.Destination
@@ -345,7 +345,7 @@ private fun LoginWithUsername(
 @Composable
 fun LoginWithUsernameScreen(
     authViewModel: AuthViewModel,
-    authNavigator: AuthNavigator
+    authNavigator: CommonNavigator
 ) {
     val authUiState by authViewModel.authUiState.collectAsState()
 

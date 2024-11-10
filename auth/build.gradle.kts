@@ -47,6 +47,8 @@ dependencies {
     implementation(project(":database"))
     implementation(project(":core"))
     implementation(project(":uicomponent"))
+    // Feature Module
+    implementation(project(":feature:common"))
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")

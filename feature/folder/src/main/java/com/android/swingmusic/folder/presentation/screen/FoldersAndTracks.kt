@@ -49,8 +49,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
-import com.android.swingmusic.album.presentation.navigator.AlbumNavigator
 import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState
@@ -401,7 +401,7 @@ fun FoldersAndTracksScreen(
     foldersViewModel: FoldersViewModel = hiltViewModel(),
     albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
-    albumNavigator: AlbumNavigator
+    albumNavigator: CommonNavigator
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }
     val foldersAndTracksState by remember { foldersViewModel.foldersAndTracks }

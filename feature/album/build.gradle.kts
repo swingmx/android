@@ -48,6 +48,8 @@ dependencies {
     implementation(project(":uicomponent"))
     implementation(project(":feature:player"))
     implementation(project(":feature:artist"))
+    // Common
+    implementation(project(":feature:common"))
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")

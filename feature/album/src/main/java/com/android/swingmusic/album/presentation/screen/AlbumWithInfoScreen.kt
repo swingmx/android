@@ -72,9 +72,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
-import com.android.swingmusic.album.presentation.navigator.AlbumNavigator
 import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
-import com.android.swingmusic.artist.presentation.navigator.ArtistNavigator
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumInfo
 import com.android.swingmusic.core.domain.model.Artist
@@ -121,482 +120,482 @@ fun AlbumWithInfo(
     val listState = rememberLazyListState()
 
     Scaffold {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface),
-                state = listState,
-            ) {
-                item {
-                    Box(modifier = Modifier.fillMaxWidth()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface),
+            state = listState,
+        ) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    AsyncImage(
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .fillParentMaxHeight(.5F),
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data("${baseUrl}img/thumbnail/${albumInfo.image}")
+                            .crossfade(true)
+                            .transformations(
+                                listOf(
+                                    BlurTransformation(
+                                        scale = 0.25f,
+                                        radius = 25
+                                    )
+                                )
+                            )
+                            .build(),
+                        contentDescription = "Artist Image",
+                        contentScale = ContentScale.Crop,
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .fillParentMaxHeight(.5F)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.surface.copy(alpha = .25F),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = .35F),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = .45F),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = .65F),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = .8F),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = .9F),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = .95F),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 1F)
+                                    )
+                                )
+                            )
+                    )
+
+                    Column(
+                        modifier = Modifier.fillParentMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(top = 24.dp)
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            IconButton(
+                                modifier = Modifier
+                                    .clip(CircleShape),
+                                // .background(iconColor),
+                                onClick = {
+                                    onClickBack()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back Arrow"
+                                )
+                            }
+
+                            // TODO: Show album menu
+                            /*IconButton(
+                            modifier = Modifier.clip(CircleShape),
+                            onClick = {
+                                onClickMore()
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Back Arrow"
+                            )
+                        }*/
+                        }
+
                         AsyncImage(
                             modifier = Modifier
-                                .fillParentMaxWidth()
-                                .fillParentMaxHeight(.5F),
+                                .padding(top = 10.dp)
+                                .size(220.dp)
+                                .clip(RoundedCornerShape(8))
+                                .shadow(elevation = 12.dp)
+                                .border(
+                                    width = (.5).dp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
+                                    shape = RoundedCornerShape(8)
+                                ),
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data("${baseUrl}img/thumbnail/${albumInfo.image}")
                                 .crossfade(true)
-                                .transformations(
-                                    listOf(
-                                        BlurTransformation(
-                                            scale = 0.25f,
-                                            radius = 25
-                                        )
-                                    )
-                                )
                                 .build(),
+                            placeholder = painterResource(R.drawable.audio_fallback),
+                            fallback = painterResource(R.drawable.audio_fallback),
+                            error = painterResource(R.drawable.audio_fallback),
                             contentDescription = "Artist Image",
                             contentScale = ContentScale.Crop,
                         )
 
-                        Box(
-                            modifier = Modifier
-                                .fillParentMaxWidth()
-                                .fillParentMaxHeight(.5F)
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            MaterialTheme.colorScheme.surface.copy(alpha = .25F),
-                                            MaterialTheme.colorScheme.surface.copy(alpha = .35F),
-                                            MaterialTheme.colorScheme.surface.copy(alpha = .45F),
-                                            MaterialTheme.colorScheme.surface.copy(alpha = .65F),
-                                            MaterialTheme.colorScheme.surface.copy(alpha = .8F),
-                                            MaterialTheme.colorScheme.surface.copy(alpha = .9F),
-                                            MaterialTheme.colorScheme.surface.copy(alpha = .95F),
-                                            MaterialTheme.colorScheme.surface.copy(alpha = 1F)
-                                        )
-                                    )
-                                )
-                        )
-
-                        Column(
-                            modifier = Modifier.fillParentMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(top = 24.dp)
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                IconButton(
-                                    modifier = Modifier
-                                        .clip(CircleShape),
-                                    // .background(iconColor),
-                                    onClick = {
-                                        onClickBack()
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back Arrow"
-                                    )
-                                }
-
-                                // TODO: Show album menu
-                                /*IconButton(
-                                modifier = Modifier.clip(CircleShape),
-                                onClick = {
-                                    onClickMore()
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Back Arrow"
-                                )
-                            }*/
-                            }
-
-                            AsyncImage(
-                                modifier = Modifier
-                                    .padding(top = 10.dp)
-                                    .size(220.dp)
-                                    .clip(RoundedCornerShape(8))
-                                    .shadow(elevation = 12.dp)
-                                    .border(
-                                        width = (.5).dp,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
-                                        shape = RoundedCornerShape(8)
-                                    ),
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data("${baseUrl}img/thumbnail/${albumInfo.image}")
-                                    .crossfade(true)
-                                    .build(),
-                                placeholder = painterResource(R.drawable.audio_fallback),
-                                fallback = painterResource(R.drawable.audio_fallback),
-                                error = painterResource(R.drawable.audio_fallback),
-                                contentDescription = "Artist Image",
-                                contentScale = ContentScale.Crop,
-                            )
-
-                            Text(
-                                modifier = Modifier.padding(
-                                    start = 12.dp,
-                                    end = 12.dp,
-                                    top = 16.dp,
-                                    bottom = 2.dp
-                                ),
-                                text = albumInfo.title,
-                                style = MaterialTheme.typography.titleLarge,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            LazyRow(
-                                modifier = Modifier.padding(horizontal = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                item {
-                                    Text(
-                                        text = albumInfo.type.replaceFirstChar { it.uppercase() },
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(8.dp)
-                                            .size(4.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
-                                            )
-                                    )
-                                }
-
-                                itemsIndexed(albumInfo.albumArtists) { index, artist ->
-                                    Text(
-                                        modifier = Modifier.clickable(
-                                            interactionSource = interaction,
-                                            indication = null
-                                        ) {
-                                            onClickArtist(artist.artistHash)
-                                        },
-                                        text = artist.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    if (index != albumInfo.albumArtists.lastIndex) {
-                                        Text(text = ", ")
-                                    }
-
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            LazyRow(
-                                modifier = Modifier.padding(horizontal = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                item {
-                                    Text(
-                                        text = albumInfo.date.formatDate("yyyy"),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Normal,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-
-                                item {
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                }
-
-                                items(albumInfo.versions) { version ->
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(end = 8.dp)
-                                            .clip(RoundedCornerShape(14))
-                                            .background(versionContainerColor)
-                                            .padding(horizontal = 5.dp, vertical = 4.dp)
-                                    ) {
-                                        Text(
-                                            text = version.uppercase(),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            fontWeight = FontWeight.SemiBold,
-                                            style = TextStyle(
-                                                fontSize = 10.sp,
-                                                color = versionTextColor
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            LazyRow(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 20.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                item {
-                                    val icon = if (albumInfo.isFavorite) R.drawable.fav_filled
-                                    else R.drawable.fav_not_filled
-                                    IconButton(
-                                        onClick = {
-                                            onToggleFavorite(
-                                                albumInfo.isFavorite,
-                                                albumInfo.albumHash
-                                            )
-                                        }
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = icon),
-                                            contentDescription = "Favorite"
-                                        )
-                                    }
-                                }
-
-                                item {
-                                    IconButton(onClick = {
-                                        onShuffle()
-                                    }) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.shuffle),
-                                            contentDescription = "Play Icon"
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    IconButton(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(32))
-                                            .background(MaterialTheme.colorScheme.primary),
-                                        onClick = {
-                                            onPlay(sortedTracks)
-                                        }
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.play_arrow_fill),
-                                            tint = MaterialTheme.colorScheme.onPrimary,
-                                            contentDescription = "Play Icon"
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-
-                // TODO: Edit to scroll to the Playing Track if this Album is the source
-                // of the currently playing track...
-                // Alternatively, scroll once (if applicable) then preserve the UI state after navigation.
-
-                albumTracks.forEach { (discNumber, tracks) ->
-                    item {
-                        // Disc Number Header
                         Text(
-                            text = "Disc $discNumber",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .85F),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(
+                                start = 12.dp,
+                                end = 12.dp,
+                                top = 16.dp,
+                                bottom = 2.dp
+                            ),
+                            text = albumInfo.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                    }
 
-                    items(
-                        items = tracks,
-                        key = { item: Track -> item.filepath }
-                    ) { track ->
-                        // Numbered Track Item
-                        Row(
-                            modifier = Modifier
-                                .padding(vertical = 4.dp)
-                                .then(
-                                    if (track.trackHash == currentTrack?.trackHash) {
-                                        Modifier.padding(horizontal = 12.dp)
-                                    } else Modifier
-                                )
-                                .clip(RoundedCornerShape(12))
-                                .background(
-                                    if (track.trackHash == currentTrack?.trackHash) {
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .14F)
-                                    } else {
-                                        Color.Unspecified
-                                    }
-                                )
-                                .padding(horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        LazyRow(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                modifier = Modifier.padding(
-                                    start =
-                                    if (track.trackHash != currentTrack?.trackHash) 12.dp else 0.dp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .85F),
-                                text = track.trackNumber.toString(),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-
-                            Box(
-                                modifier = Modifier.offset((-4).dp)
-                            ) {
-                                TrackItem(
-                                    track = track,
-                                    isAlbumTrack = true,
-                                    isCurrentTrack = track.trackHash == currentTrack?.trackHash,
-                                    playbackState = playbackState,
-                                    onClickTrackItem = {
-                                        val trackIndex = sortedTracks.indexOf(track)
-                                        if (trackIndex != -1) {
-                                            onClickAlbumTrack(trackIndex, sortedTracks)
-                                        }
-                                    },
-                                    onClickMoreVert = {
-                                        // Show menu for Album Track
-                                    },
-                                    baseUrl = baseUrl
+                            item {
+                                Text(
+                                    text = albumInfo.type.replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
+
+                                Box(
+                                    modifier = Modifier
+                                        .padding(8.dp)
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                                        )
+                                )
+                            }
+
+                            itemsIndexed(albumInfo.albumArtists) { index, artist ->
+                                Text(
+                                    modifier = Modifier.clickable(
+                                        interactionSource = interaction,
+                                        indication = null
+                                    ) {
+                                        onClickArtist(artist.artistHash)
+                                    },
+                                    text = artist.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (index != albumInfo.albumArtists.lastIndex) {
+                                    Text(text = ", ")
+                                }
+
+                                Spacer(modifier = Modifier.width(4.dp))
                             }
                         }
 
-                        if (track.filepath == sortedTracks.last().filepath) {
-                            LazyRow(
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .background(MaterialTheme.colorScheme.surface)
-                                            .padding(end = 12.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                MaterialTheme.colorScheme.onSurface
-                                            )
-                                            .padding(
-                                                horizontal = 12.dp,
-                                                vertical = 8.dp
-                                            )
-                                    ) {
-                                        Text(
-                                            text = when {
-                                                albumInfo.genres.size > 1 -> "Genres"
-                                                albumInfo.genres.size == 1 -> "Genre"
-                                                else -> "No Genres"
-                                            },
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.surface
-                                        )
-                                    }
-                                }
-
-                                items(albumInfo.genres) { genre ->
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(end = 12.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                MaterialTheme.colorScheme.tertiary
-                                            )
-                                            .padding(
-                                                horizontal = 12.dp,
-                                                vertical = 8.dp
-                                            )
-
-                                    ) {
-                                        Text(
-                                            text = genre.name,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onTertiary,
-                                            fontWeight = FontWeight.SemiBold,
-                                        )
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Column {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 20.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = albumInfo.date.formatDate("MMMM d, yyyy")
-                                            .uppercase(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Normal,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(horizontal = 12.dp)
-                                            .size(4.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
-                                            )
-                                    )
-                                    Text(
-                                        text = albumInfo.trackCount.formattedTrackCount()
-                                            .uppercase(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Normal,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(horizontal = 12.dp)
-                                            .size(4.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
-                                            )
-                                    )
-                                    Text(
-                                        text = albumInfo.duration.formattedAlbumDuration()
-                                            .uppercase(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Normal,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(4.dp))
-
+                        LazyRow(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            item {
                                 Text(
-                                    modifier = Modifier.padding(horizontal = 20.dp),
-                                    text = copyright.uppercase(),
+                                    text = albumInfo.date.formatDate("yyyy"),
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                    maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(100.dp))
+                            item {
+                                Spacer(modifier = Modifier.width(12.dp))
+                            }
+
+                            items(albumInfo.versions) { version ->
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 8.dp)
+                                        .clip(RoundedCornerShape(14))
+                                        .background(versionContainerColor)
+                                        .padding(horizontal = 5.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = version.uppercase(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = TextStyle(
+                                            fontSize = 10.sp,
+                                            color = versionTextColor
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            item {
+                                val icon = if (albumInfo.isFavorite) R.drawable.fav_filled
+                                else R.drawable.fav_not_filled
+                                IconButton(
+                                    onClick = {
+                                        onToggleFavorite(
+                                            albumInfo.isFavorite,
+                                            albumInfo.albumHash
+                                        )
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = icon),
+                                        contentDescription = "Favorite"
+                                    )
+                                }
+                            }
+
+                            item {
+                                IconButton(onClick = {
+                                    onShuffle()
+                                }) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.shuffle),
+                                        contentDescription = "Play Icon"
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(16.dp))
+                                IconButton(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(32))
+                                        .background(MaterialTheme.colorScheme.primary),
+                                    onClick = {
+                                        onPlay(sortedTracks)
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.play_arrow_fill),
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        contentDescription = "Play Icon"
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
+
+            item {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // TODO: Edit to scroll to the Playing Track if this Album is the source
+            // of the currently playing track...
+            // Alternatively, scroll once (if applicable) then preserve the UI state after navigation.
+
+            albumTracks.forEach { (discNumber, tracks) ->
+                item {
+                    // Disc Number Header
+                    Text(
+                        text = "Disc $discNumber",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .85F),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                    )
+                }
+
+                items(
+                    items = tracks,
+                    key = { item: Track -> item.filepath }
+                ) { track ->
+                    // Numbered Track Item
+                    Row(
+                        modifier = Modifier
+                            .padding(vertical = 4.dp)
+                            .then(
+                                if (track.trackHash == currentTrack?.trackHash) {
+                                    Modifier.padding(horizontal = 12.dp)
+                                } else Modifier
+                            )
+                            .clip(RoundedCornerShape(12))
+                            .background(
+                                if (track.trackHash == currentTrack?.trackHash) {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = .14F)
+                                } else {
+                                    Color.Unspecified
+                                }
+                            )
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(
+                                start =
+                                if (track.trackHash != currentTrack?.trackHash) 12.dp else 0.dp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .85F),
+                            text = track.trackNumber.toString(),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                        Box(
+                            modifier = Modifier.offset((-4).dp)
+                        ) {
+                            TrackItem(
+                                track = track,
+                                isAlbumTrack = true,
+                                isCurrentTrack = track.trackHash == currentTrack?.trackHash,
+                                playbackState = playbackState,
+                                onClickTrackItem = {
+                                    val trackIndex = sortedTracks.indexOf(track)
+                                    if (trackIndex != -1) {
+                                        onClickAlbumTrack(trackIndex, sortedTracks)
+                                    }
+                                },
+                                onClickMoreVert = {
+                                    // Show menu for Album Track
+                                },
+                                baseUrl = baseUrl
+                            )
+                        }
+                    }
+
+                    if (track.filepath == sortedTracks.last().filepath) {
+                        LazyRow(
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .padding(end = 12.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface
+                                        )
+                                        .padding(
+                                            horizontal = 12.dp,
+                                            vertical = 8.dp
+                                        )
+                                ) {
+                                    Text(
+                                        text = when {
+                                            albumInfo.genres.size > 1 -> "Genres"
+                                            albumInfo.genres.size == 1 -> "Genre"
+                                            else -> "No Genres"
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.surface
+                                    )
+                                }
+                            }
+
+                            items(albumInfo.genres) { genre ->
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 12.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.tertiary
+                                        )
+                                        .padding(
+                                            horizontal = 12.dp,
+                                            vertical = 8.dp
+                                        )
+
+                                ) {
+                                    Text(
+                                        text = genre.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onTertiary,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Column {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = albumInfo.date.formatDate("MMMM d, yyyy")
+                                        .uppercase(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                                        )
+                                )
+                                Text(
+                                    text = albumInfo.trackCount.formattedTrackCount()
+                                        .uppercase(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                                        )
+                                )
+                                Text(
+                                    text = albumInfo.duration.formattedAlbumDuration()
+                                        .uppercase(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                modifier = Modifier.padding(horizontal = 20.dp),
+                                text = copyright.uppercase(),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f),
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(100.dp))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -606,8 +605,7 @@ fun AlbumWithInfo(
 fun AlbumWithInfoScreen(
     albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
-    albumNavigator: AlbumNavigator,
-    artistNavigator: ArtistNavigator,
+    navigator: CommonNavigator,
     albumHash: String,
 ) {
     val albumWithInfoState by albumWithInfoViewModel.albumWithInfoState.collectAsState()
@@ -698,12 +696,12 @@ fun AlbumWithInfoScreen(
                         copyright = albumWithInfoState.infoResource.data?.copyright!!,
                         albumTracks = albumWithInfoState.infoResource.data!!.groupedTracks,
                         baseUrl = baseUrl ?: "https://default",
-                        onClickBack = { albumNavigator.navigateBack() },
+                        onClickBack = { navigator.navigateBack() },
                         onClickMore = {
 
                         },
                         onClickArtist = { artistHash ->
-                            artistNavigator.gotoArtistInfo(artistHash)
+                            navigator.gotoArtistInfo(artistHash)
                         },
                         onPlay = { queue ->
                             if (queue.isNotEmpty()) {
