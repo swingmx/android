@@ -557,7 +557,9 @@ fun NowPlayingScreen(
         shuffleMode = playerUiState.shuffleMode,
         isBuffering = playerUiState.isBuffering,
         baseUrl = baseUrl ?: "",
-        onClickArtist = {},
+        onClickArtist = {
+            navigator.gotoArtistInfo(it)
+        },
         onToggleRepeatMode = {
             mediaControllerViewModel.onPlayerUiEvent(
                 PlayerUiEvent.OnToggleRepeatMode

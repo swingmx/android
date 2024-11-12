@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavOptionsBuilder
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
@@ -116,7 +117,7 @@ class CoreNavigator(
             navController.navigate(
                 targetDestination within navGraph,
                 fun NavOptionsBuilder.() {
-                    launchSingleTop = false
+                    launchSingleTop = true
                     restoreState = true
                 }
             )
@@ -145,7 +146,27 @@ class CoreNavigator(
             navController.navigate(
                 targetDestination within navGraph,
                 fun NavOptionsBuilder.() {
-                    launchSingleTop = false
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            )
+        }
+    }
+
+    override fun gotoViewAllScreen(
+        viewAllType: String,
+        artistName: String,
+        baseUrl: String
+    ) {
+        val currentDestination = navController.currentDestination?.route
+        val targetDestination =
+            ViewAllScreenDestination(viewAllType, artistName, baseUrl)
+
+        if (currentDestination != targetDestination.route) {
+            navController.navigate(
+                targetDestination within navGraph,
+                fun NavOptionsBuilder.() {
+                    launchSingleTop = true
                     restoreState = true
                 }
             )

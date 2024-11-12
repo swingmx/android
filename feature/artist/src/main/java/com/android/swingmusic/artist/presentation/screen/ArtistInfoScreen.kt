@@ -53,7 +53,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
@@ -97,7 +96,8 @@ private fun ArtistInfo(
     onClickBack: () -> Unit,
     onClickAlbum: (albumHash: String) -> Unit,
     onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit,
-    onClickSimilarArtist: (artistHash: String) -> Unit
+    onClickSimilarArtist: (artistHash: String) -> Unit,
+    onClickViewAll: (artistName: String, viewAllType: String, baseUrl: String) -> Unit,
 ) {
     val clickInteractionSource = remember { MutableInteractionSource() }
 
@@ -321,7 +321,7 @@ private fun ArtistInfo(
                                         interactionSource = clickInteractionSource,
                                         indication = null
                                     ) {
-                                        // TODO: Add click action
+                                        onClickViewAll(artistInfo.artist.name, "Tracks", baseUrl)
                                     }
                             ) {
                                 Text(
@@ -385,7 +385,7 @@ private fun ArtistInfo(
                                         interactionSource = clickInteractionSource,
                                         indication = null
                                     ) {
-                                        // TODO: Add click action
+                                        onClickViewAll(artistInfo.artist.name, "Albums", baseUrl)
                                     }
                             ) {
                                 Text(
@@ -452,7 +452,11 @@ private fun ArtistInfo(
                                         interactionSource = clickInteractionSource,
                                         indication = null
                                     ) {
-                                        // TODO: Add click action
+                                        onClickViewAll(
+                                            artistInfo.artist.name,
+                                            "Ep & Singles",
+                                            baseUrl
+                                        )
                                     }
                             ) {
                                 Text(
@@ -519,7 +523,11 @@ private fun ArtistInfo(
                                         interactionSource = clickInteractionSource,
                                         indication = null
                                     ) {
-                                        // TODO: Add click action
+                                        onClickViewAll(
+                                            artistInfo.artist.name,
+                                            "Compilations",
+                                            baseUrl
+                                        )
                                     }
                             ) {
                                 Text(
@@ -585,7 +593,11 @@ private fun ArtistInfo(
                                         interactionSource = clickInteractionSource,
                                         indication = null
                                     ) {
-                                        // TODO: Add click action
+                                        onClickViewAll(
+                                            artistInfo.artist.name,
+                                            "Appearances",
+                                            baseUrl
+                                        )
                                     }
                             ) {
                                 Text(
@@ -737,28 +749,28 @@ private fun ArtistInfo(
 @Destination
 @Composable
 fun ArtistInfoScreen(
-    artistHash: String,
     mediaControllerViewModel: MediaControllerViewModel,
-    artistInfoViewModel: ArtistInfoViewModel = hiltViewModel(),
-    navigator: CommonNavigator
+    artistInfoViewModel: ArtistInfoViewModel,
+    artistHash: String,
+    commonNavigator: CommonNavigator
 ) {
     val baseUrl = mediaControllerViewModel.baseUrl
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val artistInfoState = artistInfoViewModel.artistInfoState.collectAsState()
+    val currentArtistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
     val similarArtists = if (artistInfoState.value.similarArtistsResource is Resource.Success)
         artistInfoState.value.similarArtistsResource.data else emptyList()
 
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
 
-    LaunchedEffect(
-        key1 = artistHash,
-        key2 = artistInfoState.value.requiresReload
-    ) {
+    LaunchedEffect(key1 = Unit) {
         if (artistInfoState.value.requiresReload) {
             artistInfoViewModel.onArtistInfoUiEvent(
-                event = ArtistInfoUiEvent.OnLoadArtistInfo(
-                    artistInfoState.value.infoResource.data?.artist?.artistHash ?: artistHash
-                )
+                ArtistInfoUiEvent.OnLoadArtistInfo(artistHash)
+            )
+        } else if (currentArtistHash != artistHash) {
+            artistInfoViewModel.onArtistInfoUiEvent(
+                ArtistInfoUiEvent.OnUpdateArtistHash(artistHash)
             )
         }
     }
@@ -833,7 +845,7 @@ fun ArtistInfoScreen(
                         playbackState = playerUiState.playbackState,
                         currentTrack = playerUiState.nowPlayingTrack,
                         onClickBack = {
-                            navigator.navigateBack()
+                            commonNavigator.navigateBack()
                         },
                         onToggleFavorite = { artistHash, isFavorite ->
                             artistInfoViewModel.onArtistInfoUiEvent(
@@ -879,7 +891,7 @@ fun ArtistInfoScreen(
                             }
                         },
                         onClickAlbum = {
-                            navigator.gotoAlbumWithInfo(it)
+                            commonNavigator.gotoAlbumWithInfo(it)
                         },
                         onClickArtistTrack = { queue, index ->
                             mediaControllerViewModel.onQueueEvent(
@@ -898,6 +910,13 @@ fun ArtistInfoScreen(
                         onClickSimilarArtist = {
                             artistInfoViewModel.onArtistInfoUiEvent(
                                 ArtistInfoUiEvent.OnUpdateArtistHash(it)
+                            )
+                        },
+                        onClickViewAll = { artistName: String, viewAllType: String, baseUrl: String ->
+                            commonNavigator.gotoViewAllScreen(
+                                viewAllType = viewAllType,
+                                artistName = artistName,
+                                baseUrl = baseUrl
                             )
                         }
                     )
@@ -1306,7 +1325,8 @@ fun ArtistInfoPreview() {
             onPlayAllTracks = {},
             onClickAlbum = {},
             onClickArtistTrack = { _, _ -> },
-            onClickSimilarArtist = {}
+            onClickSimilarArtist = {},
+            onClickViewAll = { _, _, _ -> }
         )
     }
 }

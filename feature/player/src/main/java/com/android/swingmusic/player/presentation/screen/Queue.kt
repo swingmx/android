@@ -3,6 +3,7 @@ package com.android.swingmusic.player.presentation.screen
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +55,7 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
+import com.android.swingmusic.player.presentation.util.navigateToSource
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
@@ -71,13 +74,14 @@ private fun Queue(
     playingTrack: Track?,
     playbackState: PlaybackState,
     baseUrl: String,
-    onClickBack: () -> Unit,
+    onClickQueueSource: (source: QueueSource) -> Unit,
     onTogglePlayerState: () -> Unit,
     onClickQueueItem: (index: Int) -> Unit
 ) {
     val lazyColumnState = rememberLazyListState()
+    val interactionSource = remember { MutableInteractionSource() }
 
-    // scroll past the playing track by one item to keep colored cards far apart at first
+    // scroll past the playing track by one item to keep highlighted cards far apart at first
     LaunchedEffect(key1 = Unit) {
         if ((playingTrackIndex - 1) in queue.indices) {
             lazyColumnState.scrollToItem((playingTrackIndex - 1))
@@ -160,7 +164,14 @@ private fun Queue(
                         .fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(bottom = 4.dp),
+                        modifier = Modifier
+                            .padding(bottom = 4.dp)
+                            .clickable(
+                                indication = null,
+                                interactionSource = interactionSource
+                            ) {
+                                onClickQueueSource(source)
+                            },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
@@ -334,7 +345,9 @@ fun QueueScreen(
         playingTrack = playerUiState.nowPlayingTrack,
         playbackState = playerUiState.playbackState,
         baseUrl = baseUrl ?: "",
-        onClickBack = { navigator.navigateBack() },
+        onClickQueueSource = { source ->
+            source.navigateToSource(navigator)
+        },
         onTogglePlayerState = { mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState) },
         onClickQueueItem = { index: Int ->
             mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(index))
@@ -390,7 +403,7 @@ fun QueuePreview() {
             playbackState = PlaybackState.PLAYING,
             queue = queue,
             baseUrl = "",
-            onClickBack = {},
+            onClickQueueSource = {},
             onTogglePlayerState = {},
             onClickQueueItem = { },
         )

@@ -18,4 +18,6 @@ interface CommonNavigator {
     fun gotoQueueScreen()
 
     fun gotoArtistInfo(artistHash: String)
+
+    fun gotoViewAllScreen(viewAllType: String, artistName: String, baseUrl: String)
 }

@@ -51,6 +51,23 @@ class ArtistInfoViewModel @Inject constructor(
         }
     }
 
+    private fun updateCurrentArtistHash(hash: String) {
+        val currentState = _artistInfoState.value
+        val currentInfo = currentState.infoResource.data
+
+        currentInfo?.let { info ->
+            _artistInfoState.value = currentState.copy(
+                infoResource = Resource.Success(
+                    data = info.copy(
+                        artist = info.artist.copy(artistHash = hash),
+                        albumsAndAppearances = info.albumsAndAppearances,
+                        tracks = info.tracks
+                    )
+                )
+            )
+        }
+    }
+
     private fun toggleArtistFavorite(artistHash: String, isFavorite: Boolean) {
         viewModelScope.launch {
             val emptyAlbumsAndAppearances = AlbumsAndAppearances(
@@ -137,6 +154,9 @@ class ArtistInfoViewModel @Inject constructor(
     fun onArtistInfoUiEvent(event: ArtistInfoUiEvent) {
         when (event) {
             is ArtistInfoUiEvent.OnLoadArtistInfo -> {
+
+                updateCurrentArtistHash(event.artistHash)
+
                 getArtistInfo(event.artistHash)
                 getSimilarArtists(event.artistHash)
             }
@@ -151,23 +171,10 @@ class ArtistInfoViewModel @Inject constructor(
             }
 
             is ArtistInfoUiEvent.OnUpdateArtistHash -> {
+                updateCurrentArtistHash(event.artistHash)
 
-                val currentState = _artistInfoState.value
-                val currentInfo = currentState.infoResource.data
-
-                currentInfo?.let { info ->
-                    _artistInfoState.value = currentState.copy(
-                        infoResource = Resource.Success(
-                            data = info.copy(
-                                artist = info.artist.copy(artistHash = event.artistHash),
-                                albumsAndAppearances = info.albumsAndAppearances,
-                                tracks = info.tracks
-                            )
-                        )
-                    )
-                }
-
-                onArtistInfoUiEvent(ArtistInfoUiEvent.OnLoadArtistInfo(event.artistHash))
+                getArtistInfo(event.artistHash)
+                getSimilarArtists(event.artistHash)
             }
 
             else -> {
