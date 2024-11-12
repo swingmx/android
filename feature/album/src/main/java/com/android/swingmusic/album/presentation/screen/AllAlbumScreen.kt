@@ -57,11 +57,11 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
 import com.android.swingmusic.album.presentation.event.AlbumsUiEvent
-import com.android.swingmusic.album.presentation.navigator.AlbumNavigator
 import com.android.swingmusic.album.presentation.state.AllAlbumsUiState
 import com.android.swingmusic.album.presentation.util.pagingAlbums
 import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
 import com.android.swingmusic.album.presentation.viewmodel.AllAlbumsViewModel
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.util.SortBy
@@ -326,7 +326,7 @@ private fun AllAlbums(
 fun AllAlbumScreen(
     allAlbumsViewModel: AllAlbumsViewModel = hiltViewModel(),
     albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
-    albumNavigator: AlbumNavigator
+    albumNavigator: CommonNavigator
 ) {
     val pagingAlbums =
         allAlbumsViewModel.allAlbumsUiState.value.pagingAlbums.collectAsLazyPagingItems()

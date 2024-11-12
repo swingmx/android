@@ -51,6 +51,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
+import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
@@ -82,6 +83,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val mediaControllerViewModel: MediaControllerViewModel by viewModels<MediaControllerViewModel>()
     private val authViewModel: AuthViewModel by viewModels<AuthViewModel>()
+    private val artistInfoViewModel: ArtistInfoViewModel by viewModels<ArtistInfoViewModel>()
 
     private lateinit var controllerFuture: ListenableFuture<MediaController>
 
@@ -184,7 +186,7 @@ class MainActivity : ComponentActivity() {
                                 playerState.value.nowPlayingTrack?.let {
                                     Box(
                                         modifier = Modifier
-                                            .height(24.dp)
+                                            .height(18.dp)
                                             .fillMaxWidth()
                                             .background(MaterialTheme.colorScheme.inverseOnSurface)
                                     )
@@ -241,6 +243,7 @@ class MainActivity : ComponentActivity() {
                             isUserLoggedIn = isUserLoggedIn,
                             navController = navController,
                             authViewModel = authViewModel,
+                            artistInfoViewModel = artistInfoViewModel,
                             mediaControllerViewModel = mediaControllerViewModel
                         )
                     }
@@ -295,6 +298,7 @@ internal fun SwingMusicAppNavigation(
     isUserLoggedIn: Boolean,
     navController: NavHostController,
     authViewModel: AuthViewModel,
+    artistInfoViewModel: ArtistInfoViewModel,
     mediaControllerViewModel: MediaControllerViewModel
 ) {
     val animatedNavHostEngine = rememberAnimatedNavHostEngine(
@@ -395,6 +399,7 @@ internal fun SwingMusicAppNavigation(
         dependenciesContainerBuilder = {
             dependency(authViewModel)
             dependency(mediaControllerViewModel)
+            dependency(artistInfoViewModel)
             dependency(
                 CoreNavigator(
                     navGraph = navBackStackEntry.destination.getNavGraph(isUserLoggedIn),

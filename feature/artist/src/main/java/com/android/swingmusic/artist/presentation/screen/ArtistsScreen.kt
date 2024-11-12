@@ -47,14 +47,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
 import com.android.swingmusic.artist.presentation.event.ArtistUiEvent
-import com.android.swingmusic.artist.presentation.navigator.ArtistNavigator
 import com.android.swingmusic.artist.presentation.state.ArtistsUiState
 import com.android.swingmusic.artist.presentation.util.pagingArtists
+import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistsViewModel
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.util.SortBy
@@ -273,6 +276,8 @@ private fun Artists(
                         }
 
                         errorState?.let {
+                            showOnRefreshIndicator = false
+
                             item(span = { GridItemSpan(artistsUiState.gridCount) }) {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),
@@ -315,8 +320,9 @@ private fun Artists(
 @Destination
 @Composable
 fun ArtistsScreen(
-    navigator: ArtistNavigator,
-    artistsViewModel: ArtistsViewModel = hiltViewModel()
+    navigator: CommonNavigator,
+    artistsViewModel: ArtistsViewModel = hiltViewModel(),
+    artistInfoViewModel: ArtistInfoViewModel
 ) {
     val pagingArtists =
         artistsViewModel.artistsUiState.value.pagingArtists.collectAsLazyPagingItems()
@@ -344,6 +350,9 @@ fun ArtistsScreen(
                 artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnPullToRefresh)
             },
             onNavigateToInfo = {
+                artistInfoViewModel.onArtistInfoUiEvent(
+                    ArtistInfoUiEvent.OnUpdateArtistHash(it)
+                )
                 navigator.gotoArtistInfo(it)
             }
         )

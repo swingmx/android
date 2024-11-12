@@ -4,6 +4,7 @@ import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithIn
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
@@ -48,7 +49,9 @@ object NavGraphs {
             listOf<DestinationSpec<*>>(
                 FoldersAndTracksScreenDestination,
                 AlbumWithInfoScreenDestination,
-                ArtistInfoScreenDestination
+                ArtistInfoScreenDestination,
+                NowPlayingScreenDestination,
+                ViewAllScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -60,7 +63,10 @@ object NavGraphs {
         override val destinationsByRoute: Map<String, DestinationSpec<*>> =
             listOf<DestinationSpec<*>>(
                 NowPlayingScreenDestination,
-                QueueScreenDestination
+                QueueScreenDestination,
+                ArtistInfoScreenDestination,
+                ViewAllScreenDestination,
+                AlbumWithInfoScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -73,7 +79,9 @@ object NavGraphs {
             listOf<DestinationSpec<*>>(
                 ArtistsScreenDestination,
                 ArtistInfoScreenDestination,
-                AlbumWithInfoScreenDestination
+                AlbumWithInfoScreenDestination,
+                ViewAllScreenDestination,
+                NowPlayingScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -86,7 +94,9 @@ object NavGraphs {
             listOf<DestinationSpec<*>>(
                 AllAlbumScreenDestination,
                 AlbumWithInfoScreenDestination,
-                ArtistInfoScreenDestination
+                ArtistInfoScreenDestination,
+                ViewAllScreenDestination,
+                NowPlayingScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
