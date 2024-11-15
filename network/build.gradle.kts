@@ -38,7 +38,7 @@ dependencies {
     implementation(project(":database"))
 
     // Kotlin extensions
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-ktx:1.15.0")
 
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
@@ -56,5 +56,5 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
     // Pagination
-    implementation ("androidx.paging:paging-compose:3.3.1")
+    implementation ("androidx.paging:paging-compose:3.3.2")
 }
