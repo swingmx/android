@@ -51,6 +51,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenDestination
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
@@ -166,17 +167,40 @@ class MainActivity : ComponentActivity() {
                                     "auth/${LoginWithQrCodeDestination.route}",
                                     "auth/${LoginWithUsernameScreenDestination.route}",
                                     "player/${NowPlayingScreenDestination.route}",
-                                    "player/${QueueScreenDestination.route}"
+                                    "player/${QueueScreenDestination.route}",
+
+                                    // Hide mini player in view all screen
+                                    "player/${ViewAllScreenDestination.route}",
+                                    "folder/${ViewAllScreenDestination.route}",
+                                    "album/${ViewAllScreenDestination.route}",
+                                    "artist/${ViewAllScreenDestination.route}"
                                 ))
                             ) {
                                 MiniPlayer(
                                     mediaControllerViewModel = mediaControllerViewModel,
                                     onClickPlayerItem = {
+                                        /*if (route !in listOf<String>(
+                                                // make mini player un-clickable in view all screen
+                                                "player/${ViewAllScreenDestination.route}",
+                                                "folder/${ViewAllScreenDestination.route}",
+                                                "album/${ViewAllScreenDestination.route}",
+                                                "artist/${ViewAllScreenDestination.route}"
+                                            )
+                                        ) {
+                                            navController.navigate(
+                                                "player/${NowPlayingScreenDestination.route}",
+                                                fun NavOptionsBuilder.() {
+                                                    launchSingleTop = true
+                                                    restoreState = false
+                                                }
+                                            )
+                                        }*/
+
                                         navController.navigate(
                                             "player/${NowPlayingScreenDestination.route}",
                                             fun NavOptionsBuilder.() {
-                                                launchSingleTop = false
-                                                restoreState = true
+                                                launchSingleTop = true
+                                                restoreState = false
                                             }
                                         )
                                     }
@@ -196,7 +220,7 @@ class MainActivity : ComponentActivity() {
                             val currentSelectedItem by navController.currentScreenAsState(
                                 isUserLoggedIn
                             )
-                            
+
                             if (showBottomNav) {
                                 NavigationBar(
                                     modifier = Modifier.fillMaxWidth(),
@@ -219,7 +243,7 @@ class MainActivity : ComponentActivity() {
                                                 label = { Text(text = item.title) },
                                                 onClick = {
                                                     navController.navigate(
-                                                        item.navGraph!!,
+                                                        item.navGraph,
                                                         fun NavOptionsBuilder.() {
                                                             launchSingleTop = true
                                                             restoreState = true

@@ -20,6 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
@@ -33,6 +34,7 @@ import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.ramcosta.composedestinations.annotation.Destination
+import timber.log.Timber
 
 @Composable
 private fun ViewAll(
@@ -131,6 +133,7 @@ private fun ViewAll(
 @Destination
 @Composable
 fun ViewAllScreen(
+    navController: NavController,
     commonNavigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
     artistInfoViewModel: ArtistInfoViewModel,
@@ -151,6 +154,8 @@ fun ViewAllScreen(
         "Appearances" -> artistData?.albumsAndAppearances?.appearances
         else -> null
     }
+
+    Timber.e("View All Route: ${navController.currentDestination?.route}")
 
     SwingMusicTheme {
         ViewAll(

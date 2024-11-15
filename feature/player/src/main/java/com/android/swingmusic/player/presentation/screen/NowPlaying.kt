@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,10 +34,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,6 +67,7 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
+import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.slider.WaveAnimationSpecs
@@ -75,6 +82,8 @@ import java.util.Locale
 @Composable
 private fun NowPlaying(
     track: Track?,
+    playingTrackIndex: Int,
+    queue: List<Track>,
     seekPosition: Float = 0F,
     playbackDuration: String,
     trackDuration: String,
@@ -83,6 +92,7 @@ private fun NowPlaying(
     repeatMode: RepeatMode,
     shuffleMode: ShuffleMode,
     baseUrl: String,
+    onPageSelect: (page: Int) -> Unit,
     onClickArtist: (artistHash: String) -> Unit,
     onToggleRepeatMode: (RepeatMode) -> Unit,
     onClickPrev: () -> Unit,
@@ -107,9 +117,6 @@ private fun NowPlaying(
         return
     }
 
-    val artistsSeparator by remember {
-        derivedStateOf { if (track.trackArtists.size == 2) " & " else ", " }
-    }
     val fileType by remember {
         derivedStateOf {
             track.filepath.substringAfterLast(".").uppercase(Locale.ROOT)
@@ -141,6 +148,34 @@ private fun NowPlaying(
         PlaybackState.ERROR -> R.drawable.error
     }
 
+    val pagerState = rememberPagerState(
+        initialPage = playingTrackIndex,
+        pageCount = { if (queue.isEmpty()) 1 else queue.size }
+    )
+
+    var isInitialComposition by remember { mutableStateOf(true) }
+
+    LaunchedEffect(
+        key1 = playingTrackIndex,
+        key2 = pagerState
+    ) {
+        if (playingTrackIndex in queue.indices) {
+            if (playingTrackIndex != pagerState.currentPage) {
+                pagerState.animateScrollToPage(playingTrackIndex)
+            }
+        }
+
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            if (isInitialComposition) {
+                isInitialComposition = false // Skip the first run
+            } else {
+                if (playingTrackIndex != page) {
+                    onPageSelect(page)
+                }
+            }
+        }
+    }
+
     Scaffold(
         modifier = Modifier.background(MaterialTheme.colorScheme.surface),
         bottomBar = {
@@ -152,7 +187,6 @@ private fun NowPlaying(
             )
         }
     ) { paddingValues ->
-
         AsyncImage(
             modifier = Modifier
                 .fillMaxWidth()
@@ -195,30 +229,44 @@ private fun NowPlaying(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Artwork, SeekBar...
             Column(
                 modifier = Modifier
-                    .wrapContentSize()
+                    .fillMaxWidth()
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Artwork
-                AsyncImage(
-                    modifier = Modifier
-                        .size(356.dp)
-                        .clip(RoundedCornerShape(7)),
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data("${baseUrl}img/thumbnail/${track.image}")
-                        .crossfade(true)
-                        .build(),
-                    placeholder = painterResource(R.drawable.audio_fallback),
-                    fallback = painterResource(R.drawable.audio_fallback),
-                    error = painterResource(R.drawable.audio_fallback),
-                    contentDescription = "Track Image",
-                    contentScale = ContentScale.Crop
-                )
+                // Artwork, SeekBar...
+                HorizontalPager(
+                    modifier = Modifier.width(356.dp),
+                    pageSpacing = 24.dp,
+                    state = pagerState,
+                    beyondViewportPageCount = 2,
+                    verticalAlignment = Alignment.CenterVertically
+                ) { page ->
+                    val imageData = if (page == playingTrackIndex) {
+                        "${baseUrl}img/thumbnail/${queue.getOrNull(playingTrackIndex)?.image ?: track.image}"
+                    } else {
+                        "${baseUrl}img/thumbnail/${queue.getOrNull(page)?.image ?: track.image}"
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        // Artwork
+                        AsyncImage(
+                            modifier = Modifier
+                                .size(356.dp)
+                                .clip(RoundedCornerShape(7)),
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(imageData)
+                                .crossfade(true)
+                                .build(),
+                            placeholder = painterResource(R.drawable.audio_fallback),
+                            fallback = painterResource(R.drawable.audio_fallback),
+                            error = painterResource(R.drawable.audio_fallback),
+                            contentDescription = "Track Image",
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(28.dp))
 
@@ -256,7 +304,7 @@ private fun NowPlaying(
                                     )
                                     if (index != track.trackArtists.lastIndex) {
                                         Text(
-                                            text = artistsSeparator,
+                                            text = ", ",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurface.copy(
                                                 alpha = .84F
@@ -431,8 +479,8 @@ private fun NowPlaying(
                         )
                     }
                 }
-            }
 
+            }
             // Bitrate, Track format
             Box(
                 modifier = Modifier
@@ -549,6 +597,8 @@ fun NowPlayingScreen(
 
     NowPlaying(
         track = playerUiState.nowPlayingTrack,
+        playingTrackIndex = playerUiState.playingTrackIndex,
+        queue = playerUiState.queue,
         seekPosition = playerUiState.seekPosition,
         playbackDuration = playerUiState.playbackDuration,
         trackDuration = playerUiState.trackDuration,
@@ -557,6 +607,12 @@ fun NowPlayingScreen(
         shuffleMode = playerUiState.shuffleMode,
         isBuffering = playerUiState.isBuffering,
         baseUrl = baseUrl ?: "",
+        onPageSelect = { page ->
+            // treat this as clicking a track in queue
+            mediaControllerViewModel.onQueueEvent(
+                QueueEvent.SeekToQueueItem(page)
+            )
+        },
         onClickArtist = {
             navigator.gotoArtistInfo(it)
         },
@@ -666,6 +722,8 @@ fun FullPlayerPreview() {
     SwingMusicTheme_Preview {
         NowPlaying(
             track = track,
+            playingTrackIndex = 0,
+            queue = emptyList(),
             seekPosition = .22F,
             playbackDuration = "01:23",
             trackDuration = "02:59",
@@ -674,6 +732,7 @@ fun FullPlayerPreview() {
             repeatMode = RepeatMode.REPEAT_OFF,
             shuffleMode = ShuffleMode.SHUFFLE_OFF,
             baseUrl = "",
+            onPageSelect = {},
             onClickArtist = {},
             onToggleRepeatMode = {},
             onResumePlayBackFromError = {},
