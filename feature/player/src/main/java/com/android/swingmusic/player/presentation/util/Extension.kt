@@ -7,7 +7,7 @@ fun QueueSource.navigateToSource(navigator: CommonNavigator) {
     return when (this) {
         is QueueSource.ALBUM -> navigator.gotoAlbumWithInfo(this.albumHash)
         is QueueSource.ARTIST -> navigator.gotoArtistInfo(this.artistHash)
-        //   is QueueSource.FOLDER -> navigator.gotoSourceFolder(this.path)
+        is QueueSource.FOLDER -> navigator.gotoSourceFolder(this.name, this.path)
         // is QueueSource.PLAYLIST -> ...
         // is QueueSource.QUERY -> ...
         else -> {}

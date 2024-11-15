@@ -96,30 +96,30 @@ private fun FoldersAndTracks(
 
     // use a double scaffold to take advantage of padding values since the app uses full screen mode
     Scaffold { it ->
-        Scaffold(
-            modifier = Modifier.padding(it),
-            topBar = {
-                Text(
-                    modifier = Modifier.padding(
-                        top = 16.dp,
-                        start = 16.dp,
-                        bottom = 8.dp
-                    ),
-                    text = "Folders",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-            }
-        ) { paddingValues ->
-            PullToRefreshBox(
-                modifier = Modifier.fillMaxSize(),
-                isRefreshing = showOnRefreshIndicator,
-                onRefresh = {
-                    showOnRefreshIndicator = true
+        PullToRefreshBox(
+            modifier = Modifier.fillMaxSize(),
+            isRefreshing = showOnRefreshIndicator,
+            onRefresh = {
+                showOnRefreshIndicator = true
 
-                    val event = FolderUiEvent.OnClickFolder(currentFolder)
-                    onPullToRefresh(event)
-                },
-            ) {
+                val event = FolderUiEvent.OnClickFolder(currentFolder)
+                onPullToRefresh(event)
+            },
+        ) {
+            Scaffold(
+                modifier = Modifier.padding(it),
+                topBar = {
+                    Text(
+                        modifier = Modifier.padding(
+                            top = 16.dp,
+                            start = 16.dp,
+                            bottom = 8.dp
+                        ),
+                        text = "Folders",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                }
+            ) { paddingValues ->
                 Surface(
                     modifier = Modifier
                         .fillMaxSize()
@@ -401,7 +401,9 @@ fun FoldersAndTracksScreen(
     foldersViewModel: FoldersViewModel = hiltViewModel(),
     albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
-    albumNavigator: CommonNavigator
+    albumNavigator: CommonNavigator,
+    gotoFolderName: String? = null,
+    gotoFolderPath: String? = null
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }
     val foldersAndTracksState by remember { foldersViewModel.foldersAndTracks }
@@ -409,6 +411,23 @@ fun FoldersAndTracksScreen(
     val homeDir = remember { foldersViewModel.homeDir }
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
+
+    LaunchedEffect(key1 = Unit) {
+        if (gotoFolderName != null && gotoFolderPath != null) {
+            val folder = Folder(
+                name = gotoFolderName,
+                path = gotoFolderPath,
+                trackCount = 0,
+                folderCount = 0,
+                isSym = false
+            )
+            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
+        } else if (foldersAndTracksState.foldersAndTracks.folders.isEmpty() &&
+            foldersAndTracksState.foldersAndTracks.tracks.isEmpty()
+        ) {
+            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(homeDir))
+        }
+    }
 
     SwingMusicTheme(navBarColor = MaterialTheme.colorScheme.inverseOnSurface) {
         FoldersAndTracks(

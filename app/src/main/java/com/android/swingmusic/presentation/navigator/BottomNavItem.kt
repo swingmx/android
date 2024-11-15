@@ -7,13 +7,13 @@ import com.android.swingmusic.uicomponent.R as UiComponent
 sealed class BottomNavItem(
     var title: String,
     @DrawableRes var icon: Int,
-    var navGraph: NavGraphSpec?
+    var navGraph: NavGraphSpec
 ) {
-    data object Home : BottomNavItem(
+    /*data object Home : BottomNavItem(
         title = "Home",
         icon = UiComponent.drawable.ic_home,
         navGraph = null
-    )
+    )*/
 
     data object Folder : BottomNavItem(
         title = "Folders",
@@ -27,11 +27,11 @@ sealed class BottomNavItem(
         navGraph = NavGraphs.album
     )
 
-    data object Playlist : BottomNavItem(
+    /*data object Playlist : BottomNavItem(
         title = "Playlists",
         icon = UiComponent.drawable.play_list,
         navGraph = null
-    )
+    )*/
 
     data object Artist : BottomNavItem(
         title = "Artists",

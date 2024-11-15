@@ -9,6 +9,7 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrC
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
+import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.ramcosta.composedestinations.dynamic.within
@@ -140,7 +141,10 @@ class CoreNavigator(
 
     override fun gotoArtistInfo(artistHash: String) {
         val currentDestination = navController.currentDestination?.route
-        val targetDestination = ArtistInfoScreenDestination(artistHash)
+        val targetDestination = ArtistInfoScreenDestination(
+            artistHash = artistHash,
+            loadNewArtist = true
+        )
 
         if (currentDestination != targetDestination.route) {
             navController.navigate(
@@ -161,6 +165,22 @@ class CoreNavigator(
         val currentDestination = navController.currentDestination?.route
         val targetDestination =
             ViewAllScreenDestination(viewAllType, artistName, baseUrl)
+
+        if (currentDestination != targetDestination.route) {
+            navController.navigate(
+                targetDestination within navGraph,
+                fun NavOptionsBuilder.() {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            )
+        }
+    }
+
+    override fun gotoSourceFolder(name: String, path: String) {
+        val currentDestination = navController.currentDestination?.route
+        val targetDestination =
+            FoldersAndTracksScreenDestination(gotoFolderName = name, gotoFolderPath = path)
 
         if (currentDestination != targetDestination.route) {
             navController.navigate(

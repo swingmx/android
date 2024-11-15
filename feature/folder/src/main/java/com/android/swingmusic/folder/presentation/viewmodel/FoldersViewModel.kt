@@ -43,7 +43,7 @@ class FoldersViewModel @Inject constructor(
                     folders = emptyList(),
                     tracks = emptyList()
                 ),
-                isLoading = false,
+                isLoading = true,
                 isError = false
             )
         )
@@ -108,10 +108,6 @@ class FoldersViewModel @Inject constructor(
         }
     }
 
-    init {
-        getFoldersAndTracks(homeDir.path)
-    }
-
     fun onFolderUiEvent(event: FolderUiEvent) {
         when (event) {
             is FolderUiEvent.OnClickNavPath -> {
@@ -131,6 +127,7 @@ class FoldersViewModel @Inject constructor(
 
                 if (!_navPaths.value.contains(event.folder)) {
                     _navPaths.value = listOf<Folder>(homeDir)
+                        // TODO: rebuild the entire path (use network result path)
                         .plus(
                             (_navPaths.value.filter {
                                 event.folder.path.contains(it.path)

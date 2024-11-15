@@ -81,6 +81,7 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Pre
 import com.android.swingmusic.uicomponent.presentation.util.Screen
 import com.android.swingmusic.uicomponent.presentation.util.formattedAlbumDuration
 import com.ramcosta.composedestinations.annotation.Destination
+import timber.log.Timber
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -752,6 +753,7 @@ fun ArtistInfoScreen(
     mediaControllerViewModel: MediaControllerViewModel,
     artistInfoViewModel: ArtistInfoViewModel,
     artistHash: String,
+    loadNewArtist: Boolean,
     commonNavigator: CommonNavigator
 ) {
     val baseUrl = mediaControllerViewModel.baseUrl
@@ -764,14 +766,12 @@ fun ArtistInfoScreen(
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = Unit) {
-        if (artistInfoState.value.requiresReload) {
-            artistInfoViewModel.onArtistInfoUiEvent(
-                ArtistInfoUiEvent.OnLoadArtistInfo(artistHash)
-            )
-        } else if (currentArtistHash != artistHash) {
-            artistInfoViewModel.onArtistInfoUiEvent(
-                ArtistInfoUiEvent.OnUpdateArtistHash(artistHash)
-            )
+        if (artistInfoState.value.requiresReload || loadNewArtist) {
+            if (currentArtistHash != artistHash) {
+                artistInfoViewModel.onArtistInfoUiEvent(
+                    ArtistInfoUiEvent.OnLoadArtistInfo(artistHash)
+                )
+            }
         }
     }
 
@@ -788,6 +788,9 @@ fun ArtistInfoScreen(
                             ?: artistHash
                     )
                 )
+
+                Timber.e("Artist Hash  VM: ${artistInfoState.value.infoResource.data?.artist?.artistHash}")
+                Timber.e("Artist Hash Nav: $artistHash")
             },
         ) {
             when (val res = artistInfoState.value.infoResource) {
