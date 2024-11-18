@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -58,6 +59,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers.RED_DOMINATED_EXAMPLE
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.lerp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
@@ -68,6 +70,7 @@ import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
+import com.android.swingmusic.player.presentation.util.calculateCurrentOffsetForPage
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.slider.WaveAnimationSpecs
@@ -248,13 +251,22 @@ private fun NowPlaying(
                     } else {
                         "${baseUrl}img/thumbnail/${queue.getOrNull(page)?.image ?: track.image}"
                     }
+                    val pageOffset = pagerState.calculateCurrentOffsetForPage(page)
+
                     Column {
                         Spacer(modifier = Modifier.height(12.dp))
                         // Artwork
                         AsyncImage(
                             modifier = Modifier
                                 .size(356.dp)
-                                .clip(RoundedCornerShape(7)),
+                                .clip(RoundedCornerShape(7))
+                                .graphicsLayer {
+                                    val scale = lerp(1f, 1.25f, pageOffset)
+                                    scaleX = scale
+                                    scaleY = scale
+                                    clip = true
+                                    shape = RoundedCornerShape(7)
+                                },
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(imageData)
                                 .crossfade(true)

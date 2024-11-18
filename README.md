@@ -2,6 +2,8 @@
 
 This project is currently in its early development stages as the [Swing Music team](https://github.com/orgs/swingmx/people) is diligently working to deliver a beta version as soon as possible.
 
+[![Android CI](https://github.com/swingmx/android/actions/workflows/android.yml/badge.svg)](https://github.com/swingmx/android/actions/workflows/android.yml)
+
 <table>
   <tr>
     <td>
