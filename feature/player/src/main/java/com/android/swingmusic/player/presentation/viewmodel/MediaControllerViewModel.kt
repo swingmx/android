@@ -892,9 +892,6 @@ class MediaControllerViewModel @Inject constructor(
             mediaItem?.let {
                 try {
                     val trackIndex = it.mediaId.toInt() // "id" == index
-
-                    Timber.e("Track Index On Transition: $trackIndex")
-
                     val playingTrack: Track =
                         if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
                             shuffledQueue[trackIndex]
