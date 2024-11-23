@@ -5,7 +5,6 @@ data class Track(
     val album: String,
     val albumTrackArtists: List<TrackArtist>,
     val albumHash: String,
-    val artistHashes: List<String>,
     val trackArtists: List<TrackArtist>,
     val bitrate: Int,
     val duration: Int,

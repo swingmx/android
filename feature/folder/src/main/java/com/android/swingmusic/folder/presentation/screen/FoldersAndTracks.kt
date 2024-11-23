@@ -10,22 +10,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -42,17 +38,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
 import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
+import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
@@ -62,7 +58,7 @@ import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.component.BottomSheetItem
+import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import com.android.swingmusic.uicomponent.presentation.component.FolderItem
 import com.android.swingmusic.uicomponent.presentation.component.PathIndicatorItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
@@ -84,15 +80,19 @@ private fun FoldersAndTracks(
     onPullToRefresh: (FolderUiEvent) -> Unit,
     onClickFolder: (Folder) -> Unit,
     onClickTrackItem: (index: Int, queue: List<Track>) -> Unit,
-    onGoToTrackAlbum: (albumHash: String) -> Unit,
+    onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
+    onGotoArtist: (hash: String) -> Unit,
     baseUrl: String
 ) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
-    var showBottomSheet by remember { mutableStateOf(false) }
+    var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
 
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
+
+    val lazyColumnState = rememberLazyListState()
+    val pathsLazyRowState = rememberLazyListState()
 
     // use a double scaffold to take advantage of padding values since the app uses full screen mode
     Scaffold { it ->
@@ -125,54 +125,43 @@ private fun FoldersAndTracks(
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
-                    val lazyColumnState = rememberLazyListState()
-                    val pathsLazyRowState = rememberLazyListState()
-
                     LaunchedEffect(key1 = currentFolder) {
                         val index = navPaths.indexOf(currentFolder)
                         pathsLazyRowState.animateScrollToItem(if (index >= 0) index else 0)
                     }
-                    if (showBottomSheet) {
-                        ModalBottomSheet(
-                            sheetState = sheetState,
-                            shape = RoundedCornerShape(16.dp),
-                            onDismissRequest = {
-                                showBottomSheet = false
-                            },
-                            dragHandle = null,
-                            scrimColor = Color.Black.copy(alpha = .75F),
-                            tonalElevation = 16.dp,
-                        ) {
-                            clickedTrack?.let { track ->
-                                Column {
-                                    Box(modifier = Modifier.offset(x = (-8).dp)) {
-                                        TrackItem(
-                                            track = track,
-                                            onClickTrackItem = {},
-                                            onClickMoreVert = {},
-                                            baseUrl = baseUrl
-                                        )
-                                    }
 
-                                    HorizontalDivider()
-                                }
-                            }
-
-                            BottomSheetItem(
-                                label = "Go to Album",
+                    if (showTrackBottomSheet) {
+                        clickedTrack?.let { track ->
+                            CustomTrackBottomSheet(
                                 scope = scope,
                                 sheetState = sheetState,
-                                iconPainter = painterResource(id = R.drawable.ic_album),
-                                clickedTrack = clickedTrack,
-                                onClick = { track ->
-                                    onGoToTrackAlbum(track.albumHash)
+                                clickedTrack = track,
+                                baseUrl = baseUrl,
+                                bottomSheetItems = listOf(
+                                    BottomSheetItemModel(
+                                        label = "Go to Artist",
+                                        enabled = true,
+                                        painterId = R.drawable.ic_artist,
+                                        track = track,
+                                        sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
+                                    ),
+                                    BottomSheetItemModel(
+                                        label = "Go to Album",
+                                        painterId = R.drawable.ic_album,
+                                        track = track,
+                                        sheetAction = BottomSheetAction.GotoAlbum
+                                    )
+                                ),
+                                onHideBottomSheet = {
+                                    showTrackBottomSheet = it
                                 },
-                                onHideBottomSheet = { hide ->
-                                    showBottomSheet = !hide
+                                onClickSheetItem = { sheetTrack, sheetAction ->
+                                    onGetSheetAction(sheetTrack, sheetAction)
+                                },
+                                onChooseArtist = { hash ->
+                                    onGotoArtist(hash)
                                 }
                             )
-
-                            Spacer(modifier = Modifier.height(48.dp))
                         }
                     }
 
@@ -271,9 +260,9 @@ private fun FoldersAndTracks(
                                             index, foldersAndTracksState.foldersAndTracks.tracks
                                         )
                                     },
-                                    onClickMoreVert = {
-                                        clickedTrack = it
-                                        showBottomSheet = true
+                                    onClickMoreVert = { clickTrack ->
+                                        clickedTrack = clickTrack
+                                        showTrackBottomSheet = true
                                     }
                                 )
 
@@ -401,7 +390,7 @@ fun FoldersAndTracksScreen(
     foldersViewModel: FoldersViewModel = hiltViewModel(),
     albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
-    albumNavigator: CommonNavigator,
+    navigator: CommonNavigator,
     gotoFolderName: String? = null,
     gotoFolderPath: String? = null
 ) {
@@ -452,12 +441,6 @@ fun FoldersAndTracksScreen(
             onClickFolder = { folder ->
                 foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
             },
-            onGoToTrackAlbum = { albumHash ->
-                albumWithInfoViewModel.onAlbumWithInfoUiEvent(
-                    AlbumWithInfoUiEvent.OnUpdateAlbumHash(albumHash)
-                )
-                albumNavigator.gotoAlbumWithInfo(albumHash)
-            },
             onClickTrackItem = { index: Int, queue: List<Track> ->
                 mediaControllerViewModel.onQueueEvent(
                     QueueEvent.RecreateQueue(
@@ -469,6 +452,21 @@ fun FoldersAndTracksScreen(
                         queue = queue
                     )
                 )
+            },
+            onGetSheetAction = { track, sheetAction ->
+                when (sheetAction) {
+                    is BottomSheetAction.GotoAlbum -> {
+                        albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                            AlbumWithInfoUiEvent.OnUpdateAlbumHash(track.albumHash)
+                        )
+                        navigator.gotoAlbumWithInfo(track.albumHash)
+                    }
+
+                    else -> {}
+                }
+            },
+            onGotoArtist = { hash ->
+                navigator.gotoArtistInfo(artistHash = hash)
             }
         )
 

@@ -21,14 +21,19 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,8 +54,10 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
+import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
+import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
@@ -58,6 +65,7 @@ import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.util.navigateToSource
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
@@ -66,6 +74,7 @@ import com.android.swingmusic.uicomponent.presentation.util.getName
 import com.android.swingmusic.uicomponent.presentation.util.getSourceType
 import com.ramcosta.composedestinations.annotation.Destination
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Queue(
     queue: List<Track>,
@@ -76,10 +85,17 @@ private fun Queue(
     baseUrl: String,
     onClickQueueSource: (source: QueueSource) -> Unit,
     onTogglePlayerState: () -> Unit,
-    onClickQueueItem: (index: Int) -> Unit
+    onClickQueueItem: (index: Int) -> Unit,
+    onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
+    onGotoArtist: (hash: String) -> Unit,
 ) {
     val lazyColumnState = rememberLazyListState()
     val interactionSource = remember { MutableInteractionSource() }
+
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    var showTrackBottomSheet by remember { mutableStateOf(false) }
+    var clickedTrack: Track? by remember { mutableStateOf(null) }
 
     // scroll past the playing track by one item to keep highlighted cards far apart at first
     LaunchedEffect(key1 = Unit) {
@@ -89,6 +105,65 @@ private fun Queue(
     }
 
     Scaffold { outerPadding ->
+        if (showTrackBottomSheet) {
+            clickedTrack?.let { track ->
+                CustomTrackBottomSheet(
+                    scope = scope,
+                    sheetState = sheetState,
+                    clickedTrack = track,
+                    baseUrl = baseUrl,
+                    bottomSheetItems = listOf(
+                        BottomSheetItemModel(
+                            label = "Go to Artist",
+                            enabled = true,
+                            painterId = R.drawable.ic_artist,
+                            track = track,
+                            sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
+                        ),
+                        BottomSheetItemModel(
+                            label = "Go to Album",
+                            painterId = R.drawable.ic_album,
+                            track = track,
+                            sheetAction = BottomSheetAction.GotoAlbum
+                        ),
+                        BottomSheetItemModel(
+                            label = "Go to Folder",
+                            enabled = true,
+                            painterId = R.drawable.folder_outlined_open,
+                            track = track,
+                            sheetAction = BottomSheetAction.GotoFolder(
+                                name = track.folder.getFolderName(),
+                                path = track.folder
+                            )
+                        ),
+                        BottomSheetItemModel(
+                            label = "Play Next",
+                            enabled = false,
+                            painterId = R.drawable.play_next,
+                            track = track,
+                            sheetAction = BottomSheetAction.PlayNext
+                        ),
+                        BottomSheetItemModel(
+                            label = "Add to playing queue",
+                            enabled = false,
+                            painterId = R.drawable.add_to_queue,
+                            track = track,
+                            sheetAction = BottomSheetAction.AddToQueue
+                        )
+                    ),
+                    onHideBottomSheet = {
+                        showTrackBottomSheet = it
+                    },
+                    onClickSheetItem = { sheetTrack, sheetAction ->
+                        onGetSheetAction(sheetTrack, sheetAction)
+                    },
+                    onChooseArtist = { hash ->
+                        onGotoArtist(hash)
+                    }
+                )
+            }
+        }
+
         AsyncImage(
             modifier = Modifier
                 .fillMaxWidth()
@@ -309,10 +384,14 @@ private fun Queue(
                             playbackState = playbackState,
                             isCurrentTrack = index == playingTrackIndex,
                             baseUrl = baseUrl,
+                            showMenuIcon = true,
                             onClickTrackItem = {
                                 onClickQueueItem(index)
                             },
-                            onClickMoreVert = {}
+                            onClickMoreVert = {
+                                clickedTrack = it
+                                showTrackBottomSheet = true
+                            }
                         )
 
                         if (index == queue.lastIndex) {
@@ -351,6 +430,18 @@ fun QueueScreen(
         onTogglePlayerState = { mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState) },
         onClickQueueItem = { index: Int ->
             mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(index))
+        },
+        onGetSheetAction = { track, sheetAction ->
+            when (sheetAction) {
+                is BottomSheetAction.GotoAlbum -> {
+                    navigator.gotoAlbumWithInfo(track.albumHash)
+                }
+
+                else -> {}
+            }
+        },
+        onGotoArtist = { hash ->
+            navigator.gotoArtistInfo(artistHash = hash)
         }
     )
 }
@@ -375,7 +466,6 @@ fun QueuePreview() {
         album = "Sample Album",
         albumTrackArtists = albumArtists,
         albumHash = "albumHash123",
-        artistHashes = listOf("artistHashes123"),
         trackArtists = artists,
         bitrate = 320,
         duration = 454, // Sample duration in seconds
@@ -406,6 +496,13 @@ fun QueuePreview() {
             onClickQueueSource = {},
             onTogglePlayerState = {},
             onClickQueueItem = { },
+            onGetSheetAction = { _, _ -> },
+            onGotoArtist = { }
         )
     }
+}
+
+internal fun String.getFolderName(): String {
+    val sanitizedPath = this.trimEnd('/')
+    return sanitizedPath.substringAfterLast('/')
 }
