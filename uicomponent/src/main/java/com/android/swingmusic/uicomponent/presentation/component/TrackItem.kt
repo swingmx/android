@@ -233,7 +233,6 @@ fun TrackItemPreview() {
         album = "Sample Album",
         albumTrackArtists = albumArtists,
         albumHash = "albumHash123",
-        artistHashes = listOf("artistHashes123"),
         trackArtists = artists,
         bitrate = 320,
         duration = 454, // Sample duration in seconds

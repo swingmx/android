@@ -32,8 +32,10 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -79,6 +81,7 @@ import com.ramcosta.composedestinations.spec.NavGraphSpec
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -152,6 +155,7 @@ class MainActivity : ComponentActivity() {
                 label = "Spacer Height"
             )
 
+            var folderClickCounter by remember{ mutableIntStateOf(0) }
             SwingMusicTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -253,6 +257,11 @@ class MainActivity : ComponentActivity() {
                                                             }
                                                         }
                                                     )
+
+                                                    if (item.navGraph == NavGraphs.folder){
+                                                        folderClickCounter += 1
+                                                        Timber.e("TODO: Fire an action to reset to root folder on second click... $folderClickCounter")
+                                                    }
                                                 }
                                             )
                                         }

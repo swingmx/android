@@ -233,18 +233,15 @@ private fun NowPlaying(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // Artwork, SeekBar...
                 HorizontalPager(
-                    modifier = Modifier.width(356.dp),
-                    pageSpacing = 24.dp,
+                    modifier = Modifier.fillMaxWidth(),
                     state = pagerState,
                     beyondViewportPageCount = 2,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) { page ->
                     val imageData = if (page == playingTrackIndex) {
                         "${baseUrl}img/thumbnail/${queue.getOrNull(playingTrackIndex)?.image ?: track.image}"
@@ -253,7 +250,10 @@ private fun NowPlaying(
                     }
                     val pageOffset = pagerState.calculateCurrentOffsetForPage(page)
 
-                    Column {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Spacer(modifier = Modifier.height(12.dp))
                         // Artwork
                         AsyncImage(
@@ -283,7 +283,9 @@ private fun NowPlaying(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -346,7 +348,9 @@ private fun NowPlaying(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                Column {
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                ) {
                     WavySlider(
                         modifier = Modifier.height(12.dp),
                         value = seekPosition,
@@ -400,7 +404,9 @@ private fun NowPlaying(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
@@ -717,7 +723,6 @@ fun FullPlayerPreview() {
         album = "Sample Album",
         albumTrackArtists = albumArtists,
         albumHash = "albumHash123",
-        artistHashes = listOf("artistHashes123"),
         trackArtists = artists,
         bitrate = 320,
         duration = 454, // Sample duration in seconds

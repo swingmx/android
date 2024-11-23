@@ -10,7 +10,6 @@ data class QueueEntity(
     val trackHash: String,
     val album: String,
     val albumHash: String,
-    val artistHashes: List<String>,
     val bitrate: Int,
     val duration: Int,
     val filepath: String,

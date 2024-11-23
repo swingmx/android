@@ -44,12 +44,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,15 +79,18 @@ import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumInfo
 import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Genre
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
+import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
@@ -94,6 +99,7 @@ import com.android.swingmusic.uicomponent.presentation.util.formatDate
 import com.android.swingmusic.uicomponent.presentation.util.formattedAlbumDuration
 import com.ramcosta.composedestinations.annotation.Destination
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun AlbumWithInfo(
@@ -111,6 +117,8 @@ fun AlbumWithInfo(
     onPlay: (queue: List<Track>) -> Unit,
     onShuffle: () -> Unit,
     onToggleFavorite: (Boolean, String) -> Unit,
+    onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
+    onGotoArtist: (hash: String) -> Unit,
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val versionContainerColor = if (isDarkTheme) Color(0x26DACC32) else Color(0x3D744F00)
@@ -119,7 +127,65 @@ fun AlbumWithInfo(
     val interaction = remember { MutableInteractionSource() }
     val listState = rememberLazyListState()
 
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    var showTrackBottomSheet by remember { mutableStateOf(false) }
+    var clickedTrack: Track? by remember { mutableStateOf(null) }
+
     Scaffold {
+        if (showTrackBottomSheet) {
+            clickedTrack?.let { track ->
+                CustomTrackBottomSheet(
+                    scope = scope,
+                    sheetState = sheetState,
+                    clickedTrack = track,
+                    baseUrl = baseUrl,
+                    bottomSheetItems = listOf(
+                        BottomSheetItemModel(
+                            label = "Go to Artist",
+                            enabled = true,
+                            painterId = R.drawable.ic_artist,
+                            track = track,
+                            sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
+                        ),
+                        BottomSheetItemModel(
+                            label = "Go to Folder",
+                            enabled = true,
+                            painterId = R.drawable.folder_outlined_open,
+                            track = track,
+                            sheetAction = BottomSheetAction.GotoFolder(
+                                name = track.folder.getFolderName(),
+                                path = track.folder
+                            )
+                        ),
+                        BottomSheetItemModel(
+                            label = "Play Next",
+                            enabled = false,
+                            painterId = R.drawable.play_next,
+                            track = track,
+                            sheetAction = BottomSheetAction.PlayNext
+                        ),
+                        BottomSheetItemModel(
+                            label = "Add to playing queue",
+                            enabled = false,
+                            painterId = R.drawable.add_to_queue,
+                            track = track,
+                            sheetAction = BottomSheetAction.AddToQueue
+                        )
+                    ),
+                    onHideBottomSheet = {
+                        showTrackBottomSheet = it
+                    },
+                    onClickSheetItem = { sheetTrack, sheetAction ->
+                        onGetSheetAction(sheetTrack, sheetAction)
+                    },
+                    onChooseArtist = { hash ->
+                        onGotoArtist(hash)
+                    }
+                )
+            }
+        }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -193,19 +259,6 @@ fun AlbumWithInfo(
                                     contentDescription = "Back Arrow"
                                 )
                             }
-
-                            // TODO: Show album menu
-                            /*IconButton(
-                            modifier = Modifier.clip(CircleShape),
-                            onClick = {
-                                onClickMore()
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Back Arrow"
-                            )
-                        }*/
                         }
 
                         AsyncImage(
@@ -396,10 +449,6 @@ fun AlbumWithInfo(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // TODO: Edit to scroll to the Playing Track if this Album is the source
-            // of the currently playing track...
-            // Alternatively, scroll once (if applicable) then preserve the UI state after navigation.
-
             albumTracks.forEach { (discNumber, tracks) ->
                 item {
                     // Disc Number Header
@@ -452,6 +501,7 @@ fun AlbumWithInfo(
                             TrackItem(
                                 track = track,
                                 isAlbumTrack = true,
+                                showMenuIcon = true,
                                 isCurrentTrack = track.trackHash == currentTrack?.trackHash,
                                 playbackState = playbackState,
                                 onClickTrackItem = {
@@ -461,7 +511,8 @@ fun AlbumWithInfo(
                                     }
                                 },
                                 onClickMoreVert = {
-                                    // Show menu for Album Track
+                                    clickedTrack = it
+                                    showTrackBottomSheet = true
                                 },
                                 baseUrl = baseUrl
                             )
@@ -754,6 +805,18 @@ fun AlbumWithInfoScreen(
                                     albumHash
                                 )
                             )
+                        },
+                        onGetSheetAction = { track, sheetAction ->
+                            when (sheetAction) {
+                                is BottomSheetAction.GotoFolder -> {
+                                    navigator.gotoSourceFolder(sheetAction.name, sheetAction.path)
+                                }
+
+                                else -> {}
+                            }
+                        },
+                        onGotoArtist = { hash ->
+                            navigator.gotoArtistInfo(artistHash = hash)
                         }
                     )
                 }
@@ -819,7 +882,6 @@ fun AlbumWithInfoScreenPreview() {
             album = "Sincere",
             albumTrackArtists = listOf(trackArtist),
             albumHash = "sincere-album-hash",
-            artistHashes = listOf("khalid-hash"),
             trackArtists = listOf(trackArtist),
             bitrate = 320,
             duration = 210,
@@ -836,7 +898,6 @@ fun AlbumWithInfoScreenPreview() {
             album = "Sincere",
             albumTrackArtists = listOf(trackArtist),
             albumHash = "sincere-album-hash",
-            artistHashes = listOf("khalid-hash"),
             trackArtists = listOf(trackArtist),
             bitrate = 320,
             duration = 180,
@@ -853,7 +914,6 @@ fun AlbumWithInfoScreenPreview() {
             album = "Sincere",
             albumTrackArtists = listOf(trackArtist),
             albumHash = "sincere-album-hash",
-            artistHashes = listOf("khalid-hash"),
             trackArtists = listOf(trackArtist),
             bitrate = 320,
             duration = 320,
@@ -870,7 +930,6 @@ fun AlbumWithInfoScreenPreview() {
             album = "Sincere",
             albumTrackArtists = listOf(trackArtist),
             albumHash = "sincere-album-hash",
-            artistHashes = listOf("khalid-hash"),
             trackArtists = listOf(trackArtist),
             bitrate = 320,
             duration = 240,
@@ -887,7 +946,6 @@ fun AlbumWithInfoScreenPreview() {
             album = "Sincere",
             albumTrackArtists = listOf(),
             albumHash = "sincere-album-hash",
-            artistHashes = listOf("khalid-hash"),
             trackArtists = listOf(trackArtist),
             bitrate = 320,
             duration = 195,
@@ -904,7 +962,6 @@ fun AlbumWithInfoScreenPreview() {
             album = "Sincere",
             albumTrackArtists = listOf(trackArtist),
             albumHash = "sincere-album-hash",
-            artistHashes = listOf("khalid-hash"),
             trackArtists = listOf(trackArtist),
             bitrate = 320,
             duration = 225,
@@ -936,7 +993,9 @@ fun AlbumWithInfoScreenPreview() {
             onClickAlbumTrack = { index, queue -> },
             onPlay = { queue -> },
             onShuffle = {},
-            onToggleFavorite = { isFavorite, albumHash -> }
+            onToggleFavorite = { isFavorite, albumHash -> },
+            onGetSheetAction = { _, _ -> },
+            onGotoArtist = {}
         )
     }
 
@@ -1056,4 +1115,9 @@ fun ShimmerPreview() {
     SwingMusicTheme_Preview {
         //  ShimmerLoadingAlbumScreen()
     }
+}
+
+internal fun String.getFolderName(): String {
+    val sanitizedPath = this.trimEnd('/')
+    return sanitizedPath.substringAfterLast('/')
 }

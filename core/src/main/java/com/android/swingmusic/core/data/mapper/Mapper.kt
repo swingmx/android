@@ -72,7 +72,6 @@ object Map {
             album = album ?: "",
             albumTrackArtists = albumTrackArtistDtos?.map { it.toArtist() } ?: emptyList(),
             albumHash = albumHash ?: "",
-            artistHashes = artistHashes ?: emptyList(),
             trackArtists = artistsDto?.map { it.toArtist() } ?: emptyList(),
             bitrate = bitrate ?: 0,
             duration = duration ?: 0,
