@@ -387,7 +387,7 @@ private fun FoldersAndTracks(
 @Destination
 @Composable
 fun FoldersAndTracksScreen(
-    foldersViewModel: FoldersViewModel = hiltViewModel(),
+    foldersViewModel: FoldersViewModel,
     albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
     navigator: CommonNavigator,
@@ -401,8 +401,13 @@ fun FoldersAndTracksScreen(
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
+    var routeByGotoFolder by remember{ mutableStateOf(false) }
+
     LaunchedEffect(key1 = Unit) {
         if (gotoFolderName != null && gotoFolderPath != null) {
+            routeByGotoFolder = true
+            foldersViewModel.resetNavPaths()
+
             val folder = Folder(
                 name = gotoFolderName,
                 path = gotoFolderPath,
@@ -410,10 +415,12 @@ fun FoldersAndTracksScreen(
                 folderCount = 0,
                 isSym = false
             )
+
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
         } else if (foldersAndTracksState.foldersAndTracks.folders.isEmpty() &&
             foldersAndTracksState.foldersAndTracks.tracks.isEmpty()
         ) {
+            routeByGotoFolder = false
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(homeDir))
         }
     }
@@ -428,6 +435,7 @@ fun FoldersAndTracksScreen(
             navPaths = navPaths,
             baseUrl = baseUrl ?: "",
             onClickNavPath = { folder ->
+                routeByGotoFolder = false
                 foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
             },
             onRetry = { event ->
@@ -439,6 +447,7 @@ fun FoldersAndTracksScreen(
                 mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnRetry)
             },
             onClickFolder = { folder ->
+                routeByGotoFolder = false
                 foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
             },
             onClickTrackItem = { index: Int, queue: List<Track> ->
@@ -471,7 +480,7 @@ fun FoldersAndTracksScreen(
         )
 
         val overrideSystemBackNav = currentFolder.path != "\$home"
-        BackHandler(enabled = overrideSystemBackNav) {
+        BackHandler(enabled = overrideSystemBackNav && routeByGotoFolder.not()) {
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
         }
     }

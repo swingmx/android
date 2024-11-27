@@ -59,7 +59,9 @@ import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
+import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
+import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.player.presentation.screen.MiniPlayer
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
@@ -81,13 +83,13 @@ import com.ramcosta.composedestinations.spec.NavGraphSpec
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val mediaControllerViewModel: MediaControllerViewModel by viewModels<MediaControllerViewModel>()
     private val authViewModel: AuthViewModel by viewModels<AuthViewModel>()
     private val artistInfoViewModel: ArtistInfoViewModel by viewModels<ArtistInfoViewModel>()
+    private val foldersViewModel: FoldersViewModel by viewModels<FoldersViewModel>()
 
     private lateinit var controllerFuture: ListenableFuture<MediaController>
 
@@ -155,7 +157,7 @@ class MainActivity : ComponentActivity() {
                 label = "Spacer Height"
             )
 
-            var folderClickCounter by remember{ mutableIntStateOf(0) }
+            var folderClickCounter by remember { mutableIntStateOf(0) }
             SwingMusicTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -258,9 +260,12 @@ class MainActivity : ComponentActivity() {
                                                         }
                                                     )
 
-                                                    if (item.navGraph == NavGraphs.folder){
-                                                        folderClickCounter += 1
-                                                        Timber.e("TODO: Fire an action to reset to root folder on second click... $folderClickCounter")
+                                                    if (item.navGraph == NavGraphs.folder) {
+                                                        foldersViewModel.onFolderUiEvent(
+                                                            FolderUiEvent.OnClickNavPath(
+                                                                folder = foldersViewModel.homeDir
+                                                            )
+                                                        )
                                                     }
                                                 }
                                             )
@@ -276,6 +281,7 @@ class MainActivity : ComponentActivity() {
                             isUserLoggedIn = isUserLoggedIn,
                             navController = navController,
                             authViewModel = authViewModel,
+                            foldersViewModel = foldersViewModel,
                             artistInfoViewModel = artistInfoViewModel,
                             mediaControllerViewModel = mediaControllerViewModel
                         )
@@ -331,6 +337,7 @@ internal fun SwingMusicAppNavigation(
     isUserLoggedIn: Boolean,
     navController: NavHostController,
     authViewModel: AuthViewModel,
+    foldersViewModel: FoldersViewModel,
     artistInfoViewModel: ArtistInfoViewModel,
     mediaControllerViewModel: MediaControllerViewModel
 ) {
@@ -431,6 +438,7 @@ internal fun SwingMusicAppNavigation(
         navGraph = NavGraphs.root(isUserLoggedIn),
         dependenciesContainerBuilder = {
             dependency(authViewModel)
+            dependency(foldersViewModel)
             dependency(mediaControllerViewModel)
             dependency(artistInfoViewModel)
             dependency(

@@ -984,10 +984,6 @@ fun ArtistInfoScreen(
                         },
                         onGetSheetAction = { track, sheetAction ->
                             when (sheetAction) {
-                                is BottomSheetAction.OpenArtistsDialog -> {
-
-                                }
-
                                 is BottomSheetAction.GotoAlbum -> {
                                     commonNavigator.gotoAlbumWithInfo(track.albumHash)
                                 }
