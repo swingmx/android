@@ -436,6 +436,9 @@ fun QueueScreen(
                 is BottomSheetAction.GotoAlbum -> {
                     navigator.gotoAlbumWithInfo(track.albumHash)
                 }
+                is BottomSheetAction.GotoFolder -> {
+                    navigator.gotoSourceFolder(name = sheetAction.name, path = sheetAction.path)
+                }
 
                 else -> {}
             }

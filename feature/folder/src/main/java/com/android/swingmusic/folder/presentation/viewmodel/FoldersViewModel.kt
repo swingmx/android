@@ -15,6 +15,7 @@ import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -35,6 +36,10 @@ class FoldersViewModel @Inject constructor(
     private var _navPaths: MutableState<List<Folder>> =
         mutableStateOf(listOf(homeDir))
     val navPaths: State<List<Folder>> = _navPaths
+
+    fun resetNavPaths() {
+        _navPaths.value = listOf(homeDir)
+    }
 
     private var _foldersAndTracks: MutableState<FoldersAndTracksState> =
         mutableStateOf(
@@ -127,14 +132,11 @@ class FoldersViewModel @Inject constructor(
 
                 if (!_navPaths.value.contains(event.folder)) {
                     _navPaths.value = listOf<Folder>(homeDir)
-                        // TODO: rebuild the entire path (use network result path)
                         .plus(
                             (_navPaths.value.filter {
                                 event.folder.path.contains(it.path)
                             }.plus(event.folder))
-                                .toSet()
-                                .toList()
-                        )
+                        ).distinctBy { it.path }
                 }
             }
 
