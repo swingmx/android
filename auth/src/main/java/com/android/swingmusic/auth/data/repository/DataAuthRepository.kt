@@ -93,7 +93,7 @@ class DataAuthRepository @Inject constructor(
 
             result.toModel()
         } catch (e: Exception) {
-            Timber.e(message = "Failed to load users!")
+            Timber.e(message = "Failed to get refresh tokens!")
             null
         } catch (e: HttpException) {
             Timber.e(message = "Connection Failed!")

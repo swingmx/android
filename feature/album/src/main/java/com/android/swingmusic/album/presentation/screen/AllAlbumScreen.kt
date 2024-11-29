@@ -29,20 +29,16 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,17 +67,16 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.ramcosta.composedestinations.annotation.Destination
 import com.android.swingmusic.uicomponent.R as UiComponents
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AllAlbums(
     pagingAlbums: LazyPagingItems<Album>,
     allAlbumsUiState: AllAlbumsUiState,
     sortByPairs: List<Pair<SortBy, String>>,
+    showOnRefreshIndicator: Boolean,
     onUpdateGridCount: (Int) -> Unit,
     onSortBy: (Pair<SortBy, String>) -> Unit,
     onClickAlbumItem: (albumHash: String) -> Unit,
     onRetry: () -> Unit,
-    onPullToRefresh: () -> Unit,
     baseUrl: String
 ) {
     val gridState = rememberLazyGridState()
@@ -106,7 +101,6 @@ private fun AllAlbums(
     }
 
     var isGridCountMenuExpanded by remember { mutableStateOf(false) }
-    var showOnRefreshIndicator by remember { mutableStateOf(false) }
 
     Scaffold { pv ->
         Scaffold(
@@ -207,84 +201,49 @@ private fun AllAlbums(
                     .padding(paddingValues)
                     .fillMaxSize()
             ) {
-                PullToRefreshBox(
-                    isRefreshing = showOnRefreshIndicator,
-                    onRefresh = {
-                        showOnRefreshIndicator = true
-                        onPullToRefresh()
-                    },
+                LazyVerticalGrid(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp),
+                    columns = GridCells.Fixed(allAlbumsUiState.gridCount),
+                    state = gridState,
                 ) {
-                    LazyVerticalGrid(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 8.dp),
-                        columns = GridCells.Fixed(allAlbumsUiState.gridCount),
-                        state = gridState,
-                    ) {
-                        item(span = { GridItemSpan(allAlbumsUiState.gridCount) }) {
-                            LazyRow(
-                                modifier = Modifier
-                                    .padding(horizontal = 4.dp, vertical = 12.dp)
-                                    .fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                items(sortByPairs) { pair ->
-                                    SortByChip(
-                                        labelPair = pair,
-                                        sortOrder = allAlbumsUiState.sortOrder,
-                                        isSelected = allAlbumsUiState.sortBy == pair
-                                    ) { clickedPair ->
-                                        onSortBy(clickedPair)
-                                    }
-                                    Spacer(modifier = Modifier.width(12.dp))
+                    item(span = { GridItemSpan(allAlbumsUiState.gridCount) }) {
+                        LazyRow(
+                            modifier = Modifier
+                                .padding(horizontal = 4.dp, vertical = 12.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            items(sortByPairs) { pair ->
+                                SortByChip(
+                                    labelPair = pair,
+                                    sortOrder = allAlbumsUiState.sortOrder,
+                                    isSelected = allAlbumsUiState.sortBy == pair
+                                ) { clickedPair ->
+                                    onSortBy(clickedPair)
                                 }
+                                Spacer(modifier = Modifier.width(12.dp))
                             }
                         }
+                    }
 
-                        if (pagingAlbums.loadState.refresh is LoadState.NotLoading) {
-                            showOnRefreshIndicator = false
-
-                            pagingAlbums(pagingAlbums) { album ->
-                                if (album == null) return@pagingAlbums
-                                AlbumItem(
-                                    modifier = Modifier.fillMaxSize(),
-                                    album = album,
-                                    baseUrl = baseUrl,
-                                    onClick = {
-                                        onClickAlbumItem(it)
-                                    }
-                                )
-                            }
-                        }
-
-                        loadingState?.let {
-                            if (!showOnRefreshIndicator) {
-                                item(span = { GridItemSpan(allAlbumsUiState.gridCount) }) {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .padding(16.dp)
-                                                .fillMaxSize()
-                                                .padding(12.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Text(text = "Loading albums...")
-
-                                            Spacer(modifier = Modifier.height(8.dp))
-
-                                            CircularProgressIndicator()
-                                        }
-                                    }
+                    if (pagingAlbums.loadState.refresh is LoadState.NotLoading) {
+                        pagingAlbums(pagingAlbums) { album ->
+                            if (album == null) return@pagingAlbums
+                            AlbumItem(
+                                modifier = Modifier.fillMaxSize(),
+                                album = album,
+                                baseUrl = baseUrl,
+                                onClick = {
+                                    onClickAlbumItem(it)
                                 }
-                            }
+                            )
                         }
+                    }
 
-                        errorState?.let {
-                            showOnRefreshIndicator = false
-
+                    loadingState?.let {
+                        if (!showOnRefreshIndicator) {
                             item(span = { GridItemSpan(allAlbumsUiState.gridCount) }) {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),
@@ -297,19 +256,42 @@ private fun AllAlbums(
                                             .padding(12.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Text(
-                                            text = it.error.message!!,
-                                            textAlign = TextAlign.Center
-                                        )
+                                        Text(text = "Loading albums...")
 
                                         Spacer(modifier = Modifier.height(8.dp))
 
-                                        Button(onClick = {
-                                            pagingAlbums.retry()
-                                            onRetry()
-                                        }) {
-                                            Text(text = "RETRY")
-                                        }
+                                        CircularProgressIndicator()
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    errorState?.let {
+                        item(span = { GridItemSpan(allAlbumsUiState.gridCount) }) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxSize()
+                                        .padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = it.error.message!!,
+                                        textAlign = TextAlign.Center
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Button(onClick = {
+                                        pagingAlbums.retry()
+                                        onRetry()
+                                    }) {
+                                        Text(text = "RETRY")
                                     }
                                 }
                             }
@@ -321,6 +303,7 @@ private fun AllAlbums(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Destination
 @Composable
 fun AllAlbumScreen(
@@ -335,29 +318,53 @@ fun AllAlbumScreen(
 
     val baseUrl by allAlbumsViewModel.baseUrl.collectAsState()
 
+    var showOnRefreshIndicator by remember { mutableStateOf(false) }
+
+    val errorState = when {
+        pagingAlbums.loadState.append is LoadState.Error -> pagingAlbums.loadState.append as LoadState.Error
+        pagingAlbums.loadState.prepend is LoadState.Error -> pagingAlbums.loadState.prepend as LoadState.Error
+        pagingAlbums.loadState.refresh is LoadState.Error -> pagingAlbums.loadState.refresh as LoadState.Error
+        else -> null
+    }
+
+    if (pagingAlbums.loadState.refresh is LoadState.NotLoading) {
+        showOnRefreshIndicator = false
+    }
+
+    errorState?.let {
+        showOnRefreshIndicator = false
+    }
+
     SwingMusicTheme(navBarColor = MaterialTheme.colorScheme.inverseOnSurface) {
-        AllAlbums(
-            pagingAlbums = pagingAlbums,
-            allAlbumsUiState = albumsUiState,
-            sortByPairs = sortAlbumsByPairs,
-            baseUrl = baseUrl ?: "https://default",
-            onUpdateGridCount = { gridCount ->
-                allAlbumsViewModel.onAlbumsUiEvent(AlbumsUiEvent.OnUpdateGridCount(gridCount))
-            },
-            onSortBy = { pair ->
-                allAlbumsViewModel.onAlbumsUiEvent(AlbumsUiEvent.OnSortBy(pair))
-            },
-            onClickAlbumItem = {
-                albumWithInfoViewModel.onAlbumWithInfoUiEvent(AlbumWithInfoUiEvent.ResetState)
-                albumNavigator.gotoAlbumWithInfo(albumHash = it)
-            },
-            onRetry = {
-                allAlbumsViewModel.onAlbumsUiEvent(AlbumsUiEvent.OnRetry)
-            },
-            onPullToRefresh = {
+        PullToRefreshBox(
+            isRefreshing = showOnRefreshIndicator,
+            onRefresh = {
+                showOnRefreshIndicator = true
+
                 allAlbumsViewModel.onAlbumsUiEvent(AlbumsUiEvent.OnPullToRefresh)
-            }
-        )
+            },
+        ) {
+            AllAlbums(
+                pagingAlbums = pagingAlbums,
+                allAlbumsUiState = albumsUiState,
+                sortByPairs = sortAlbumsByPairs,
+                baseUrl = baseUrl ?: "https://default",
+                showOnRefreshIndicator = showOnRefreshIndicator,
+                onUpdateGridCount = { gridCount ->
+                    allAlbumsViewModel.onAlbumsUiEvent(AlbumsUiEvent.OnUpdateGridCount(gridCount))
+                },
+                onSortBy = { pair ->
+                    allAlbumsViewModel.onAlbumsUiEvent(AlbumsUiEvent.OnSortBy(pair))
+                },
+                onClickAlbumItem = {
+                    albumWithInfoViewModel.onAlbumWithInfoUiEvent(AlbumWithInfoUiEvent.ResetState)
+                    albumNavigator.gotoAlbumWithInfo(albumHash = it)
+                },
+                onRetry = {
+                    allAlbumsViewModel.onAlbumsUiEvent(AlbumsUiEvent.OnRetry)
+                }
+            )
+        }
     }
 }
 
