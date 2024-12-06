@@ -27,6 +27,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -90,6 +92,7 @@ private fun FoldersAndTracks(
     var clickedTrack: Track? by remember { mutableStateOf(null) }
 
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
+    val refreshState = rememberPullToRefreshState()
 
     val lazyColumnState = rememberLazyListState()
     val pathsLazyRowState = rememberLazyListState()
@@ -99,12 +102,22 @@ private fun FoldersAndTracks(
         PullToRefreshBox(
             modifier = Modifier.fillMaxSize(),
             isRefreshing = showOnRefreshIndicator,
+            state = refreshState,
             onRefresh = {
                 showOnRefreshIndicator = true
 
                 val event = FolderUiEvent.OnClickFolder(currentFolder)
                 onPullToRefresh(event)
             },
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    modifier = Modifier
+                        .padding(top = 76.dp)
+                        .align(Alignment.TopCenter),
+                    isRefreshing = showOnRefreshIndicator,
+                    state = refreshState
+                )
+            }
         ) {
             Scaffold(
                 modifier = Modifier.padding(it),

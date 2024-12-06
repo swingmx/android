@@ -33,6 +33,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -317,7 +319,9 @@ fun ArtistsScreen(
     val sortByPairs by remember { derivedStateOf { artistsViewModel.sortArtistsByEntries.toList() } }
 
     val baseUrl by remember { artistsViewModel.baseUrl() }
+
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
+    val refreshState = rememberPullToRefreshState()
 
     val errorState = when {
         pagingArtists.loadState.append is LoadState.Error -> pagingArtists.loadState.append as LoadState.Error
@@ -337,11 +341,21 @@ fun ArtistsScreen(
     SwingMusicTheme(navBarColor = MaterialTheme.colorScheme.inverseOnSurface) {
         PullToRefreshBox(
             isRefreshing = showOnRefreshIndicator,
+            state = refreshState,
             onRefresh = {
                 showOnRefreshIndicator = true
 
                 artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnPullToRefresh)
             },
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    modifier = Modifier
+                        .padding(top = 76.dp)
+                        .align(Alignment.TopCenter),
+                    isRefreshing = showOnRefreshIndicator,
+                    state = refreshState
+                )
+            }
         ) {
             Artists(
                 pagingArtists = pagingArtists,

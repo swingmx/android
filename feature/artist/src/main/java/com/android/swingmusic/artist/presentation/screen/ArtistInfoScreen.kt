@@ -34,6 +34,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -86,7 +88,6 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Pre
 import com.android.swingmusic.uicomponent.presentation.util.Screen
 import com.android.swingmusic.uicomponent.presentation.util.formattedAlbumDuration
 import com.ramcosta.composedestinations.annotation.Destination
-import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -824,6 +825,7 @@ fun ArtistInfoScreen(
         artistInfoState.value.similarArtistsResource.data else emptyList()
 
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
+    val refreshState = rememberPullToRefreshState()
 
     LaunchedEffect(key1 = Unit) {
         if (artistInfoState.value.requiresReload || loadNewArtist) {
@@ -839,6 +841,7 @@ fun ArtistInfoScreen(
         PullToRefreshBox(
             modifier = Modifier.fillMaxSize(),
             isRefreshing = showOnRefreshIndicator,
+            state = refreshState,
             onRefresh = {
                 showOnRefreshIndicator = true
 
@@ -848,10 +851,16 @@ fun ArtistInfoScreen(
                             ?: artistHash
                     )
                 )
-
-                Timber.e("Artist Hash  VM: ${artistInfoState.value.infoResource.data?.artist?.artistHash}")
-                Timber.e("Artist Hash Nav: $artistHash")
             },
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    modifier = Modifier
+                        .padding(top = 76.dp)
+                        .align(Alignment.TopCenter),
+                    isRefreshing = showOnRefreshIndicator,
+                    state = refreshState
+                )
+            }
         ) {
             when (val res = artistInfoState.value.infoResource) {
                 is Resource.Loading -> {
