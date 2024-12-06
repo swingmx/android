@@ -44,6 +44,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -665,6 +667,7 @@ fun AlbumWithInfoScreen(
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
+    val refreshState = rememberPullToRefreshState()
 
     LaunchedEffect(
         key1 = albumWithInfoState.albumHash,
@@ -681,6 +684,7 @@ fun AlbumWithInfoScreen(
         PullToRefreshBox(
             modifier = Modifier.fillMaxSize(),
             isRefreshing = showOnRefreshIndicator,
+            state = refreshState,
             onRefresh = {
                 showOnRefreshIndicator = true
 
@@ -688,6 +692,15 @@ fun AlbumWithInfoScreen(
                     event = AlbumWithInfoUiEvent.OnRefreshAlbumInfo
                 )
             },
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    modifier = Modifier
+                        .padding(top = 76.dp)
+                        .align(Alignment.TopCenter),
+                    isRefreshing = showOnRefreshIndicator,
+                    state = refreshState
+                )
+            }
         ) {
             when (albumWithInfoState.infoResource) {
                 is Resource.Loading -> {
