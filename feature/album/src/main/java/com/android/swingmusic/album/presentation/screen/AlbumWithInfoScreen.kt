@@ -145,14 +145,12 @@ fun AlbumWithInfo(
                     bottomSheetItems = listOf(
                         BottomSheetItemModel(
                             label = "Go to Artist",
-                            enabled = true,
                             painterId = R.drawable.ic_artist,
                             track = track,
                             sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
                         ),
                         BottomSheetItemModel(
                             label = "Go to Folder",
-                            enabled = true,
                             painterId = R.drawable.folder_outlined_open,
                             track = track,
                             sheetAction = BottomSheetAction.GotoFolder(
@@ -162,14 +160,12 @@ fun AlbumWithInfo(
                         ),
                         BottomSheetItemModel(
                             label = "Play Next",
-                            enabled = false,
                             painterId = R.drawable.play_next,
                             track = track,
                             sheetAction = BottomSheetAction.PlayNext
                         ),
                         BottomSheetItemModel(
                             label = "Add to playing queue",
-                            enabled = false,
                             painterId = R.drawable.add_to_queue,
                             track = track,
                             sheetAction = BottomSheetAction.AddToQueue
@@ -823,6 +819,18 @@ fun AlbumWithInfoScreen(
                             when (sheetAction) {
                                 is BottomSheetAction.GotoFolder -> {
                                     navigator.gotoSourceFolder(sheetAction.name, sheetAction.path)
+                                }
+
+                                is BottomSheetAction.PlayNext -> {
+                                    mediaControllerViewModel.onQueueEvent(
+                                        QueueEvent.PlayNext(track)
+                                    )
+                                }
+
+                                is BottomSheetAction.AddToQueue -> {
+                                    mediaControllerViewModel.onQueueEvent(
+                                        QueueEvent.AddToQueue(track)
+                                    )
                                 }
 
                                 else -> {}

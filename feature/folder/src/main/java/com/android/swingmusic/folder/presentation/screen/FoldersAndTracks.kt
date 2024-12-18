@@ -163,6 +163,19 @@ private fun FoldersAndTracks(
                                         painterId = R.drawable.ic_album,
                                         track = track,
                                         sheetAction = BottomSheetAction.GotoAlbum
+                                    ),
+                                    BottomSheetItemModel(
+                                        label = "Play Next",
+                                        enabled = true,
+                                        painterId = R.drawable.play_next,
+                                        track = track,
+                                        sheetAction = BottomSheetAction.PlayNext
+                                    ),
+                                    BottomSheetItemModel(
+                                        label = "Add to playing queue",
+                                        painterId = R.drawable.add_to_queue,
+                                        track = track,
+                                        sheetAction = BottomSheetAction.AddToQueue
                                     )
                                 ),
                                 onHideBottomSheet = {
@@ -414,7 +427,7 @@ fun FoldersAndTracksScreen(
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
-    var routeByGotoFolder by remember{ mutableStateOf(false) }
+    var routeByGotoFolder by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = Unit) {
         if (gotoFolderName != null && gotoFolderPath != null) {
@@ -482,6 +495,14 @@ fun FoldersAndTracksScreen(
                             AlbumWithInfoUiEvent.OnUpdateAlbumHash(track.albumHash)
                         )
                         navigator.gotoAlbumWithInfo(track.albumHash)
+                    }
+
+                    is BottomSheetAction.PlayNext -> {
+                        mediaControllerViewModel.onQueueEvent(QueueEvent.PlayNext(track))
+                    }
+
+                    is BottomSheetAction.AddToQueue -> {
+                        mediaControllerViewModel.onQueueEvent(QueueEvent.AddToQueue(track))
                     }
 
                     else -> {}

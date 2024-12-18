@@ -11,7 +11,9 @@ interface QueueEvent {
         val clickedTrackIndex: Int,
     ) : QueueEvent
 
-    data class InsertTrackAtIndex(val track: Track, val index: Int) : QueueEvent
+    data class PlayNext(val track: Track) : QueueEvent
+
+    data class AddToQueue(val track: Track) : QueueEvent
 
     data class SeekToQueueItem(val index: Int) : QueueEvent
 

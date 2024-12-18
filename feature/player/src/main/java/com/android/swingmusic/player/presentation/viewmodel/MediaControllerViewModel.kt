@@ -333,6 +333,64 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
+    private fun addToPlayNextInQueue(playNextTrack: Track?) {
+        val currentIndex = mediaController?.currentMediaItemIndex ?: 0
+        val targetQueue = if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
+            shuffledQueue
+        } else {
+            workingQueue
+        }
+
+        playNextTrack?.let {
+            targetQueue.add(currentIndex + 1, it)
+            _playerUiState.value = _playerUiState.value.copy(
+                queue = targetQueue
+            )
+        } ?: return
+
+        val mediaItems = targetQueue.mapIndexed { index, track ->
+            createMediaItem(id = index, track = track)
+        }
+
+        mediaController?.apply {
+            replaceMediaItems(
+                currentIndex + 1,
+                targetQueue.lastIndex,
+                mediaItems.drop(currentIndex + 1)
+            )
+        }
+
+        updateQueueInDatabase(
+            queue = targetQueue,
+            playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
+        )
+    }
+
+    private fun addToPlayingQueue(track: Track?) {
+        val targetQueue = if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
+            shuffledQueue
+        } else {
+            workingQueue
+        }
+
+        track?.let {
+            targetQueue.add(it)
+
+            _playerUiState.value = _playerUiState.value.copy(
+                queue = targetQueue
+            )
+
+            val newMediaItem = createMediaItem(
+                id = targetQueue.lastIndex,
+                track = it
+            )
+
+            mediaController?.apply {
+                addMediaItem(newMediaItem)
+            }
+        }
+    }
+
     private fun createNewQueue(
         tracks: List<Track>,
         startIndex: Int,
@@ -748,36 +806,12 @@ class MediaControllerViewModel @Inject constructor(
                 mediaController?.playWhenReady = true
             }
 
-            is QueueEvent.InsertTrackAtIndex -> {
-                val eventTrack = event.track
-                if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
-                    shuffledQueue.add(event.index, eventTrack)
-                    // TODO: Examine how this affects the ids of the mediaItems after the inserted one
-                    val mediaItem = createMediaItem(event.index, eventTrack)
-                    mediaController?.addMediaItem(event.index, mediaItem)
+            is QueueEvent.PlayNext -> {
+                addToPlayNextInQueue(event.track)
+            }
 
-                    _playerUiState.value = _playerUiState.value.copy(
-                        queue = shuffledQueue
-                    )
-
-                    updateQueueInDatabase(
-                        queue = shuffledQueue,
-                        playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
-                    )
-                } else {
-                    workingQueue.add(event.index, eventTrack)
-                    val mediaItem = createMediaItem(event.index, eventTrack)
-                    mediaController?.addMediaItem(event.index, mediaItem)
-
-                    _playerUiState.value = _playerUiState.value.copy(
-                        queue = workingQueue
-                    )
-
-                    updateQueueInDatabase(
-                        queue = workingQueue,
-                        playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
-                    )
-                }
+            is QueueEvent.AddToQueue -> {
+                addToPlayingQueue(event.track)
             }
 
             is QueueEvent.ClearQueue -> {
