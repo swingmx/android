@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.emptyFlow
 data class ArtistsUiState(
     val pagingArtists: Flow<PagingData<Artist>> = emptyFlow(),
     val totalArtists: Resource<Int> = Resource.Success(data = 0),
-    val sortBy: Pair<SortBy, String> = Pair(SortBy.NO_OF_TRACKS, "trackcount"),
+    val sortBy: Pair<SortBy, String> = Pair(SortBy.LAST_PLAYED, "lastplayed"),
     val sortOrder: SortOrder = SortOrder.DESCENDING,
     val gridCount: Int = 2
 )

@@ -138,17 +138,10 @@ private fun Queue(
                         ),
                         BottomSheetItemModel(
                             label = "Play Next",
-                            enabled = false,
+                            enabled = true,
                             painterId = R.drawable.play_next,
                             track = track,
                             sheetAction = BottomSheetAction.PlayNext
-                        ),
-                        BottomSheetItemModel(
-                            label = "Add to playing queue",
-                            enabled = false,
-                            painterId = R.drawable.add_to_queue,
-                            track = track,
-                            sheetAction = BottomSheetAction.AddToQueue
                         )
                     ),
                     onHideBottomSheet = {
@@ -438,6 +431,10 @@ fun QueueScreen(
                 }
                 is BottomSheetAction.GotoFolder -> {
                     navigator.gotoSourceFolder(name = sheetAction.name, path = sheetAction.path)
+                }
+
+                is BottomSheetAction.PlayNext -> {
+                    mediaControllerViewModel.onQueueEvent(QueueEvent.PlayNext(track))
                 }
 
                 else -> {}
