@@ -50,6 +50,7 @@ object NavGraphs {
                 FoldersAndTracksScreenDestination,
                 AlbumWithInfoScreenDestination,
                 ArtistInfoScreenDestination,
+                QueueScreenDestination,
                 NowPlayingScreenDestination,
                 ViewAllScreenDestination
             ).routedIn(this).associateBy { it.route }
@@ -83,6 +84,7 @@ object NavGraphs {
                 AlbumWithInfoScreenDestination,
                 ViewAllScreenDestination,
                 NowPlayingScreenDestination,
+                QueueScreenDestination,
                 FoldersAndTracksScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
@@ -99,6 +101,7 @@ object NavGraphs {
                 ArtistInfoScreenDestination,
                 ViewAllScreenDestination,
                 NowPlayingScreenDestination,
+                QueueScreenDestination,
                 FoldersAndTracksScreenDestination
             ).routedIn(this).associateBy { it.route }
     }

@@ -1,6 +1,9 @@
 package com.android.swingmusic.player.presentation.viewmodel
 
 import android.net.Uri
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -29,6 +32,7 @@ import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnToggleFa
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnTogglePlayerState
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnToggleRepeatMode
 import com.android.swingmusic.player.presentation.event.QueueEvent
+import com.android.swingmusic.player.presentation.event.SnackbarEvent
 import com.android.swingmusic.player.presentation.state.PlayerUiState
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.google.common.util.concurrent.ListenableFuture
@@ -36,6 +40,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -48,7 +53,8 @@ import kotlin.math.roundToInt
 @HiltViewModel
 class MediaControllerViewModel @Inject constructor(
     private val pLayerRepository: PLayerRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val vibrator: Vibrator
 ) : ViewModel() {
     private val _baseUrl: MutableStateFlow<String?> = MutableStateFlow(null)
     val baseUrl: StateFlow<String?> get() = _baseUrl
@@ -59,7 +65,9 @@ class MediaControllerViewModel @Inject constructor(
     private var shuffledQueue: MutableList<Track> = mutableListOf()
     private var trackToLog: Track? = null
 
-    //TODO: Manage durationPlayed within the Playback Service to improve accuracy and data integrity
+    private val _snackbarEvent = MutableStateFlow<SnackbarEvent?>(null)
+    val snackbarEvent = _snackbarEvent.asStateFlow()
+
     private var durationPlayedSec: Long = 0L
     private val playbackMutex = Mutex()
 
@@ -812,6 +820,7 @@ class MediaControllerViewModel @Inject constructor(
 
             is QueueEvent.AddToQueue -> {
                 addToPlayingQueue(event.track)
+                activateHapticResponse()
             }
 
             is QueueEvent.ClearQueue -> {
@@ -823,6 +832,19 @@ class MediaControllerViewModel @Inject constructor(
                     mediaController?.clearMediaItems()
                     trackToLog = null
                 }
+
+                activateHapticResponse()
+            }
+
+            is QueueEvent.ShowSnackbar -> {
+                _snackbarEvent.value = SnackbarEvent(
+                    message = event.msg,
+                    actionLabel = event.actionLabel
+                )
+            }
+
+            is QueueEvent.HideSnackbar -> {
+                _snackbarEvent.value = null
             }
         }
     }
@@ -963,6 +985,22 @@ class MediaControllerViewModel @Inject constructor(
                     Timber.e("ERROR ON TRANSITION -> $e")
                 }
             }
+        }
+    }
+
+    private fun activateHapticResponse(durationMs: Long = 50L) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    durationMs,
+                    VibrationEffect.DEFAULT_AMPLITUDE
+                )
+            )
+        } else {
+            val timings = longArrayOf(0L, durationMs)
+
+            val effect = VibrationEffect.createWaveform(timings, -1)
+            vibrator.vibrate(effect)
         }
     }
 

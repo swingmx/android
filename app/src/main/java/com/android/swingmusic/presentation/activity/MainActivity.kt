@@ -157,7 +157,6 @@ class MainActivity : ComponentActivity() {
                 label = "Spacer Height"
             )
 
-            var folderClickCounter by remember { mutableIntStateOf(0) }
             SwingMusicTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -179,7 +178,9 @@ class MainActivity : ComponentActivity() {
                                     "player/${ViewAllScreenDestination.route}",
                                     "folder/${ViewAllScreenDestination.route}",
                                     "album/${ViewAllScreenDestination.route}",
-                                    "artist/${ViewAllScreenDestination.route}"
+                                    "artist/${ViewAllScreenDestination.route}",
+
+                                    "folder/${QueueScreenDestination.route}",
                                 ))
                             ) {
                                 MiniPlayer(

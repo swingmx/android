@@ -18,4 +18,8 @@ interface QueueEvent {
     data class SeekToQueueItem(val index: Int) : QueueEvent
 
     object ClearQueue : QueueEvent
+
+    data class ShowSnackbar(val msg: String, val actionLabel: String) : QueueEvent
+
+    object HideSnackbar : QueueEvent
 }

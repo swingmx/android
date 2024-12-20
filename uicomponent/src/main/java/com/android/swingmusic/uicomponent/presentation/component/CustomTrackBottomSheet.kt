@@ -1,6 +1,5 @@
 package com.android.swingmusic.uicomponent.presentation.component
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -19,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
@@ -62,6 +62,7 @@ fun CustomTrackBottomSheet(
     baseUrl: String,
     bottomSheetItems: List<BottomSheetItemModel>,
     currentArtisthash: String? = null,
+    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
     onHideBottomSheet: (show: Boolean) -> Unit,
     onClickSheetItem: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onChooseArtist: (hash: String) -> Unit
@@ -80,13 +81,36 @@ fun CustomTrackBottomSheet(
     ) {
         clickedTrack?.let { track ->
             Column {
-                Box(modifier = Modifier.offset(x = (-8).dp)) {
+                Box(
+                    modifier = Modifier.offset(x = (-8).dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
                     TrackItem(
                         track = track,
                         onClickTrackItem = {},
                         onClickMoreVert = {},
                         baseUrl = baseUrl
                     )
+
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        IconButton(
+                            modifier = Modifier
+                                .clip(CircleShape),
+                            onClick = {
+                                onToggleTrackFavorite(track.isFavorite, track.trackHash)
+                            }) {
+                            val icon =
+                                if (track.isFavorite) R.drawable.fav_filled
+                                else R.drawable.fav_not_filled
+                            Icon(
+                                painter = painterResource(id = icon),
+                                contentDescription = "Favorite"
+                            )
+                        }
+                    }
                 }
 
                 HorizontalDivider()
