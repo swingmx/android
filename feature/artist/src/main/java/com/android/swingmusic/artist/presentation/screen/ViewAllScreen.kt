@@ -1,5 +1,6 @@
 package com.android.swingmusic.artist.presentation.screen
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,9 +16,14 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,9 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
@@ -43,8 +48,8 @@ import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.ramcosta.composedestinations.annotation.Destination
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +63,7 @@ private fun ViewAll(
     allTracks: List<Track>?,
     allAlbumsToShow: List<Album>?,
     onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit,
+    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
     onClickAlbum: (hash: String) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onGotoArtist: (hash: String) -> Unit
@@ -142,6 +148,9 @@ private fun ViewAll(
                         },
                         onChooseArtist = { hash ->
                             onGotoArtist(hash)
+                        },
+                        onToggleTrackFavorite = { isFavorite, trackHash ->
+                            onToggleTrackFavorite(isFavorite, trackHash)
                         }
                     )
                 }
@@ -209,6 +218,7 @@ private fun ViewAll(
     }
 }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Destination
 @Composable
 fun ViewAllScreen(
@@ -233,55 +243,107 @@ fun ViewAllScreen(
         else -> null
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val snackbarEvent by mediaControllerViewModel.snackbarEvent.collectAsStateWithLifecycle()
+
+    SideEffect {
+        mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
+    }
+
     SwingMusicTheme {
-        ViewAll(
-            title = viewAllType,
-            artistName = artistData?.artist?.name ?: artistName,
-            baseUrl = baseUrl,
-            artistHash = artistHash,
-            playingTrackHash = playerUiState.value.nowPlayingTrack?.trackHash ?: "",
-            playbackState = playerUiState.value.playbackState,
-            allTracks = tracks,
-            allAlbumsToShow = albumsToShow,
-            onClickArtistTrack = { queue, index ->
-                mediaControllerViewModel.onQueueEvent(
-                    QueueEvent.RecreateQueue(
-                        source = QueueSource.ARTIST(artistHash = artistHash, name = artistName),
-                        clickedTrackIndex = index,
-                        queue = queue
-                    )
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.padding(bottom = 24.dp)
                 )
-            },
-            onClickAlbum = {
-                commonNavigator.gotoAlbumWithInfo(it)
-            },
-            onGetSheetAction = { track, sheetAction ->
-                when (sheetAction) {
-                    is BottomSheetAction.GotoAlbum -> {
-                        commonNavigator.gotoAlbumWithInfo(track.albumHash)
-                    }
-
-                    is BottomSheetAction.GotoFolder -> {
-                        commonNavigator.gotoSourceFolder(
-                            sheetAction.name,
-                            sheetAction.path
-                        )
-                    }
-
-                    is BottomSheetAction.PlayNext -> {
-                        mediaControllerViewModel.onQueueEvent(QueueEvent.PlayNext(track))
-                    }
-
-                    is BottomSheetAction.AddToQueue -> {
-                        mediaControllerViewModel.onQueueEvent(QueueEvent.AddToQueue(track))
-                    }
-
-                    else -> {}
-                }
-            },
-            onGotoArtist = { hash ->
-                commonNavigator.gotoArtistInfo(hash)
             }
-        )
+        ) {
+            ViewAll(
+                title = viewAllType,
+                artistName = artistData?.artist?.name ?: artistName,
+                baseUrl = baseUrl,
+                artistHash = artistHash,
+                playingTrackHash = playerUiState.value.nowPlayingTrack?.trackHash ?: "",
+                playbackState = playerUiState.value.playbackState,
+                allTracks = tracks,
+                allAlbumsToShow = albumsToShow,
+                onClickArtistTrack = { queue, index ->
+                    mediaControllerViewModel.onQueueEvent(
+                        QueueEvent.RecreateQueue(
+                            source = QueueSource.ARTIST(artistHash = artistHash, name = artistName),
+                            clickedTrackIndex = index,
+                            queue = queue
+                        )
+                    )
+                },
+                onClickAlbum = {
+                    commonNavigator.gotoAlbumWithInfo(it)
+                },
+                onGetSheetAction = { track, sheetAction ->
+                    when (sheetAction) {
+                        is BottomSheetAction.GotoAlbum -> {
+                            commonNavigator.gotoAlbumWithInfo(track.albumHash)
+                        }
+
+                        is BottomSheetAction.GotoFolder -> {
+                            commonNavigator.gotoSourceFolder(
+                                sheetAction.name,
+                                sheetAction.path
+                            )
+                        }
+
+                        is BottomSheetAction.PlayNext -> {
+                            mediaControllerViewModel.onQueueEvent(QueueEvent.PlayNext(track))
+                        }
+
+                        is BottomSheetAction.AddToQueue -> {
+                            mediaControllerViewModel.onQueueEvent(QueueEvent.AddToQueue(track))
+
+                            mediaControllerViewModel.onQueueEvent(
+                                QueueEvent.ShowSnackbar(
+                                    msg = "Track added to playing queue",
+                                    actionLabel = "View Queue"
+                                )
+                            )
+                        }
+
+                        else -> {}
+                    }
+                },
+                onGotoArtist = { hash ->
+                    commonNavigator.gotoArtistInfo(hash)
+                },
+                onToggleTrackFavorite = { isFavorite, trackHash ->
+                    // TODO: Call ViewAll Track fav toggle
+                }
+            )
+
+            LaunchedEffect(snackbarEvent) {
+                snackbarEvent?.let { event ->
+                    scope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = event.message,
+                            actionLabel = event.actionLabel,
+                            duration = event.duration
+                        )
+
+                        when (result) {
+                            SnackbarResult.ActionPerformed -> {
+                                commonNavigator.gotoQueueScreen()
+                            }
+
+                            SnackbarResult.Dismissed -> {}
+
+                            else -> {}
+                        }
+
+                        mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
+                    }
+                }
+            }
+        }
     }
 }

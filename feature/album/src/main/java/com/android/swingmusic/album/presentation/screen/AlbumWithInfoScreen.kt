@@ -42,6 +42,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -49,6 +52,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +77,7 @@ import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
@@ -100,6 +105,7 @@ import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.android.swingmusic.uicomponent.presentation.util.formatDate
 import com.android.swingmusic.uicomponent.presentation.util.formattedAlbumDuration
 import com.ramcosta.composedestinations.annotation.Destination
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -116,6 +122,7 @@ fun AlbumWithInfo(
     onClickMore: () -> Unit,
     onClickArtist: (artistHsh: String) -> Unit,
     onClickAlbumTrack: (index: Int, queue: List<Track>) -> Unit,
+    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
     onPlay: (queue: List<Track>) -> Unit,
     onShuffle: () -> Unit,
     onToggleFavorite: (Boolean, String) -> Unit,
@@ -179,6 +186,9 @@ fun AlbumWithInfo(
                     },
                     onChooseArtist = { hash ->
                         onGotoArtist(hash)
+                    },
+                    onToggleTrackFavorite = { isFavorite, trackHash ->
+                        onToggleTrackFavorite(isFavorite, trackHash)
                     }
                 )
             }
@@ -648,6 +658,7 @@ fun AlbumWithInfo(
     }
 }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
 @Composable
@@ -665,6 +676,11 @@ fun AlbumWithInfoScreen(
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
     val refreshState = rememberPullToRefreshState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val snackbarEvent by mediaControllerViewModel.snackbarEvent.collectAsStateWithLifecycle()
+
     LaunchedEffect(
         key1 = albumWithInfoState.albumHash,
         key2 = albumWithInfoState.reloadRequired
@@ -676,95 +692,137 @@ fun AlbumWithInfoScreen(
         }
     }
 
-    SwingMusicTheme {
-        PullToRefreshBox(
-            modifier = Modifier.fillMaxSize(),
-            isRefreshing = showOnRefreshIndicator,
-            state = refreshState,
-            onRefresh = {
-                showOnRefreshIndicator = true
+    SideEffect {
+        mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
+    }
 
-                albumWithInfoViewModel.onAlbumWithInfoUiEvent(
-                    event = AlbumWithInfoUiEvent.OnRefreshAlbumInfo
-                )
-            },
-            indicator = {
-                PullToRefreshDefaults.Indicator(
-                    modifier = Modifier
-                        .padding(top = 76.dp)
-                        .align(Alignment.TopCenter),
-                    isRefreshing = showOnRefreshIndicator,
-                    state = refreshState
+    SwingMusicTheme {
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.padding(bottom = 90.dp)
                 )
             }
         ) {
-            when (albumWithInfoState.infoResource) {
-                is Resource.Loading -> {
-                    if (!showOnRefreshIndicator) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            // TODO: Read this from settings
-                            val shimmer = false
-                            if (shimmer) {
-                                ShimmerLoadingAlbumScreen()
-                            } else {
-                                CircularProgressIndicator()
+            PullToRefreshBox(
+                modifier = Modifier.fillMaxSize(),
+                isRefreshing = showOnRefreshIndicator,
+                state = refreshState,
+                onRefresh = {
+                    showOnRefreshIndicator = true
+
+                    albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                        event = AlbumWithInfoUiEvent.OnRefreshAlbumInfo
+                    )
+                },
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        modifier = Modifier
+                            .padding(top = 76.dp)
+                            .align(Alignment.TopCenter),
+                        isRefreshing = showOnRefreshIndicator,
+                        state = refreshState
+                    )
+                }
+            ) {
+                when (albumWithInfoState.infoResource) {
+                    is Resource.Loading -> {
+                        if (!showOnRefreshIndicator) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                // TODO: Read this from settings
+                                val shimmer = false
+                                if (shimmer) {
+                                    ShimmerLoadingAlbumScreen()
+                                } else {
+                                    CircularProgressIndicator()
+                                }
                             }
                         }
                     }
-                }
 
-                is Resource.Error -> {
-                    showOnRefreshIndicator = false
+                    is Resource.Error -> {
+                        showOnRefreshIndicator = false
 
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = albumWithInfoState.infoResource.message
-                                ?: "Failed to load Album"
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(
-                            onClick = {
-                                albumWithInfoViewModel.onAlbumWithInfoUiEvent(
-                                    event = AlbumWithInfoUiEvent.OnRefreshAlbumInfo
-                                )
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface,
-                                contentColor = MaterialTheme.colorScheme.surface
-                            )
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(text = "RETRY")
+                            Text(
+                                text = albumWithInfoState.infoResource.message
+                                    ?: "Failed to load Album"
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = {
+                                    albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                                        event = AlbumWithInfoUiEvent.OnRefreshAlbumInfo
+                                    )
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.onSurface,
+                                    contentColor = MaterialTheme.colorScheme.surface
+                                )
+                            ) {
+                                Text(text = "RETRY")
+                            }
                         }
                     }
-                }
 
-                is Resource.Success -> {
-                    showOnRefreshIndicator = false
+                    is Resource.Success -> {
+                        showOnRefreshIndicator = false
 
-                    AlbumWithInfo(
-                        currentTrack = playerUiState.nowPlayingTrack,
-                        sortedTracks = albumWithInfoState.orderedTracks,
-                        playbackState = playerUiState.playbackState,
-                        albumInfo = albumWithInfoState.infoResource.data?.albumInfo!!,
-                        copyright = albumWithInfoState.infoResource.data?.copyright!!,
-                        albumTracks = albumWithInfoState.infoResource.data!!.groupedTracks,
-                        baseUrl = baseUrl ?: "https://default",
-                        onClickBack = { navigator.navigateBack() },
-                        onClickMore = {
+                        AlbumWithInfo(
+                            currentTrack = playerUiState.nowPlayingTrack,
+                            sortedTracks = albumWithInfoState.orderedTracks,
+                            playbackState = playerUiState.playbackState,
+                            albumInfo = albumWithInfoState.infoResource.data?.albumInfo!!,
+                            copyright = albumWithInfoState.infoResource.data?.copyright!!,
+                            albumTracks = albumWithInfoState.infoResource.data!!.groupedTracks,
+                            baseUrl = baseUrl ?: "https://default",
+                            onClickBack = { navigator.navigateBack() },
+                            onClickMore = {
 
-                        },
-                        onClickArtist = { artistHash ->
-                            navigator.gotoArtistInfo(artistHash)
-                        },
-                        onPlay = { queue ->
-                            if (queue.isNotEmpty()) {
+                            },
+                            onClickArtist = { artistHash ->
+                                navigator.gotoArtistInfo(artistHash)
+                            },
+                            onPlay = { queue ->
+                                if (queue.isNotEmpty()) {
+                                    mediaControllerViewModel.onQueueEvent(
+                                        QueueEvent.RecreateQueue(
+                                            source = QueueSource.ALBUM(
+                                                albumHash = albumHash,
+                                                name = albumWithInfoState.infoResource.data?.albumInfo?.title
+                                                    ?: ""
+                                            ),
+                                            clickedTrackIndex = 0,
+                                            queue = queue
+                                        )
+                                    )
+                                }
+                            },
+                            onShuffle = {
+                                if (albumWithInfoState.orderedTracks.isNotEmpty()) {
+                                    mediaControllerViewModel.initQueueFromGivenSource(
+                                        tracks = albumWithInfoState.orderedTracks,
+                                        source = QueueSource.ALBUM(
+                                            albumHash = albumHash,
+                                            name = albumWithInfoState.infoResource.data?.albumInfo?.title
+                                                ?: ""
+                                        )
+                                    )
+
+                                    mediaControllerViewModel.onPlayerUiEvent(
+                                        PlayerUiEvent.OnToggleShuffleMode()
+                                    )
+                                }
+                            },
+                            onClickAlbumTrack = { index, queue ->
                                 mediaControllerViewModel.onQueueEvent(
                                     QueueEvent.RecreateQueue(
                                         source = QueueSource.ALBUM(
@@ -772,74 +830,82 @@ fun AlbumWithInfoScreen(
                                             name = albumWithInfoState.infoResource.data?.albumInfo?.title
                                                 ?: ""
                                         ),
-                                        clickedTrackIndex = 0,
+                                        clickedTrackIndex = index,
                                         queue = queue
                                     )
                                 )
+                            },
+                            onToggleFavorite = { isFavorite, albumHash ->
+                                albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                                    AlbumWithInfoUiEvent.OnToggleAlbumFavorite(
+                                        isFavorite,
+                                        albumHash
+                                    )
+                                )
+                            },
+                            onGetSheetAction = { track, sheetAction ->
+                                when (sheetAction) {
+                                    is BottomSheetAction.GotoFolder -> {
+                                        navigator.gotoSourceFolder(
+                                            sheetAction.name,
+                                            sheetAction.path
+                                        )
+                                    }
+
+                                    is BottomSheetAction.PlayNext -> {
+                                        mediaControllerViewModel.onQueueEvent(
+                                            QueueEvent.PlayNext(track)
+                                        )
+                                    }
+
+                                    is BottomSheetAction.AddToQueue -> {
+                                        mediaControllerViewModel.onQueueEvent(
+                                            QueueEvent.AddToQueue(track)
+                                        )
+
+                                        mediaControllerViewModel.onQueueEvent(
+                                            QueueEvent.ShowSnackbar(
+                                                msg = "Track added to playing queue",
+                                                actionLabel = "View Queue"
+                                            )
+                                        )
+                                    }
+
+                                    else -> {}
+                                }
+                            },
+                            onGotoArtist = { hash ->
+                                navigator.gotoArtistInfo(artistHash = hash)
+                            },
+                            onToggleTrackFavorite = { isFavorite, trackHash ->
+                                // TODO: Call Album Track fav toggle
                             }
-                        },
-                        onShuffle = {
-                            if (albumWithInfoState.orderedTracks.isNotEmpty()) {
-                                mediaControllerViewModel.initQueueFromGivenSource(
-                                    tracks = albumWithInfoState.orderedTracks,
-                                    source = QueueSource.ALBUM(
-                                        albumHash = albumHash,
-                                        name = albumWithInfoState.infoResource.data?.albumInfo?.title
-                                            ?: ""
-                                    )
-                                )
+                        )
+                    }
+                }
 
-                                mediaControllerViewModel.onPlayerUiEvent(
-                                    PlayerUiEvent.OnToggleShuffleMode()
-                                )
-                            }
-                        },
-                        onClickAlbumTrack = { index, queue ->
-                            mediaControllerViewModel.onQueueEvent(
-                                QueueEvent.RecreateQueue(
-                                    source = QueueSource.ALBUM(
-                                        albumHash = albumHash,
-                                        name = albumWithInfoState.infoResource.data?.albumInfo?.title
-                                            ?: ""
-                                    ),
-                                    clickedTrackIndex = index,
-                                    queue = queue
-                                )
+                LaunchedEffect(snackbarEvent) {
+                    snackbarEvent?.let { event ->
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = event.message,
+                                actionLabel = event.actionLabel,
+                                duration = event.duration
                             )
-                        },
-                        onToggleFavorite = { isFavorite, albumHash ->
-                            albumWithInfoViewModel.onAlbumWithInfoUiEvent(
-                                AlbumWithInfoUiEvent.OnToggleAlbumFavorite(
-                                    isFavorite,
-                                    albumHash
-                                )
-                            )
-                        },
-                        onGetSheetAction = { track, sheetAction ->
-                            when (sheetAction) {
-                                is BottomSheetAction.GotoFolder -> {
-                                    navigator.gotoSourceFolder(sheetAction.name, sheetAction.path)
+
+                            when (result) {
+                                SnackbarResult.ActionPerformed -> {
+                                    navigator.gotoQueueScreen()
                                 }
 
-                                is BottomSheetAction.PlayNext -> {
-                                    mediaControllerViewModel.onQueueEvent(
-                                        QueueEvent.PlayNext(track)
-                                    )
-                                }
-
-                                is BottomSheetAction.AddToQueue -> {
-                                    mediaControllerViewModel.onQueueEvent(
-                                        QueueEvent.AddToQueue(track)
-                                    )
-                                }
+                                SnackbarResult.Dismissed -> {}
 
                                 else -> {}
                             }
-                        },
-                        onGotoArtist = { hash ->
-                            navigator.gotoArtistInfo(artistHash = hash)
+
+                            mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
                         }
-                    )
+                    }
                 }
             }
         }
@@ -1016,7 +1082,8 @@ fun AlbumWithInfoScreenPreview() {
             onShuffle = {},
             onToggleFavorite = { isFavorite, albumHash -> },
             onGetSheetAction = { _, _ -> },
-            onGotoArtist = {}
+            onGotoArtist = {},
+            onToggleTrackFavorite = { _, _ -> }
         )
     }
 

@@ -1,5 +1,6 @@
 package com.android.swingmusic.folder.presentation.screen
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -24,6 +25,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -32,6 +36,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +49,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
 import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
@@ -66,6 +72,7 @@ import com.android.swingmusic.uicomponent.presentation.component.PathIndicatorIt
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.ramcosta.composedestinations.annotation.Destination
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -82,6 +89,7 @@ private fun FoldersAndTracks(
     onPullToRefresh: (FolderUiEvent) -> Unit,
     onClickFolder: (Folder) -> Unit,
     onClickTrackItem: (index: Int, queue: List<Track>) -> Unit,
+    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onGotoArtist: (hash: String) -> Unit,
     baseUrl: String
@@ -186,6 +194,9 @@ private fun FoldersAndTracks(
                                 },
                                 onChooseArtist = { hash ->
                                     onGotoArtist(hash)
+                                },
+                                onToggleTrackFavorite = {isFavorite, trackHash ->
+                                    onToggleTrackFavorite(isFavorite, trackHash)
                                 }
                             )
                         }
@@ -410,6 +421,7 @@ private fun FoldersAndTracks(
  *  It basically calls a stateless composable
  *  and provides hoisted states
  */
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Destination
 @Composable
 fun FoldersAndTracksScreen(
@@ -428,6 +440,11 @@ fun FoldersAndTracksScreen(
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
     var routeByGotoFolder by remember { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val snackbarEvent by mediaControllerViewModel.snackbarEvent.collectAsStateWithLifecycle()
 
     LaunchedEffect(key1 = Unit) {
         if (gotoFolderName != null && gotoFolderPath != null) {
@@ -451,71 +468,118 @@ fun FoldersAndTracksScreen(
         }
     }
 
+    SideEffect {
+        mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
+    }
+
     SwingMusicTheme(navBarColor = MaterialTheme.colorScheme.inverseOnSurface) {
-        FoldersAndTracks(
-            currentFolder = currentFolder,
-            currentTrackHash = playerUiState.nowPlayingTrack?.trackHash ?: "",
-            playbackState = playerUiState.playbackState,
-            homeDir = homeDir,
-            foldersAndTracksState = foldersAndTracksState,
-            navPaths = navPaths,
-            baseUrl = baseUrl ?: "",
-            onClickNavPath = { folder ->
-                routeByGotoFolder = false
-                foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
-            },
-            onRetry = { event ->
-                foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
-                mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnRetry)
-            },
-            onPullToRefresh = { event ->
-                foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
-                mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnRetry)
-            },
-            onClickFolder = { folder ->
-                routeByGotoFolder = false
-                foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
-            },
-            onClickTrackItem = { index: Int, queue: List<Track> ->
-                mediaControllerViewModel.onQueueEvent(
-                    QueueEvent.RecreateQueue(
-                        source = QueueSource.FOLDER(
-                            path = currentFolder.path,
-                            name = currentFolder.name
-                        ),
-                        clickedTrackIndex = index,
-                        queue = queue
-                    )
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.padding(bottom = 170.dp)
                 )
-            },
-            onGetSheetAction = { track, sheetAction ->
-                when (sheetAction) {
-                    is BottomSheetAction.GotoAlbum -> {
-                        albumWithInfoViewModel.onAlbumWithInfoUiEvent(
-                            AlbumWithInfoUiEvent.OnUpdateAlbumHash(track.albumHash)
-                        )
-                        navigator.gotoAlbumWithInfo(track.albumHash)
-                    }
-
-                    is BottomSheetAction.PlayNext -> {
-                        mediaControllerViewModel.onQueueEvent(QueueEvent.PlayNext(track))
-                    }
-
-                    is BottomSheetAction.AddToQueue -> {
-                        mediaControllerViewModel.onQueueEvent(QueueEvent.AddToQueue(track))
-                    }
-
-                    else -> {}
-                }
-            },
-            onGotoArtist = { hash ->
-                navigator.gotoArtistInfo(artistHash = hash)
             }
-        )
+        ) {
+            FoldersAndTracks(
+                currentFolder = currentFolder,
+                currentTrackHash = playerUiState.nowPlayingTrack?.trackHash ?: "",
+                playbackState = playerUiState.playbackState,
+                homeDir = homeDir,
+                foldersAndTracksState = foldersAndTracksState,
+                navPaths = navPaths,
+                baseUrl = baseUrl ?: "",
+                onClickNavPath = { folder ->
+                    routeByGotoFolder = false
+                    foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
+                },
+                onRetry = { event ->
+                    foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
+                    mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnRetry)
+                },
+                onPullToRefresh = { event ->
+                    foldersViewModel.onFolderUiEvent(FolderUiEvent.OnRetry(event))
+                    mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnRetry)
+                },
+                onClickFolder = { folder ->
+                    routeByGotoFolder = false
+                    foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
+                },
+                onClickTrackItem = { index: Int, queue: List<Track> ->
+                    mediaControllerViewModel.onQueueEvent(
+                        QueueEvent.RecreateQueue(
+                            source = QueueSource.FOLDER(
+                                path = currentFolder.path,
+                                name = currentFolder.name
+                            ),
+                            clickedTrackIndex = index,
+                            queue = queue
+                        )
+                    )
+                },
+                onGetSheetAction = { track, sheetAction ->
+                    when (sheetAction) {
+                        is BottomSheetAction.GotoAlbum -> {
+                            albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                                AlbumWithInfoUiEvent.OnUpdateAlbumHash(track.albumHash)
+                            )
+                            navigator.gotoAlbumWithInfo(track.albumHash)
+                        }
 
-        val overrideSystemBackNav = currentFolder.path != "\$home"
-        BackHandler(enabled = overrideSystemBackNav && routeByGotoFolder.not()) {
-            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
+                        is BottomSheetAction.PlayNext -> {
+                            mediaControllerViewModel.onQueueEvent(QueueEvent.PlayNext(track))
+                        }
+
+                        is BottomSheetAction.AddToQueue -> {
+                            mediaControllerViewModel.onQueueEvent(QueueEvent.AddToQueue(track))
+
+                            mediaControllerViewModel.onQueueEvent(
+                                QueueEvent.ShowSnackbar(
+                                    msg = "Track added to playing queue",
+                                    actionLabel = "View Queue"
+                                )
+                            )
+                        }
+
+                        else -> {}
+                    }
+                },
+                onGotoArtist = { hash ->
+                    navigator.gotoArtistInfo(artistHash = hash)
+                },
+                onToggleTrackFavorite = { isFavorite, trackHash ->
+                    // TODO: Call Folder Track fav toggle
+                }
+            )
+
+            LaunchedEffect(snackbarEvent) {
+                snackbarEvent?.let { event ->
+                    scope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = event.message,
+                            actionLabel = event.actionLabel,
+                            duration = event.duration
+                        )
+
+                        when (result) {
+                            SnackbarResult.ActionPerformed -> {
+                                navigator.gotoQueueScreen()
+                            }
+
+                            SnackbarResult.Dismissed -> {}
+
+                            else -> {}
+                        }
+
+                        mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
+                    }
+                }
+            }
+
+            val overrideSystemBackNav = currentFolder.path != "\$home"
+            BackHandler(enabled = overrideSystemBackNav && routeByGotoFolder.not()) {
+                foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
+            }
         }
     }
 }

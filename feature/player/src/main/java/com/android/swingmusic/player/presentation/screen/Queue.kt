@@ -84,6 +84,7 @@ private fun Queue(
     playbackState: PlaybackState,
     baseUrl: String,
     onClickQueueSource: (source: QueueSource) -> Unit,
+    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
     onTogglePlayerState: () -> Unit,
     onClickQueueItem: (index: Int) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
@@ -152,6 +153,9 @@ private fun Queue(
                     },
                     onChooseArtist = { hash ->
                         onGotoArtist(hash)
+                    },
+                    onToggleTrackFavorite = { isFavorite, trackHash ->
+                        onToggleTrackFavorite(isFavorite, trackHash)
                     }
                 )
             }
@@ -429,6 +433,7 @@ fun QueueScreen(
                 is BottomSheetAction.GotoAlbum -> {
                     navigator.gotoAlbumWithInfo(track.albumHash)
                 }
+
                 is BottomSheetAction.GotoFolder -> {
                     navigator.gotoSourceFolder(name = sheetAction.name, path = sheetAction.path)
                 }
@@ -442,6 +447,11 @@ fun QueueScreen(
         },
         onGotoArtist = { hash ->
             navigator.gotoArtistInfo(artistHash = hash)
+        },
+        onToggleTrackFavorite = { isFavorite, trackHash ->
+            mediaControllerViewModel.onPlayerUiEvent(
+                PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)
+            )
         }
     )
 }
@@ -495,9 +505,10 @@ fun QueuePreview() {
             baseUrl = "",
             onClickQueueSource = {},
             onTogglePlayerState = {},
-            onClickQueueItem = { },
+            onClickQueueItem = {},
             onGetSheetAction = { _, _ -> },
-            onGotoArtist = { }
+            onGotoArtist = {},
+            onToggleTrackFavorite = { _, _ -> }
         )
     }
 }

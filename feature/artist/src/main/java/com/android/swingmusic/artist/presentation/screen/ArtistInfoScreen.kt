@@ -32,6 +32,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -39,6 +42,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +61,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
@@ -88,6 +93,7 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Pre
 import com.android.swingmusic.uicomponent.presentation.util.Screen
 import com.android.swingmusic.uicomponent.presentation.util.formattedAlbumDuration
 import com.ramcosta.composedestinations.annotation.Destination
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -104,6 +110,7 @@ private fun ArtistInfo(
     onClickBack: () -> Unit,
     onClickAlbum: (albumHash: String) -> Unit,
     onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit,
+    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
     onClickSimilarArtist: (artistHash: String) -> Unit,
     onClickViewAll: (artistName: String, viewAllType: String, baseUrl: String) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
@@ -192,6 +199,9 @@ private fun ArtistInfo(
                     },
                     onChooseArtist = { hash ->
                         onGotoArtist(hash)
+                    },
+                    onToggleTrackFavorite = {isFavorite, trackHash ->
+                        onToggleTrackFavorite(isFavorite, trackHash)
                     }
                 )
             }
@@ -818,6 +828,7 @@ private fun ArtistInfo(
     }
 }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
 @Composable
@@ -838,6 +849,11 @@ fun ArtistInfoScreen(
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
     val refreshState = rememberPullToRefreshState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val snackbarEvent by mediaControllerViewModel.snackbarEvent.collectAsStateWithLifecycle()
+
     LaunchedEffect(key1 = Unit) {
         if (artistInfoState.value.requiresReload || loadNewArtist) {
             if (currentArtistHash != artistHash) {
@@ -848,117 +864,147 @@ fun ArtistInfoScreen(
         }
     }
 
-    SwingMusicTheme {
-        PullToRefreshBox(
-            modifier = Modifier.fillMaxSize(),
-            isRefreshing = showOnRefreshIndicator,
-            state = refreshState,
-            onRefresh = {
-                showOnRefreshIndicator = true
+    SideEffect {
+        mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
+    }
 
-                artistInfoViewModel.onArtistInfoUiEvent(
-                    ArtistInfoUiEvent.OnRefresh(
-                        artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
-                            ?: artistHash
-                    )
-                )
-            },
-            indicator = {
-                PullToRefreshDefaults.Indicator(
-                    modifier = Modifier
-                        .padding(top = 76.dp)
-                        .align(Alignment.TopCenter),
-                    isRefreshing = showOnRefreshIndicator,
-                    state = refreshState
+    SwingMusicTheme {
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.padding(bottom = 90.dp)
                 )
             }
         ) {
-            when (val res = artistInfoState.value.infoResource) {
-                is Resource.Loading -> {
-                    if (!showOnRefreshIndicator) {
+            PullToRefreshBox(
+                modifier = Modifier.fillMaxSize(),
+                isRefreshing = showOnRefreshIndicator,
+                state = refreshState,
+                onRefresh = {
+                    showOnRefreshIndicator = true
+
+                    artistInfoViewModel.onArtistInfoUiEvent(
+                        ArtistInfoUiEvent.OnRefresh(
+                            artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
+                                ?: artistHash
+                        )
+                    )
+                },
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        modifier = Modifier
+                            .padding(top = 76.dp)
+                            .align(Alignment.TopCenter),
+                        isRefreshing = showOnRefreshIndicator,
+                        state = refreshState
+                    )
+                }
+            ) {
+                when (val res = artistInfoState.value.infoResource) {
+                    is Resource.Loading -> {
+                        if (!showOnRefreshIndicator) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        showOnRefreshIndicator = false
+
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator()
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(text = "Failed to fetch artist data")
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Button(
+                                    onClick = {
+                                        artistInfoViewModel.onArtistInfoUiEvent(
+                                            ArtistInfoUiEvent.OnRefresh(
+                                                artistHash = artistHash
+                                            )
+                                        )
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.onSurface,
+                                        contentColor = MaterialTheme.colorScheme.surface
+                                    )
+                                ) {
+                                    Text(text = "RETRY")
+                                }
+                            }
                         }
                     }
-                }
 
-                is Resource.Error -> {
-                    showOnRefreshIndicator = false
+                    is Resource.Success -> {
+                        showOnRefreshIndicator = false
 
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(text = "Failed to fetch artist data")
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Button(
-                                onClick = {
-                                    artistInfoViewModel.onArtistInfoUiEvent(
-                                        ArtistInfoUiEvent.OnRefresh(
-                                            artistHash = artistHash
+                        ArtistInfo(
+                            baseUrl = baseUrl.value ?: "https://default.null",
+                            artistInfo = res.data!!,
+                            similarArtists = similarArtists ?: emptyList(),
+                            playbackState = playerUiState.playbackState,
+                            currentTrack = playerUiState.nowPlayingTrack,
+                            onClickBack = {
+                                commonNavigator.navigateBack()
+                            },
+                            onToggleFavorite = { artistHash, isFavorite ->
+                                artistInfoViewModel.onArtistInfoUiEvent(
+                                    ArtistInfoUiEvent.OnToggleArtistFavorite(
+                                        artistHash = artistHash,
+                                        isFavorite = isFavorite
+                                    )
+                                )
+                            },
+                            onShuffle = {
+                                val tracks = artistInfoState.value.infoResource.data?.tracks
+                                if (tracks?.isNotEmpty() == true) {
+                                    mediaControllerViewModel.initQueueFromGivenSource(
+                                        tracks = tracks,
+                                        source = QueueSource.ARTIST(
+                                            artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
+                                                ?: "",
+                                            name = artistInfoState.value.infoResource.data?.artist?.name
+                                                ?: ""
                                         )
                                     )
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.onSurface,
-                                    contentColor = MaterialTheme.colorScheme.surface
-                                )
-                            ) {
-                                Text(text = "RETRY")
-                            }
-                        }
-                    }
-                }
 
-                is Resource.Success -> {
-                    showOnRefreshIndicator = false
-
-                    ArtistInfo(
-                        baseUrl = baseUrl.value ?: "https://default.null",
-                        artistInfo = res.data!!,
-                        similarArtists = similarArtists ?: emptyList(),
-                        playbackState = playerUiState.playbackState,
-                        currentTrack = playerUiState.nowPlayingTrack,
-                        onClickBack = {
-                            commonNavigator.navigateBack()
-                        },
-                        onToggleFavorite = { artistHash, isFavorite ->
-                            artistInfoViewModel.onArtistInfoUiEvent(
-                                ArtistInfoUiEvent.OnToggleArtistFavorite(
-                                    artistHash = artistHash,
-                                    isFavorite = isFavorite
-                                )
-                            )
-                        },
-                        onShuffle = {
-                            val tracks = artistInfoState.value.infoResource.data?.tracks
-                            if (tracks?.isNotEmpty() == true) {
-                                mediaControllerViewModel.initQueueFromGivenSource(
-                                    tracks = tracks,
-                                    source = QueueSource.ARTIST(
-                                        artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
-                                            ?: "",
-                                        name = artistInfoState.value.infoResource.data?.artist?.name
-                                            ?: ""
+                                    mediaControllerViewModel.onPlayerUiEvent(
+                                        PlayerUiEvent.OnToggleShuffleMode()
                                     )
-                                )
-
-                                mediaControllerViewModel.onPlayerUiEvent(
-                                    PlayerUiEvent.OnToggleShuffleMode()
-                                )
-                            }
-                        },
-                        onPlayAllTracks = {
-                            val queue = artistInfoState.value.infoResource.data?.tracks
-                            if (queue?.isNotEmpty() == true) {
+                                }
+                            },
+                            onPlayAllTracks = {
+                                val queue = artistInfoState.value.infoResource.data?.tracks
+                                if (queue?.isNotEmpty() == true) {
+                                    mediaControllerViewModel.onQueueEvent(
+                                        QueueEvent.RecreateQueue(
+                                            source = QueueSource.ARTIST(
+                                                artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
+                                                    ?: "",
+                                                name = artistInfoState.value.infoResource.data?.artist?.name
+                                                    ?: ""
+                                            ),
+                                            clickedTrackIndex = 0,
+                                            queue = queue
+                                        )
+                                    )
+                                }
+                            },
+                            onClickAlbum = {
+                                commonNavigator.gotoAlbumWithInfo(it)
+                            },
+                            onClickArtistTrack = { queue, index ->
                                 mediaControllerViewModel.onQueueEvent(
                                     QueueEvent.RecreateQueue(
                                         source = QueueSource.ARTIST(
@@ -967,73 +1013,94 @@ fun ArtistInfoScreen(
                                             name = artistInfoState.value.infoResource.data?.artist?.name
                                                 ?: ""
                                         ),
-                                        clickedTrackIndex = 0,
+                                        clickedTrackIndex = index,
                                         queue = queue
                                     )
                                 )
-                            }
-                        },
-                        onClickAlbum = {
-                            commonNavigator.gotoAlbumWithInfo(it)
-                        },
-                        onClickArtistTrack = { queue, index ->
-                            mediaControllerViewModel.onQueueEvent(
-                                QueueEvent.RecreateQueue(
-                                    source = QueueSource.ARTIST(
-                                        artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
-                                            ?: "",
-                                        name = artistInfoState.value.infoResource.data?.artist?.name
-                                            ?: ""
-                                    ),
-                                    clickedTrackIndex = index,
-                                    queue = queue
+                            },
+                            onClickSimilarArtist = {
+                                artistInfoViewModel.onArtistInfoUiEvent(
+                                    ArtistInfoUiEvent.OnUpdateArtistHash(it)
                                 )
+                            },
+                            onClickViewAll = { artistName: String, viewAllType: String, baseUrl: String ->
+                                commonNavigator.gotoViewAllScreen(
+                                    viewAllType = viewAllType,
+                                    artistName = artistName,
+                                    baseUrl = baseUrl
+                                )
+                            },
+                            onGetSheetAction = { track, sheetAction ->
+                                when (sheetAction) {
+                                    is BottomSheetAction.GotoAlbum -> {
+                                        commonNavigator.gotoAlbumWithInfo(track.albumHash)
+                                    }
+
+                                    is BottomSheetAction.GotoFolder -> {
+                                        commonNavigator.gotoSourceFolder(
+                                            sheetAction.name,
+                                            sheetAction.path
+                                        )
+                                    }
+
+                                    is BottomSheetAction.PlayNext -> {
+                                        mediaControllerViewModel.onQueueEvent(
+                                            QueueEvent.PlayNext(
+                                                track
+                                            )
+                                        )
+                                    }
+
+                                    is BottomSheetAction.AddToQueue -> {
+                                        mediaControllerViewModel.onQueueEvent(
+                                            QueueEvent.AddToQueue(track)
+                                        )
+
+                                        mediaControllerViewModel.onQueueEvent(
+                                            QueueEvent.ShowSnackbar(
+                                                msg = "Track added to playing queue",
+                                                actionLabel = "View Queue"
+                                            )
+                                        )
+                                    }
+
+                                    else -> {}
+                                }
+                            },
+                            onGotoArtist = { hash ->
+                                artistInfoViewModel.onArtistInfoUiEvent(
+                                    ArtistInfoUiEvent.OnUpdateArtistHash(hash)
+                                )
+                            },
+                            onToggleTrackFavorite = { isFavorite, trackHash ->
+                                // TODO: Call Artist Track fav toggle
+                            }
+                        )
+                    }
+                }
+
+                LaunchedEffect(snackbarEvent) {
+                    snackbarEvent?.let { event ->
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = event.message,
+                                actionLabel = event.actionLabel,
+                                duration = event.duration
                             )
-                        },
-                        onClickSimilarArtist = {
-                            artistInfoViewModel.onArtistInfoUiEvent(
-                                ArtistInfoUiEvent.OnUpdateArtistHash(it)
-                            )
-                        },
-                        onClickViewAll = { artistName: String, viewAllType: String, baseUrl: String ->
-                            commonNavigator.gotoViewAllScreen(
-                                viewAllType = viewAllType,
-                                artistName = artistName,
-                                baseUrl = baseUrl
-                            )
-                        },
-                        onGetSheetAction = { track, sheetAction ->
-                            when (sheetAction) {
-                                is BottomSheetAction.GotoAlbum -> {
-                                    commonNavigator.gotoAlbumWithInfo(track.albumHash)
+
+                            when (result) {
+                                SnackbarResult.ActionPerformed -> {
+                                    commonNavigator.gotoQueueScreen()
                                 }
 
-                                is BottomSheetAction.GotoFolder -> {
-                                    commonNavigator.gotoSourceFolder(
-                                        sheetAction.name,
-                                        sheetAction.path
-                                    )
-                                }
-
-                                is BottomSheetAction.PlayNext -> {
-                                    mediaControllerViewModel.onQueueEvent(QueueEvent.PlayNext(track))
-                                }
-
-                                is BottomSheetAction.AddToQueue -> {
-                                    mediaControllerViewModel.onQueueEvent(
-                                        QueueEvent.AddToQueue(track)
-                                    )
-                                }
+                                SnackbarResult.Dismissed -> {}
 
                                 else -> {}
                             }
-                        },
-                        onGotoArtist = { hash ->
-                            artistInfoViewModel.onArtistInfoUiEvent(
-                                ArtistInfoUiEvent.OnUpdateArtistHash(hash)
-                            )
+
+                            mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
                         }
-                    )
+                    }
                 }
             }
         }
@@ -1435,7 +1502,8 @@ fun ArtistInfoPreview() {
             onClickSimilarArtist = {},
             onClickViewAll = { _, _, _ -> },
             onGetSheetAction = { _, _ -> },
-            onGotoArtist = {}
+            onGotoArtist = {},
+            onToggleTrackFavorite = {_, _ ->}
         )
     }
 }
