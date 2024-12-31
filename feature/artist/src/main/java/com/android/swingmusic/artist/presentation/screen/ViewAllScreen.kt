@@ -16,14 +16,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,7 +31,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
@@ -246,12 +244,6 @@ fun ViewAllScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val snackbarEvent by mediaControllerViewModel.snackbarEvent.collectAsStateWithLifecycle()
-
-    SideEffect {
-        mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
-    }
-
     SwingMusicTheme {
         Scaffold(
             snackbarHost = {
@@ -296,18 +288,51 @@ fun ViewAllScreen(
                         }
 
                         is BottomSheetAction.PlayNext -> {
-                            mediaControllerViewModel.onQueueEvent(QueueEvent.PlayNext(track))
+                            mediaControllerViewModel.onQueueEvent(
+                                QueueEvent.PlayNext(
+                                    track = track,
+                                    source = QueueSource.ARTIST(
+                                        artistHash,
+                                        artistInfoState.value.infoResource.data?.artist?.name
+                                            ?: "Artist"
+                                    )
+                                )
+                            )
+
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Track added to play next",
+                                    actionLabel = "View Queue",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    commonNavigator.gotoQueueScreen()
+                                }
+                            }
                         }
 
                         is BottomSheetAction.AddToQueue -> {
-                            mediaControllerViewModel.onQueueEvent(QueueEvent.AddToQueue(track))
-
                             mediaControllerViewModel.onQueueEvent(
-                                QueueEvent.ShowSnackbar(
-                                    msg = "Track added to playing queue",
-                                    actionLabel = "View Queue"
+                                QueueEvent.AddToQueue(
+                                    track = track,
+                                    source = QueueSource.ARTIST(
+                                        artistHash,
+                                        artistInfoState.value.infoResource.data?.artist?.name
+                                            ?: "Artist"
+                                    )
                                 )
                             )
+
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Track added to playing queue",
+                                    actionLabel = "View Queue",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    commonNavigator.gotoQueueScreen()
+                                }
+                            }
                         }
 
                         else -> {}
@@ -320,30 +345,6 @@ fun ViewAllScreen(
                     // TODO: Call ViewAll Track fav toggle
                 }
             )
-
-            LaunchedEffect(snackbarEvent) {
-                snackbarEvent?.let { event ->
-                    scope.launch {
-                        val result = snackbarHostState.showSnackbar(
-                            message = event.message,
-                            actionLabel = event.actionLabel,
-                            duration = event.duration
-                        )
-
-                        when (result) {
-                            SnackbarResult.ActionPerformed -> {
-                                commonNavigator.gotoQueueScreen()
-                            }
-
-                            SnackbarResult.Dismissed -> {}
-
-                            else -> {}
-                        }
-
-                        mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
-                    }
-                }
-            }
         }
     }
 }

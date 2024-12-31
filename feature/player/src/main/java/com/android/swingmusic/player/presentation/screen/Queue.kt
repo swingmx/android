@@ -439,7 +439,12 @@ fun QueueScreen(
                 }
 
                 is BottomSheetAction.PlayNext -> {
-                    mediaControllerViewModel.onQueueEvent(QueueEvent.PlayNext(track))
+                    mediaControllerViewModel.onQueueEvent(
+                        QueueEvent.PlayNext(
+                            track = track,
+                            source = playerUiState.source
+                        )
+                    )
                 }
 
                 else -> {}

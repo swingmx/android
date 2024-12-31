@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -42,7 +43,6 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,7 +61,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
@@ -200,7 +199,7 @@ private fun ArtistInfo(
                     onChooseArtist = { hash ->
                         onGotoArtist(hash)
                     },
-                    onToggleTrackFavorite = {isFavorite, trackHash ->
+                    onToggleTrackFavorite = { isFavorite, trackHash ->
                         onToggleTrackFavorite(isFavorite, trackHash)
                     }
                 )
@@ -852,8 +851,6 @@ fun ArtistInfoScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val snackbarEvent by mediaControllerViewModel.snackbarEvent.collectAsStateWithLifecycle()
-
     LaunchedEffect(key1 = Unit) {
         if (artistInfoState.value.requiresReload || loadNewArtist) {
             if (currentArtistHash != artistHash) {
@@ -862,10 +859,6 @@ fun ArtistInfoScreen(
                 )
             }
         }
-    }
-
-    SideEffect {
-        mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
     }
 
     SwingMusicTheme {
@@ -1046,22 +1039,49 @@ fun ArtistInfoScreen(
                                     is BottomSheetAction.PlayNext -> {
                                         mediaControllerViewModel.onQueueEvent(
                                             QueueEvent.PlayNext(
-                                                track
+                                                track = track,
+                                                source = QueueSource.ARTIST(
+                                                    artistHash,
+                                                    artistInfoState.value.infoResource.data?.artist?.name
+                                                        ?: "Artist"
+                                                )
                                             )
                                         )
+
+                                        scope.launch {
+                                            val result = snackbarHostState.showSnackbar(
+                                                message = "Track added to play next",
+                                                actionLabel = "View Queue",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                commonNavigator.gotoQueueScreen()
+                                            }
+                                        }
                                     }
 
                                     is BottomSheetAction.AddToQueue -> {
                                         mediaControllerViewModel.onQueueEvent(
-                                            QueueEvent.AddToQueue(track)
-                                        )
-
-                                        mediaControllerViewModel.onQueueEvent(
-                                            QueueEvent.ShowSnackbar(
-                                                msg = "Track added to playing queue",
-                                                actionLabel = "View Queue"
+                                            QueueEvent.AddToQueue(
+                                                track = track,
+                                                source = QueueSource.ARTIST(
+                                                    artistHash,
+                                                    artistInfoState.value.infoResource.data?.artist?.name
+                                                        ?: "Artist"
+                                                )
                                             )
                                         )
+
+                                        scope.launch {
+                                            val result = snackbarHostState.showSnackbar(
+                                                message = "Track added to playing queue",
+                                                actionLabel = "View Queue",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                commonNavigator.gotoQueueScreen()
+                                            }
+                                        }
                                     }
 
                                     else -> {}
@@ -1076,30 +1096,6 @@ fun ArtistInfoScreen(
                                 // TODO: Call Artist Track fav toggle
                             }
                         )
-                    }
-                }
-
-                LaunchedEffect(snackbarEvent) {
-                    snackbarEvent?.let { event ->
-                        scope.launch {
-                            val result = snackbarHostState.showSnackbar(
-                                message = event.message,
-                                actionLabel = event.actionLabel,
-                                duration = event.duration
-                            )
-
-                            when (result) {
-                                SnackbarResult.ActionPerformed -> {
-                                    commonNavigator.gotoQueueScreen()
-                                }
-
-                                SnackbarResult.Dismissed -> {}
-
-                                else -> {}
-                            }
-
-                            mediaControllerViewModel.onQueueEvent(QueueEvent.HideSnackbar)
-                        }
                     }
                 }
             }
@@ -1503,7 +1499,7 @@ fun ArtistInfoPreview() {
             onClickViewAll = { _, _, _ -> },
             onGetSheetAction = { _, _ -> },
             onGotoArtist = {},
-            onToggleTrackFavorite = {_, _ ->}
+            onToggleTrackFavorite = { _, _ -> }
         )
     }
 }

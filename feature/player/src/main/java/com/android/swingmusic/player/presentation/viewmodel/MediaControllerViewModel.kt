@@ -1,7 +1,6 @@
 package com.android.swingmusic.player.presentation.viewmodel
 
 import android.net.Uri
-import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.lifecycle.ViewModel
@@ -32,7 +31,6 @@ import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnToggleFa
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnTogglePlayerState
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnToggleRepeatMode
 import com.android.swingmusic.player.presentation.event.QueueEvent
-import com.android.swingmusic.player.presentation.event.SnackbarEvent
 import com.android.swingmusic.player.presentation.state.PlayerUiState
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import com.google.common.util.concurrent.ListenableFuture
@@ -40,7 +38,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -64,9 +61,6 @@ class MediaControllerViewModel @Inject constructor(
     private var workingQueue: MutableList<Track> = mutableListOf()
     private var shuffledQueue: MutableList<Track> = mutableListOf()
     private var trackToLog: Track? = null
-
-    private val _snackbarEvent = MutableStateFlow<SnackbarEvent?>(null)
-    val snackbarEvent = _snackbarEvent.asStateFlow()
 
     private var durationPlayedSec: Long = 0L
     private val playbackMutex = Mutex()
@@ -341,61 +335,85 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
-    private fun addToPlayNextInQueue(playNextTrack: Track?) {
-        val currentIndex = mediaController?.currentMediaItemIndex ?: 0
+    private fun addToPlayNextInQueue(playNextTrack: Track?, source: QueueSource) {
+        if (playNextTrack == null) return
+
         val targetQueue = if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
             shuffledQueue
         } else {
             workingQueue
         }
 
-        playNextTrack?.let {
-            targetQueue.add(currentIndex + 1, it)
-            _playerUiState.value = _playerUiState.value.copy(
-                queue = targetQueue
+        if (targetQueue.isEmpty()) {
+            mediaController?.addListener(playerListener)
+
+            onQueueEvent(
+                QueueEvent.RecreateQueue(
+                    source = source,
+                    queue = listOf(playNextTrack),
+                    clickedTrackIndex = 0
+                )
             )
-        } ?: return
+        } else {
+            val currentPlayingIndex = mediaController?.currentMediaItemIndex ?: -1
+            val insertIndex = if (currentPlayingIndex < 0) 0 else currentPlayingIndex + 1
 
-        val mediaItems = targetQueue.mapIndexed { index, track ->
-            createMediaItem(id = index, track = track)
-        }
+            targetQueue.add(insertIndex, playNextTrack)
+            _playerUiState.value = _playerUiState.value.copy(queue = targetQueue)
 
-        mediaController?.apply {
-            replaceMediaItems(
-                currentIndex + 1,
+            val mediaItems = targetQueue.mapIndexed { index, track ->
+                createMediaItem(id = index, track = track)
+            }
+
+            mediaController?.replaceMediaItems(
+                insertIndex,
                 targetQueue.lastIndex,
-                mediaItems.drop(currentIndex + 1)
+                mediaItems.drop(insertIndex)
+            )
+
+            updateQueueInDatabase(
+                queue = targetQueue,
+                playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
             )
         }
-
-        updateQueueInDatabase(
-            queue = targetQueue,
-            playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
-        )
     }
 
-    private fun addToPlayingQueue(track: Track?) {
+    private fun addToPlayingQueue(track: Track?, source: QueueSource) {
+        if (track == null) return
+
         val targetQueue = if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
             shuffledQueue
         } else {
             workingQueue
         }
 
-        track?.let {
-            targetQueue.add(it)
+        if (targetQueue.isEmpty()) {
+            mediaController?.addListener(playerListener)
 
-            _playerUiState.value = _playerUiState.value.copy(
-                queue = targetQueue
+            onQueueEvent(
+                QueueEvent.RecreateQueue(
+                    source = source,
+                    queue = listOf(track),
+                    clickedTrackIndex = 0
+                )
             )
+        } else {
+            targetQueue.add(track)
+            _playerUiState.value = _playerUiState.value.copy(queue = targetQueue)
 
             val newMediaItem = createMediaItem(
                 id = targetQueue.lastIndex,
-                track = it
+                track = track
             )
 
             mediaController?.apply {
                 addMediaItem(newMediaItem)
             }
+
+            updateQueueInDatabase(
+                queue = targetQueue,
+                playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
+            )
         }
     }
 
@@ -815,11 +833,12 @@ class MediaControllerViewModel @Inject constructor(
             }
 
             is QueueEvent.PlayNext -> {
-                addToPlayNextInQueue(event.track)
+                addToPlayNextInQueue(event.track, event.source)
+                activateHapticResponse()
             }
 
             is QueueEvent.AddToQueue -> {
-                addToPlayingQueue(event.track)
+                addToPlayingQueue(event.track, event.source)
                 activateHapticResponse()
             }
 
@@ -834,17 +853,6 @@ class MediaControllerViewModel @Inject constructor(
                 }
 
                 activateHapticResponse()
-            }
-
-            is QueueEvent.ShowSnackbar -> {
-                _snackbarEvent.value = SnackbarEvent(
-                    message = event.msg,
-                    actionLabel = event.actionLabel
-                )
-            }
-
-            is QueueEvent.HideSnackbar -> {
-                _snackbarEvent.value = null
             }
         }
     }
@@ -988,20 +996,12 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
-    private fun activateHapticResponse(durationMs: Long = 50L) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            vibrator.vibrate(
-                VibrationEffect.createOneShot(
-                    durationMs,
-                    VibrationEffect.DEFAULT_AMPLITUDE
-                )
-            )
-        } else {
-            val timings = longArrayOf(0L, durationMs)
+    private fun activateHapticResponse() {
+        val timings = longArrayOf(0, 30, 60, 30)
+        val amplitudes = intArrayOf(0, 30, 0, 30)
 
-            val effect = VibrationEffect.createWaveform(timings, -1)
-            vibrator.vibrate(effect)
-        }
+        val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+        vibrator.vibrate(effect)
     }
 
     fun releaseMediaController(controllerFuture: ListenableFuture<MediaController>) {
