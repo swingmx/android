@@ -11,15 +11,11 @@ interface QueueEvent {
         val clickedTrackIndex: Int,
     ) : QueueEvent
 
-    data class PlayNext(val track: Track) : QueueEvent
+    data class PlayNext(val track: Track, val source: QueueSource) : QueueEvent
 
-    data class AddToQueue(val track: Track) : QueueEvent
+    data class AddToQueue(val track: Track, val source: QueueSource) : QueueEvent
 
     data class SeekToQueueItem(val index: Int) : QueueEvent
 
     object ClearQueue : QueueEvent
-
-    data class ShowSnackbar(val msg: String, val actionLabel: String) : QueueEvent
-
-    object HideSnackbar : QueueEvent
 }
