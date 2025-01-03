@@ -276,7 +276,7 @@ private fun FoldersAndTracks(
                                 if (index == foldersAndTracksState.foldersAndTracks.folders.lastIndex &&
                                     foldersAndTracksState.foldersAndTracks.tracks.isEmpty()
                                 ) {
-                                    Spacer(modifier = Modifier.height(150.dp))
+                                    Spacer(modifier = Modifier.height(200.dp))
                                 }
                             }
 
@@ -287,7 +287,7 @@ private fun FoldersAndTracks(
                             ) { index, track ->
                                 TrackItem(
                                     track = track,
-                                    showMenuIcon = true, // TODO: set true after fixing AlbumInfo bug
+                                    showMenuIcon = true,
                                     isCurrentTrack = track.trackHash == currentTrackHash,
                                     playbackState = playbackState,
                                     baseUrl = baseUrl,
@@ -303,7 +303,7 @@ private fun FoldersAndTracks(
                                 )
 
                                 if (index == foldersAndTracksState.foldersAndTracks.tracks.lastIndex) {
-                                    Spacer(modifier = Modifier.height(150.dp))
+                                    Spacer(modifier = Modifier.height(200.dp))
                                 }
                             }
                         }

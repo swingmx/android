@@ -238,6 +238,10 @@ private fun Artists(
                                 }
                             )
                         }
+
+                        item(span = { GridItemSpan(artistsUiState.gridCount) }) {
+                            Spacer(modifier = Modifier.height(200.dp))
+                        }
                     }
 
                     loadingState?.let {

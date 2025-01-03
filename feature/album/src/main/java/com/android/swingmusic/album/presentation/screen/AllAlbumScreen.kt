@@ -241,6 +241,10 @@ private fun AllAlbums(
                                 }
                             )
                         }
+
+                        item(span = { GridItemSpan(allAlbumsUiState.gridCount) }) {
+                            Spacer(modifier = Modifier.height(200.dp))
+                        }
                     }
 
                     loadingState?.let {
