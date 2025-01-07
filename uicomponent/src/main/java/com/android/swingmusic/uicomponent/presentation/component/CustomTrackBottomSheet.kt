@@ -60,14 +60,16 @@ fun CustomTrackBottomSheet(
     sheetState: SheetState,
     clickedTrack: Track?,
     baseUrl: String,
+    isFavorite: Boolean = false,
     bottomSheetItems: List<BottomSheetItemModel>,
     currentArtisthash: String? = null,
-    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onHideBottomSheet: (show: Boolean) -> Unit,
     onClickSheetItem: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onChooseArtist: (hash: String) -> Unit
 ) {
     var artistDialogExpanded by remember { mutableStateOf(false) }
+    var isFav by remember { mutableStateOf(isFavorite) }
 
     ModalBottomSheet(
         sheetState = sheetState,
@@ -100,10 +102,11 @@ fun CustomTrackBottomSheet(
                             modifier = Modifier
                                 .clip(CircleShape),
                             onClick = {
-                                onToggleTrackFavorite(track.isFavorite, track.trackHash)
+                                isFav = !isFav
+                                onToggleTrackFavorite(track.trackHash, track.isFavorite)
                             }) {
                             val icon =
-                                if (track.isFavorite) R.drawable.fav_filled
+                                if (isFav) R.drawable.fav_filled
                                 else R.drawable.fav_not_filled
                             Icon(
                                 painter = painterResource(id = icon),

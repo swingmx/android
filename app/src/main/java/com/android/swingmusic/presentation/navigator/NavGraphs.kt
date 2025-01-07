@@ -2,8 +2,8 @@ package com.android.swingmusic.presentation.navigator
 
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
@@ -75,11 +75,11 @@ object NavGraphs {
     val artist = object : NavGraphSpec {
         override val route: String = "artist"
 
-        override val startRoute: Route = ArtistsScreenDestination routedIn this
+        override val startRoute: Route = AllArtistsScreenDestination routedIn this
 
         override val destinationsByRoute: Map<String, DestinationSpec<*>> =
             listOf<DestinationSpec<*>>(
-                ArtistsScreenDestination,
+                AllArtistsScreenDestination,
                 ArtistInfoScreenDestination,
                 AlbumWithInfoScreenDestination,
                 ViewAllScreenDestination,

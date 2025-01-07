@@ -121,10 +121,10 @@ fun AlbumWithInfo(
     onClickMore: () -> Unit,
     onClickArtist: (artistHsh: String) -> Unit,
     onClickAlbumTrack: (index: Int, queue: List<Track>) -> Unit,
-    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
     onPlay: (queue: List<Track>) -> Unit,
     onShuffle: () -> Unit,
-    onToggleFavorite: (Boolean, String) -> Unit,
+    onToggleAlbumFavorite: (Boolean, String) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onGotoArtist: (hash: String) -> Unit,
 ) {
@@ -186,8 +186,8 @@ fun AlbumWithInfo(
                     onChooseArtist = { hash ->
                         onGotoArtist(hash)
                     },
-                    onToggleTrackFavorite = { isFavorite, trackHash ->
-                        onToggleTrackFavorite(isFavorite, trackHash)
+                    onToggleTrackFavorite = { trackHash, isFavorite ->
+                        onToggleTrackFavorite(trackHash, isFavorite)
                     }
                 )
             }
@@ -408,7 +408,7 @@ fun AlbumWithInfo(
                                 else R.drawable.fav_not_filled
                                 IconButton(
                                     onClick = {
-                                        onToggleFavorite(
+                                        onToggleAlbumFavorite(
                                             albumInfo.isFavorite,
                                             albumInfo.albumHash
                                         )
@@ -828,7 +828,7 @@ fun AlbumWithInfoScreen(
                                     )
                                 )
                             },
-                            onToggleFavorite = { isFavorite, albumHash ->
+                            onToggleAlbumFavorite = { isFavorite, albumHash ->
                                 albumWithInfoViewModel.onAlbumWithInfoUiEvent(
                                     AlbumWithInfoUiEvent.OnToggleAlbumFavorite(
                                         isFavorite,
@@ -1078,7 +1078,7 @@ fun AlbumWithInfoScreenPreview() {
             onClickAlbumTrack = { index, queue -> },
             onPlay = { queue -> },
             onShuffle = {},
-            onToggleFavorite = { isFavorite, albumHash -> },
+            onToggleAlbumFavorite = { isFavorite, albumHash -> },
             onGetSheetAction = { _, _ -> },
             onGotoArtist = {},
             onToggleTrackFavorite = { _, _ -> }

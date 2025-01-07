@@ -61,7 +61,7 @@ private fun ViewAll(
     allTracks: List<Track>?,
     allAlbumsToShow: List<Album>?,
     onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit,
-    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onClickAlbum: (hash: String) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onGotoArtist: (hash: String) -> Unit
@@ -147,8 +147,8 @@ private fun ViewAll(
                         onChooseArtist = { hash ->
                             onGotoArtist(hash)
                         },
-                        onToggleTrackFavorite = { isFavorite, trackHash ->
-                            onToggleTrackFavorite(isFavorite, trackHash)
+                        onToggleTrackFavorite = { trackHash, isFavorite ->
+                            onToggleTrackFavorite(trackHash, isFavorite)
                         }
                     )
                 }

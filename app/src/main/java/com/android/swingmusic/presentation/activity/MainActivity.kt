@@ -50,7 +50,7 @@ import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.ArtistsScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenDestination
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
@@ -133,7 +133,7 @@ class MainActivity : ComponentActivity() {
             val showBottomNav = route in listOf(
                 "folder/${FoldersAndTracksScreenDestination.route}",
                 "album/${AllAlbumScreenDestination.route}",
-                "artist/${ArtistsScreenDestination.route}"
+                "artist/${AllArtistsScreenDestination.route}"
             )
 
             val bottomNavHeight by animateDpAsState(
@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
             val showSpacer = route !in listOf(
                 "folder/${FoldersAndTracksScreenDestination.route}",
                 "album/${AllAlbumScreenDestination.route}",
-                "artist/${ArtistsScreenDestination.route}",
+                "artist/${AllArtistsScreenDestination.route}",
             )
 
             val spacerHeight by animateDpAsState(

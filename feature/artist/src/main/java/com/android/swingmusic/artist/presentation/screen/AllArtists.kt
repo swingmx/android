@@ -69,7 +69,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.android.swingmusic.uicomponent.R as UiComponents
 
 @Composable
-private fun Artists(
+private fun AllArtists(
     pagingArtists: LazyPagingItems<Artist>,
     artistsUiState: ArtistsUiState,
     sortByPairs: List<Pair<SortBy, String>>,
@@ -307,12 +307,12 @@ private fun Artists(
 }
 
 /**
- * This Composable is heavily coupled with ArtistsViewModel. [Artists] Compsable has no ties.
+ * This Composable is heavily coupled with ArtistsViewModel. [AllArtists] Compsable has no ties.
  **/
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
 @Composable
-fun ArtistsScreen(
+fun AllArtistsScreen(
     navigator: CommonNavigator,
     artistsViewModel: ArtistsViewModel = hiltViewModel(),
     artistInfoViewModel: ArtistInfoViewModel
@@ -361,7 +361,7 @@ fun ArtistsScreen(
                 )
             }
         ) {
-            Artists(
+            AllArtists(
                 pagingArtists = pagingArtists,
                 artistsUiState = artistsUiState,
                 sortByPairs = sortByPairs,
