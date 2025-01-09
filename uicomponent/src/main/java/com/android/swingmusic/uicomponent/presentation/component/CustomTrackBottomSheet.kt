@@ -69,7 +69,6 @@ fun CustomTrackBottomSheet(
     onChooseArtist: (hash: String) -> Unit
 ) {
     var artistDialogExpanded by remember { mutableStateOf(false) }
-    var isFav by remember { mutableStateOf(isFavorite) }
 
     ModalBottomSheet(
         sheetState = sheetState,
@@ -87,27 +86,20 @@ fun CustomTrackBottomSheet(
                     modifier = Modifier.offset(x = (-8).dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    TrackItem(
-                        track = track,
+                    TrackItem(track = track,
                         onClickTrackItem = {},
                         onClickMoreVert = {},
                         baseUrl = baseUrl
                     )
 
                     Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.CenterEnd
+                        modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd
                     ) {
-                        IconButton(
-                            modifier = Modifier
-                                .clip(CircleShape),
-                            onClick = {
-                                isFav = !isFav
-                                onToggleTrackFavorite(track.trackHash, track.isFavorite)
-                            }) {
-                            val icon =
-                                if (isFav) R.drawable.fav_filled
-                                else R.drawable.fav_not_filled
+                        IconButton(modifier = Modifier.clip(CircleShape), onClick = {
+                            onToggleTrackFavorite(track.trackHash, track.isFavorite)
+                        }) {
+                            val icon = if (isFavorite) R.drawable.fav_filled
+                            else R.drawable.fav_not_filled
                             Icon(
                                 painter = painterResource(id = icon),
                                 contentDescription = "Favorite"
@@ -121,8 +113,7 @@ fun CustomTrackBottomSheet(
             }
         }
         bottomSheetItems.forEach { model ->
-            BottomSheetItem(
-                label = model.label,
+            BottomSheetItem(label = model.label,
                 enabled = model.enabled,
                 baseUrl = baseUrl,
                 sheetAction = model.sheetAction,
@@ -157,8 +148,7 @@ fun CustomTrackBottomSheet(
                 },
                 onDialogDismissRequest = { expand ->
                     artistDialogExpanded = expand
-                }
-            )
+                })
         }
 
         Spacer(modifier = Modifier.height(48.dp))
@@ -181,21 +171,18 @@ fun BottomSheetItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled) {
-                clickedTrack?.let { track ->
-                    onClickSheetItem(track)
-                }
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .clickable(enabled = enabled) {
+            clickedTrack?.let { track ->
+                onClickSheetItem(track)
             }
-            .padding(all = 12.dp)
-    ) {
+        }
+        .padding(all = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 painter = iconPainter,
-                tint = if (!enabled) MaterialTheme.colorScheme.onSurface.copy(alpha = .30F) else
-                    MaterialTheme.colorScheme.onSurface,
+                tint = if (!enabled) MaterialTheme.colorScheme.onSurface.copy(alpha = .30F) else MaterialTheme.colorScheme.onSurface,
                 contentDescription = "Icon"
             )
 
@@ -203,20 +190,16 @@ fun BottomSheetItem(
 
             Text(
                 text = label,
-                color = if (!enabled) MaterialTheme.colorScheme.onSurface.copy(alpha = .305F) else
-                    MaterialTheme.colorScheme.onSurface
+                color = if (!enabled) MaterialTheme.colorScheme.onSurface.copy(alpha = .305F) else MaterialTheme.colorScheme.onSurface
             )
         }.also {
             when (sheetAction) {
                 is BottomSheetAction.OpenArtistsDialog -> {
                     if (expandArtistDialog) {
-                        Dialog(
-                            properties = DialogProperties(decorFitsSystemWindows = true),
-                            onDismissRequest = { onDialogDismissRequest(false) })
-                        {
+                        Dialog(properties = DialogProperties(decorFitsSystemWindows = true),
+                            onDismissRequest = { onDialogDismissRequest(false) }) {
                             Surface(
-                                shape = MaterialTheme.shapes.medium,
-                                tonalElevation = 8.dp
+                                shape = MaterialTheme.shapes.medium, tonalElevation = 8.dp
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -244,19 +227,17 @@ fun BottomSheetItem(
                                                 ) {
                                                     onDialogDismissRequest(false)
                                                     onChooseArtist(artist.artistHash)
-                                                },
-                                            verticalAlignment = Alignment.CenterVertically
+                                                }, verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            AsyncImage(
-                                                modifier = Modifier
-                                                    .padding(vertical = 8.dp)
-                                                    .size(32.dp)
-                                                    .clip(CircleShape)
-                                                    .background(
-                                                        MaterialTheme.colorScheme.inversePrimary.copy(
-                                                            .5F
-                                                        )
-                                                    ),
+                                            AsyncImage(modifier = Modifier
+                                                .padding(vertical = 8.dp)
+                                                .size(32.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    MaterialTheme.colorScheme.inversePrimary.copy(
+                                                        .5F
+                                                    )
+                                                ),
                                                 model = ImageRequest.Builder(LocalContext.current)
                                                     .data("${baseUrl}img/artist/small/${artist.artistHash}.webp")
                                                     .build(),
@@ -265,10 +246,8 @@ fun BottomSheetItem(
                                                 error = painterResource(R.drawable.artist_fallback),
                                                 contentScale = ContentScale.Crop,
                                                 colorFilter = if (clickable) null else ColorMatrixColorFilter(
-                                                    ColorMatrix().apply { setToSaturation(0f) }
-                                                ),
-                                                contentDescription = "Track Image"
-                                            )
+                                                    ColorMatrix().apply { setToSaturation(0f) }),
+                                                contentDescription = "Track Image")
 
                                             Spacer(modifier = Modifier.width(8.dp))
 
@@ -276,8 +255,9 @@ fun BottomSheetItem(
                                                 text = artist.name,
                                                 overflow = TextOverflow.Ellipsis,
                                                 style = MaterialTheme.typography.bodyLarge,
-                                                color = if (clickable) MaterialTheme.colorScheme.onSurface else
-                                                    MaterialTheme.colorScheme.onSurface.copy(alpha = .20F)
+                                                color = if (clickable) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = .20F
+                                                )
                                             )
                                         }
                                     }

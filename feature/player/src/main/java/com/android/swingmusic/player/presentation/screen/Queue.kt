@@ -98,6 +98,13 @@ private fun Queue(
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
 
+    LaunchedEffect(queue) {
+        clickedTrack?.let { track ->
+            val updatedTrack = queue.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+    }
+
     // scroll past the playing track by one item to keep highlighted cards far apart at first
     LaunchedEffect(key1 = Unit) {
         if ((playingTrackIndex - 1) in queue.indices) {
@@ -112,6 +119,7 @@ private fun Queue(
                     scope = scope,
                     sheetState = sheetState,
                     clickedTrack = track,
+                    isFavorite = track.isFavorite,
                     baseUrl = baseUrl,
                     bottomSheetItems = listOf(
                         BottomSheetItemModel(

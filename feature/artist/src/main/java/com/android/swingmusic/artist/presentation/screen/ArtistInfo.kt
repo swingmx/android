@@ -104,7 +104,7 @@ private fun ArtistInfo(
     playbackState: PlaybackState,
     currentTrack: Track?,
     onToggleArtistFavorite: (String, Boolean) -> Unit,
-    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean, ) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onShuffle: () -> Unit,
     onPlayAllTracks: () -> Unit,
     onClickBack: () -> Unit,
@@ -120,6 +120,13 @@ private fun ArtistInfo(
     val scope = rememberCoroutineScope()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+
+    LaunchedEffect(artistInfo.tracks) {
+        clickedTrack?.let { track ->
+            val updatedTrack = artistInfo.tracks.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -150,6 +157,7 @@ private fun ArtistInfo(
                 CustomTrackBottomSheet(
                     scope = scope,
                     sheetState = sheetState,
+                    isFavorite = track.isFavorite,
                     clickedTrack = track,
                     baseUrl = baseUrl,
                     currentArtisthash = artistInfo.artist.artistHash,
@@ -199,8 +207,8 @@ private fun ArtistInfo(
                     onChooseArtist = { hash ->
                         onGotoArtist(hash)
                     },
-                    onToggleTrackFavorite = { isFavorite, trackHash ->
-                        onToggleTrackFavorite(isFavorite, trackHash)
+                    onToggleTrackFavorite = { trackHash, isFavorite ->
+                        onToggleTrackFavorite(trackHash, isFavorite)
                     }
                 )
             }
@@ -1092,8 +1100,12 @@ fun ArtistInfoScreen(
                                     ArtistInfoUiEvent.OnUpdateArtistHash(hash)
                                 )
                             },
-                            onToggleTrackFavorite = { trackHash ,isFavorite ->
-                                // TODO: Call Artist Track fav toggle
+                            onToggleTrackFavorite = { trackHash, isFavorite ->
+                                artistInfoViewModel.onArtistInfoUiEvent(
+                                    ArtistInfoUiEvent.ToggleArtistTrackFavorite(
+                                        trackHash, isFavorite
+                                    )
+                                )
                             }
                         )
                     }

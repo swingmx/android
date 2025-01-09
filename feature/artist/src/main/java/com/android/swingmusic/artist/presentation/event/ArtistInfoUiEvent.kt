@@ -12,4 +12,9 @@ interface ArtistInfoUiEvent {
     ) : ArtistInfoUiEvent
 
     data class OnRefresh(val artistHash: String) : ArtistInfoUiEvent
+
+    data class ToggleArtistTrackFavorite(
+        val trackHash: String,
+        val isFavorite: Boolean
+    ) : ArtistInfoUiEvent
 }

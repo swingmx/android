@@ -98,6 +98,16 @@ private fun FoldersAndTracks(
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
 
+    LaunchedEffect(foldersAndTracksState.foldersAndTracks.tracks) {
+        clickedTrack?.let { track ->
+            val updatedTrack =
+                foldersAndTracksState.foldersAndTracks.tracks.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+        // just in case
+        if (clickedTrack == null) showTrackBottomSheet = false
+    }
+
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
     val refreshState = rememberPullToRefreshState()
 
@@ -543,7 +553,7 @@ fun FoldersAndTracksScreen(
                             }
                         }
 
-                         is BottomSheetAction.AddToQueue -> {
+                        is BottomSheetAction.AddToQueue -> {
                             mediaControllerViewModel.onQueueEvent(
                                 QueueEvent.AddToQueue(
                                     track = track,
