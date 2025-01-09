@@ -9,17 +9,18 @@ import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumsAndAppearances
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
+import com.android.swingmusic.player.domain.repository.PLayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class ArtistInfoViewModel @Inject constructor(
-    private val artistRepository: ArtistRepository
+    private val artistRepository: ArtistRepository,
+    private val pLayerRepository: PLayerRepository
 ) : ViewModel() {
     private val _artistInfoState: MutableStateFlow<ArtistInfoState> =
         MutableStateFlow(ArtistInfoState())
@@ -109,8 +110,6 @@ class ArtistInfoViewModel @Inject constructor(
                 artistRepository.addArtistToFavorite(artistHash)
             }
 
-            Timber.e("TOGGLE ARTIST FAVORITE TO :${!isFavorite}")
-
             request.collectLatest {
                 when (it) {
                     is Resource.Loading -> {}
@@ -151,6 +150,100 @@ class ArtistInfoViewModel @Inject constructor(
         }
     }
 
+    private fun toggleArtistTrackFavorite(trackHash: String, isFavorite: Boolean) {
+        viewModelScope.launch {
+            val emptyAlbumsAndAppearances = AlbumsAndAppearances(
+                albums = emptyList(),
+                appearances = emptyList(),
+                artistName = "",
+                compilations = emptyList(),
+                singlesAndEps = emptyList()
+            )
+            val emptyArtistExpanded = ArtistExpanded(
+                albumCount = 0,
+                artistHash = "",
+                color = "",
+                duration = 0,
+                genres = emptyList(),
+                image = "",
+                isFavorite = false,
+                name = "",
+                trackCount = 0
+            )
+
+            // Optimistically update the UI
+            _artistInfoState.value = _artistInfoState.value.copy(
+                infoResource = Resource.Success(
+                    ArtistInfo(
+                        albumsAndAppearances = _artistInfoState.value.infoResource.data?.albumsAndAppearances
+                            ?: emptyAlbumsAndAppearances,
+                        artist = _artistInfoState.value.infoResource.data?.artist
+                            ?: emptyArtistExpanded,
+                        tracks = _artistInfoState.value.infoResource.data?.tracks?.map { track ->
+                            if (track.trackHash == trackHash) {
+                                track.copy(isFavorite = !isFavorite)
+                            } else {
+                                track
+                            }
+                        } ?: emptyList()
+                    )
+                )
+            )
+
+            val request = if (isFavorite) {
+                pLayerRepository.removeTrackFromFavorite(trackHash)
+            } else {
+                pLayerRepository.addTrackToFavorite(trackHash)
+            }
+
+            request.collectLatest {
+                when (it) {
+                    is Resource.Loading -> {}
+
+                    is Resource.Success -> {
+                        _artistInfoState.value = _artistInfoState.value.copy(
+                            infoResource = Resource.Success(
+                                ArtistInfo(
+                                    albumsAndAppearances = _artistInfoState.value.infoResource.data?.albumsAndAppearances
+                                        ?: emptyAlbumsAndAppearances,
+                                    artist = _artistInfoState.value.infoResource.data?.artist
+                                        ?: emptyArtistExpanded,
+                                    tracks = _artistInfoState.value.infoResource.data?.tracks?.map { track ->
+                                        if (track.trackHash == trackHash) {
+                                            track.copy(isFavorite = it.data ?: false)
+                                        } else {
+                                            track
+                                        }
+                                    } ?: emptyList()
+                                )
+                            )
+                        )
+                    }
+
+                    is Resource.Error -> {
+                        _artistInfoState.value = _artistInfoState.value.copy(
+                            infoResource = Resource.Success(
+                                ArtistInfo(
+                                    albumsAndAppearances = _artistInfoState.value.infoResource.data?.albumsAndAppearances
+                                        ?: emptyAlbumsAndAppearances,
+                                    artist = _artistInfoState.value.infoResource.data?.artist
+                                        ?: emptyArtistExpanded,
+                                    tracks = _artistInfoState.value.infoResource.data?.tracks?.map { track ->
+                                        if (track.trackHash == trackHash) {
+                                            track.copy(isFavorite = isFavorite)
+                                        } else {
+                                            track
+                                        }
+                                    } ?: emptyList()
+                                )
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun onArtistInfoUiEvent(event: ArtistInfoUiEvent) {
         when (event) {
             is ArtistInfoUiEvent.OnLoadArtistInfo -> {
@@ -159,10 +252,6 @@ class ArtistInfoViewModel @Inject constructor(
 
                 getArtistInfo(event.artistHash)
                 getSimilarArtists(event.artistHash)
-            }
-
-            is ArtistInfoUiEvent.OnToggleArtistFavorite -> {
-                toggleArtistFavorite(event.artistHash, event.isFavorite)
             }
 
             is ArtistInfoUiEvent.OnRefresh -> {
@@ -175,6 +264,14 @@ class ArtistInfoViewModel @Inject constructor(
 
                 getArtistInfo(event.artistHash)
                 getSimilarArtists(event.artistHash)
+            }
+
+            is ArtistInfoUiEvent.OnToggleArtistFavorite -> {
+                toggleArtistFavorite(event.artistHash, event.isFavorite)
+            }
+
+            is ArtistInfoUiEvent.ToggleArtistTrackFavorite -> {
+                toggleArtistTrackFavorite(event.trackHash, event.isFavorite)
             }
 
             else -> {

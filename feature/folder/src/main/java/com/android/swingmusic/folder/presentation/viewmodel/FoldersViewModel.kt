@@ -12,15 +12,16 @@ import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.folder.domain.FolderRepository
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
+import com.android.swingmusic.player.domain.repository.PLayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class FoldersViewModel @Inject constructor(
-    private val folderRepository: FolderRepository
+    private val folderRepository: FolderRepository,
+    private val pLayerRepository: PLayerRepository
 ) : ViewModel() {
     val homeDir: Folder = Folder(
         path = "\$home",
@@ -160,6 +161,69 @@ class FoldersViewModel @Inject constructor(
                 resetUiToLoadingState()
                 getFoldersAndTracks(_currentFolder.value.path)
             }
+
+            is FolderUiEvent.ToggleTrackFavorite -> {
+                toggleTrackFavorite(event.trackHash, event.isFavorite)
+            }
+        }
+    }
+
+    private fun toggleTrackFavorite(trackHash: String, isFavorite: Boolean) {
+        viewModelScope.launch {
+            // Optimistically update the UI
+            _foldersAndTracks.value = _foldersAndTracks.value.copy(
+                foldersAndTracks = _foldersAndTracks.value.foldersAndTracks.copy(
+                    tracks = _foldersAndTracks.value.foldersAndTracks.tracks.map { track ->
+                        if (track.trackHash == trackHash) {
+                            track.copy(isFavorite = !isFavorite)
+                        } else {
+                            track
+                        }
+                    }
+                )
+            )
+
+            val request = if (isFavorite) {
+                pLayerRepository.removeTrackFromFavorite(trackHash)
+            } else {
+                pLayerRepository.addTrackToFavorite(trackHash)
+            }
+
+            request.collectLatest {
+                when (it) {
+                    is Resource.Loading -> {}
+
+                    is Resource.Success -> {
+                        _foldersAndTracks.value = _foldersAndTracks.value.copy(
+                            foldersAndTracks = _foldersAndTracks.value.foldersAndTracks.copy(
+                                tracks = _foldersAndTracks.value.foldersAndTracks.tracks.map { track ->
+                                    if (track.trackHash == trackHash) {
+                                        track.copy(isFavorite = it.data ?: false)
+                                    } else {
+                                        track
+                                    }
+                                }
+                            )
+                        )
+                    }
+
+                    is Resource.Error -> {
+                        // Revert the optimistic updates in case of an error
+                        _foldersAndTracks.value = _foldersAndTracks.value.copy(
+                            foldersAndTracks = _foldersAndTracks.value.foldersAndTracks.copy(
+                                tracks = _foldersAndTracks.value.foldersAndTracks.tracks.map { track ->
+                                    if (track.trackHash == trackHash) {
+                                        track.copy(isFavorite = isFavorite)
+                                    } else {
+                                        track
+                                    }
+                                }
+                            )
+                        )
+                    }
+                }
+            }
+
         }
     }
 }

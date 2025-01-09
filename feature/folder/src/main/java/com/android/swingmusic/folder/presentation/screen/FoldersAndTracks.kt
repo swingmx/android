@@ -88,7 +88,7 @@ private fun FoldersAndTracks(
     onPullToRefresh: (FolderUiEvent) -> Unit,
     onClickFolder: (Folder) -> Unit,
     onClickTrackItem: (index: Int, queue: List<Track>) -> Unit,
-    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onGotoArtist: (hash: String) -> Unit,
     baseUrl: String
@@ -97,6 +97,16 @@ private fun FoldersAndTracks(
     val scope = rememberCoroutineScope()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+
+    LaunchedEffect(foldersAndTracksState.foldersAndTracks.tracks) {
+        clickedTrack?.let { track ->
+            val updatedTrack =
+                foldersAndTracksState.foldersAndTracks.tracks.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+        // just in case
+        if (clickedTrack == null) showTrackBottomSheet = false
+    }
 
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
     val refreshState = rememberPullToRefreshState()
@@ -157,6 +167,7 @@ private fun FoldersAndTracks(
                                 sheetState = sheetState,
                                 clickedTrack = track,
                                 baseUrl = baseUrl,
+                                isFavorite = track.isFavorite,
                                 bottomSheetItems = listOf(
                                     BottomSheetItemModel(
                                         label = "Go to Artist",
@@ -194,8 +205,8 @@ private fun FoldersAndTracks(
                                 onChooseArtist = { hash ->
                                     onGotoArtist(hash)
                                 },
-                                onToggleTrackFavorite = { isFavorite, trackHash ->
-                                    onToggleTrackFavorite(isFavorite, trackHash)
+                                onToggleTrackFavorite = { trackHash, isFavorite ->
+                                    onToggleTrackFavorite(trackHash, isFavorite)
                                 }
                             )
                         }
@@ -571,8 +582,10 @@ fun FoldersAndTracksScreen(
                 onGotoArtist = { hash ->
                     navigator.gotoArtistInfo(artistHash = hash)
                 },
-                onToggleTrackFavorite = { isFavorite, trackHash ->
-                    // TODO: Call Folder Track fav toggle
+                onToggleTrackFavorite = { trackHash, isFavorite ->
+                    foldersViewModel.onFolderUiEvent(
+                        FolderUiEvent.ToggleTrackFavorite(trackHash, isFavorite)
+                    )
                 }
             )
 

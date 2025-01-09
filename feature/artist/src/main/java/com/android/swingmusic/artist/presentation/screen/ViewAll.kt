@@ -23,6 +23,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
@@ -61,7 +63,7 @@ private fun ViewAll(
     allTracks: List<Track>?,
     allAlbumsToShow: List<Album>?,
     onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit,
-    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onClickAlbum: (hash: String) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onGotoArtist: (hash: String) -> Unit
@@ -71,6 +73,13 @@ private fun ViewAll(
     val scope = rememberCoroutineScope()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+
+    LaunchedEffect(allTracks) {
+        clickedTrack?.let { track ->
+            val updatedTrack = allTracks?.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+    }
 
     Scaffold { padding ->
         Scaffold(
@@ -99,6 +108,7 @@ private fun ViewAll(
                     CustomTrackBottomSheet(
                         scope = scope,
                         sheetState = sheetState,
+                        isFavorite = track.isFavorite,
                         clickedTrack = track,
                         baseUrl = baseUrl,
                         currentArtisthash = artistHash,
@@ -147,8 +157,8 @@ private fun ViewAll(
                         onChooseArtist = { hash ->
                             onGotoArtist(hash)
                         },
-                        onToggleTrackFavorite = { isFavorite, trackHash ->
-                            onToggleTrackFavorite(isFavorite, trackHash)
+                        onToggleTrackFavorite = { trackHash, isFavorite ->
+                            onToggleTrackFavorite(trackHash, isFavorite)
                         }
                     )
                 }
@@ -341,8 +351,12 @@ fun ViewAllScreen(
                 onGotoArtist = { hash ->
                     commonNavigator.gotoArtistInfo(hash)
                 },
-                onToggleTrackFavorite = { isFavorite, trackHash ->
-                    // TODO: Call ViewAll Track fav toggle
+                onToggleTrackFavorite = { trackHash, isFavorite ->
+                    artistInfoViewModel.onArtistInfoUiEvent(
+                        ArtistInfoUiEvent.ToggleArtistTrackFavorite(
+                            trackHash, isFavorite
+                        )
+                    )
                 }
             )
         }

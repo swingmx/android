@@ -8,6 +8,7 @@ import com.android.swingmusic.album.presentation.state.AlbumInfoWithGroupedTrack
 import com.android.swingmusic.album.presentation.state.AlbumWithInfoState
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumWithInfo
+import com.android.swingmusic.player.domain.repository.PLayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AlbumWithInfoViewModel @Inject constructor(
-    private val albumRepository: AlbumRepository
+    private val albumRepository: AlbumRepository,
+    private val pLayerRepository: PLayerRepository
 ) : ViewModel() {
 
     private val _albumWithInfoState: MutableStateFlow<AlbumWithInfoState> =
@@ -123,6 +125,113 @@ class AlbumWithInfoViewModel @Inject constructor(
         }
     }
 
+    private fun toggleAlbumTrackFavorite(trackHash: String, isFavorite: Boolean) {
+        viewModelScope.launch {
+            // Optimistically update the Ui
+            _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                orderedTracks = _albumWithInfoState.value.orderedTracks.map { track ->
+                    if (track.trackHash == trackHash) {
+                        track.copy(isFavorite = !isFavorite)
+                    } else {
+                        track
+                    }
+                }
+            )
+
+            _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                infoResource = Resource.Success(
+                    AlbumInfoWithGroupedTracks(
+                        albumInfo = _albumWithInfoState.value.infoResource.data?.albumInfo,
+                        groupedTracks = _albumWithInfoState.value.infoResource.data?.groupedTracks?.mapValues { entry ->
+                            entry.value.map { track ->
+                                if (track.trackHash == trackHash) {
+                                    track.copy(isFavorite = !isFavorite)
+                                } else {
+                                    track
+                                }
+                            }
+                        } ?: emptyMap(),
+                        copyright = _albumWithInfoState.value.infoResource.data?.copyright
+                    )
+                )
+            )
+
+
+            val request = if (isFavorite) {
+                pLayerRepository.removeTrackFromFavorite(trackHash)
+            } else {
+                pLayerRepository.addTrackToFavorite(trackHash)
+            }
+
+            request.collectLatest {
+                when (it) {
+                    is Resource.Loading -> {}
+
+                    is Resource.Success -> {
+                        _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                            orderedTracks = _albumWithInfoState.value.orderedTracks.map { track ->
+                                if (track.trackHash == trackHash) {
+                                    track.copy(isFavorite = it.data ?: false)
+                                } else {
+                                    track
+                                }
+                            }
+                        )
+
+                        _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                            infoResource = Resource.Success(
+                                AlbumInfoWithGroupedTracks(
+                                    albumInfo = _albumWithInfoState.value.infoResource.data?.albumInfo,
+                                    groupedTracks = _albumWithInfoState.value.infoResource.data?.groupedTracks?.mapValues { entry ->
+                                        entry.value.map { track ->
+                                            if (track.trackHash == trackHash) {
+                                                track.copy(isFavorite = it.data ?: false)
+                                            } else {
+                                                track
+                                            }
+                                        }
+                                    } ?: emptyMap(),
+                                    copyright = _albumWithInfoState.value.infoResource.data?.copyright
+                                )
+                            )
+                        )
+                    }
+
+                    is Resource.Error -> {
+                        // Revert the optimistic updates in case of an error
+                        _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                            orderedTracks = _albumWithInfoState.value.orderedTracks.map { track ->
+                                if (track.trackHash == trackHash) {
+                                    track.copy(isFavorite = isFavorite)
+                                } else {
+                                    track
+                                }
+                            }
+                        )
+
+                        _albumWithInfoState.value = _albumWithInfoState.value.copy(
+                            infoResource = Resource.Success(
+                                AlbumInfoWithGroupedTracks(
+                                    albumInfo = _albumWithInfoState.value.infoResource.data?.albumInfo,
+                                    groupedTracks = _albumWithInfoState.value.infoResource.data?.groupedTracks?.mapValues { entry ->
+                                        entry.value.map { track ->
+                                            if (track.trackHash == trackHash) {
+                                                track.copy(isFavorite = isFavorite)
+                                            } else {
+                                                track
+                                            }
+                                        }
+                                    } ?: emptyMap(),
+                                    copyright = _albumWithInfoState.value.infoResource.data?.copyright
+                                )
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun onAlbumWithInfoUiEvent(event: AlbumWithInfoUiEvent) {
         when (event) {
             is AlbumWithInfoUiEvent.ResetState -> {
@@ -161,6 +270,10 @@ class AlbumWithInfoViewModel @Inject constructor(
 
             is AlbumWithInfoUiEvent.OnToggleAlbumFavorite -> {
                 toggleAlbumFavorite(event.albumHash, event.isFavorite)
+            }
+
+            is AlbumWithInfoUiEvent.OnToggleAlbumTrackFavorite -> {
+                toggleAlbumTrackFavorite(event.trackHash, event.favorite)
             }
 
             else -> {}

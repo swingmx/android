@@ -84,7 +84,7 @@ private fun Queue(
     playbackState: PlaybackState,
     baseUrl: String,
     onClickQueueSource: (source: QueueSource) -> Unit,
-    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onTogglePlayerState: () -> Unit,
     onClickQueueItem: (index: Int) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
@@ -97,6 +97,13 @@ private fun Queue(
     val scope = rememberCoroutineScope()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+
+    LaunchedEffect(queue) {
+        clickedTrack?.let { track ->
+            val updatedTrack = queue.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+    }
 
     // scroll past the playing track by one item to keep highlighted cards far apart at first
     LaunchedEffect(key1 = Unit) {
@@ -112,6 +119,7 @@ private fun Queue(
                     scope = scope,
                     sheetState = sheetState,
                     clickedTrack = track,
+                    isFavorite = track.isFavorite,
                     baseUrl = baseUrl,
                     bottomSheetItems = listOf(
                         BottomSheetItemModel(
@@ -154,8 +162,8 @@ private fun Queue(
                     onChooseArtist = { hash ->
                         onGotoArtist(hash)
                     },
-                    onToggleTrackFavorite = { isFavorite, trackHash ->
-                        onToggleTrackFavorite(isFavorite, trackHash)
+                    onToggleTrackFavorite = { trackHash, isFavorite ->
+                        onToggleTrackFavorite(trackHash, isFavorite)
                     }
                 )
             }
@@ -455,7 +463,7 @@ fun QueueScreen(
         },
         onToggleTrackFavorite = { isFavorite, trackHash ->
             mediaControllerViewModel.onPlayerUiEvent(
-                PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)
+                PlayerUiEvent.OnToggleFavorite(trackHash, isFavorite)
             )
         }
     )

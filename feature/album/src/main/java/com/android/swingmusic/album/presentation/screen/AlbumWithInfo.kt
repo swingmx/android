@@ -115,16 +115,16 @@ fun AlbumWithInfo(
     playbackState: PlaybackState,
     albumInfo: AlbumInfo,
     copyright: String,
-    albumTracks: Map<Int, List<Track>>,
+    albumTracksMap: Map<Int, List<Track>>,
     baseUrl: String,
     onClickBack: () -> Unit,
     onClickMore: () -> Unit,
     onClickArtist: (artistHsh: String) -> Unit,
     onClickAlbumTrack: (index: Int, queue: List<Track>) -> Unit,
-    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
     onPlay: (queue: List<Track>) -> Unit,
     onShuffle: () -> Unit,
-    onToggleFavorite: (Boolean, String) -> Unit,
+    onToggleAlbumFavorite: (Boolean, String) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onGotoArtist: (hash: String) -> Unit,
 ) {
@@ -140,12 +140,21 @@ fun AlbumWithInfo(
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
 
+    LaunchedEffect(albumTracksMap) {
+        albumTracksMap.forEach { entry ->
+            clickedTrack = entry.value.find { track ->
+                track.trackHash == clickedTrack?.trackHash
+            } ?: clickedTrack
+        }
+    }
+
     Scaffold {
         if (showTrackBottomSheet) {
             clickedTrack?.let { track ->
                 CustomTrackBottomSheet(
                     scope = scope,
                     sheetState = sheetState,
+                    isFavorite = track.isFavorite,
                     clickedTrack = track,
                     baseUrl = baseUrl,
                     bottomSheetItems = listOf(
@@ -186,8 +195,8 @@ fun AlbumWithInfo(
                     onChooseArtist = { hash ->
                         onGotoArtist(hash)
                     },
-                    onToggleTrackFavorite = { isFavorite, trackHash ->
-                        onToggleTrackFavorite(isFavorite, trackHash)
+                    onToggleTrackFavorite = { trackHash, isFavorite ->
+                        onToggleTrackFavorite(trackHash, isFavorite)
                     }
                 )
             }
@@ -408,7 +417,7 @@ fun AlbumWithInfo(
                                 else R.drawable.fav_not_filled
                                 IconButton(
                                     onClick = {
-                                        onToggleFavorite(
+                                        onToggleAlbumFavorite(
                                             albumInfo.isFavorite,
                                             albumInfo.albumHash
                                         )
@@ -456,7 +465,7 @@ fun AlbumWithInfo(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            albumTracks.forEach { (discNumber, tracks) ->
+            albumTracksMap.forEach { (discNumber, tracks) ->
                 item {
                     // Disc Number Header
                     Text(
@@ -507,6 +516,7 @@ fun AlbumWithInfo(
                         ) {
                             TrackItem(
                                 track = track,
+                                baseUrl = baseUrl,
                                 isAlbumTrack = true,
                                 showMenuIcon = true,
                                 isCurrentTrack = track.trackHash == currentTrack?.trackHash,
@@ -520,8 +530,7 @@ fun AlbumWithInfo(
                                 onClickMoreVert = {
                                     clickedTrack = it
                                     showTrackBottomSheet = true
-                                },
-                                baseUrl = baseUrl
+                                }
                             )
                         }
                     }
@@ -775,7 +784,7 @@ fun AlbumWithInfoScreen(
                             playbackState = playerUiState.playbackState,
                             albumInfo = albumWithInfoState.infoResource.data?.albumInfo!!,
                             copyright = albumWithInfoState.infoResource.data?.copyright!!,
-                            albumTracks = albumWithInfoState.infoResource.data!!.groupedTracks,
+                            albumTracksMap = albumWithInfoState.infoResource.data!!.groupedTracks,
                             baseUrl = baseUrl ?: "https://default",
                             onClickBack = { navigator.navigateBack() },
                             onClickMore = {
@@ -828,7 +837,7 @@ fun AlbumWithInfoScreen(
                                     )
                                 )
                             },
-                            onToggleFavorite = { isFavorite, albumHash ->
+                            onToggleAlbumFavorite = { isFavorite, albumHash ->
                                 albumWithInfoViewModel.onAlbumWithInfoUiEvent(
                                     AlbumWithInfoUiEvent.OnToggleAlbumFavorite(
                                         isFavorite,
@@ -899,8 +908,12 @@ fun AlbumWithInfoScreen(
                             onGotoArtist = { hash ->
                                 navigator.gotoArtistInfo(artistHash = hash)
                             },
-                            onToggleTrackFavorite = { isFavorite, trackHash ->
-                                // TODO: Call Album Track fav toggle
+                            onToggleTrackFavorite = { trackHash, isFavorite ->
+                                albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                                    AlbumWithInfoUiEvent.OnToggleAlbumTrackFavorite(
+                                        trackHash, isFavorite,
+                                    )
+                                )
                             }
                         )
                     }
@@ -1068,7 +1081,7 @@ fun AlbumWithInfoScreenPreview() {
             playbackState = PlaybackState.PLAYING,
             albumInfo = albumInfo,
             copyright = "© 2018 Republic Records",
-            albumTracks = mapOf(
+            albumTracksMap = mapOf(
                 1 to listOf(tracks[1], tracks[5])
             ),
             baseUrl = "",
@@ -1078,7 +1091,7 @@ fun AlbumWithInfoScreenPreview() {
             onClickAlbumTrack = { index, queue -> },
             onPlay = { queue -> },
             onShuffle = {},
-            onToggleFavorite = { isFavorite, albumHash -> },
+            onToggleAlbumFavorite = { isFavorite, albumHash -> },
             onGetSheetAction = { _, _ -> },
             onGotoArtist = {},
             onToggleTrackFavorite = { _, _ -> }

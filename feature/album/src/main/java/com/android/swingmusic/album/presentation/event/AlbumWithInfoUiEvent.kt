@@ -8,10 +8,15 @@ interface AlbumWithInfoUiEvent {
 
     object OnRefreshAlbumInfo : AlbumWithInfoUiEvent
 
-    object ResetState: AlbumWithInfoUiEvent
+    object ResetState : AlbumWithInfoUiEvent
 
     data class OnToggleAlbumFavorite(
         val isFavorite: Boolean,
         val albumHash: String,
+    ) : AlbumWithInfoUiEvent
+
+    data class OnToggleAlbumTrackFavorite(
+        val trackHash: String,
+        val favorite: Boolean
     ) : AlbumWithInfoUiEvent
 }

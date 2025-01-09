@@ -596,8 +596,6 @@ class MediaControllerViewModel @Inject constructor(
                             }
                         }.toMutableList()
                     }
-
-                    else -> {}
                 }
             }
         }

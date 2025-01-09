@@ -55,10 +55,4 @@ class DataFolderRepository @Inject constructor(
             }
         }
     }
-
-    private fun FoldersAndTracks.sort(): FoldersAndTracks {
-        val folders = this.folders.sortedBy { it.name }
-        val tracks = this.tracks.sortedBy { it.title }
-        return FoldersAndTracks(folders, tracks)
-    }
 }

@@ -108,7 +108,7 @@ class DataPLayerRepository @Inject constructor(
                     bearerToken = "Bearer $accessToken"
                 )
 
-                emit(Resource.Success(data = true))
+                emit(Resource.Success(data = true)) // isFavorite = true
 
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO ADD TRACK TO FAVORITE"))
@@ -132,7 +132,7 @@ class DataPLayerRepository @Inject constructor(
                     toggleFavoriteRequest = ToggleFavoriteRequest(hash = trackHash, type = "track"),
                     bearerToken = "Bearer $accessToken"
                 )
-                emit(Resource.Success(data = false))
+                emit(Resource.Success(data = false)) // isFavorite = false
 
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO REMOVE TRACK FROM FAVORITE"))

@@ -103,13 +103,13 @@ private fun ArtistInfo(
     similarArtists: List<Artist>,
     playbackState: PlaybackState,
     currentTrack: Track?,
-    onToggleFavorite: (String, Boolean) -> Unit,
+    onToggleArtistFavorite: (String, Boolean) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onShuffle: () -> Unit,
     onPlayAllTracks: () -> Unit,
     onClickBack: () -> Unit,
     onClickAlbum: (albumHash: String) -> Unit,
     onClickArtistTrack: (queue: List<Track>, index: Int) -> Unit,
-    onToggleTrackFavorite: (isFavorite: Boolean, trackHash: String) -> Unit,
     onClickSimilarArtist: (artistHash: String) -> Unit,
     onClickViewAll: (artistName: String, viewAllType: String, baseUrl: String) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
@@ -120,6 +120,13 @@ private fun ArtistInfo(
     val scope = rememberCoroutineScope()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+
+    LaunchedEffect(artistInfo.tracks) {
+        clickedTrack?.let { track ->
+            val updatedTrack = artistInfo.tracks.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -150,6 +157,7 @@ private fun ArtistInfo(
                 CustomTrackBottomSheet(
                     scope = scope,
                     sheetState = sheetState,
+                    isFavorite = track.isFavorite,
                     clickedTrack = track,
                     baseUrl = baseUrl,
                     currentArtisthash = artistInfo.artist.artistHash,
@@ -199,8 +207,8 @@ private fun ArtistInfo(
                     onChooseArtist = { hash ->
                         onGotoArtist(hash)
                     },
-                    onToggleTrackFavorite = { isFavorite, trackHash ->
-                        onToggleTrackFavorite(isFavorite, trackHash)
+                    onToggleTrackFavorite = { trackHash, isFavorite ->
+                        onToggleTrackFavorite(trackHash, isFavorite)
                     }
                 )
             }
@@ -321,7 +329,7 @@ private fun ArtistInfo(
                         LazyRow(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 16.dp, end = 20.dp),
+                                .padding(start = 16.dp, end = 12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -330,7 +338,7 @@ private fun ArtistInfo(
                                 else R.drawable.fav_not_filled
                                 IconButton(
                                     onClick = {
-                                        onToggleFavorite(
+                                        onToggleArtistFavorite(
                                             artistInfo.artist.artistHash,
                                             artistInfo.artist.isFavorite
                                         )
@@ -951,7 +959,7 @@ fun ArtistInfoScreen(
                             onClickBack = {
                                 commonNavigator.navigateBack()
                             },
-                            onToggleFavorite = { artistHash, isFavorite ->
+                            onToggleArtistFavorite = { artistHash, isFavorite ->
                                 artistInfoViewModel.onArtistInfoUiEvent(
                                     ArtistInfoUiEvent.OnToggleArtistFavorite(
                                         artistHash = artistHash,
@@ -1092,8 +1100,12 @@ fun ArtistInfoScreen(
                                     ArtistInfoUiEvent.OnUpdateArtistHash(hash)
                                 )
                             },
-                            onToggleTrackFavorite = { isFavorite, trackHash ->
-                                // TODO: Call Artist Track fav toggle
+                            onToggleTrackFavorite = { trackHash, isFavorite ->
+                                artistInfoViewModel.onArtistInfoUiEvent(
+                                    ArtistInfoUiEvent.ToggleArtistTrackFavorite(
+                                        trackHash, isFavorite
+                                    )
+                                )
                             }
                         )
                     }
@@ -1490,7 +1502,7 @@ fun ArtistInfoPreview() {
                 ),
             ),
             onClickBack = {},
-            onToggleFavorite = { _, _ -> },
+            onToggleArtistFavorite = { _, _ -> },
             onShuffle = {},
             onPlayAllTracks = {},
             onClickAlbum = {},
