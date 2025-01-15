@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,7 +29,8 @@ class ArtistInfoViewModel @Inject constructor(
 
     private fun getArtistInfo(artistHash: String) {
         viewModelScope.launch {
-            artistRepository.getArtistInfo(artistHash).collectLatest { res ->
+            val lastHash = _artistInfoState.value.artistHashBackStack.lastOrNull() ?: artistHash
+            artistRepository.getArtistInfo(lastHash).collectLatest { res ->
                 _artistInfoState.value = _artistInfoState.value.copy(
                     infoResource = res
                 )
@@ -44,7 +46,9 @@ class ArtistInfoViewModel @Inject constructor(
 
     private fun getSimilarArtists(artistHash: String) {
         viewModelScope.launch {
-            artistRepository.getSimilarArtists(artistHash).collectLatest { res ->
+            val lastHash = _artistInfoState.value.artistHashBackStack.lastOrNull() ?: artistHash
+
+            artistRepository.getSimilarArtists(lastHash).collectLatest { res ->
                 _artistInfoState.value = _artistInfoState.value.copy(
                     similarArtistsResource = res
                 )
@@ -67,6 +71,8 @@ class ArtistInfoViewModel @Inject constructor(
                 )
             )
         }
+
+        Timber.e("UPDATED HASH BACKSTACK: ${_artistInfoState.value.artistHashBackStack}, NEW: $hash")
     }
 
     private fun toggleArtistFavorite(artistHash: String, isFavorite: Boolean) {
@@ -244,10 +250,33 @@ class ArtistInfoViewModel @Inject constructor(
         }
     }
 
+    private fun addArtistHashToBackStack(artistHash: String) {
+        val currentBackStack = _artistInfoState.value.artistHashBackStack
+        _artistInfoState.value = _artistInfoState.value.copy(
+            artistHashBackStack = if ((artistHash != currentBackStack.lastOrNull())) {
+                _artistInfoState.value.artistHashBackStack.plus(artistHash)
+            } else currentBackStack
+        )
+    }
+
+    private fun removeLastHashFromBackStack() {
+        _artistInfoState.value = _artistInfoState.value.copy(
+            artistHashBackStack = _artistInfoState.value.artistHashBackStack.dropLast(1)
+        )
+    }
+
+    private fun clearArtistHashBackStack() {
+        _artistInfoState.value = _artistInfoState.value.copy(
+            artistHashBackStack = emptyList()
+        )
+
+        Timber.e("CLEARED BACKSTACK: ${_artistInfoState.value.artistHashBackStack}")
+    }
+
     fun onArtistInfoUiEvent(event: ArtistInfoUiEvent) {
         when (event) {
             is ArtistInfoUiEvent.OnLoadArtistInfo -> {
-
+                addArtistHashToBackStack(event.artistHash)
                 updateCurrentArtistHash(event.artistHash)
 
                 getArtistInfo(event.artistHash)
@@ -255,15 +284,22 @@ class ArtistInfoViewModel @Inject constructor(
             }
 
             is ArtistInfoUiEvent.OnRefresh -> {
-                getArtistInfo(event.artistHash)
-                getSimilarArtists(event.artistHash)
+                onArtistInfoUiEvent(ArtistInfoUiEvent.OnLoadArtistInfo(event.artistHash))
             }
 
-            is ArtistInfoUiEvent.OnUpdateArtistHash -> {
-                updateCurrentArtistHash(event.artistHash)
+            is ArtistInfoUiEvent.OnNavigateBack -> {
+                if (_artistInfoState.value.artistHashBackStack.size == 1) {
+                    clearArtistHashBackStack()
+                } else {
+                    removeLastHashFromBackStack()
 
-                getArtistInfo(event.artistHash)
-                getSimilarArtists(event.artistHash)
+                    val hash = _artistInfoState.value.artistHashBackStack.lastOrNull()
+                    hash?.let {
+                        updateCurrentArtistHash(it)
+                        getArtistInfo(it)
+                        getSimilarArtists(it)
+                    }
+                }
             }
 
             is ArtistInfoUiEvent.OnToggleArtistFavorite -> {
