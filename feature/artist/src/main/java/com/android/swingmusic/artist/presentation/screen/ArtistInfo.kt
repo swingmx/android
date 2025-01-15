@@ -2,6 +2,7 @@ package com.android.swingmusic.artist.presentation.screen
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -22,8 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -130,7 +129,7 @@ private fun ArtistInfo(
 
     Scaffold(
         topBar = {
-            Row(
+            /*Row(
                 modifier = Modifier
                     .padding(top = 24.dp)
                     .fillMaxWidth()
@@ -149,7 +148,7 @@ private fun ArtistInfo(
                         contentDescription = "Back Arrow"
                     )
                 }
-            }
+            }*/
         }
     ) {
         if (showTrackBottomSheet) {
@@ -843,7 +842,7 @@ fun ArtistInfoScreen(
     mediaControllerViewModel: MediaControllerViewModel,
     artistInfoViewModel: ArtistInfoViewModel,
     artistHash: String,
-    loadNewArtist: Boolean,
+    loadNewArtist: Boolean = false,
     commonNavigator: CommonNavigator
 ) {
     val baseUrl = mediaControllerViewModel.baseUrl
@@ -853,6 +852,8 @@ fun ArtistInfoScreen(
     val similarArtists = if (artistInfoState.value.similarArtistsResource is Resource.Success)
         artistInfoState.value.similarArtistsResource.data else emptyList()
 
+    var routeByGotoArtist by remember { mutableStateOf(false) }
+
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
     val refreshState = rememberPullToRefreshState()
 
@@ -860,12 +861,14 @@ fun ArtistInfoScreen(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(key1 = Unit) {
-        if (artistInfoState.value.requiresReload || loadNewArtist) {
-            if (currentArtistHash != artistHash) {
-                artistInfoViewModel.onArtistInfoUiEvent(
-                    ArtistInfoUiEvent.OnLoadArtistInfo(artistHash)
-                )
-            }
+        routeByGotoArtist = loadNewArtist
+
+        val lastHash = artistInfoState.value.artistHashBackStack.lastOrNull() ?: artistHash
+        val hashToLoad = if (routeByGotoArtist) artistHash else lastHash
+        if (hashToLoad != currentArtistHash) {
+            artistInfoViewModel.onArtistInfoUiEvent(
+                ArtistInfoUiEvent.OnLoadArtistInfo(hashToLoad)
+            )
         }
     }
 
@@ -957,7 +960,11 @@ fun ArtistInfoScreen(
                             playbackState = playerUiState.playbackState,
                             currentTrack = playerUiState.nowPlayingTrack,
                             onClickBack = {
-                                commonNavigator.navigateBack()
+                                /* if (artistInfoState.value.artistHashBackStack.size > 1) {
+                                     artistInfoViewModel.onArtistInfoUiEvent(ArtistInfoUiEvent.OnNavigateBack)
+                                 } else {
+                                     commonNavigator.navigateBack()
+                                 }*/
                             },
                             onToggleArtistFavorite = { artistHash, isFavorite ->
                                 artistInfoViewModel.onArtistInfoUiEvent(
@@ -1020,8 +1027,10 @@ fun ArtistInfoScreen(
                                 )
                             },
                             onClickSimilarArtist = {
+                                routeByGotoArtist = false
+
                                 artistInfoViewModel.onArtistInfoUiEvent(
-                                    ArtistInfoUiEvent.OnUpdateArtistHash(it)
+                                    ArtistInfoUiEvent.OnLoadArtistInfo(it)
                                 )
                             },
                             onClickViewAll = { artistName: String, viewAllType: String, baseUrl: String ->
@@ -1096,8 +1105,10 @@ fun ArtistInfoScreen(
                                 }
                             },
                             onGotoArtist = { hash ->
+                                routeByGotoArtist = false
+
                                 artistInfoViewModel.onArtistInfoUiEvent(
-                                    ArtistInfoUiEvent.OnUpdateArtistHash(hash)
+                                    ArtistInfoUiEvent.OnLoadArtistInfo(hash)
                                 )
                             },
                             onToggleTrackFavorite = { trackHash, isFavorite ->
@@ -1112,6 +1123,16 @@ fun ArtistInfoScreen(
                 }
             }
         }
+    }
+
+    BackHandler(enabled = routeByGotoArtist.not()) {
+        val hashBackStack = artistInfoState.value.artistHashBackStack
+        if (hashBackStack.size <= 1) {
+            routeByGotoArtist = false
+            commonNavigator.navigateBack()
+        }
+
+        artistInfoViewModel.onArtistInfoUiEvent(ArtistInfoUiEvent.OnNavigateBack)
     }
 }
 

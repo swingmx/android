@@ -349,6 +349,7 @@ fun ViewAllScreen(
                     }
                 },
                 onGotoArtist = { hash ->
+                    artistInfoViewModel.onArtistInfoUiEvent(ArtistInfoUiEvent.OnLoadArtistInfo(hash))
                     commonNavigator.gotoArtistInfo(hash)
                 },
                 onToggleTrackFavorite = { trackHash, isFavorite ->

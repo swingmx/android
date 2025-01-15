@@ -378,7 +378,7 @@ fun AllArtistsScreen(
                 },
                 onNavigateToInfo = {
                     artistInfoViewModel.onArtistInfoUiEvent(
-                        ArtistInfoUiEvent.OnUpdateArtistHash(it)
+                        ArtistInfoUiEvent.OnLoadArtistInfo(it)
                     )
                     navigator.gotoArtistInfo(it)
                 }
