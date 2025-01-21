@@ -182,6 +182,8 @@ private fun MiniPlayer(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp),
+                gapSize = 0.dp,
+                drawStopIndicator = {},
                 progress = { playbackProgress },
                 strokeCap = StrokeCap.Square
             )
