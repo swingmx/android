@@ -11,6 +11,7 @@ import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAnd
 import com.android.swingmusic.home.presentation.destinations.HomeDestination
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
+import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
 import com.ramcosta.composedestinations.dynamic.routedIn
 import com.ramcosta.composedestinations.spec.DestinationSpec
 import com.ramcosta.composedestinations.spec.NavGraphSpec
@@ -52,7 +53,8 @@ object NavGraphs {
                 ArtistInfoScreenDestination,
                 QueueScreenDestination,
                 NowPlayingScreenDestination,
-                ViewAllScreenDestination
+                ViewAllScreenDestination,
+                SearchScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -68,7 +70,8 @@ object NavGraphs {
                 ArtistInfoScreenDestination,
                 ViewAllScreenDestination,
                 AlbumWithInfoScreenDestination,
-                FoldersAndTracksScreenDestination
+                FoldersAndTracksScreenDestination,
+                SearchScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -85,7 +88,8 @@ object NavGraphs {
                 ViewAllScreenDestination,
                 NowPlayingScreenDestination,
                 QueueScreenDestination,
-                FoldersAndTracksScreenDestination
+                FoldersAndTracksScreenDestination,
+                SearchScreenDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -96,6 +100,25 @@ object NavGraphs {
 
         override val destinationsByRoute: Map<String, DestinationSpec<*>> =
             listOf<DestinationSpec<*>>(
+                AllAlbumScreenDestination,
+                AlbumWithInfoScreenDestination,
+                ArtistInfoScreenDestination,
+                ViewAllScreenDestination,
+                NowPlayingScreenDestination,
+                QueueScreenDestination,
+                FoldersAndTracksScreenDestination,
+                SearchScreenDestination
+            ).routedIn(this).associateBy { it.route }
+    }
+
+    val search = object : NavGraphSpec {
+        override val route: String = "search"
+
+        override val startRoute: Route = SearchScreenDestination routedIn this
+
+        override val destinationsByRoute: Map<String, DestinationSpec<*>> =
+            listOf<DestinationSpec<*>>(
+                SearchScreenDestination,
                 AllAlbumScreenDestination,
                 AlbumWithInfoScreenDestination,
                 ArtistInfoScreenDestination,
@@ -121,7 +144,8 @@ object NavGraphs {
             // playlist,
             album,
             folder,
-            artist
+            artist,
+            search
         )
     }
 }
