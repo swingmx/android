@@ -38,4 +38,10 @@ sealed class BottomNavItem(
         icon = UiComponent.drawable.ic_artist,
         navGraph = NavGraphs.artist
     )
+
+    data object Search : BottomNavItem(
+        title = "Search",
+        icon = UiComponent.drawable.ic_search,
+        navGraph = NavGraphs.search
+    )
 }

@@ -186,7 +186,7 @@ private fun ViewAll(
                         )
 
                         if (index == tracks.lastIndex) {
-                            Spacer(modifier = Modifier.height(50.dp))
+                            Spacer(modifier = Modifier.height(100.dp))
                         }
                     }
                 }

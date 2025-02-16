@@ -47,7 +47,7 @@ class Converters {
             is QueueSource.ARTIST -> "ARTIST|${queueSource.artistHash.escape()}|${queueSource.name.escape()}"
             is QueueSource.FOLDER -> "FOLDER|${queueSource.path.escape()}|${queueSource.name.escape()}"
             is QueueSource.PLAYLIST -> "PLAYLIST|${queueSource.id.escape()}|${queueSource.name.escape()}"
-            is QueueSource.QUERY -> "QUERY|${queueSource.query.escape()}|${queueSource.name.escape()}"
+            is QueueSource.SEARCH -> "SEARCH"
             is QueueSource.FAVORITE -> "FAVORITE"
             is QueueSource.UNKNOWN -> "UNKNOWN"
             else -> ""
@@ -62,7 +62,7 @@ class Converters {
             "ARTIST" -> QueueSource.ARTIST(parts[1], parts[2])
             "FOLDER" -> QueueSource.FOLDER(parts[1], parts[2])
             "PLAYLIST" -> QueueSource.PLAYLIST(parts[1], parts[2])
-            "QUERY" -> QueueSource.QUERY(parts[1], parts[2])
+            "SEARCH" -> QueueSource.SEARCH
             "FAVORITE" -> QueueSource.FAVORITE
             "UNKNOWN" -> QueueSource.UNKNOWN
             else -> throw IllegalArgumentException("Unknown QueueSource type")

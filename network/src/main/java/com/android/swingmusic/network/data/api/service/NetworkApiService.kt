@@ -1,12 +1,16 @@
 package com.android.swingmusic.network.data.api.service
 
 import com.android.swingmusic.core.data.dto.AlbumWithInfoDto
+import com.android.swingmusic.core.data.dto.AlbumsSearchResultDto
 import com.android.swingmusic.core.data.dto.AllAlbumsDto
 import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.ArtistDto
 import com.android.swingmusic.core.data.dto.ArtistInfoDto
+import com.android.swingmusic.core.data.dto.ArtistsSearchResultDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
+import com.android.swingmusic.core.data.dto.TopSearchResultsDto
+import com.android.swingmusic.core.data.dto.TracksSearchResultDto
 import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
 import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
 import com.android.swingmusic.network.data.dto.LogTrackRequestDto
@@ -102,4 +106,39 @@ interface NetworkApiService {
         @Url url: String,
         @Header("Authorization") bearerToken: String
     ): List<ArtistDto>
+
+    @GET
+    suspend fun searchAlbums(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") limit: Int = -1,
+        @Query("itemtype") itemType: String = "albums",
+        @Query("q") searchParams: String
+    ): AlbumsSearchResultDto
+
+    @GET
+    suspend fun searchArtists(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") limit: Int = -1,
+        @Query("itemtype") itemType: String = "artists",
+        @Query("q") searchParams: String
+    ): ArtistsSearchResultDto
+
+    @GET
+    suspend fun searchTracks(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") limit: Int = -1,
+        @Query("itemtype") itemType: String = "tracks",
+        @Query("q") searchParams: String
+    ): TracksSearchResultDto
+
+    @GET
+    suspend fun getTopSearchResults(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") limit: Int = -1,
+        @Query("q") searchParams: String
+    ): TopSearchResultsDto
 }

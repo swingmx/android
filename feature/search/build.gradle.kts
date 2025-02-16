@@ -1,33 +1,23 @@
 plugins {
-    id("com.android.application")
+    id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
 }
 
 android {
-    namespace = "com.android.swingmusic"
-    compileSdk = 35
+    namespace = "com.android.swingmusic.search"
+    compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.android.swingmusic"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-            )
         }
     }
     compileOptions {
@@ -51,24 +41,19 @@ android {
 }
 
 dependencies {
+
     // Local Modules
     implementation(project(":auth"))
     implementation(project(":core"))
     implementation(project(":network"))
     implementation(project(":uicomponent"))
-    // Feature Modules
-    implementation(project(":feature:home"))
-    implementation(project(":feature:folder"))
     implementation(project(":feature:player"))
-    implementation(project(":feature:artist"))
-    implementation(project(":feature:album"))
-    implementation(project(":feature:search"))
+
     // Common Feature
     implementation(project(":feature:common"))
 
     // Core
-   // implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 
     // Compose
@@ -80,50 +65,33 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    testImplementation("junit:junit:4.13.2")
-
-    // Hilt DI
+    // Hilt
     implementation("com.google.dagger:hilt-android:2.50")
     ksp("com.google.dagger:hilt-android-compiler:2.50")
 
     // Hilt Navigation-Compose
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-
-    // Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    annotationProcessor("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation ("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.5.0")
 
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
 
-    // WorkManger
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
-    implementation("androidx.hilt:hilt-work:1.2.0")
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
-    // Navigation
-    // implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
-    implementation("io.github.raamcosta.compose-destinations:animations-core:1.9.63")
+    // Raamcosta Navigation
+    implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
-    // Media3-Player
-    implementation("androidx.media3:media3-exoplayer:1.4.1")
-    implementation("androidx.media3:media3-session:1.4.1")
-    // implementation("androidx.media3:media3-exoplayer-hls:1.3.1")
-    // implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
+    // Pagination
+    implementation ("androidx.paging:paging-compose")
 
     // Coil Image Loader
     implementation("io.coil-kt:coil-compose:2.6.0")
-
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 }
 
 kotlin {
@@ -139,5 +107,5 @@ kotlin {
 
 ksp {
     arg("compose-destinations.mode", "destinations")
-    arg("compose-destinations.moduleName", "app")
+    arg("compose-destinations.moduleName", "feature:search")
 }

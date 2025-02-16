@@ -65,6 +65,7 @@ import com.android.swingmusic.player.presentation.screen.destinations.NowPlaying
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.presentation.navigator.*
+import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.service.SessionTokenManager
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -127,13 +128,15 @@ class MainActivity : ComponentActivity() {
                 BottomNavItem.Album,
                 // BottomNavItem.Playlist,
                 BottomNavItem.Artist,
+                BottomNavItem.Search,
             )
 
             // Show BottomBar Navigation if route is ONE of...
             val showBottomNav = route in listOf(
                 "folder/${FoldersAndTracksScreenDestination.route}",
                 "album/${AllAlbumScreenDestination.route}",
-                "artist/${AllArtistsScreenDestination.route}"
+                "artist/${AllArtistsScreenDestination.route}",
+                "search/${SearchScreenDestination.route}",
             )
 
             val bottomNavHeight by animateDpAsState(
@@ -182,6 +185,7 @@ class MainActivity : ComponentActivity() {
                                     "folder/${QueueScreenDestination.route}",
                                     "album/${QueueScreenDestination.route}",
                                     "artist/${QueueScreenDestination.route}",
+                                    "search/${QueueScreenDestination.route}",
                                 ))
                             ) {
                                 MiniPlayer(
