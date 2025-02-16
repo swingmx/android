@@ -2,13 +2,17 @@ package com.android.swingmusic.core.data.mapper
 
 import com.android.swingmusic.core.data.dto.AlbumDto
 import com.android.swingmusic.core.data.dto.AlbumInfoDto
+import com.android.swingmusic.core.data.dto.AlbumResultDto
 import com.android.swingmusic.core.data.dto.AlbumWithInfoDto
 import com.android.swingmusic.core.data.dto.AlbumsAndAppearancesDto
+import com.android.swingmusic.core.data.dto.AlbumsSearchResultDto
 import com.android.swingmusic.core.data.dto.AllAlbumsDto
 import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.ArtistDto
 import com.android.swingmusic.core.data.dto.ArtistExpandedDto
 import com.android.swingmusic.core.data.dto.ArtistInfoDto
+import com.android.swingmusic.core.data.dto.ArtistResultDto
+import com.android.swingmusic.core.data.dto.ArtistsSearchResultDto
 import com.android.swingmusic.core.data.dto.DirDto
 import com.android.swingmusic.core.data.dto.DirListDto
 import com.android.swingmusic.core.data.dto.FolderDto
@@ -16,17 +20,24 @@ import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.GenreDto
 import com.android.swingmusic.core.data.dto.RootDirsDto
+import com.android.swingmusic.core.data.dto.TopResultDto
+import com.android.swingmusic.core.data.dto.TopResultItemDto
+import com.android.swingmusic.core.data.dto.TopSearchResultsDto
 import com.android.swingmusic.core.data.dto.TrackArtistDto
 import com.android.swingmusic.core.data.dto.TrackDto
+import com.android.swingmusic.core.data.dto.TrackResultDto
+import com.android.swingmusic.core.data.dto.TracksSearchResultDto
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.AlbumInfo
 import com.android.swingmusic.core.domain.model.AlbumWithInfo
 import com.android.swingmusic.core.domain.model.AlbumsAndAppearances
+import com.android.swingmusic.core.domain.model.AlbumsSearchResult
 import com.android.swingmusic.core.domain.model.AllAlbums
 import com.android.swingmusic.core.domain.model.AllArtists
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
+import com.android.swingmusic.core.domain.model.ArtistsSearchResult
 import com.android.swingmusic.core.domain.model.Dir
 import com.android.swingmusic.core.domain.model.DirList
 import com.android.swingmusic.core.domain.model.Folder
@@ -34,8 +45,12 @@ import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.Genre
 import com.android.swingmusic.core.domain.model.RootDirs
+import com.android.swingmusic.core.domain.model.TopResult
+import com.android.swingmusic.core.domain.model.TopResultItem
+import com.android.swingmusic.core.domain.model.TopSearchResults
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
+import com.android.swingmusic.core.domain.model.TracksSearchResult
 
 object Map {
     fun ArtistDto.toArtist(): Artist {
@@ -228,8 +243,7 @@ object Map {
         )
     }
 
-    // AlbumsAndAppearancesDto to AlbumsAndAppearances
-    fun AlbumsAndAppearancesDto.toAlbumsAndAppearances(): AlbumsAndAppearances {
+    private fun AlbumsAndAppearancesDto.toAlbumsAndAppearances(): AlbumsAndAppearances {
         return AlbumsAndAppearances(
             albums = albums?.map { it.toAlbum() } ?: emptyList(),
             appearances = appearances?.map { it.toAlbum() } ?: emptyList(),
@@ -239,7 +253,6 @@ object Map {
         )
     }
 
-    // ArtistExpandedDto to ArtistExpanded
     private fun ArtistExpandedDto.toArtistExpanded(): ArtistExpanded {
         return ArtistExpanded(
             albumCount = albumcount ?: 0,
@@ -254,7 +267,6 @@ object Map {
         )
     }
 
-    // ArtistInfoDto to ArtistInfo
     fun ArtistInfoDto.toArtistInfo(): ArtistInfo {
         return ArtistInfo(
             albumsAndAppearances = albumsAndAppearancesDto?.toAlbumsAndAppearances()
@@ -277,6 +289,130 @@ object Map {
                 trackCount = 0
             ),
             tracks = tracks?.map { it.toTrack() } ?: emptyList()
+        )
+    }
+
+    // Search Mappers -->
+
+    private fun AlbumResultDto.toAlbum(): Album {
+        return Album(
+            albumArtists = albumArtists?.map { it.toArtist() } ?: emptyList(),
+            albumHash = albumHash ?: "",
+            colors = listOf(color ?: "#FFFFFF"),
+            createdDate = System.currentTimeMillis().toDouble(),
+            date = date ?: 0,
+            helpText = "",
+            image = image ?: "",
+            title = title ?: "Untitled",
+            versions = versions?.filterIsInstance<String>() ?: emptyList()
+        )
+    }
+
+    fun AlbumsSearchResultDto.toAlbumsSearchResult(): AlbumsSearchResult {
+        return AlbumsSearchResult(
+            more = more ?: false,
+            result = results?.map { it.toAlbum() } ?: emptyList()
+        )
+    }
+
+    private fun ArtistResultDto.toArtist(): Artist {
+        return Artist(
+            artistHash = artisthash ?: "",
+            colors = listOf(color ?: "#FFFFFF"),
+            createdDate = createdDate?.toDouble() ?: 0.0,
+            helpText = "",
+            image = image ?: "",
+            name = name ?: "Unknown Artist"
+        )
+    }
+
+    fun ArtistsSearchResultDto.toArtistsSearchResult(): ArtistsSearchResult {
+        return ArtistsSearchResult(
+            more = more ?: false,
+            results = resultDto?.map { it.toArtist() } ?: emptyList()
+        )
+    }
+
+    private fun ArtistDto.toTrackArtist(): TrackArtist {
+        return TrackArtist(
+            name = name ?: "Unknown Artist",
+            artistHash = artisthash ?: "",
+            image = image ?: ""
+        )
+    }
+
+    private fun TrackResultDto.toTrackResults(): Track {
+        return Track(
+            album = album ?: "",
+            albumTrackArtists = albumArtists?.map { it.toTrackArtist() } ?: emptyList(),
+            albumHash = albumHash ?: "",
+            trackArtists = artists?.map { it.toArtist() } ?: emptyList(),
+            bitrate = bitrate ?: 0,
+            duration = duration ?: 0,
+            filepath = filepath ?: "",
+            folder = folder ?: "",
+            image = image ?: "",
+            isFavorite = isFavorite ?: false,
+            title = title ?: "Untitled",
+            trackHash = trackHash ?: "",
+            disc = 0,
+            trackNumber = 0
+        )
+    }
+
+    fun TracksSearchResultDto.toTracksSearchResult(): TracksSearchResult {
+        return TracksSearchResult(
+            more = more ?: false,
+            results = results?.map { it.toTrackResults() } ?: emptyList()
+        )
+    }
+
+    private fun TopResultItemDto?.toTopResultItem(): TopResultItem? = this?.let {
+        TopResultItem(
+            title = title ?: "",
+            albumCount = albumcount ?: 0,
+            artistHash = artistHash ?: "",
+            albumHash = albumHash ?: "",
+            trackHash = trackHash ?: "",
+            genres = genresDto?.map { it.toGenre() } ?: emptyList(),
+            trackCount = trackcount ?: 0,
+            albumcount = albumcount ?: 0,
+            color = color ?: "",
+            createdDate = createdDate ?: 0,
+            date = date ?: 0,
+            duration = duration ?: 0,
+            favUserIds = favUserIdsDto ?: emptyList(),
+            genreHashes = genreHashes ?: "",
+            id = id ?: 0,
+            image = image ?: "",
+            lastPlayed = lastPlayed ?: 0,
+            name = name ?: "",
+            playCount = playCount ?: 0,
+            playDuration = playDuration ?: 0,
+            trackcount = trackcount ?: 0,
+            album = album ?: "",
+            albumArtists = albumArtists?.map { it.toArtist() } ?: emptyList(),
+            artistHashes = artistHashes ?: emptyList(),
+            artists = artists?.map { it.toArtist() } ?: emptyList(),
+            bitrate = bitrate ?: 0,
+            explicit = explicit ?: false,
+            filepath = filepath ?: "",
+            folder = folder ?: "",
+            isFavorite = isFavorite ?: false
+        )
+    }
+
+    private fun TopResultDto?.toTopResult(): TopResult? = this?.let {
+        TopResult(
+            item = it.resultItemDto?.toTopResultItem(),
+            type = it.type ?: "Unknown"
+        )
+    }
+
+
+    fun TopSearchResultsDto.toTopSearchResults(): TopSearchResults {
+        return TopSearchResults(
+            topResult = topResultDto.toTopResult()
         )
     }
 }

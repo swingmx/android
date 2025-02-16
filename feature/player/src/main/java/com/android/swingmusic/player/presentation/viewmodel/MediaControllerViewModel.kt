@@ -466,7 +466,7 @@ class MediaControllerViewModel @Inject constructor(
                     is QueueSource.ARTIST -> "ar:${source.artistHash}"
                     is QueueSource.FOLDER -> "fo:${source.path}"
                     is QueueSource.PLAYLIST -> "pl:${source.id}"
-                    is QueueSource.QUERY -> "q:${source.query}"
+                    is QueueSource.SEARCH -> "q:query"
                     is QueueSource.FAVORITE -> "favorite"
                     is QueueSource.UNKNOWN -> ""
                     else -> ""
