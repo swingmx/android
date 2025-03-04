@@ -15,15 +15,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -34,9 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.swingmusic.core.domain.model.TopResult
 import com.android.swingmusic.core.domain.model.TopResultItem
-import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
@@ -44,38 +45,52 @@ import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 @Composable
 fun TopSearchResultItem(
     baseUrl: String,
-    topResult: TopResult,
-    onClickTopResultItem: (type: String, hash: String) -> Unit
+    isLoadingTracks: Boolean = false,
+    topResultItem: TopResultItem,
+    onClickTopResultItem: (type: String, hash: String) -> Unit,
+    onClickPlayTopResultItem: (type: String, hash: String) -> Unit
 ) {
-    val imagePath = if (topResult.type == "artist") {
-        "${baseUrl}img/artist/${topResult.item?.image}"
+    val imagePath = if (topResultItem.type == "artist") {
+        "${baseUrl}img/artist/${topResultItem.image}"
     } else {
-        "${baseUrl}img/thumbnail/${topResult.item?.image}"
+        "${baseUrl}img/thumbnail/${topResultItem.image}"
     }
 
-    val displayTitle = if (topResult.type == "artist")
-        topResult.item?.name else topResult.item?.title
+    val backgroundImagePath = if (topResultItem.type == "artist") {
+        "${baseUrl}img/artist/small/${topResultItem.image}"
+    } else {
+        "${baseUrl}img/thumbnail/small/${topResultItem.image}"
+    }
 
-    val type = topResult.type.replaceFirstChar { it.uppercaseChar() }
-    val hash = when (topResult.type) {
-        "artist" -> topResult.item?.artistHash
-        "track" -> topResult.item?.trackHash
-        "album" -> topResult.item?.albumHash
+    val displayTitle = if (topResultItem.type == "artist")
+        topResultItem.name else topResultItem.title
+
+    val displayType = topResultItem.type.replaceFirstChar { it.uppercaseChar() }
+
+    val hash = when (topResultItem.type) {
+        "artist" -> topResultItem.artistHash
+        "track" -> topResultItem.trackHash
+        "album" -> topResultItem.albumHash
         else -> "hash"
     }
 
-    Surface(modifier = Modifier.clip(RoundedCornerShape(12.dp))) {
+    Card(shape = RoundedCornerShape(11.dp)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(170.dp)
+                .clickable {
+                    onClickTopResultItem(topResultItem.type, hash)
+                }
         ) {
             AsyncImage(
                 modifier = Modifier
                     .fillMaxWidth(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(12.dp))
+                ,
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(imagePath)
+                    .data(backgroundImagePath)
                     .crossfade(true)
                     .transformations(
                         listOf(
@@ -84,11 +99,7 @@ fun TopSearchResultItem(
                                 radius = 25
                             )
                         )
-                    )
-                    .build(),
-                placeholder = painterResource(R.drawable.artist_fallback),
-                fallback = painterResource(R.drawable.artist_fallback),
-                error = painterResource(R.drawable.artist_fallback),
+                    ).build(),
                 contentDescription = "Image",
                 contentScale = ContentScale.Crop,
             )
@@ -100,7 +111,7 @@ fun TopSearchResultItem(
                     .clip(RoundedCornerShape(6.dp))
                     .fillMaxHeight()
                     .clickable {
-                        onClickTopResultItem(topResult.type, hash ?: "hash")
+                        onClickTopResultItem(topResultItem.type, hash)
                     },
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(imagePath)
@@ -133,9 +144,9 @@ fun TopSearchResultItem(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .fillMaxWidth(.5F)
+                    .fillMaxWidth(.53F)
                     .fillMaxHeight()
-                    .padding(vertical = 24.dp),
+                    .padding(vertical = 24.dp, horizontal = 4.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
@@ -150,14 +161,21 @@ fun TopSearchResultItem(
                             .clip(RoundedCornerShape(32))
                             .background(MaterialTheme.colorScheme.primary),
                         onClick = {
-                            onClickTopResultItem(topResult.type, hash ?: "hash")
+                            onClickPlayTopResultItem(topResultItem.type, hash)
                         }
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.play_arrow_fill),
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            contentDescription = "Play Icon"
-                        )
+                        if (isLoadingTracks) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.scale(0.75F),
+                                strokeWidth = (0.84).dp
+                            )
+                        } else
+                            Icon(
+                                painter = painterResource(id = R.drawable.play_arrow_fill),
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                contentDescription = "Play Icon"
+                            )
                     }
                 }
 
@@ -171,7 +189,7 @@ fun TopSearchResultItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = type,
+                        text = displayType,
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
@@ -179,62 +197,80 @@ fun TopSearchResultItem(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = if (displayTitle.isNullOrBlank()) "Unknown" else displayTitle,
+                    text = displayTitle.ifBlank { "Unknown" },
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleLarge
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                if (displayType == "Album" || displayType == "Track") {
+                    val artists = if (displayType == "Album") {
+                        topResultItem.albumArtists.joinToString(", ") { it.name }
+                    } else {
+                        topResultItem.artists.joinToString(", ") { it.name }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = artists,
+                        maxLines = 1,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.84F),
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }
 }
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = false)
 @Composable
 private fun TopSearchResultItemPreview() {
     SwingMusicTheme_Preview {
         TopSearchResultItem(
             baseUrl = "",
-            topResult = topResult,
-            onClickTopResultItem = { _, _ -> }
+            isLoadingTracks = false,
+            topResultItem = topResult,
+            onClickTopResultItem = { _, _ -> },
+            onClickPlayTopResultItem = { _, _ -> }
         )
     }
 }
 
-private val topResult = TopResult(
-    item = TopResultItem(
-        albumCount = 0,
-        artistHash = "hash",
-        albumHash = "436f1e93ac4087d1",
-        trackHash = "7e3bc5770fd9a362",
-        genres = emptyList(),
-        trackCount = 0,
-        albumcount = 0,
-        color = "",
-        createdDate = 0,
-        date = 0,
-        duration = 166,
-        favUserIds = emptyList(),
-        genreHashes = "",
-        id = 0,
-        image = "436f1e93ac4087d1.webp",
-        lastPlayed = 0,
-        name = "",
-        playCount = 0,
-        playDuration = 0,
-        trackcount = 0,
-        album = "F U Goodbye",
-        albumArtists = listOf(),
-        artistHashes = listOf("76846ddfb31669f8"),
-        artists = listOf(),
-        bitrate = 320,
-        explicit = false,
-        filepath = "/home/cwilvx/Music/Chill/Claire Rosinkranz Radio/Peach PRC - F U Goodbye.m4a",
-        folder = "/home/cwilvx/Music/Chill/Claire Rosinkranz Radio/",
-        isFavorite = false,
-        title = "F U Goodbye"
-    ),
-    type = "track"
+private val topResult = TopResultItem(
+    type = "track",
+    albumCount = 0,
+    artistHash = "hash",
+    albumHash = "436f1e93ac4087d1",
+    trackHash = "7e3bc5770fd9a362",
+    genres = emptyList(),
+    trackCount = 0,
+    albumcount = 0,
+    color = "",
+    createdDate = 0,
+    date = 0,
+    duration = 166,
+    favUserIds = emptyList(),
+    genreHashes = "",
+    id = 0,
+    image = "436f1e93ac4087d1.webp",
+    lastPlayed = 0,
+    name = "",
+    playCount = 0,
+    playDuration = 0,
+    trackcount = 0,
+    album = "F U Goodbye",
+    albumArtists = listOf(),
+    artistHashes = listOf("7684631669f8"),
+    artists = listOf(),
+    bitrate = 320,
+    explicit = false,
+    filepath = "/home/Music/Chill/Claire Radio/Peach PRC - F U Goodbye.m4a",
+    folder = "/home/Music/Chill/Claire Radio/",
+    isFavorite = false,
+    title = "F U Goodbye"
 )

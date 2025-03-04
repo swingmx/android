@@ -10,10 +10,11 @@ import com.android.swingmusic.core.data.dto.ArtistsSearchResultDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.TopSearchResultsDto
+import com.android.swingmusic.core.data.dto.TrackDto
 import com.android.swingmusic.core.data.dto.TracksSearchResultDto
-import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
 import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
 import com.android.swingmusic.network.data.dto.LogTrackRequestDto
+import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -108,7 +109,27 @@ interface NetworkApiService {
     ): List<ArtistDto>
 
     @GET
-    suspend fun searchAlbums(
+    suspend fun getTopSearchResults(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") limit: Int = 5,
+        @Query("q") searchParams: String
+    ): TopSearchResultsDto
+
+    @GET
+    suspend fun getArtistTracks(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): List<TrackDto>
+
+    @GET
+    suspend fun getAlbumTracks(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): List<TrackDto>
+
+    @GET
+    suspend fun searchAllAlbums(
         @Url url: String,
         @Header("Authorization") bearerToken: String,
         @Query("limit") limit: Int = -1,
@@ -117,7 +138,7 @@ interface NetworkApiService {
     ): AlbumsSearchResultDto
 
     @GET
-    suspend fun searchArtists(
+    suspend fun searchAllArtists(
         @Url url: String,
         @Header("Authorization") bearerToken: String,
         @Query("limit") limit: Int = -1,
@@ -126,7 +147,7 @@ interface NetworkApiService {
     ): ArtistsSearchResultDto
 
     @GET
-    suspend fun searchTracks(
+    suspend fun searchAllTracks(
         @Url url: String,
         @Header("Authorization") bearerToken: String,
         @Query("limit") limit: Int = -1,
@@ -134,11 +155,4 @@ interface NetworkApiService {
         @Query("q") searchParams: String
     ): TracksSearchResultDto
 
-    @GET
-    suspend fun getTopSearchResults(
-        @Url url: String,
-        @Header("Authorization") bearerToken: String,
-        @Query("limit") limit: Int = -1,
-        @Query("q") searchParams: String
-    ): TopSearchResultsDto
 }

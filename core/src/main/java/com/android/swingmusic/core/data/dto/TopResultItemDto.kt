@@ -4,6 +4,8 @@ package com.android.swingmusic.core.data.dto
 import com.google.gson.annotations.SerializedName
 
 data class TopResultItemDto(
+    @SerializedName("type")
+    val type: String?,
     @SerializedName("title")
     val title: String?,
     @SerializedName("albumcount")

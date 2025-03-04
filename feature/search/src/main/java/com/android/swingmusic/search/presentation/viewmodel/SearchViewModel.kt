@@ -3,6 +3,7 @@ package com.android.swingmusic.search.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.core.data.util.Resource
+import com.android.swingmusic.core.domain.model.TopSearchResults
 import com.android.swingmusic.search.domain.reposotory.SearchRepository
 import com.android.swingmusic.search.presentation.event.SearchUiEvent
 import com.android.swingmusic.search.presentation.state.SearchState
@@ -12,7 +13,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
@@ -41,50 +41,102 @@ class SearchViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .collectLatest { query ->
                     if (query.isNotBlank()) {
-                        performSearch(query)
+                        searchTopResults(query)
                     }
                 }
         }
     }
 
-    private fun performSearch(searchParams: String) {
+    private fun searchTopResults(params: String) {
         viewModelScope.launch {
-            combine(
-                searchRepository.getTopSearchResults(searchParams),
-                searchRepository.searchTracks(searchParams),
-                searchRepository.searchAlbums(searchParams),
-                searchRepository.searchArtists(searchParams)
-            ) { topResults, tracks, albums, artists ->
-                updateSearchState {
-                    copy(
-                        isLoading = listOf(
-                            topResults,
-                            tracks,
-                            albums,
-                            artists
-                        ).any { it is Resource.Loading },
-                        isError = listOf(
-                            topResults,
-                            tracks,
-                            albums,
-                            artists
-                        ).any { it is Resource.Error },
-                        errorMessage = listOfNotNull(
-                            (topResults as? Resource.Error)?.message,
-                            (tracks as? Resource.Error)?.message,
-                            (albums as? Resource.Error)?.message,
-                            (artists as? Resource.Error)?.message
-                        ).firstOrNull(),
-                        topSearchResults = (topResults as? Resource.Success)?.data,
-                        tracksSearchResult = (tracks as? Resource.Success)?.data,
-                        albumsSearchResult = (albums as? Resource.Success)?.data,
-                        artistsSearchResult = (artists as? Resource.Success)?.data
-                    )
+            searchRepository.getTopSearchResults(params).collectLatest { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        updateSearchState {
+                            copy(
+                                isLoading = true,
+                                hasSearched = true,
+                                topItemTracks = null
+                            )
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        updateSearchState {
+                            copy(
+                                isError = true,
+                                isLoading = false,
+                                errorMessage = result.message
+                            )
+                        }
+                    }
+
+                    is Resource.Success -> {
+                        val topResultItem = result.data?.topResultItem
+                        val tracks = result.data?.tracks ?: emptyList()
+                        val albums = result.data?.albums ?: emptyList()
+                        val artists = result.data?.artists ?: emptyList()
+
+                        updateSearchState {
+                            copy(
+                                isError = false,
+                                isLoading = false,
+                                topSearchResults = TopSearchResults(
+                                    topResultItem = topResultItem,
+                                    tracks = tracks,
+                                    albums = albums,
+                                    artists = artists
+                                )
+                            )
+                        }
+                    }
                 }
-            }.collectLatest {}
+            }
         }
     }
 
+    private fun getTopItemTracks(event: SearchUiEvent) {
+        viewModelScope.launch {
+            val request = when (event) {
+                is SearchUiEvent.OnGetArtistTracks -> {
+                    searchRepository.getArtistTracks(event.artistHash)
+                }
+
+                is SearchUiEvent.OnGetAlbumTacks -> {
+                    searchRepository.getAlbumTracks(event.albumHash)
+                }
+
+                else -> null
+            }
+
+            request?.let { flow ->
+                flow.collectLatest { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {
+                            updateSearchState { copy(isLoadingTopItemTracks = true) }
+                        }
+
+                        is Resource.Success -> {
+                            val tracks = resource.data
+
+                            updateSearchState {
+                                copy(
+                                    isLoadingTopItemTracks = false,
+                                    topItemTracks = tracks
+                                )
+                            }
+                        }
+
+                        is Resource.Error -> {
+                            updateSearchState {
+                                copy(isLoadingTopItemTracks = false)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     fun onSearchUiEvent(event: SearchUiEvent) {
         when (event) {
@@ -96,9 +148,17 @@ class SearchViewModel @Inject constructor(
             is SearchUiEvent.OnRetrySearch -> {
                 _searchState.value.searchParams.let {
                     if (it.isNotBlank()) {
-                        performSearch(it)
+                        searchTopResults(it)
                     }
                 }
+            }
+
+            is SearchUiEvent.OnGetArtistTracks -> {
+                getTopItemTracks(event)
+            }
+
+            is SearchUiEvent.OnGetAlbumTacks -> {
+                getTopItemTracks(event)
             }
         }
     }

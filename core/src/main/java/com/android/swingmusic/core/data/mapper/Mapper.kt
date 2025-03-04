@@ -20,7 +20,6 @@ import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.GenreDto
 import com.android.swingmusic.core.data.dto.RootDirsDto
-import com.android.swingmusic.core.data.dto.TopResultDto
 import com.android.swingmusic.core.data.dto.TopResultItemDto
 import com.android.swingmusic.core.data.dto.TopSearchResultsDto
 import com.android.swingmusic.core.data.dto.TrackArtistDto
@@ -45,7 +44,6 @@ import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.Genre
 import com.android.swingmusic.core.domain.model.RootDirs
-import com.android.swingmusic.core.domain.model.TopResult
 import com.android.swingmusic.core.domain.model.TopResultItem
 import com.android.swingmusic.core.domain.model.TopSearchResults
 import com.android.swingmusic.core.domain.model.Track
@@ -82,10 +80,10 @@ object Map {
         )
     }
 
-    private fun TrackDto.toTrack(): Track {
+    fun TrackDto.toTrack(): Track {
         return Track(
             album = album ?: "",
-            albumTrackArtists = albumTrackArtistDtos?.map { it.toArtist() } ?: emptyList(),
+            albumTrackArtists = albumTrackArtistDto?.map { it.toArtist() } ?: emptyList(),
             albumHash = albumHash ?: "",
             trackArtists = artistsDto?.map { it.toArtist() } ?: emptyList(),
             bitrate = bitrate ?: 0,
@@ -367,8 +365,11 @@ object Map {
         )
     }
 
-    private fun TopResultItemDto?.toTopResultItem(): TopResultItem? = this?.let {
-        TopResultItem(
+    private fun TopResultItemDto?.toTopResultItem(): TopResultItem? {
+        if (this == null) return null
+
+        return TopResultItem(
+            type = type ?: "",
             title = title ?: "",
             albumCount = albumcount ?: 0,
             artistHash = artistHash ?: "",
@@ -402,17 +403,12 @@ object Map {
         )
     }
 
-    private fun TopResultDto?.toTopResult(): TopResult? = this?.let {
-        TopResult(
-            item = it.resultItemDto?.toTopResultItem(),
-            type = it.type ?: "Unknown"
-        )
-    }
-
-
     fun TopSearchResultsDto.toTopSearchResults(): TopSearchResults {
         return TopSearchResults(
-            topResult = topResultDto.toTopResult()
+            topResultItem = topResultItemDto?.toTopResultItem(),
+            tracks = tracksDto?.map { it.toTrack() } ?: emptyList(),
+            albums = albumsDto?.map { it.toAlbum() } ?: emptyList(),
+            artists = artistsDto?.map { it.toArtist() } ?: emptyList()
         )
     }
 }
