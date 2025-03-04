@@ -1,6 +1,7 @@
 package com.android.swingmusic.search.presentation.screen
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -34,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -49,14 +52,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.Artist
-import com.android.swingmusic.core.domain.model.TopResult
+import com.android.swingmusic.core.domain.model.TopResultItem
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
+import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.search.presentation.event.SearchUiEvent
+import com.android.swingmusic.search.presentation.util.isScrollingUp
 import com.android.swingmusic.search.presentation.viewmodel.SearchViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
@@ -71,24 +76,28 @@ import com.ramcosta.composedestinations.annotation.Destination
 @Composable
 private fun Search(
     isLoading: Boolean,
+    isLoadingTopItemTracks: Boolean,
+    hasSearched: Boolean,
     isError: Boolean,
     errorMessage: String?,
     baseUrl: String,
     searchParams: String,
     playingTrackHash: String,
     playbackState: PlaybackState,
-    topResult: TopResult?,
+    topResultItem: TopResultItem?,
     tracksSearchResults: List<Track>,
     albumSearchResults: List<Album>,
     artistsSearchResults: List<Artist>,
     onSearchParamChanged: (params: String) -> Unit,
     onRetrySearch: () -> Unit,
     onClickTopResultItem: (type: String, hash: String) -> Unit,
+    onClickPlayTopResultItem: (type: String, hash: String) -> Unit,
     onClickTrackItem: (queue: List<Track>, index: Int) -> Unit,
     onClickAlbumItem: (hash: String) -> Unit,
     onClickArtist: (hash: String) -> Unit,
     onClickViewAll: (viewAllType: String, baseUrl: String) -> Unit,
 ) {
+    val lazyColumnState = rememberLazyListState()
     val clickInteractionSource = remember { MutableInteractionSource() }
 
     Scaffold {
@@ -107,39 +116,41 @@ private fun Search(
                         style = MaterialTheme.typography.headlineMedium
                     )
 
-                    TextField(
-                        value = searchParams,
-                        onValueChange = { newValue ->
-                            onSearchParamChanged(newValue)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        placeholder = { Text("search swing music") },
-                        singleLine = true,
-                        maxLines = 1,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        leadingIcon = {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                painter = painterResource(id = R.drawable.swing_music_logo_rounded),
-                                contentDescription = "App Icon"
-                            )
-                        },
-                        trailingIcon = {
-                            if (searchParams.trim().isNotEmpty()) {
-                                IconButton(onClick = {
-                                    onSearchParamChanged("")
-                                }) {
-                                    Icon(Icons.Default.Clear, contentDescription = null)
+                    AnimatedVisibility(visible = lazyColumnState.isScrollingUp()) {
+                        TextField(
+                            value = searchParams,
+                            onValueChange = { newValue ->
+                                onSearchParamChanged(newValue)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            placeholder = { Text("search swing music") },
+                            singleLine = true,
+                            maxLines = 1,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            leadingIcon = {
+                                Icon(
+                                    modifier = Modifier.size(24.dp),
+                                    painter = painterResource(id = R.drawable.swing_music_logo_rounded),
+                                    contentDescription = "App Icon"
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchParams.trim().isNotEmpty()) {
+                                    IconButton(onClick = {
+                                        onSearchParamChanged("")
+                                    }) {
+                                        Icon(Icons.Default.Clear, contentDescription = null)
+                                    }
                                 }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         ) { paddingValues ->
@@ -177,7 +188,9 @@ private fun Search(
                     }
                 }
 
-                (tracksSearchResults.isEmpty() &&
+                (hasSearched &&
+                        topResultItem == null &&
+                        tracksSearchResults.isEmpty() &&
                         albumSearchResults.isEmpty() &&
                         artistsSearchResults.isEmpty() &&
                         searchParams.isNotEmpty()
@@ -207,15 +220,16 @@ private fun Search(
 
                 else -> {
                     LazyColumn(
+                        state = lazyColumnState,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(paddingValues)
                     ) {
-                        topResult?.let { result ->
+                        topResultItem?.let { result ->
                             item {
                                 Column(
                                     modifier = Modifier.padding(
-                                        top = 12.dp,
+                                        top = 16.dp,
                                         bottom = 4.dp,
                                         start = 20.dp,
                                         end = 20.dp
@@ -231,9 +245,16 @@ private fun Search(
 
                                     TopSearchResultItem(
                                         baseUrl = baseUrl,
-                                        topResult = result,
+                                        isLoadingTracks = isLoadingTopItemTracks,
+                                        topResultItem = result,
                                         onClickTopResultItem = { type, hash ->
                                             onClickTopResultItem(
+                                                type,
+                                                hash
+                                            )
+                                        },
+                                        onClickPlayTopResultItem = { type, hash ->
+                                            onClickPlayTopResultItem(
                                                 type,
                                                 hash
                                             )
@@ -250,7 +271,7 @@ private fun Search(
                                         .background(MaterialTheme.colorScheme.surface)
                                         .fillParentMaxWidth()
                                         .padding(
-                                            top = 12.dp,
+                                            top = 24.dp,
                                             bottom = 4.dp,
                                             start = 20.dp,
                                             end = 20.dp
@@ -320,7 +341,7 @@ private fun Search(
                                         .background(MaterialTheme.colorScheme.surface)
                                         .fillParentMaxWidth()
                                         .padding(
-                                            top = 12.dp,
+                                            top = 24.dp,
                                             bottom = 4.dp,
                                             start = 20.dp,
                                             end = 20.dp
@@ -368,7 +389,7 @@ private fun Search(
                                         .fillParentMaxWidth()
                                         .padding(horizontal = 12.dp)
                                 ) {
-                                    items(albumSearchResults.take(6)) { album ->
+                                    items(albumSearchResults.take(4)) { album ->
                                         Box(modifier = Modifier.width(170.dp)) {
                                             AlbumItem(
                                                 modifier = Modifier.fillMaxWidth(),
@@ -394,7 +415,7 @@ private fun Search(
                                         .background(MaterialTheme.colorScheme.surface)
                                         .fillParentMaxWidth()
                                         .padding(
-                                            top = 12.dp,
+                                            top = 16.dp,
                                             bottom = 4.dp,
                                             start = 20.dp,
                                             end = 20.dp
@@ -442,7 +463,7 @@ private fun Search(
                                         .fillParentMaxWidth()
                                         .padding(horizontal = 12.dp)
                                 ) {
-                                    items(items = artistsSearchResults.take(6)) { artist ->
+                                    items(items = artistsSearchResults.take(4)) { artist ->
                                         Box(modifier = Modifier.width(170.dp)) {
                                             ArtistItem(
                                                 modifier = Modifier.fillMaxWidth(),
@@ -459,7 +480,7 @@ private fun Search(
                         }
 
                         item {
-                            Spacer(modifier = Modifier.height(200.dp))
+                            Spacer(modifier = Modifier.height(230.dp))
                         }
                     }
                 }
@@ -480,25 +501,64 @@ fun SearchScreen(
 
     val searchUiState by searchViewModel.searchState.collectAsState()
 
-    val topResult = searchUiState.topSearchResults?.topResult
-    val tracks = searchUiState.tracksSearchResult?.results
-    val albums = searchUiState.albumsSearchResult?.result
-    val artists = searchUiState.artistsSearchResult?.results
+    val topResultItem = searchUiState.topSearchResults.topResultItem
+    val tracks = searchUiState.topSearchResults.tracks
+    val albums = searchUiState.topSearchResults.albums
+    val artists = searchUiState.topSearchResults.artists
+
+    val topItemTracks = searchUiState.topItemTracks
+
+    LaunchedEffect(key1 = topItemTracks) {
+        if (topItemTracks.isNullOrEmpty().not() && topResultItem != null) {
+            val source = when (topResultItem.type) {
+                "artist" -> {
+                    val artist = topResultItem.artists.firstOrNull()
+                    artist?.let {
+                        QueueSource.ARTIST(it.artistHash, it.name)
+                    }
+                }
+
+                "album" -> {
+                    val albumHash = topResultItem.albumHash
+                    val albumName = topResultItem.album
+                    QueueSource.ALBUM(albumHash, albumName)
+                }
+
+                else -> null
+            }
+
+            if (mediaControllerViewModel.playerUiState.value.source != source) {
+                mediaControllerViewModel.onQueueEvent(
+                    QueueEvent.RecreateQueue(
+                        source = source ?: QueueSource.SEARCH,
+                        clickedTrackIndex = 0,
+                        queue = topItemTracks!!
+                    )
+                )
+            } else {
+                mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
+                mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
+            }
+        }
+    }
+
 
     SwingMusicTheme {
         Surface {
             Search(
                 isLoading = searchUiState.isLoading,
                 isError = searchUiState.isError,
+                hasSearched = searchUiState.hasSearched,
+                isLoadingTopItemTracks = searchUiState.isLoadingTopItemTracks,
                 errorMessage = searchUiState.errorMessage,
                 baseUrl = baseUrl ?: "https://default",
                 searchParams = searchUiState.searchParams,
                 playingTrackHash = playerState.nowPlayingTrack?.trackHash ?: "hash",
                 playbackState = playerState.playbackState,
-                topResult = topResult,
-                tracksSearchResults = tracks ?: emptyList(),
-                albumSearchResults = albums ?: emptyList(),
-                artistsSearchResults = artists ?: emptyList(),
+                topResultItem = topResultItem,
+                tracksSearchResults = tracks,
+                albumSearchResults = albums,
+                artistsSearchResults = artists,
                 onSearchParamChanged = {
                     searchViewModel.onSearchUiEvent(
                         SearchUiEvent.OnSearchParamChanged(it)
@@ -509,12 +569,27 @@ fun SearchScreen(
                         SearchUiEvent.OnRetrySearch
                     )
                 },
+                onClickPlayTopResultItem = { type, hash ->
+                    when (type) {
+                        "artist" -> {
+                            searchViewModel.onSearchUiEvent(
+                                SearchUiEvent.OnGetArtistTracks(hash)
+                            )
+                        }
+
+                        "album" -> {
+                            searchViewModel.onSearchUiEvent(
+                                SearchUiEvent.OnGetAlbumTacks(hash)
+                            )
+                        }
+                    }
+                },
                 onClickTopResultItem = { type, hash ->
                     when (type) {
                         "artist" -> navigator.gotoArtistInfo(hash)
                         "album" -> navigator.gotoAlbumWithInfo(hash)
                         "track" -> {
-                            val trackArtists = topResult?.item?.artists?.map {
+                            val trackArtists = topResultItem?.artists?.map {
                                 TrackArtist(
                                     name = it.name,
                                     artistHash = it.artistHash,
@@ -523,17 +598,17 @@ fun SearchScreen(
                             } ?: emptyList()
 
                             val track = Track(
-                                album = topResult?.item?.album ?: "",
+                                album = topResultItem?.album ?: "",
                                 albumTrackArtists = trackArtists,
-                                albumHash = topResult?.item?.albumHash ?: "",
+                                albumHash = topResultItem?.albumHash ?: "",
                                 trackArtists = trackArtists,
-                                bitrate = topResult?.item?.bitrate ?: 0,
-                                duration = topResult?.item?.duration ?: 0,
-                                filepath = topResult?.item?.filepath ?: "",
-                                folder = topResult?.item?.folder ?: "\$home",
-                                image = topResult?.item?.image ?: "",
-                                isFavorite = topResult?.item?.isFavorite ?: false,
-                                title = topResult?.item?.title ?: "",
+                                bitrate = topResultItem?.bitrate ?: 0,
+                                duration = topResultItem?.duration ?: 0,
+                                filepath = topResultItem?.filepath ?: "",
+                                folder = topResultItem?.folder ?: "\$home",
+                                image = topResultItem?.image ?: "",
+                                isFavorite = topResultItem?.isFavorite ?: false,
+                                title = topResultItem?.title ?: "",
                                 trackHash = hash,
                                 disc = 1,
                                 trackNumber = 1

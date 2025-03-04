@@ -1,6 +1,8 @@
 package com.android.swingmusic.core.domain.model
 
 data class TopResultItem(
+    val id: Int,
+    val type: String,
     val albumCount: Int,
     val artistHash: String,
     val albumHash: String,
@@ -14,7 +16,6 @@ data class TopResultItem(
     val duration: Int,
     val favUserIds: List<String>,
     val genreHashes: String,
-    val id: Int,
     val image: String,
     val lastPlayed: Int,
     val name: String,
