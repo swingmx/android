@@ -254,7 +254,10 @@ private fun Search(
                                             )
                                         },
                                         onClickPlayTopResultItem = { type, hash ->
-                                            onClickPlayTopResultItem(
+                                            if (type == "track") onClickTopResultItem(
+                                                "track",
+                                                hash
+                                            ) else onClickPlayTopResultItem(
                                                 type,
                                                 hash
                                             )
