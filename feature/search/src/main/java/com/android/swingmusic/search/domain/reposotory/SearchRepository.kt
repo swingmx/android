@@ -12,13 +12,13 @@ interface SearchRepository {
 
     suspend fun getTopSearchResults(searchParams: String): Flow<Resource<TopSearchResults>>
 
-    suspend fun searchAllAlbums(searchParams: String): Flow<Resource<AlbumsSearchResult>>
-
-    suspend fun searchAllArtists(searchParams: String): Flow<Resource<ArtistsSearchResult>>
-
-    suspend fun searchAllTracks(searchParams: String): Flow<Resource<TracksSearchResult>>
-
     suspend fun getArtistTracks(artistHash: String): Flow<Resource<List<Track>>>
 
     suspend fun getAlbumTracks(albumHash: String): Flow<Resource<List<Track>>>
+
+    suspend fun searchAllTracks(searchParams: String): Flow<Resource<TracksSearchResult>>
+
+    suspend fun searchAllAlbums(searchParams: String): Flow<Resource<AlbumsSearchResult>>
+
+    suspend fun searchAllArtists(searchParams: String): Flow<Resource<ArtistsSearchResult>>
 }

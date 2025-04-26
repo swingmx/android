@@ -4,7 +4,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavOptionsBuilder
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenOnArtistDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
@@ -12,6 +12,7 @@ import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
+import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
 import com.ramcosta.composedestinations.dynamic.within
 import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.spec.NavGraphSpec
@@ -157,14 +158,36 @@ class CoreNavigator(
         }
     }
 
-    override fun gotoViewAllScreen(
+    override fun gotoViewAllOnArtistScreen(
         viewAllType: String,
         artistName: String,
         baseUrl: String
     ) {
         val currentDestination = navController.currentDestination?.route
         val targetDestination =
-            ViewAllScreenDestination(viewAllType, artistName, baseUrl)
+            ViewAllScreenOnArtistDestination(viewAllType, artistName, baseUrl)
+
+        if (currentDestination != targetDestination.route) {
+            navController.navigate(
+                targetDestination within navGraph,
+                fun NavOptionsBuilder.() {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            )
+        }
+    }
+
+    override fun gotoViewAllSearchResultsScreen(
+        viewAllType: String,
+        searchParams: String
+    ) {
+        val currentDestination = navController.currentDestination?.route
+        val targetDestination =
+            ViewAllSearchResultsDestination(
+                searchParams = searchParams,
+                viewAllType = viewAllType
+            )
 
         if (currentDestination != targetDestination.route) {
             navController.navigate(

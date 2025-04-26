@@ -19,7 +19,10 @@ interface CommonNavigator {
 
     fun gotoArtistInfo(artistHash: String)
 
-    fun gotoViewAllScreen(viewAllType: String, artistName: String, baseUrl: String)
+    fun gotoViewAllOnArtistScreen(viewAllType: String, artistName: String, baseUrl: String)
+
+    fun gotoViewAllSearchResultsScreen(viewAllType: String, searchParams: String)
 
     fun gotoSourceFolder(name: String, path: String)
+
 }

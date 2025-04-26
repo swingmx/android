@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.TopSearchResults
+import com.android.swingmusic.player.domain.repository.PLayerRepository
 import com.android.swingmusic.search.domain.reposotory.SearchRepository
 import com.android.swingmusic.search.presentation.event.SearchUiEvent
 import com.android.swingmusic.search.presentation.state.SearchState
@@ -22,7 +23,8 @@ import javax.inject.Inject
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val searchRepository: SearchRepository
+    private val searchRepository: SearchRepository,
+    private val pLayerRepository: PLayerRepository
 ) : ViewModel() {
 
     private val _searchState = MutableStateFlow(SearchState())
@@ -54,7 +56,7 @@ class SearchViewModel @Inject constructor(
                     is Resource.Loading -> {
                         updateSearchState {
                             copy(
-                                isLoading = true,
+                                isLoadingTopResult = true,
                                 hasSearched = true,
                                 topItemTracks = null
                             )
@@ -65,7 +67,7 @@ class SearchViewModel @Inject constructor(
                         updateSearchState {
                             copy(
                                 isError = true,
-                                isLoading = false,
+                                isLoadingTopResult = false,
                                 errorMessage = result.message
                             )
                         }
@@ -79,8 +81,9 @@ class SearchViewModel @Inject constructor(
 
                         updateSearchState {
                             copy(
+                                viewAllSearchParam = searchParams,
                                 isError = false,
-                                isLoading = false,
+                                isLoadingTopResult = false,
                                 topSearchResults = TopSearchResults(
                                     topResultItem = topResultItem,
                                     tracks = tracks,
@@ -138,6 +141,128 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    private fun searchAllTracks(searchParams: String) {
+        viewModelScope.launch {
+            searchRepository.searchAllTracks(searchParams).collectLatest { response ->
+                val resource = when (response) {
+                    is Resource.Loading -> Resource.Loading()
+                    is Resource.Error -> Resource.Error(message = response.message!!)
+                    is Resource.Success -> Resource.Success(data = response.data!!.result)
+                }
+
+                updateSearchState {
+                    copy(viewAllTracks = resource)
+                }
+            }
+        }
+    }
+
+    private fun searchAllAlbums(searchParams: String) {
+        viewModelScope.launch {
+            searchRepository.searchAllAlbums(searchParams).collectLatest { response ->
+                val resource = when (response) {
+                    is Resource.Loading -> Resource.Loading()
+                    is Resource.Error -> Resource.Error(message = response.message!!)
+                    is Resource.Success -> Resource.Success(data = response.data!!.result)
+                }
+
+                updateSearchState {
+                    copy(viewAllAlbums = resource)
+                }
+            }
+        }
+    }
+
+    private fun searchAllArtists(searchParams: String) {
+        viewModelScope.launch {
+            searchRepository.searchAllArtists(searchParams).collectLatest { response ->
+                val resource = when (response) {
+                    is Resource.Loading -> Resource.Loading()
+                    is Resource.Error -> Resource.Error(message = response.message!!)
+                    is Resource.Success -> Resource.Success(data = response.data!!.result)
+                }
+
+                updateSearchState {
+                    copy(viewAllArtists = resource)
+                }
+            }
+        }
+    }
+
+    private fun clearSearchAllResources() {
+        updateSearchState {
+            copy(
+                viewAllTracks = null,
+                viewAllAlbums = null,
+                viewAllArtists = null
+            )
+        }
+    }
+
+    private fun toggleSearchTrackFavorite(trackHash: String, isFavorite: Boolean) {
+        viewModelScope.launch {
+            // Optimistically update the UI
+            _searchState.update { currentState ->
+                val updatedTracks = currentState.viewAllTracks?.data.orEmpty().map { track ->
+                    if (track.trackHash == trackHash) {
+                        track.copy(isFavorite = !isFavorite)
+                    } else {
+                        track
+                    }
+                }
+                currentState.copy(
+                    viewAllTracks = Resource.Success(updatedTracks)
+                )
+            }
+
+            val request = if (isFavorite) {
+                pLayerRepository.removeTrackFromFavorite(trackHash)
+            } else {
+                pLayerRepository.addTrackToFavorite(trackHash)
+            }
+
+            request.collectLatest { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        // No-op
+                    }
+
+                    is Resource.Success -> {
+                        _searchState.update { currentState ->
+                            val updatedTracks =
+                                currentState.viewAllTracks?.data.orEmpty().map { track ->
+                                    if (track.trackHash == trackHash) {
+                                        track.copy(isFavorite = result.data ?: false)
+                                    } else {
+                                        track
+                                    }
+                                }
+                            currentState.copy(
+                                viewAllTracks = Resource.Success(updatedTracks)
+                            )
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        _searchState.update { currentState ->
+                            val revertedTracks =
+                                currentState.viewAllTracks?.data.orEmpty().map { track ->
+                                    if (track.trackHash == trackHash) {
+                                        track.copy(isFavorite = isFavorite) // revert
+                                    } else {
+                                        track
+                                    }
+                                }
+                            currentState.copy(
+                                viewAllTracks = Resource.Success(revertedTracks)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fun onSearchUiEvent(event: SearchUiEvent) {
         when (event) {
             is SearchUiEvent.OnSearchParamChanged -> {
@@ -145,7 +270,7 @@ class SearchViewModel @Inject constructor(
                 updateSearchState { copy(searchParams = event.searchParams) }
             }
 
-            is SearchUiEvent.OnRetrySearch -> {
+            is SearchUiEvent.OnRetrySearchTopResults -> {
                 _searchState.value.searchParams.let {
                     if (it.isNotBlank()) {
                         searchTopResults(it)
@@ -159,6 +284,29 @@ class SearchViewModel @Inject constructor(
 
             is SearchUiEvent.OnGetAlbumTacks -> {
                 getTopItemTracks(event)
+            }
+
+            is SearchUiEvent.OnSearchAllTacks -> {
+                searchAllTracks(event.searchParams)
+            }
+
+            is SearchUiEvent.OnSearchAllAlbums -> {
+                searchAllAlbums(event.searchParams)
+            }
+
+            is SearchUiEvent.OnSearchAllArtists -> {
+                searchAllArtists(event.searchParams)
+            }
+
+            is SearchUiEvent.OnClearSearchAllResources -> {
+                clearSearchAllResources()
+            }
+
+            is SearchUiEvent.OnToggleTrackFavorite -> {
+                toggleSearchTrackFavorite(
+                    trackHash = event.trackHash,
+                    isFavorite = event.isFavorite
+                )
             }
         }
     }

@@ -129,6 +129,15 @@ interface NetworkApiService {
     ): List<TrackDto>
 
     @GET
+    suspend fun searchAllTracks(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") limit: Int = -1,
+        @Query("itemtype") itemType: String = "tracks",
+        @Query("q") searchParams: String
+    ): TracksSearchResultDto
+
+    @GET
     suspend fun searchAllAlbums(
         @Url url: String,
         @Header("Authorization") bearerToken: String,
@@ -145,14 +154,4 @@ interface NetworkApiService {
         @Query("itemtype") itemType: String = "artists",
         @Query("q") searchParams: String
     ): ArtistsSearchResultDto
-
-    @GET
-    suspend fun searchAllTracks(
-        @Url url: String,
-        @Header("Authorization") bearerToken: String,
-        @Query("limit") limit: Int = -1,
-        @Query("itemtype") itemType: String = "tracks",
-        @Query("q") searchParams: String
-    ): TracksSearchResultDto
-
 }

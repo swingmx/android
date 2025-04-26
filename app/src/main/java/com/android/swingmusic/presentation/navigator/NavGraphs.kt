@@ -4,7 +4,7 @@ import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithIn
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenOnArtistDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
@@ -12,6 +12,7 @@ import com.android.swingmusic.home.presentation.destinations.HomeDestination
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
+import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
 import com.ramcosta.composedestinations.dynamic.routedIn
 import com.ramcosta.composedestinations.spec.DestinationSpec
 import com.ramcosta.composedestinations.spec.NavGraphSpec
@@ -53,8 +54,9 @@ object NavGraphs {
                 ArtistInfoScreenDestination,
                 QueueScreenDestination,
                 NowPlayingScreenDestination,
-                ViewAllScreenDestination,
-                SearchScreenDestination
+                ViewAllScreenOnArtistDestination,
+                SearchScreenDestination,
+                ViewAllSearchResultsDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -68,10 +70,11 @@ object NavGraphs {
                 NowPlayingScreenDestination,
                 QueueScreenDestination,
                 ArtistInfoScreenDestination,
-                ViewAllScreenDestination,
+                ViewAllScreenOnArtistDestination,
                 AlbumWithInfoScreenDestination,
                 FoldersAndTracksScreenDestination,
-                SearchScreenDestination
+                SearchScreenDestination,
+                ViewAllSearchResultsDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -85,11 +88,12 @@ object NavGraphs {
                 AllArtistsScreenDestination,
                 ArtistInfoScreenDestination,
                 AlbumWithInfoScreenDestination,
-                ViewAllScreenDestination,
+                ViewAllScreenOnArtistDestination,
                 NowPlayingScreenDestination,
                 QueueScreenDestination,
                 FoldersAndTracksScreenDestination,
-                SearchScreenDestination
+                SearchScreenDestination,
+                ViewAllSearchResultsDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -103,11 +107,12 @@ object NavGraphs {
                 AllAlbumScreenDestination,
                 AlbumWithInfoScreenDestination,
                 ArtistInfoScreenDestination,
-                ViewAllScreenDestination,
+                ViewAllScreenOnArtistDestination,
                 NowPlayingScreenDestination,
                 QueueScreenDestination,
                 FoldersAndTracksScreenDestination,
-                SearchScreenDestination
+                SearchScreenDestination,
+                ViewAllSearchResultsDestination
             ).routedIn(this).associateBy { it.route }
     }
 
@@ -119,10 +124,11 @@ object NavGraphs {
         override val destinationsByRoute: Map<String, DestinationSpec<*>> =
             listOf<DestinationSpec<*>>(
                 SearchScreenDestination,
+                ViewAllSearchResultsDestination,
                 AllAlbumScreenDestination,
                 AlbumWithInfoScreenDestination,
                 ArtistInfoScreenDestination,
-                ViewAllScreenDestination,
+                ViewAllScreenOnArtistDestination,
                 NowPlayingScreenDestination,
                 QueueScreenDestination,
                 FoldersAndTracksScreenDestination

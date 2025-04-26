@@ -43,12 +43,12 @@ class DataSearchRepository @Inject constructor(
                 emit(Resource.Success(data = topSearchResult))
 
             } catch (e: Exception) {
-                emit(Resource.Error(message = "Error Searching"))
+                emit(Resource.Error(message = "Error Searching Top Result"))
             }
         }
     }
 
-    override suspend fun searchAllAlbums(searchParams: String): Flow<Resource<AlbumsSearchResult>> {
+    override suspend fun getArtistTracks(artistHash: String): Flow<Resource<List<Track>>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
         val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
@@ -56,22 +56,20 @@ class DataSearchRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val albumsSearchResultDto = networkApiService.searchAllAlbums(
-                    url = "${baseUrl}search/",
+                val tracksResultDto = networkApiService.getArtistTracks(
+                    url = "${baseUrl}artist/$artistHash/tracks",
                     bearerToken = "Bearer $accessToken",
-                    searchParams = searchParams
                 )
-                val albumsSearchResult = albumsSearchResultDto.toAlbumsSearchResult()
+                val tracksResult = tracksResultDto.map { it.toTrack() }
 
-                emit(Resource.Success(data = albumsSearchResult))
-
+                emit(Resource.Success(data = tracksResult))
             } catch (e: Exception) {
-                emit(Resource.Error(message = "Error Searching"))
+                emit(Resource.Error(message = "Error Searching Artist Tracks"))
             }
         }
     }
 
-    override suspend fun searchAllArtists(searchParams: String): Flow<Resource<ArtistsSearchResult>> {
+    override suspend fun getAlbumTracks(albumHash: String): Flow<Resource<List<Track>>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
         val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
@@ -79,17 +77,15 @@ class DataSearchRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val artistsSearchResultDto = networkApiService.searchAllArtists(
-                    url = "${baseUrl}search/",
+                val tracksResultDto = networkApiService.getAlbumTracks(
+                    url = "${baseUrl}album/$albumHash/tracks",
                     bearerToken = "Bearer $accessToken",
-                    searchParams = searchParams
                 )
-                val artistsSearchResult = artistsSearchResultDto.toArtistsSearchResult()
+                val tracksResult = tracksResultDto.map { it.toTrack() }
 
-                emit(Resource.Success(data = artistsSearchResult))
-
+                emit(Resource.Success(data = tracksResult))
             } catch (e: Exception) {
-                emit(Resource.Error(message = "Error Searching"))
+                emit(Resource.Error(message = "Error Searching Album Tracks"))
             }
         }
     }
@@ -112,12 +108,12 @@ class DataSearchRepository @Inject constructor(
                 emit(Resource.Success(data = tracksSearchResult))
 
             } catch (e: Exception) {
-                emit(Resource.Error(message = "Error Searching"))
+                emit(Resource.Error(message = "Error Searching Tracks"))
             }
         }
     }
 
-    override suspend fun getArtistTracks(artistHash: String): Flow<Resource<List<Track>>> {
+    override suspend fun searchAllAlbums(searchParams: String): Flow<Resource<AlbumsSearchResult>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
         val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
@@ -125,20 +121,22 @@ class DataSearchRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val tracksResultDto = networkApiService.getArtistTracks(
-                    url = "${baseUrl}artist/$artistHash/tracks",
+                val albumsSearchResultDto = networkApiService.searchAllAlbums(
+                    url = "${baseUrl}search/",
                     bearerToken = "Bearer $accessToken",
+                    searchParams = searchParams
                 )
-                val tracksResult = tracksResultDto.map { it.toTrack() }
+                val albumsSearchResult = albumsSearchResultDto.toAlbumsSearchResult()
 
-                emit(Resource.Success(data = tracksResult))
+                emit(Resource.Success(data = albumsSearchResult))
+
             } catch (e: Exception) {
-                emit(Resource.Error(message = "Error Searching"))
+                emit(Resource.Error(message = "Error Searching Albums"))
             }
         }
     }
 
-    override suspend fun getAlbumTracks(albumHash: String): Flow<Resource<List<Track>>> {
+    override suspend fun searchAllArtists(searchParams: String): Flow<Resource<ArtistsSearchResult>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
         val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
@@ -146,16 +144,21 @@ class DataSearchRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val tracksResultDto = networkApiService.getAlbumTracks(
-                    url = "${baseUrl}album/$albumHash/tracks",
+                val artistsSearchResultDto = networkApiService.searchAllArtists(
+                    url = "${baseUrl}search/",
                     bearerToken = "Bearer $accessToken",
+                    searchParams = searchParams
                 )
-                val tracksResult = tracksResultDto.map { it.toTrack() }
+                val artistsSearchResult = artistsSearchResultDto.toArtistsSearchResult()
 
-                emit(Resource.Success(data = tracksResult))
+                emit(Resource.Success(data = artistsSearchResult))
+
             } catch (e: Exception) {
-                emit(Resource.Error(message = "Error Searching"))
+                emit(Resource.Error(message = "Error Searching Artists"))
             }
         }
     }
+
+
+
 }

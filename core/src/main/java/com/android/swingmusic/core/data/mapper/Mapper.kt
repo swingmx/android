@@ -11,7 +11,6 @@ import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.ArtistDto
 import com.android.swingmusic.core.data.dto.ArtistExpandedDto
 import com.android.swingmusic.core.data.dto.ArtistInfoDto
-import com.android.swingmusic.core.data.dto.ArtistResultDto
 import com.android.swingmusic.core.data.dto.ArtistsSearchResultDto
 import com.android.swingmusic.core.data.dto.DirDto
 import com.android.swingmusic.core.data.dto.DirListDto
@@ -313,21 +312,10 @@ object Map {
         )
     }
 
-    private fun ArtistResultDto.toArtist(): Artist {
-        return Artist(
-            artistHash = artisthash ?: "",
-            colors = listOf(color ?: "#FFFFFF"),
-            createdDate = createdDate?.toDouble() ?: 0.0,
-            helpText = "",
-            image = image ?: "",
-            name = name ?: "Unknown Artist"
-        )
-    }
-
     fun ArtistsSearchResultDto.toArtistsSearchResult(): ArtistsSearchResult {
         return ArtistsSearchResult(
             more = more ?: false,
-            results = resultDto?.map { it.toArtist() } ?: emptyList()
+            result = resultDto?.map { it.toArtist() } ?: emptyList()
         )
     }
 
@@ -361,7 +349,7 @@ object Map {
     fun TracksSearchResultDto.toTracksSearchResult(): TracksSearchResult {
         return TracksSearchResult(
             more = more ?: false,
-            results = results?.map { it.toTrackResults() } ?: emptyList()
+            result = results?.map { it.toTrackResults() } ?: emptyList()
         )
     }
 
