@@ -95,7 +95,7 @@ private fun Search(
     onClickTrackItem: (queue: List<Track>, index: Int) -> Unit,
     onClickAlbumItem: (hash: String) -> Unit,
     onClickArtist: (hash: String) -> Unit,
-    onClickViewAll: (viewAllType: String, baseUrl: String) -> Unit,
+    onClickViewAll: (itemType: String) -> Unit,
 ) {
     val lazyColumnState = rememberLazyListState()
     val clickInteractionSource = remember { MutableInteractionSource() }
@@ -288,7 +288,8 @@ private fun Search(
                                         fontSize = 20.sp
                                     )
 
-                                    if (tracksSearchResults.size > 4) {
+                                    // server returns a static number (4)
+                                    if (tracksSearchResults.size > 3) {
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(6.dp))
@@ -300,7 +301,7 @@ private fun Search(
                                                     interactionSource = clickInteractionSource,
                                                     indication = null
                                                 ) {
-                                                    onClickViewAll("Tracks", baseUrl)
+                                                    onClickViewAll("tracks")
                                                 }
                                         ) {
                                             Text(
@@ -370,7 +371,7 @@ private fun Search(
                                                     interactionSource = clickInteractionSource,
                                                     indication = null
                                                 ) {
-                                                    onClickViewAll("Albums", baseUrl)
+                                                    onClickViewAll("albums")
                                                 }
                                         ) {
                                             Text(
@@ -444,7 +445,7 @@ private fun Search(
                                                     interactionSource = clickInteractionSource,
                                                     indication = null
                                                 ) {
-                                                    onClickViewAll("Artists", baseUrl)
+                                                    onClickViewAll("artists")
                                                 }
                                         ) {
                                             Text(
@@ -549,7 +550,7 @@ fun SearchScreen(
     SwingMusicTheme {
         Surface {
             Search(
-                isLoading = searchUiState.isLoading,
+                isLoading = searchUiState.isLoadingTopResult,
                 isError = searchUiState.isError,
                 hasSearched = searchUiState.hasSearched,
                 isLoadingTopItemTracks = searchUiState.isLoadingTopItemTracks,
@@ -569,7 +570,7 @@ fun SearchScreen(
                 },
                 onRetrySearch = {
                     searchViewModel.onSearchUiEvent(
-                        SearchUiEvent.OnRetrySearch
+                        SearchUiEvent.OnRetrySearchTopResults
                     )
                 },
                 onClickPlayTopResultItem = { type, hash ->
@@ -639,8 +640,9 @@ fun SearchScreen(
                 onClickAlbumItem = {
                     navigator.gotoAlbumWithInfo(it)
                 },
-                onClickViewAll = { viewAllType, baseUrl ->
-                    // TODO: Open view all screen
+                onClickViewAll = { viewAllType ->
+                    val searchParams = searchUiState.viewAllSearchParam
+                    navigator.gotoViewAllSearchResultsScreen(viewAllType, searchParams)
                 },
                 onClickArtist = {
                     navigator.gotoArtistInfo(it)

@@ -7,5 +7,5 @@ data class ArtistsSearchResultDto(
     @SerializedName("more")
     val more: Boolean?,
     @SerializedName("results")
-    val resultDto: List<ArtistResultDto>?
+    val resultDto: List<ArtistDto>?
 )

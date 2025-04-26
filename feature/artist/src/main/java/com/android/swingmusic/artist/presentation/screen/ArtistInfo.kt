@@ -1034,7 +1034,7 @@ fun ArtistInfoScreen(
                                 )
                             },
                             onClickViewAll = { artistName: String, viewAllType: String, baseUrl: String ->
-                                commonNavigator.gotoViewAllScreen(
+                                commonNavigator.gotoViewAllOnArtistScreen(
                                     viewAllType = viewAllType,
                                     artistName = artistName,
                                     baseUrl = baseUrl

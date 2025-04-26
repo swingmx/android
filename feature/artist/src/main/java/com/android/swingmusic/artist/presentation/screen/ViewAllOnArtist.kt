@@ -53,7 +53,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ViewAll(
+private fun ViewAllOnArtist(
     title: String,
     artistName: String,
     artistHash: String,
@@ -229,7 +229,7 @@ private fun ViewAll(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Destination
 @Composable
-fun ViewAllScreen(
+fun ViewAllScreenOnArtist(
     commonNavigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
     artistInfoViewModel: ArtistInfoViewModel,
@@ -263,7 +263,7 @@ fun ViewAllScreen(
                 )
             }
         ) {
-            ViewAll(
+            ViewAllOnArtist(
                 title = viewAllType,
                 artistName = artistData?.artist?.name ?: artistName,
                 baseUrl = baseUrl,

@@ -51,7 +51,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenOnArtistDestination
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
@@ -64,8 +64,15 @@ import com.android.swingmusic.player.presentation.screen.MiniPlayer
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
-import com.android.swingmusic.presentation.navigator.*
+import com.android.swingmusic.presentation.navigator.BottomNavItem
+import com.android.swingmusic.presentation.navigator.CoreNavigator
+import com.android.swingmusic.presentation.navigator.NavGraphs
+import com.android.swingmusic.presentation.navigator.scaleInEnterTransition
+import com.android.swingmusic.presentation.navigator.scaleInPopEnterTransition
+import com.android.swingmusic.presentation.navigator.scaleOutExitTransition
+import com.android.swingmusic.presentation.navigator.scaleOutPopExitTransition
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
+import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.service.SessionTokenManager
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -176,10 +183,18 @@ class MainActivity : ComponentActivity() {
                                     "player/${QueueScreenDestination.route}",
 
                                     // Hide mini player in view all screen
-                                    "player/${ViewAllScreenDestination.route}",
-                                    "folder/${ViewAllScreenDestination.route}",
-                                    "album/${ViewAllScreenDestination.route}",
-                                    "artist/${ViewAllScreenDestination.route}",
+                                    "player/${ViewAllScreenOnArtistDestination.route}",
+                                    "folder/${ViewAllScreenOnArtistDestination.route}",
+                                    "album/${ViewAllScreenOnArtistDestination.route}",
+                                    "artist/${ViewAllScreenOnArtistDestination.route}",
+                                    "search/${ViewAllScreenOnArtistDestination.route}",
+
+                                    "player/${ViewAllSearchResultsDestination.route}",
+                                    "folder/${ViewAllSearchResultsDestination.route}",
+                                    "album/${ViewAllSearchResultsDestination.route}",
+                                    "artist/${ViewAllSearchResultsDestination.route}",
+                                    "search/${ViewAllSearchResultsDestination.route}",
+                                    "search/${ViewAllSearchResultsDestination.route}",
 
                                     // Hide mini player in queue screen
                                     "folder/${QueueScreenDestination.route}",
