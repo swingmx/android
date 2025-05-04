@@ -7,9 +7,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -26,13 +28,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,16 +38,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import androidx.navigation.NavController
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenOnArtistDestination
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
@@ -84,11 +78,11 @@ import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaul
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
-import com.ramcosta.composedestinations.navigation.navigate
-import com.ramcosta.composedestinations.spec.NavGraphSpec
+import com.ramcosta.composedestinations.utils.destination
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -102,10 +96,9 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
 
-        val isUserLoggedIn by authViewModel.isUserLoggedIn()
         lifecycleScope.launch {
-            authViewModel.isUserLoggedInFlow.collectLatest {
-                if (it || isUserLoggedIn) {
+            authViewModel.isUserLoggedIn.collectLatest {
+                if (it == true) {
                     initializeMediaController()
                 }
             }
@@ -121,13 +114,23 @@ class MainActivity : ComponentActivity() {
         scheduleTokenRefreshWork(applicationContext)
 
         setContent {
-            val isUserLoggedIn by authViewModel.isUserLoggedIn()
+            val isUserLoggedIn by authViewModel.isUserLoggedIn.collectAsState()
 
             val playerState = mediaControllerViewModel.playerUiState.collectAsState()
 
             val navController = rememberNavController()
             val newBackStackEntry by navController.currentBackStackEntryAsState()
             val route = newBackStackEntry?.destination?.route
+
+            val hideForDestination = listOf(
+                LoginWithUsernameScreenDestination,
+                LoginWithQrCodeDestination,
+                NowPlayingScreenDestination,
+                QueueScreenDestination
+            )
+
+            val showBottomNav =
+                route != null && newBackStackEntry?.destination() !in hideForDestination
 
             val bottomNavItems: List<BottomNavItem> = listOf(
                 // BottomNavItem.Home,
@@ -138,98 +141,44 @@ class MainActivity : ComponentActivity() {
                 BottomNavItem.Search,
             )
 
-            // Show BottomBar Navigation if route is ONE of...
-            val showBottomNav = route in listOf(
-                "folder/${FoldersAndTracksScreenDestination.route}",
-                "album/${AllAlbumScreenDestination.route}",
-                "artist/${AllArtistsScreenDestination.route}",
-                "search/${SearchScreenDestination.route}",
+            // Map of BottomNavItem to their route prefixes
+            val bottomNavRoutePrefixes = mapOf(
+                // BottomNavItem.Home to listOf(HomeDestination.route),
+                BottomNavItem.Folder to listOf(FoldersAndTracksScreenDestination.route),
+                BottomNavItem.Album to listOf(
+                    AllAlbumScreenDestination.route,
+                    AlbumWithInfoScreenDestination.route
+                ),
+                BottomNavItem.Artist to listOf(
+                    AllArtistsScreenDestination.route,
+                    ArtistInfoScreenDestination.route,
+                    ViewAllScreenOnArtistDestination.route
+                ),
+                BottomNavItem.Search to listOf(
+                    SearchScreenDestination.route,
+                    ViewAllSearchResultsDestination.route
+                )
             )
 
-            val bottomNavHeight by animateDpAsState(
-                targetValue = if (showBottomNav) 80.dp else 0.dp,
-                animationSpec = tween(durationMillis = 300),
-                label = "Bottom Nav Height"
-            )
-
-            // Show Spacer below MiniPlayer if route NOT one of...
-            val showSpacer = route !in listOf(
-                "folder/${FoldersAndTracksScreenDestination.route}",
-                "album/${AllAlbumScreenDestination.route}",
-                "artist/${AllArtistsScreenDestination.route}",
-            )
-
-            val spacerHeight by animateDpAsState(
-                targetValue = if (showSpacer) 0.dp else 0.dp, // TODO: Fix Anim 24.dp <-> 12.dp
-                animationSpec = tween(durationMillis = 300),
-                label = "Spacer Height"
-            )
 
             SwingMusicTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
-                        // show mini player on home, folder, artist and when btm nav is visible
-                        // show btm nav on home, folder, ,
-
                         Column(
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // Show mini player if route is NOT one of...
-                            if ((route !in listOf<String>(
-                                    "auth/${LoginWithQrCodeDestination.route}",
-                                    "auth/${LoginWithUsernameScreenDestination.route}",
-                                    "player/${NowPlayingScreenDestination.route}",
-                                    "player/${QueueScreenDestination.route}",
-
-                                    // Hide mini player in view all screen
-                                    "player/${ViewAllScreenOnArtistDestination.route}",
-                                    "folder/${ViewAllScreenOnArtistDestination.route}",
-                                    "album/${ViewAllScreenOnArtistDestination.route}",
-                                    "artist/${ViewAllScreenOnArtistDestination.route}",
-                                    "search/${ViewAllScreenOnArtistDestination.route}",
-
-                                    "player/${ViewAllSearchResultsDestination.route}",
-                                    "folder/${ViewAllSearchResultsDestination.route}",
-                                    "album/${ViewAllSearchResultsDestination.route}",
-                                    "artist/${ViewAllSearchResultsDestination.route}",
-                                    "search/${ViewAllSearchResultsDestination.route}",
-                                    "search/${ViewAllSearchResultsDestination.route}",
-
-                                    // Hide mini player in queue screen
-                                    "folder/${QueueScreenDestination.route}",
-                                    "album/${QueueScreenDestination.route}",
-                                    "artist/${QueueScreenDestination.route}",
-                                    "search/${QueueScreenDestination.route}",
-                                ))
-                            ) {
+                            // Show mini player whenever bottom nav is visible
+                            if (showBottomNav) {
                                 MiniPlayer(
                                     mediaControllerViewModel = mediaControllerViewModel,
                                     onClickPlayerItem = {
-                                        /*if (route !in listOf<String>(
-                                                // make mini player un-clickable in view all screen
-                                                "player/${ViewAllScreenDestination.route}",
-                                                "folder/${ViewAllScreenDestination.route}",
-                                                "album/${ViewAllScreenDestination.route}",
-                                                "artist/${ViewAllScreenDestination.route}"
-                                            )
-                                        ) {
-                                            navController.navigate(
-                                                "player/${NowPlayingScreenDestination.route}",
-                                                fun NavOptionsBuilder.() {
-                                                    launchSingleTop = true
-                                                    restoreState = false
-                                                }
-                                            )
-                                        }*/
-
                                         navController.navigate(
-                                            "player/${NowPlayingScreenDestination.route}",
-                                            fun NavOptionsBuilder.() {
-                                                launchSingleTop = true
-                                                restoreState = false
-                                            }
-                                        )
+                                            NowPlayingScreenDestination.route
+                                        ) {
+                                            launchSingleTop = true
+                                            restoreState = false
+                                        }
                                     }
                                 )
 
@@ -237,16 +186,12 @@ class MainActivity : ComponentActivity() {
                                 playerState.value.nowPlayingTrack?.let {
                                     Box(
                                         modifier = Modifier
-                                            .height(18.dp)
+                                            .height(12.dp)
                                             .fillMaxWidth()
                                             .background(MaterialTheme.colorScheme.inverseOnSurface)
                                     )
                                 }
                             }
-
-                            val currentSelectedItem by navController.currentScreenAsState(
-                                isUserLoggedIn
-                            )
 
                             if (showBottomNav) {
                                 NavigationBar(
@@ -265,23 +210,29 @@ class MainActivity : ComponentActivity() {
                                                         contentDescription = null
                                                     )
                                                 },
-                                                selected = currentSelectedItem == item.navGraph,
+                                                selected = navController.currentDestination?.route?.let { route ->
+                                                    bottomNavRoutePrefixes[item]?.any { prefix ->
+                                                        route.startsWith(prefix)
+                                                    } == true
+                                                } == true,
                                                 alwaysShowLabel = false,
                                                 label = { Text(text = item.title) },
                                                 onClick = {
-                                                    navController.navigate(
-                                                        item.navGraph,
-                                                        fun NavOptionsBuilder.() {
+                                                    // Whatever you do, DON'T TOUCH this
+                                                    if(navController.currentDestination?.route != item.destination.route) {
+                                                        navController.navigate(item.destination.route) {
                                                             launchSingleTop = true
-                                                            restoreState = true
-                                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                                saveState = true
+                                                            restoreState = false
+
+                                                            popUpTo(navController.graph.startDestinationId) {
+                                                                saveState = false
                                                                 inclusive = false
                                                             }
                                                         }
-                                                    )
+                                                    }
 
-                                                    if (item.navGraph == NavGraphs.folder) {
+                                                    // refresh folders starting from $home
+                                                    if (item.destination.route == FoldersAndTracksScreenDestination.route) {
                                                         foldersViewModel.onFolderUiEvent(
                                                             FolderUiEvent.OnClickNavPath(
                                                                 folder = foldersViewModel.homeDir
@@ -297,15 +248,29 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) {
-                    Surface {
-                        SwingMusicAppNavigation(
-                            isUserLoggedIn = isUserLoggedIn,
-                            navController = navController,
-                            authViewModel = authViewModel,
-                            foldersViewModel = foldersViewModel,
-                            artistInfoViewModel = artistInfoViewModel,
-                            mediaControllerViewModel = mediaControllerViewModel
-                        )
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        AnimatedVisibility(
+                            visible = isUserLoggedIn == null,
+                            enter = fadeIn(animationSpec = tween(durationMillis = 100))
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+
+                        isUserLoggedIn?.let { value ->
+                            SwingMusicAppNavigation(
+                                isUserLoggedIn = value,
+                                navController = navController,
+                                authViewModel = authViewModel,
+                                foldersViewModel = foldersViewModel,
+                                artistInfoViewModel = artistInfoViewModel,
+                                mediaControllerViewModel = mediaControllerViewModel
+                            )
+                        }
                     }
                 }
             }
@@ -362,81 +327,13 @@ internal fun SwingMusicAppNavigation(
     artistInfoViewModel: ArtistInfoViewModel,
     mediaControllerViewModel: MediaControllerViewModel
 ) {
+    val navGraph = remember(isUserLoggedIn) { NavGraphs.root(isUserLoggedIn) }
+
     val animatedNavHostEngine = rememberAnimatedNavHostEngine(
         navHostContentAlignment = Alignment.TopCenter,
-        rootDefaultAnimations = RootNavGraphDefaultAnimations.ACCOMPANIST_FADING, // default `rootDefaultAnimations` means no animations
+        rootDefaultAnimations = RootNavGraphDefaultAnimations.ACCOMPANIST_FADING,
         defaultAnimationsForNestedNavGraph = mapOf(
-            NavGraphs.auth to NestedNavGraphDefaultAnimations(
-                enterTransition = {
-                    scaleInEnterTransition()
-                },
-                exitTransition = {
-                    scaleOutExitTransition()
-                },
-                popEnterTransition = {
-                    scaleInPopEnterTransition()
-                },
-                popExitTransition = {
-                    scaleOutPopExitTransition()
-                }
-            ),
-            NavGraphs.home to NestedNavGraphDefaultAnimations(
-                enterTransition = {
-                    scaleInEnterTransition()
-                },
-                exitTransition = {
-                    scaleOutExitTransition()
-                },
-                popEnterTransition = {
-                    scaleInPopEnterTransition()
-                },
-                popExitTransition = {
-                    scaleOutPopExitTransition()
-                }
-            ),
-            NavGraphs.folder to NestedNavGraphDefaultAnimations(
-                enterTransition = {
-                    scaleInEnterTransition()
-                },
-                exitTransition = {
-                    scaleOutExitTransition()
-                },
-                popEnterTransition = {
-                    scaleInPopEnterTransition()
-                },
-                popExitTransition = {
-                    scaleOutPopExitTransition()
-                }
-            ),
-            NavGraphs.player to NestedNavGraphDefaultAnimations(
-                enterTransition = {
-                    scaleInEnterTransition()
-                },
-                exitTransition = {
-                    scaleOutExitTransition()
-                },
-                popEnterTransition = {
-                    scaleInPopEnterTransition()
-                },
-                popExitTransition = {
-                    scaleOutPopExitTransition()
-                }
-            ),
-            NavGraphs.album to NestedNavGraphDefaultAnimations(
-                enterTransition = {
-                    scaleInEnterTransition()
-                },
-                exitTransition = {
-                    scaleOutExitTransition()
-                },
-                popEnterTransition = {
-                    scaleInPopEnterTransition()
-                },
-                popExitTransition = {
-                    scaleOutPopExitTransition()
-                }
-            ),
-            NavGraphs.artist to NestedNavGraphDefaultAnimations(
+            NavGraphs.root(isUserLoggedIn) to NestedNavGraphDefaultAnimations(
                 enterTransition = {
                     scaleInEnterTransition()
                 },
@@ -456,52 +353,15 @@ internal fun SwingMusicAppNavigation(
     DestinationsNavHost(
         engine = animatedNavHostEngine,
         navController = navController,
-        navGraph = NavGraphs.root(isUserLoggedIn),
+        navGraph = navGraph,
         dependenciesContainerBuilder = {
             dependency(authViewModel)
             dependency(foldersViewModel)
             dependency(mediaControllerViewModel)
             dependency(artistInfoViewModel)
             dependency(
-                CoreNavigator(
-                    navGraph = navBackStackEntry.destination.getNavGraph(isUserLoggedIn),
-                    navController = navController,
-                    authViewModel = authViewModel,
-                    mediaControllerViewModel = mediaControllerViewModel
-                )
+                CoreNavigator(navController = navController)
             )
         }
     )
-}
-
-@Stable
-@Composable
-private fun NavController.currentScreenAsState(isUserLoggedIn: Boolean): State<NavGraphSpec> {
-    // ---------------------Todo: Change this to NavGraphs.home
-    val selectedItem: MutableState<NavGraphSpec> = remember { mutableStateOf(NavGraphs.folder) }
-
-    DisposableEffect(this) {
-        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
-            selectedItem.value = destination.getNavGraph(isUserLoggedIn)
-        }
-        addOnDestinationChangedListener(listener)
-
-        onDispose {
-            removeOnDestinationChangedListener(listener)
-        }
-    }
-
-    return selectedItem
-}
-
-private fun NavDestination.getNavGraph(isUserLoggedIn: Boolean): NavGraphSpec {
-    hierarchy.forEach { destination ->
-        NavGraphs.root(isUserLoggedIn).nestedNavGraphs.forEach { navGraph ->
-            if (destination.route == navGraph.route) {
-                return navGraph
-            }
-        }
-    }
-
-    throw RuntimeException("Unknown nav graph for destination $route")
 }
