@@ -352,7 +352,7 @@ fun LoginWithUsernameScreen(
     LaunchedEffect(key1 = authUiState.authState, block = {
         if (authUiState.authState == AuthState.AUTHENTICATED) {
             // authNavigator.gotoHomeNavGraph()
-            authNavigator.gotoFolderNavGraph()
+            authNavigator.gotoFolders()
         }
     })
 
