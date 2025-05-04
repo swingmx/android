@@ -420,7 +420,7 @@ fun ViewAllSearchResults(
                                         )
 
                                         if (index == tracks.data?.lastIndex) {
-                                            Spacer(modifier = Modifier.height(100.dp))
+                                            Spacer(modifier = Modifier.height(250.dp))
                                         }
                                     }
                                 }
@@ -450,11 +450,9 @@ fun ViewAllSearchResults(
                                             }
                                         )
                                     }
-                                    item {
-                                        Spacer(modifier = Modifier.height(50.dp))
-                                    }
-                                    item {
-                                        Spacer(modifier = Modifier.height(50.dp))
+
+                                    item(span = { GridItemSpan(2) }) {
+                                        Spacer(modifier = Modifier.height(250.dp))
                                     }
                                 }
                             }
