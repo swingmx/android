@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import timber.log.Timber
 import javax.inject.Inject
@@ -32,7 +33,8 @@ class DataAuthRepository @Inject constructor(
     private val baseUrlDao: BaseUrlDao,
     private val userDao: UserDao
 ) : AuthRepository {
-    init {
+
+    override suspend fun initializeBaseUrlAndAuthTokens() {
         if (AuthTokenHolder.accessToken == null) {
             getAccessToken()
         }
@@ -41,11 +43,10 @@ class DataAuthRepository @Inject constructor(
         }
     }
 
-    override fun getBaseUrl(): String? {
-        // TODO: Try async await or validate the use of runBlocking
+    override suspend fun getBaseUrl(): String? {
         if (BaseUrlHolder.baseUrl == null) {
-            runBlocking(Dispatchers.IO) {
-                BaseUrlHolder.baseUrl = baseUrlDao.getBaseUrl()?.toModel()?.url
+            BaseUrlHolder.baseUrl = withContext(Dispatchers.IO) {
+                baseUrlDao.getBaseUrl()?.toModel()?.url
             }
         }
         return BaseUrlHolder.baseUrl
@@ -55,19 +56,15 @@ class DataAuthRepository @Inject constructor(
         baseUrlDao.insertBaseUrl(BaseUrl(url = "$url/").toEntity()) // BASE_URL must end with '/'
     }
 
-    override fun getAccessToken(): String? {
+    override suspend fun getAccessToken(): String? {
         if (AuthTokenHolder.accessToken == null) {
-            runBlocking(Dispatchers.IO) {
-                AuthTokenHolder.accessToken = authTokensDataStore.accessToken.firstOrNull()
-            }
+            AuthTokenHolder.accessToken = authTokensDataStore.accessToken.firstOrNull()
         }
         return AuthTokenHolder.accessToken
     }
 
-    override fun getRefreshToken(): String? {
-        runBlocking(Dispatchers.IO) {
-            AuthTokenHolder.refreshToken = authTokensDataStore.refreshToken.firstOrNull()
-        }
+    override suspend fun getRefreshToken(): String? {
+        AuthTokenHolder.refreshToken = authTokensDataStore.refreshToken.firstOrNull()
         return AuthTokenHolder.refreshToken
     }
 
@@ -78,6 +75,7 @@ class DataAuthRepository @Inject constructor(
     ) {
         AuthTokenHolder.accessToken = accessToken
         AuthTokenHolder.refreshToken = refreshToken
+
         authTokensDataStore.updateAuthTokens(accessToken, refreshToken, maxAge)
     }
 
