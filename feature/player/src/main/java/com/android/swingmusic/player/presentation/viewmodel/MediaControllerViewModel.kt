@@ -39,6 +39,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -78,7 +79,9 @@ class MediaControllerViewModel @Inject constructor(
     }
 
     fun refreshBaseUrl() {
-        _baseUrl.value = authRepository.getBaseUrl()
+        viewModelScope.launch {
+            _baseUrl.update { authRepository.getBaseUrl() }
+        }
     }
 
     fun getMediaController() = mediaController
