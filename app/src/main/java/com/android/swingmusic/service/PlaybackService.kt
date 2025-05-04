@@ -11,13 +11,17 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
@@ -27,49 +31,49 @@ class PlaybackService : MediaSessionService() {
     lateinit var authRepository: AuthRepository
     private var mediaSession: MediaSession? = null
 
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     @OptIn(UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
 
-        val loadControlBuilder = DefaultLoadControl.Builder()
-        loadControlBuilder.setBufferDurationsMs(
-            DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
-            DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
-            DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-            DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
-        ).setBackBuffer(30_000, false) // 30 sec cache
-        val loadControl: LoadControl = loadControlBuilder.build()
+        serviceScope.launch {
+            val accessToken = authRepository.getAccessToken()
+                ?: "TAG: $this SERVICE -> TOKEN NOT FOUND"
 
-        val accessToken = authRepository.getAccessToken() ?: "TAG: $this SERVICE -> TOKEN NOT FOUND"
-        val dataSourceFactory = CustomDataSourceFactory(this, accessToken)
-        val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+            val loadControlBuilder = DefaultLoadControl.Builder().apply {
+                setBufferDurationsMs(
+                    DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+                    DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
+                    DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+                    DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+                ).setBackBuffer(30_000, false)
+            }
 
-        // val mediaSource = DefaultMediaSourceFactory(dataSourceFactory)
-        // val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
-        // val mediaSource = DashMediaSource.Factory(dataSourceFactory)
+            val dataSourceFactory = CustomDataSourceFactory(this@PlaybackService, accessToken)
+            val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
 
-        val player = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(mediaSource)
-            .setLoadControl(loadControl)
-            .setAudioAttributes(AudioAttributes.DEFAULT, true)
-            .setDeviceVolumeControlEnabled(true)
-            .setHandleAudioBecomingNoisy(true)
-            .setWakeMode(C.WAKE_MODE_NETWORK)
-            .build()
+            val player = ExoPlayer.Builder(this@PlaybackService)
+                .setMediaSourceFactory(mediaSource)
+                .setLoadControl(loadControlBuilder.build())
+                .setAudioAttributes(AudioAttributes.DEFAULT, true)
+                .setDeviceVolumeControlEnabled(true)
+                .setHandleAudioBecomingNoisy(true)
+                .setWakeMode(C.WAKE_MODE_NETWORK)
+                .build()
 
-        val intent = packageManager.getLaunchIntentForPackage(packageName)
-        val pendingIntent =
-            PendingIntent.getActivity(this, 0, intent, FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
+            val intent = packageManager.getLaunchIntentForPackage(packageName)
+            val pendingIntent = PendingIntent.getActivity(
+                this@PlaybackService, 0, intent, FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT
+            )
 
-        mediaSession = MediaSession.Builder(this, player)
-            .setSessionActivity(pendingIntent)
-            .build()
+            mediaSession = MediaSession.Builder(this@PlaybackService, player)
+                .setSessionActivity(pendingIntent)
+                .build()
 
-        // Store the session token
-        SessionTokenManager.sessionToken = mediaSession?.token
+            SessionTokenManager.sessionToken = mediaSession?.token
+        }
     }
-
-    // TODO: Save Played Track on Transition within this Service when app is not running but service is.
 
     // The user dismissed the app from the recent tasks
     override fun onTaskRemoved(rootIntent: Intent?) {
@@ -98,6 +102,8 @@ class PlaybackService : MediaSessionService() {
         SessionTokenManager.sessionToken = null
         AuthTokenHolder.accessToken = null
         AuthTokenHolder.refreshToken = null
+
+        serviceScope.cancel()
 
         super.onDestroy()
     }
