@@ -49,8 +49,8 @@ class DataArtistRepository @Inject constructor(
     }
 
     override fun getPagingArtists(sortBy: String, sortOrder: Int): Flow<PagingData<Artist>> {
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-        val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+        val accessToken = AuthTokenHolder.accessToken
+        val baseUrl = BaseUrlHolder.baseUrl
 
         return Pager(
             config = PagingConfig(enablePlaceholders = false, pageSize = 20),
@@ -67,10 +67,11 @@ class DataArtistRepository @Inject constructor(
     }
 
     override fun getArtistInfo(artistHash: String): Flow<Resource<ArtistInfo>> {
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-        val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
         return flow {
+            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+            val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
             try {
                 emit(Resource.Loading())
 
@@ -89,10 +90,11 @@ class DataArtistRepository @Inject constructor(
     }
 
     override fun getSimilarArtists(artistHash: String): Flow<Resource<List<Artist>>> {
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-        val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
         return flow {
+            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+            val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
             try {
                 emit(Resource.Loading())
 
