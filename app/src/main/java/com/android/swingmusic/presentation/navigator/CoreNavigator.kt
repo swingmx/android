@@ -1,128 +1,86 @@
 package com.android.swingmusic.presentation.navigator
 
 import androidx.navigation.NavController
-import androidx.navigation.NavOptionsBuilder
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenOnArtistDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
-import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
+import com.android.swingmusic.home.presentation.destinations.HomeDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
-import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
-import com.ramcosta.composedestinations.dynamic.within
 import com.ramcosta.composedestinations.navigation.navigate
-import com.ramcosta.composedestinations.spec.NavGraphSpec
 
 class CoreNavigator(
-    private val navGraph: NavGraphSpec,
-    private val navController: NavController,
-    private val mediaControllerViewModel: MediaControllerViewModel,
-    private val authViewModel: AuthViewModel
+    private val navController: NavController
 ) : CommonNavigator {
+
     /**----------------------------------- Auth Navigator ----------------------------------------*/
     override fun gotoLoginWithUsername() {
-        val currentDestination = navController.currentDestination?.route
         val targetDestination = LoginWithUsernameScreenDestination
 
-        if (currentDestination != targetDestination.route) {
-            navController.navigate(targetDestination within navGraph,
-                fun NavOptionsBuilder.() {
-                    launchSingleTop = true
-                    restoreState = false
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
+            restoreState = false
 
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = false
-                        inclusive = true
-                    }
-                }
-            )
+            popUpTo(navController.graph.startDestinationId) {
+                inclusive = true
+                saveState = false
+            }
         }
     }
 
     override fun gotoLoginWithQrCode() {
-        val currentDestination = navController.currentDestination?.route
         val targetDestination = LoginWithQrCodeDestination
 
-        if (currentDestination != targetDestination.route) {
-            navController.navigate(targetDestination within navGraph,
-                fun NavOptionsBuilder.() {
-                    launchSingleTop = true
-                    restoreState = false
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
+            restoreState = false
 
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = false
-                        inclusive = true
-                    }
-                }
-            )
+            popUpTo(navController.graph.startDestinationId) {
+                inclusive = true
+                saveState = false
+            }
         }
     }
 
-    override fun gotoHomeNavGraph() {
-        mediaControllerViewModel.refreshBaseUrl()
-        authViewModel.updateIsUserLoggedInFlow() // flow collected in the main activity
+    override fun gotoHome() {
+        val targetDestination = HomeDestination()
 
-        val currentDestination = navController.currentDestination?.route
-        val homeNavGraph = NavGraphs.home
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
+            restoreState = false
 
-        if (currentDestination != homeNavGraph.route) {
-            navController.navigate(
-                homeNavGraph,
-                fun NavOptionsBuilder.() {
-                    launchSingleTop = true
-                    restoreState = true
-
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                        inclusive = true
-                    }
-                }
-            )
+            popUpTo(navController.graph.startDestinationId) {
+                inclusive = true
+                saveState = false
+            }
         }
     }
 
     // Todo: Remove this after adding home content
-    // REMEMBER: Bug -> Sometimes the app enters ANR state after this method is called
-    override fun gotoFolderNavGraph() {
-        mediaControllerViewModel.refreshBaseUrl()
-        authViewModel.updateIsUserLoggedInFlow() // flow collected in the main activity
+    override fun gotoFolders() {
+        val targetDestination = FoldersAndTracksScreenDestination()
 
-        val currentDestination = navController.currentDestination?.route
-        val folderNavGraph = NavGraphs.folder
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
+            restoreState = false
 
-        if (currentDestination != folderNavGraph.route) {
-            navController.navigate(
-                folderNavGraph,
-                fun NavOptionsBuilder.() {
-                    launchSingleTop = true
-                    restoreState = true
-
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                        inclusive = true
-                    }
-                }
-            )
+            popUpTo(navController.graph.startDestinationId) {
+                inclusive = true
+                saveState = false
+            }
         }
     }
 
     /**----------------------------------- Album Navigator --------------------------------------*/
     override fun gotoAlbumWithInfo(albumHash: String) {
-        val currentDestination = navController.currentDestination?.route
         val targetDestination = AlbumWithInfoScreenDestination(albumHash)
 
-        if (currentDestination != targetDestination.route) {
-            navController.navigate(
-                targetDestination within navGraph,
-                fun NavOptionsBuilder.() {
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            )
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
         }
     }
 
@@ -132,29 +90,22 @@ class CoreNavigator(
 
     /**----------------------------------- Player Navigator -------------------------------------*/
     override fun gotoQueueScreen() {
-        val currentDestination = navController.currentDestination?.route
         val targetDestination = QueueScreenDestination
 
-        if (currentDestination != targetDestination.route) {
-            navController.navigate(targetDestination within navGraph)
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
         }
+
     }
 
     override fun gotoArtistInfo(artistHash: String) {
-        val currentDestination = navController.currentDestination?.route
         val targetDestination = ArtistInfoScreenDestination(
             artistHash = artistHash,
             loadNewArtist = true
         )
 
-        if (currentDestination != targetDestination.route) {
-            navController.navigate(
-                targetDestination within navGraph,
-                fun NavOptionsBuilder.() {
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            )
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
         }
     }
 
@@ -163,18 +114,14 @@ class CoreNavigator(
         artistName: String,
         baseUrl: String
     ) {
-        val currentDestination = navController.currentDestination?.route
-        val targetDestination =
-            ViewAllScreenOnArtistDestination(viewAllType, artistName, baseUrl)
+        val targetDestination = ViewAllScreenOnArtistDestination(
+            viewAllType = viewAllType,
+            artistName = artistName,
+            baseUrl = baseUrl
+        )
 
-        if (currentDestination != targetDestination.route) {
-            navController.navigate(
-                targetDestination within navGraph,
-                fun NavOptionsBuilder.() {
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            )
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
         }
     }
 
@@ -182,37 +129,20 @@ class CoreNavigator(
         viewAllType: String,
         searchParams: String
     ) {
-        val currentDestination = navController.currentDestination?.route
-        val targetDestination =
-            ViewAllSearchResultsDestination(
-                searchParams = searchParams,
-                viewAllType = viewAllType
-            )
+        val targetDestination = ViewAllSearchResultsDestination(
+            searchParams = searchParams,
+            viewAllType = viewAllType
+        )
 
-        if (currentDestination != targetDestination.route) {
-            navController.navigate(
-                targetDestination within navGraph,
-                fun NavOptionsBuilder.() {
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            )
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
         }
     }
 
     override fun gotoSourceFolder(name: String, path: String) {
-        val currentDestination = navController.currentDestination?.route
-        val targetDestination =
-            FoldersAndTracksScreenDestination(gotoFolderName = name, gotoFolderPath = path)
-
-        if (currentDestination != targetDestination.route) {
-            navController.navigate(
-                targetDestination within navGraph,
-                fun NavOptionsBuilder.() {
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            )
+        val targetDestination = FoldersAndTracksScreenDestination(name, path)
+        navController.navigate(targetDestination) {
+            launchSingleTop = true
         }
     }
 }
