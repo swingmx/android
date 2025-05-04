@@ -82,7 +82,6 @@ import com.ramcosta.composedestinations.utils.destination
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -219,7 +218,7 @@ class MainActivity : ComponentActivity() {
                                                 label = { Text(text = item.title) },
                                                 onClick = {
                                                     // Whatever you do, DON'T TOUCH this
-                                                    if(navController.currentDestination?.route != item.destination.route) {
+                                                    if (navController.currentDestination?.route != item.destination.route) {
                                                         navController.navigate(item.destination.route) {
                                                             launchSingleTop = true
                                                             restoreState = false
