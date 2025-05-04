@@ -8,13 +8,15 @@ import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
 
-    fun getBaseUrl(): String?
+    suspend fun initializeBaseUrlAndAuthTokens()
+    
+    suspend fun getBaseUrl(): String?
 
     suspend fun storeBaseUrl(url: String)
 
-    fun getAccessToken(): String?
+    suspend fun getAccessToken(): String?
 
-    fun getRefreshToken(): String?
+    suspend fun getRefreshToken(): String?
 
     suspend fun storeAuthTokens(
         accessToken: String,
@@ -47,5 +49,4 @@ interface AuthRepository {
     fun processQrCodeData(encoded: String): Pair<String, String>
 
     suspend fun logInWithQrCode(url: String, pairCode: String): Flow<Resource<LogInResult>>
-
 }

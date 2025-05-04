@@ -1,27 +1,26 @@
 package com.android.swingmusic.auth.presentation.viewmodel
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
+import com.android.swingmusic.auth.presentation.event.AuthUiEvent.ClearErrorState
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.LogInWithQrCode
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.LogInWithUsernameAndPassword
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnBaseUrlChange
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnPasswordChange
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnUsernameChange
-import com.android.swingmusic.auth.presentation.event.AuthUiEvent.ClearErrorState
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.state.AuthUiState
 import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.core.data.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,25 +29,33 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _isUserLoggedInFlow = MutableStateFlow(false)
-    val isUserLoggedInFlow: Flow<Boolean> get() = _isUserLoggedInFlow
-
     private val _authUiState: MutableStateFlow<AuthUiState> = MutableStateFlow(AuthUiState())
     val authUiState: StateFlow<AuthUiState> get() = _authUiState
 
+
+    private val _isUserLoggedIn = MutableStateFlow<Boolean?>(null)
+    val isUserLoggedIn: StateFlow<Boolean?> = _isUserLoggedIn.asStateFlow()
+
     init {
-        getSavedBaseUrl()
+        viewModelScope.launch {
+            authRepository.initializeBaseUrlAndAuthTokens()
+        }
+        refreshLoginState()
+        refreshBaseUrlBaseUrl()
     }
 
-    // Proceed to :home if token is not null
-    fun isUserLoggedIn(): State<Boolean> {
-        val token = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-        return mutableStateOf(!token.isNullOrEmpty())
+    private fun refreshLoginState() {
+        viewModelScope.launch {
+            val token = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+            _isUserLoggedIn.update { !token.isNullOrEmpty() }
+        }
     }
 
-    fun updateIsUserLoggedInFlow() {
-        val token = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-        _isUserLoggedInFlow.value = !token.isNullOrEmpty()
+    private fun refreshBaseUrlBaseUrl() {
+        viewModelScope.launch {
+            val url = authRepository.getBaseUrl()
+            _authUiState.update { it.copy(baseUrl = url) }
+        }
     }
 
     private suspend fun getAuthenticatedUser() {
@@ -60,11 +67,6 @@ class AuthViewModel @Inject constructor(
         _authUiState.value = _authUiState.value.copy(
             authError = AuthError.None
         )
-    }
-
-    private fun getSavedBaseUrl() {
-        val url = authRepository.getBaseUrl()
-        _authUiState.value = _authUiState.value.copy(baseUrl = url)
     }
 
     fun createUser(username: String, password: String, email: String, roles: List<String>) {
@@ -140,6 +142,9 @@ class AuthViewModel @Inject constructor(
                         authRepository.storeBaseUrl(baseUrl)
                         authRepository.storeAuthTokens(accessToken, refreshToken, mxAge)
 
+                        refreshLoginState()
+                        refreshBaseUrlBaseUrl()
+
                         _authUiState.value = _authUiState.value.copy(
                             authState = AuthState.AUTHENTICATED,
                             isLoading = false,
@@ -195,6 +200,9 @@ class AuthViewModel @Inject constructor(
 
                         authRepository.storeAuthTokens(accessToken, refreshToken, maxAge)
                         authRepository.storeBaseUrl(url)
+
+                        refreshLoginState()
+                        refreshBaseUrlBaseUrl()
 
                         _authUiState.value = _authUiState.value.copy(
                             authState = AuthState.AUTHENTICATED,
