@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -186,7 +187,7 @@ private fun ViewAllOnArtist(
                         )
 
                         if (index == tracks.lastIndex) {
-                            Spacer(modifier = Modifier.height(100.dp))
+                            Spacer(modifier = Modifier.height(200.dp))
                         }
                     }
                 }
@@ -214,11 +215,9 @@ private fun ViewAllOnArtist(
                             }
                         )
                     }
-                    item {
-                        Spacer(modifier = Modifier.height(50.dp))
-                    }
-                    item {
-                        Spacer(modifier = Modifier.height(50.dp))
+
+                    item(span = { GridItemSpan(2) }) {
+                        Spacer(modifier = Modifier.height(200.dp))
                     }
                 }
             }

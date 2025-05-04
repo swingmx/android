@@ -484,7 +484,7 @@ private fun Search(
                         }
 
                         item {
-                            Spacer(modifier = Modifier.height(230.dp))
+                            Spacer(modifier = Modifier.height(250.dp))
                         }
                     }
                 }
