@@ -101,9 +101,10 @@ fun LoginWithQrCode(
     LaunchedEffect(key1 = authUiState.authState, block = {
         if (authUiState.authState == AuthState.AUTHENTICATED) {
             // authNavigator.gotoHomeNavGraph()
-            authNavigator.gotoFolderNavGraph()
+            authNavigator.gotoFolders()
         }
     })
+
     Scaffold {
         Scaffold(
             modifier = Modifier.padding(it),

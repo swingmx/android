@@ -72,7 +72,10 @@ class AllAlbumsViewModel @Inject constructor(
 
 
     private fun getBaseUrl() {
-        _baseUrl.value = authRepository.getBaseUrl()
+        viewModelScope.launch {
+            _baseUrl.value = authRepository.getBaseUrl()
+        }
+
     }
 
     init {

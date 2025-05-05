@@ -66,7 +66,9 @@ class ArtistsViewModel @Inject constructor(
     fun baseUrl() = baseUrl
 
     private fun getBaseUrl() {
-        baseUrl.value = authRepository.getBaseUrl()
+        viewModelScope.launch {
+            baseUrl.value = authRepository.getBaseUrl()
+        }
     }
 
     init {

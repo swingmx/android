@@ -6,10 +6,10 @@ interface CommonNavigator {
 
     fun gotoLoginWithQrCode()
 
-    fun gotoHomeNavGraph()
+    fun gotoHome()
 
     // Todo: Remove this after adding home content
-    fun gotoFolderNavGraph()
+    fun gotoFolders()
 
     fun gotoAlbumWithInfo(albumHash: String)
 

@@ -37,6 +37,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -453,6 +454,10 @@ fun FoldersAndTracksScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    SideEffect {
+        mediaControllerViewModel.refreshBaseUrl()
+    }
 
     LaunchedEffect(key1 = Unit) {
         if (gotoFolderName != null && gotoFolderPath != null) {

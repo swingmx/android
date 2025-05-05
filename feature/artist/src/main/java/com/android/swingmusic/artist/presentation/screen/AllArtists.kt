@@ -240,7 +240,7 @@ private fun AllArtists(
                         }
 
                         item(span = { GridItemSpan(artistsUiState.gridCount) }) {
-                            Spacer(modifier = Modifier.height(200.dp))
+                            Spacer(modifier = Modifier.height(250.dp))
                         }
                     }
 

@@ -45,6 +45,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":network"))
     implementation(project(":uicomponent"))
+    implementation(project(":feature:player"))
     // Common
     implementation(project(":feature:common"))
 

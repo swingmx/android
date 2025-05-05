@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -81,17 +81,16 @@ fun TopSearchResultItem(
                 .height(170.dp)
                 .clickable {
                     onClickTopResultItem(topResultItem.type, hash)
-                }
+                },
+            contentAlignment = Alignment.CenterStart
         ) {
             AsyncImage(
                 modifier = Modifier
                     .fillMaxWidth(1f)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(12.dp))
-                ,
+                    .clip(RoundedCornerShape(12.dp)),
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(backgroundImagePath)
-                    .crossfade(true)
                     .transformations(
                         listOf(
                             BlurTransformation(
@@ -100,26 +99,6 @@ fun TopSearchResultItem(
                             )
                         )
                     ).build(),
-                contentDescription = "Image",
-                contentScale = ContentScale.Crop,
-            )
-
-            AsyncImage(
-                modifier = Modifier
-                    .fillMaxWidth(0.47f)
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .fillMaxHeight()
-                    .clickable {
-                        onClickTopResultItem(topResultItem.type, hash)
-                    },
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imagePath)
-                    .crossfade(true)
-                    .build(),
-                placeholder = painterResource(R.drawable.artist_fallback),
-                fallback = painterResource(R.drawable.artist_fallback),
-                error = painterResource(R.drawable.artist_fallback),
                 contentDescription = "Image",
                 contentScale = ContentScale.Crop,
             )
@@ -141,12 +120,38 @@ fun TopSearchResultItem(
                     )
             )
 
+            AsyncImage(
+                modifier = Modifier
+                    .size(170.dp)
+                    .padding(8.dp)
+                    .clip(
+                        if (topResultItem.type == "artist") CircleShape else
+                            RoundedCornerShape(6.dp)
+                    )
+                    .clickable {
+                        onClickTopResultItem(topResultItem.type, hash)
+                    },
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imagePath)
+                    .crossfade(true)
+                    .build(),
+                placeholder = painterResource(R.drawable.artist_fallback),
+                fallback = painterResource(R.drawable.artist_fallback),
+                error = painterResource(R.drawable.artist_fallback),
+                contentDescription = "Image",
+                contentScale = ContentScale.Crop,
+            )
+
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .fillMaxWidth(.53F)
                     .fillMaxHeight()
-                    .padding(vertical = 24.dp, horizontal = 4.dp),
+                    .padding(
+                        top = 24.dp,
+                        bottom = 24.dp,
+                        start = 174.dp, // image size of 170.dp considered
+                        end = 4.dp
+                    ),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
@@ -242,7 +247,7 @@ private fun TopSearchResultItemPreview() {
 }
 
 private val topResult = TopResultItem(
-    type = "track",
+    type = "artist",
     albumCount = 0,
     artistHash = "hash",
     albumHash = "436f1e93ac4087d1",
@@ -259,7 +264,7 @@ private val topResult = TopResultItem(
     id = 0,
     image = "436f1e93ac4087d1.webp",
     lastPlayed = 0,
-    name = "",
+    name = "Preview",
     playCount = 0,
     playDuration = 0,
     trackcount = 0,
