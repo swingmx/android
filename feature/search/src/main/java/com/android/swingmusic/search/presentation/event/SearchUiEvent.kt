@@ -20,4 +20,6 @@ sealed interface SearchUiEvent {
 
     data class OnToggleTrackFavorite(val trackHash: String, val isFavorite: Boolean) : SearchUiEvent
 
+    data object OnClearSearchStates: SearchUiEvent
+
 }

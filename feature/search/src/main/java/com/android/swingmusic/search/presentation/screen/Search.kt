@@ -27,19 +27,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,13 +57,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
+import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.TopResultItem
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
+import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
@@ -66,11 +78,13 @@ import com.android.swingmusic.search.presentation.viewmodel.SearchViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
+import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import com.android.swingmusic.uicomponent.presentation.component.TopSearchResultItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.Screen
 import com.ramcosta.composedestinations.annotation.Destination
+import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -81,11 +95,12 @@ private fun Search(
     isError: Boolean,
     errorMessage: String?,
     baseUrl: String,
+    snackbarHostState: SnackbarHostState,
     searchParams: String,
     playingTrackHash: String,
     playbackState: PlaybackState,
     topResultItem: TopResultItem?,
-    tracksSearchResults: List<Track>,
+    topSearchTracks: List<Track>,
     albumSearchResults: List<Album>,
     artistsSearchResults: List<Artist>,
     onSearchParamChanged: (params: String) -> Unit,
@@ -96,12 +111,19 @@ private fun Search(
     onClickAlbumItem: (hash: String) -> Unit,
     onClickArtist: (hash: String) -> Unit,
     onClickViewAll: (itemType: String) -> Unit,
+    onClickMoreVert: (track: Track) -> Unit,
 ) {
     val lazyColumnState = rememberLazyListState()
     val clickInteractionSource = remember { MutableInteractionSource() }
 
     Scaffold {
         Scaffold(
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.padding(bottom = 170.dp)
+                )
+            },
             modifier = Modifier.padding(it),
             topBar = {
                 Column {
@@ -190,7 +212,7 @@ private fun Search(
 
                 (hasSearched &&
                         topResultItem == null &&
-                        tracksSearchResults.isEmpty() &&
+                        topSearchTracks.isEmpty() &&
                         albumSearchResults.isEmpty() &&
                         artistsSearchResults.isEmpty() &&
                         searchParams.isNotEmpty()
@@ -267,7 +289,7 @@ private fun Search(
                             }
                         }
 
-                        if (tracksSearchResults.isNotEmpty()) {
+                        if (topSearchTracks.isNotEmpty()) {
                             item {
                                 Row(
                                     modifier = Modifier
@@ -289,7 +311,7 @@ private fun Search(
                                     )
 
                                     // server returns a static number (4)
-                                    if (tracksSearchResults.size > 3) {
+                                    if (topSearchTracks.size > 3) {
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(6.dp))
@@ -317,20 +339,20 @@ private fun Search(
                                 }
                             }
 
-                            itemsIndexed(tracksSearchResults.take(4)) { index, track ->
+                            itemsIndexed(topSearchTracks.take(4)) { index, track ->
                                 TrackItem(
                                     track = track,
-                                    showMenuIcon = false, // TODO: Add Menu
+                                    showMenuIcon = true,
                                     playbackState = playbackState,
                                     isCurrentTrack = track.trackHash == playingTrackHash,
                                     onClickTrackItem = {
                                         onClickTrackItem(
-                                            tracksSearchResults,
+                                            topSearchTracks,
                                             index
                                         )
                                     },
-                                    onClickMoreVert = {
-                                        // TODO: Add Menu
+                                    onClickMoreVert = { clicked ->
+                                        onClickMoreVert(clicked)
                                     },
                                     baseUrl = baseUrl
                                 )
@@ -493,12 +515,14 @@ private fun Search(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Destination
 @Composable
 fun SearchScreen(
-    searchViewModel: SearchViewModel = hiltViewModel(),
+    searchViewModel: SearchViewModel,
     mediaControllerViewModel: MediaControllerViewModel,
-    navigator: CommonNavigator
+    navigator: CommonNavigator,
+    artistInfoViewModel: ArtistInfoViewModel
 ) {
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
     val playerState by mediaControllerViewModel.playerUiState.collectAsState()
@@ -511,6 +535,19 @@ fun SearchScreen(
     val artists = searchUiState.topSearchResults.artists
 
     val topItemTracks = searchUiState.topItemTracks
+
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showTrackBottomSheet by remember { mutableStateOf(false) }
+    var clickedTrack: Track? by remember { mutableStateOf(null) }
+
+    LaunchedEffect(tracks) {
+        clickedTrack?.let { track ->
+            val updatedTrack = tracks.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+    }
 
     LaunchedEffect(key1 = topItemTracks) {
         if (topItemTracks.isNullOrEmpty().not() && topResultItem != null) {
@@ -539,9 +576,6 @@ fun SearchScreen(
                         queue = topItemTracks!!
                     )
                 )
-            } else {
-                mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
-                mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
             }
         }
     }
@@ -549,6 +583,127 @@ fun SearchScreen(
 
     SwingMusicTheme {
         Surface {
+            if (showTrackBottomSheet) {
+                clickedTrack?.let { track ->
+                    CustomTrackBottomSheet(
+                        scope = scope,
+                        sheetState = sheetState,
+                        isFavorite = track.isFavorite,
+                        clickedTrack = track,
+                        baseUrl = baseUrl ?: "",
+                        currentArtisthash = null,
+                        bottomSheetItems = listOf(
+                            BottomSheetItemModel(
+                                label = "Go to Artist",
+                                painterId = R.drawable.ic_artist,
+                                track = track,
+                                sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
+                            ),
+                            BottomSheetItemModel(
+                                label = "Go to Album",
+                                painterId = R.drawable.ic_album,
+                                track = track,
+                                sheetAction = BottomSheetAction.GotoAlbum
+                            ),
+                            BottomSheetItemModel(
+                                label = "Go to Folder",
+                                painterId = R.drawable.folder_outlined_open,
+                                track = track,
+                                sheetAction = BottomSheetAction.GotoFolder(
+                                    name = track.folder.getFolderName(),
+                                    path = track.folder
+                                )
+                            ),
+                            BottomSheetItemModel(
+                                label = "Play Next",
+                                painterId = R.drawable.play_next,
+                                track = track,
+                                sheetAction = BottomSheetAction.PlayNext
+                            ),
+                            BottomSheetItemModel(
+                                label = "Add to playing queue",
+                                painterId = R.drawable.add_to_queue,
+                                track = track,
+                                sheetAction = BottomSheetAction.AddToQueue
+                            )
+                        ),
+                        onHideBottomSheet = {
+                            showTrackBottomSheet = it
+                        },
+                        onClickSheetItem = { sheetTrack, sheetAction ->
+                            when (sheetAction) {
+                                is BottomSheetAction.GotoAlbum -> {
+                                    navigator.gotoAlbumWithInfo(sheetTrack.albumHash)
+                                }
+
+                                is BottomSheetAction.GotoFolder -> {
+                                    navigator.gotoSourceFolder(
+                                        sheetAction.name,
+                                        sheetAction.path
+                                    )
+                                }
+
+                                is BottomSheetAction.PlayNext -> {
+                                    mediaControllerViewModel.onQueueEvent(
+                                        QueueEvent.PlayNext(
+                                            track = sheetTrack,
+                                            source = QueueSource.SEARCH
+                                        )
+                                    )
+
+                                    scope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Track added to play next",
+                                            actionLabel = "View Queue",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            navigator.gotoQueueScreen()
+                                        }
+                                    }
+                                }
+
+                                is BottomSheetAction.AddToQueue -> {
+                                    mediaControllerViewModel.onQueueEvent(
+                                        QueueEvent.AddToQueue(
+                                            track = sheetTrack,
+                                            source = QueueSource.SEARCH
+                                        )
+                                    )
+
+                                    scope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Track added to playing queue",
+                                            actionLabel = "View Queue",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            navigator.gotoQueueScreen()
+                                        }
+                                    }
+                                }
+
+                                else -> {}
+                            }
+                        },
+                        onChooseArtist = { hash ->
+                            artistInfoViewModel.onArtistInfoUiEvent(
+                                ArtistInfoUiEvent.OnLoadArtistInfo(hash)
+                            )
+                            navigator.gotoArtistInfo(hash)
+                        },
+                        onToggleTrackFavorite = { trackHash, isFavorite ->
+                            searchViewModel.onSearchUiEvent(
+                                SearchUiEvent.OnToggleTrackFavorite(
+                                    trackHash = trackHash,
+                                    isFavorite = isFavorite
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
             Search(
                 isLoading = searchUiState.isLoadingTopResult,
                 isError = searchUiState.isError,
@@ -556,11 +711,12 @@ fun SearchScreen(
                 isLoadingTopItemTracks = searchUiState.isLoadingTopItemTracks,
                 errorMessage = searchUiState.errorMessage,
                 baseUrl = baseUrl ?: "https://default",
+                snackbarHostState = snackbarHostState,
                 searchParams = searchUiState.searchParams,
                 playingTrackHash = playerState.nowPlayingTrack?.trackHash ?: "hash",
                 playbackState = playerState.playbackState,
                 topResultItem = topResultItem,
-                tracksSearchResults = tracks,
+                topSearchTracks = tracks,
                 albumSearchResults = albums,
                 artistsSearchResults = artists,
                 onSearchParamChanged = {
@@ -646,6 +802,10 @@ fun SearchScreen(
                 },
                 onClickArtist = {
                     navigator.gotoArtistInfo(it)
+                },
+                onClickMoreVert = { track ->
+                    clickedTrack = track
+                    showTrackBottomSheet = true
                 }
             )
         }

@@ -65,8 +65,10 @@ import com.android.swingmusic.presentation.navigator.scaleInEnterTransition
 import com.android.swingmusic.presentation.navigator.scaleInPopEnterTransition
 import com.android.swingmusic.presentation.navigator.scaleOutExitTransition
 import com.android.swingmusic.presentation.navigator.scaleOutPopExitTransition
+import com.android.swingmusic.search.presentation.event.SearchUiEvent
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
+import com.android.swingmusic.search.presentation.viewmodel.SearchViewModel
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.service.SessionTokenManager
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -87,8 +89,9 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val mediaControllerViewModel: MediaControllerViewModel by viewModels<MediaControllerViewModel>()
     private val authViewModel: AuthViewModel by viewModels<AuthViewModel>()
-    private val artistInfoViewModel: ArtistInfoViewModel by viewModels<ArtistInfoViewModel>()
     private val foldersViewModel: FoldersViewModel by viewModels<FoldersViewModel>()
+    private val artistInfoViewModel: ArtistInfoViewModel by viewModels<ArtistInfoViewModel>()
+    private val searchViewModel: SearchViewModel by viewModels<SearchViewModel>()
 
     private lateinit var controllerFuture: ListenableFuture<MediaController>
 
@@ -238,6 +241,13 @@ class MainActivity : ComponentActivity() {
                                                             )
                                                         )
                                                     }
+
+                                                    // refresh Search screen
+                                                    if (item.destination.route == SearchScreenDestination.route) {
+                                                        searchViewModel.onSearchUiEvent(
+                                                            SearchUiEvent.OnClearSearchStates
+                                                        )
+                                                    }
                                                 }
                                             )
                                         }
@@ -265,9 +275,10 @@ class MainActivity : ComponentActivity() {
                                 isUserLoggedIn = value,
                                 navController = navController,
                                 authViewModel = authViewModel,
+                                mediaControllerViewModel = mediaControllerViewModel,
                                 foldersViewModel = foldersViewModel,
                                 artistInfoViewModel = artistInfoViewModel,
-                                mediaControllerViewModel = mediaControllerViewModel
+                                searchViewModel = searchViewModel
                             )
                         }
                     }
@@ -322,9 +333,10 @@ internal fun SwingMusicAppNavigation(
     isUserLoggedIn: Boolean,
     navController: NavHostController,
     authViewModel: AuthViewModel,
+    mediaControllerViewModel: MediaControllerViewModel,
     foldersViewModel: FoldersViewModel,
     artistInfoViewModel: ArtistInfoViewModel,
-    mediaControllerViewModel: MediaControllerViewModel
+    searchViewModel: SearchViewModel
 ) {
     val navGraph = remember(isUserLoggedIn) { NavGraphs.root(isUserLoggedIn) }
 
@@ -354,13 +366,14 @@ internal fun SwingMusicAppNavigation(
         navController = navController,
         navGraph = navGraph,
         dependenciesContainerBuilder = {
+            dependency(
+                CoreNavigator(navController = navController)
+            )
             dependency(authViewModel)
             dependency(foldersViewModel)
             dependency(mediaControllerViewModel)
             dependency(artistInfoViewModel)
-            dependency(
-                CoreNavigator(navController = navController)
-            )
+            dependency(searchViewModel)
         }
     )
 }

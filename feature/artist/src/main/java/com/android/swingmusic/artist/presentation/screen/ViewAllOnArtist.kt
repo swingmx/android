@@ -258,7 +258,7 @@ fun ViewAllScreenOnArtist(
             snackbarHost = {
                 SnackbarHost(
                     hostState = snackbarHostState,
-                    modifier = Modifier.padding(bottom = 24.dp)
+                    modifier = Modifier.padding(bottom = 170.dp)
                 )
             }
         ) {

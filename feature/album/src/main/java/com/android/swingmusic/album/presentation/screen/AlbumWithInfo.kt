@@ -703,7 +703,7 @@ fun AlbumWithInfoScreen(
             snackbarHost = {
                 SnackbarHost(
                     hostState = snackbarHostState,
-                    modifier = Modifier.padding(bottom = 90.dp)
+                    modifier = Modifier.padding(bottom = 170.dp)
                 )
             }
         ) {

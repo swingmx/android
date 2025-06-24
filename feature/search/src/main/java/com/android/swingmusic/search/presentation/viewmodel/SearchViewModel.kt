@@ -199,19 +199,37 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    private fun clearSearchStates() {
+        updateSearchState {
+            SearchState()
+        }
+    }
+
     private fun toggleSearchTrackFavorite(trackHash: String, isFavorite: Boolean) {
         viewModelScope.launch {
             // Optimistically update the UI
             _searchState.update { currentState ->
-                val updatedTracks = currentState.viewAllTracks?.data.orEmpty().map { track ->
+                val updatedAllTracks = currentState.viewAllTracks?.data.orEmpty().map { track ->
                     if (track.trackHash == trackHash) {
                         track.copy(isFavorite = !isFavorite)
                     } else {
                         track
                     }
                 }
+
+                val updatedTopSearchTracks = currentState.topSearchResults.tracks.map { track ->
+                    if (track.trackHash == trackHash) {
+                        track.copy(isFavorite = !isFavorite)
+                    } else {
+                        track
+                    }
+                }
+
                 currentState.copy(
-                    viewAllTracks = Resource.Success(updatedTracks)
+                    viewAllTracks = Resource.Success(updatedAllTracks),
+                    topSearchResults = currentState.topSearchResults.copy(
+                        tracks = updatedTopSearchTracks
+                    )
                 )
             }
 
@@ -229,7 +247,7 @@ class SearchViewModel @Inject constructor(
 
                     is Resource.Success -> {
                         _searchState.update { currentState ->
-                            val updatedTracks =
+                            val updatedAllTracks =
                                 currentState.viewAllTracks?.data.orEmpty().map { track ->
                                     if (track.trackHash == trackHash) {
                                         track.copy(isFavorite = result.data ?: false)
@@ -237,15 +255,28 @@ class SearchViewModel @Inject constructor(
                                         track
                                     }
                                 }
+
+                            val updatedTopSearchTracks =
+                                currentState.topSearchResults.tracks.map { track ->
+                                    if (track.trackHash == trackHash) {
+                                        track.copy(isFavorite = result.data ?: false)
+                                    } else {
+                                        track
+                                    }
+                                }
+
                             currentState.copy(
-                                viewAllTracks = Resource.Success(updatedTracks)
+                                viewAllTracks = Resource.Success(updatedAllTracks),
+                                topSearchResults = currentState.topSearchResults.copy(
+                                    tracks = updatedTopSearchTracks
+                                )
                             )
                         }
                     }
 
                     is Resource.Error -> {
                         _searchState.update { currentState ->
-                            val revertedTracks =
+                            val revertedAllTracks =
                                 currentState.viewAllTracks?.data.orEmpty().map { track ->
                                     if (track.trackHash == trackHash) {
                                         track.copy(isFavorite = isFavorite) // revert
@@ -253,8 +284,21 @@ class SearchViewModel @Inject constructor(
                                         track
                                     }
                                 }
+
+                            val updatedTopSearchTracks =
+                                currentState.topSearchResults.tracks.map { track ->
+                                    if (track.trackHash == trackHash) {
+                                        track.copy(isFavorite = isFavorite)
+                                    } else {
+                                        track
+                                    }
+                                }
+
                             currentState.copy(
-                                viewAllTracks = Resource.Success(revertedTracks)
+                                viewAllTracks = Resource.Success(revertedAllTracks),
+                                topSearchResults = currentState.topSearchResults.copy(
+                                    tracks = updatedTopSearchTracks
+                                )
                             )
                         }
                     }
@@ -300,6 +344,13 @@ class SearchViewModel @Inject constructor(
 
             is SearchUiEvent.OnClearSearchAllResources -> {
                 clearSearchAllResources()
+            }
+
+            is SearchUiEvent.OnClearSearchStates -> {
+                clearSearchStates()
+                onSearchUiEvent(
+                    SearchUiEvent.OnSearchParamChanged("")
+                )
             }
 
             is SearchUiEvent.OnToggleTrackFavorite -> {

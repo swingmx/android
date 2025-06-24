@@ -23,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -43,7 +44,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
@@ -72,8 +72,8 @@ fun ViewAllSearchResults(
     viewAllType: String,
     navigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
-    searchViewModel: SearchViewModel = hiltViewModel(),
-    artistInfoViewModel: ArtistInfoViewModel = hiltViewModel()
+    searchViewModel: SearchViewModel,
+    artistInfoViewModel: ArtistInfoViewModel
 ) {
     val searchState by searchViewModel.searchState.collectAsState()
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
@@ -103,11 +103,11 @@ fun ViewAllSearchResults(
 
     val errorMessage = when {
         isError -> when (viewAllType) {
-            "tracks" -> allTracks?.message ?: "Error"
+            "tracks" -> allTracks?.message ?: "Error loading Tracks"
 
-            "albums" -> allAlbums?.message ?: "Error"
+            "albums" -> allAlbums?.message ?: "Error loading Albums"
 
-            "artists" -> allArtists?.message ?: "Error"
+            "artists" -> allArtists?.message ?: "Error loading Artits"
 
             else -> "Unknown Error"
         }
@@ -143,6 +143,12 @@ fun ViewAllSearchResults(
 
     Scaffold { outerPadding ->
         Scaffold(
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.padding(bottom = 170.dp)
+                )
+            },
             modifier = Modifier.padding(outerPadding),
             topBar = {
                 Column(
