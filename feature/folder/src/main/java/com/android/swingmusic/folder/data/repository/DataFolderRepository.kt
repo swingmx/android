@@ -16,8 +16,10 @@ import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.folder.data.paging.FoldersPagingSource
 import com.android.swingmusic.folder.domain.FolderRepository
+import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import com.android.swingmusic.network.data.api.service.NetworkApiService
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
 import java.io.IOException
@@ -64,6 +66,25 @@ class DataFolderRepository @Inject constructor(
     }
 
     override suspend fun getPagingTracks(folderPath: String): Flow<PagingData<Track>> {
+        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+        val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+        /*return Pager(
+            config = PagingConfig(enablePlaceholders = false, pageSize = 20),
+            pagingSourceFactory = {
+                FoldersPagingSource(
+                    api = networkApiService,
+                    folderPath = folderPath,
+                    baseUrl = "${baseUrl}folder",
+                    accessToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                )
+            }
+        ).flow*/
+
+        return emptyFlow()
+    }
+
+    override suspend fun getPagingContent(folderPath: String): Flow<PagingData<FolderContentItem>> {
         val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 

@@ -59,7 +59,10 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersWithPagingTracksState
+import com.android.swingmusic.folder.presentation.state.FoldersContentPagingState
+import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
+import com.android.swingmusic.folder.presentation.util.pagingFolderContent
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
@@ -77,7 +80,7 @@ import java.util.Locale
 private fun FoldersAndTracksPaginated(
     currentFolder: Folder,
     homeDir: Folder,
-    foldersWithPagingTracksState: FoldersWithPagingTracksState,
+    foldersContentPagingState: FoldersContentPagingState,
     currentTrackHash: String,
     playbackState: PlaybackState,
     navPaths: List<Folder>,
@@ -89,28 +92,45 @@ private fun FoldersAndTracksPaginated(
     onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
     onGetSheetAction: (track: Track, sheetAction: BottomSheetAction) -> Unit,
     onGotoArtist: (hash: String) -> Unit,
-    baseUrl: String
+    baseUrl: String,
+    isManualRefreshing: Boolean,
+    onManualRefreshingChange: (Boolean) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
 
-    val pagingTracks = foldersWithPagingTracksState.pagingTracks.collectAsLazyPagingItems()
+    val pagingContent = foldersContentPagingState.pagingContent.collectAsLazyPagingItems()
     
-    LaunchedEffect(currentFolder) {
-        pagingTracks.refresh()
-    }
-    
-    LaunchedEffect(pagingTracks.itemSnapshotList.items) {
-        clickedTrack?.let { track ->
-            val updatedTrack = pagingTracks.itemSnapshotList.items.find { it?.trackHash == track.trackHash }
-            clickedTrack = updatedTrack ?: track
+    // Track state updates and reset manual refreshing
+    LaunchedEffect(pagingContent.loadState, pagingContent.itemCount) {
+        // Reset manual refreshing when content loads successfully
+        if (isManualRefreshing) {
+            when (pagingContent.loadState.refresh) {
+                is LoadState.NotLoading -> {
+                    if (pagingContent.itemCount > 0) {
+                        // Data has loaded successfully
+                        onManualRefreshingChange(false)
+                    }
+                }
+                is LoadState.Error -> {
+                    // Error occurred, stop refreshing
+                    onManualRefreshingChange(false)
+                }
+                else -> { /* Keep refreshing */ }
+            }
         }
-        if (clickedTrack == null) showTrackBottomSheet = false
+        
+        // Reset bottom sheet if content is refreshed
+        if (pagingContent.loadState.refresh is LoadState.NotLoading) {
+            if (clickedTrack != null) {
+                showTrackBottomSheet = false
+                clickedTrack = null
+            }
+        }
     }
 
-    var isManualRefreshing by remember { mutableStateOf(false) }
     val refreshState = rememberPullToRefreshState()
 
     val lazyColumnState = rememberLazyListState()
@@ -121,8 +141,8 @@ private fun FoldersAndTracksPaginated(
             isRefreshing = isManualRefreshing,
             state = refreshState,
             onRefresh = {
-                isManualRefreshing = true
-                pagingTracks.refresh()
+                onManualRefreshingChange(true)
+                // Call fresh data load instead of refresh to avoid pagination issues
                 val event = FolderUiEvent.OnClickFolder(currentFolder)
                 onPullToRefresh(event)
             },
@@ -267,100 +287,54 @@ private fun FoldersAndTracksPaginated(
                             }
                         }
 
-                        when (val foldersResource = foldersWithPagingTracksState.folders) {
-                            is Resource.Success -> {
-                                itemsIndexed(
-                                    items = foldersResource.data ?: emptyList(),
-                                    key = { _: Int, item: Folder -> item.path }
-                                ) { index, folder ->
-                                    FolderItem(
-                                        folder = folder,
-                                        onClickFolderItem = { clickedFolder ->
-                                            onClickFolder(clickedFolder)
-                                        },
-                                        onClickMoreVert = {
-                                        }
-                                    )
-                                    
-                                    if (index == (foldersResource.data?.size ?: 0) - 1 && pagingTracks.itemCount == 0) {
-                                        Spacer(modifier = Modifier.height(200.dp))
+                        // Use clean extension function like Albums feature
+                        if (pagingContent.loadState.refresh is LoadState.NotLoading) {
+                            pagingFolderContent(pagingContent) { contentItem ->
+                                if (contentItem == null) return@pagingFolderContent
+                                
+                                when (contentItem) {
+                                    is FolderContentItem.FolderItem -> {
+                                        FolderItem(
+                                            folder = contentItem.folder,
+                                            onClickFolderItem = { clickedFolder ->
+                                                onClickFolder(clickedFolder)
+                                            },
+                                            onClickMoreVert = {}
+                                        )
                                     }
-                                }
-                            }
-                            is Resource.Error -> {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(24.dp),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Text(
-                                                text = foldersResource.message ?: "Error loading folders",
-                                                textAlign = TextAlign.Center,
-                                                style = MaterialTheme.typography.bodyLarge
-                                            )
-                                            Spacer(modifier = Modifier.height(12.dp))
-                                            Button(onClick = {
-                                                val event = FolderUiEvent.OnClickFolder(currentFolder)
-                                                onRetry(event)
-                                            }) {
-                                                Text("RETRY")
+                                    is FolderContentItem.TrackItem -> {
+                                        val track = contentItem.track
+                                        TrackItem(
+                                            track = track,
+                                            showMenuIcon = true,
+                                            isCurrentTrack = track.trackHash == currentTrackHash,
+                                            playbackState = playbackState,
+                                            baseUrl = baseUrl,
+                                            onClickTrackItem = {
+                                                // Get all tracks for queue creation
+                                                val allTracks = (0 until pagingContent.itemCount)
+                                                    .mapNotNull { i -> 
+                                                        (pagingContent[i] as? FolderContentItem.TrackItem)?.track 
+                                                    }
+                                                val trackIndex = allTracks.indexOf(track)
+                                                onClickTrackItem(trackIndex, allTracks)
+                                            },
+                                            onClickMoreVert = { clickTrack ->
+                                                clickedTrack = clickTrack
+                                                showTrackBottomSheet = true
                                             }
-                                        }
+                                        )
                                     }
                                 }
                             }
-                            is Resource.Loading -> {
-                                if (pagingTracks.itemCount == 0 && pagingTracks.loadState.refresh !is LoadState.Loading) {
-                                    item {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(24.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator(strokeCap = StrokeCap.Round)
-                                        }
-                                    }
-                                }
+                            
+                            // Add bottom spacing
+                            item {
+                                Spacer(modifier = Modifier.height(200.dp))
                             }
                         }
 
-                        items(
-                            count = pagingTracks.itemCount,
-                            key = { index -> pagingTracks[index]?.filepath ?: "track_$index" }
-                        ) { index ->
-                            val track = pagingTracks[index]
-                            if (track != null) {
-                                TrackItem(
-                                    track = track,
-                                    showMenuIcon = true,
-                                    isCurrentTrack = track.trackHash == currentTrackHash,
-                                    playbackState = playbackState,
-                                    baseUrl = baseUrl,
-                                    onClickTrackItem = {
-                                        val tracksList = (0 until pagingTracks.itemCount).mapNotNull { i ->
-                                            pagingTracks[i]
-                                        }
-                                        onClickTrackItem(index, tracksList)
-                                    },
-                                    onClickMoreVert = { clickTrack ->
-                                        clickedTrack = clickTrack
-                                        showTrackBottomSheet = true
-                                    }
-                                )
-
-                                if (index == pagingTracks.itemCount - 1) {
-                                    Spacer(modifier = Modifier.height(200.dp))
-                                }
-                            }
-                        }
-
-                        when (val appendState = pagingTracks.loadState.append) {
+                        when (val appendState = pagingContent.loadState.append) {
                             is LoadState.Loading -> {
                                 item {
                                     Box(
@@ -383,12 +357,12 @@ private fun FoldersAndTracksPaginated(
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
-                                                text = appendState.error.message ?: "Error loading more tracks",
+                                                text = appendState.error.message ?: "Error loading more content",
                                                 textAlign = TextAlign.Center,
                                                 style = MaterialTheme.typography.bodyMedium
                                             )
                                             Spacer(modifier = Modifier.height(8.dp))
-                                            Button(onClick = { pagingTracks.retry() }) {
+                                            Button(onClick = { pagingContent.retry() }) {
                                                 Text("RETRY")
                                             }
                                         }
@@ -398,10 +372,9 @@ private fun FoldersAndTracksPaginated(
                             else -> {}
                         }
 
-                        when (val refresh = pagingTracks.loadState.refresh) {
+                        when (val refresh = pagingContent.loadState.refresh) {
                             is LoadState.Loading -> {
-                                if (pagingTracks.itemCount == 0 && 
-                                    foldersWithPagingTracksState.folders !is Resource.Loading && !isManualRefreshing) {
+                                if (pagingContent.itemCount == 0 && !isManualRefreshing) {
                                     item {
                                         Box(
                                             modifier = Modifier
@@ -415,8 +388,10 @@ private fun FoldersAndTracksPaginated(
                                 }
                             }
                             is LoadState.Error -> {
-                                isManualRefreshing = false
-                                if (pagingTracks.itemCount == 0) {
+                                if (isManualRefreshing) {
+                                    onManualRefreshingChange(false)
+                                }
+                                if (pagingContent.itemCount == 0) {
                                     item {
                                         Box(
                                             modifier = Modifier
@@ -435,7 +410,7 @@ private fun FoldersAndTracksPaginated(
                                                 Text(
                                                     text = refresh.error.message?.replaceFirstChar {
                                                         it.titlecase(Locale.ROOT)
-                                                    } ?: "Error loading tracks",
+                                                    } ?: "Error loading content",
                                                     modifier = Modifier.fillMaxWidth(),
                                                     textAlign = TextAlign.Center,
                                                     style = MaterialTheme.typography.bodyLarge
@@ -443,7 +418,7 @@ private fun FoldersAndTracksPaginated(
 
                                                 Spacer(modifier = Modifier.height(12.dp))
 
-                                                Button(onClick = { pagingTracks.retry() }) {
+                                                Button(onClick = { pagingContent.retry() }) {
                                                     Text("RETRY")
                                                 }
                                             }
@@ -452,15 +427,16 @@ private fun FoldersAndTracksPaginated(
                                 }
                             }
                             is LoadState.NotLoading -> {
-                                isManualRefreshing = false
+                                if (isManualRefreshing) {
+                                    onManualRefreshingChange(false)
+                                }
                             }
                             else -> {}
                         }
 
-                        if (pagingTracks.itemCount == 0 &&
-                            pagingTracks.loadState.refresh !is LoadState.Loading &&
-                            foldersWithPagingTracksState.folders is Resource.Success &&
-                            foldersWithPagingTracksState.folders.data?.isEmpty() == true
+                        if (pagingContent.itemCount == 0 &&
+                            pagingContent.loadState.refresh !is LoadState.Loading &&
+                            !isManualRefreshing
                         ) {
                             item {
                                 Column(
@@ -514,6 +490,7 @@ fun FoldersAndTracksPaginatedScreen(
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }
     val foldersWithPagingTracksState by remember { foldersViewModel.foldersWithPagingTracks }
+
     val navPaths by remember { foldersViewModel.navPaths }
     val homeDir = remember { foldersViewModel.homeDir }
 
@@ -522,13 +499,23 @@ fun FoldersAndTracksPaginatedScreen(
     
     val currentTrackHash = playerUiState.nowPlayingTrack?.trackHash ?: ""
     val playbackState = playerUiState.playbackState
-
-    BackHandler {
-        if (navPaths.size > 1) {
-            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
-        } else {
-            navigator.navigateBack()
+    
+    var isManualRefreshing by remember { mutableStateOf(false) }
+    
+    // Fallback timeout to reset refresh state
+    LaunchedEffect(isManualRefreshing) {
+        if (isManualRefreshing) {
+            // Auto-reset after 8 seconds as fallback
+            kotlinx.coroutines.delay(8000)
+            if (isManualRefreshing) {
+                isManualRefreshing = false
+            }
         }
+    }
+
+    // override the default back nav behavior
+    BackHandler(enabled = currentFolder.path != homeDir.path) {
+            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
     }
 
     LaunchedEffect(key1 = gotoFolderName, key2 = gotoFolderPath) {
@@ -548,7 +535,7 @@ fun FoldersAndTracksPaginatedScreen(
     FoldersAndTracksPaginated(
         currentFolder = currentFolder,
         homeDir = homeDir,
-        foldersWithPagingTracksState = foldersWithPagingTracksState,
+        foldersContentPagingState = foldersViewModel.foldersContentPaging.value,
         currentTrackHash = currentTrackHash,
         playbackState = playbackState,
         navPaths = navPaths,
@@ -559,7 +546,12 @@ fun FoldersAndTracksPaginatedScreen(
             foldersViewModel.onFolderUiEvent(event)
         },
         onPullToRefresh = { event ->
+            isManualRefreshing = true
             foldersViewModel.onFolderUiEvent(event)
+        },
+        isManualRefreshing = isManualRefreshing,
+        onManualRefreshingChange = { isRefreshing ->
+            isManualRefreshing = isRefreshing
         },
         onClickFolder = { folder ->
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))

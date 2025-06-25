@@ -5,6 +5,7 @@ import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -18,4 +19,8 @@ data class FoldersAndTracksState(
 data class FoldersWithPagingTracksState(
     val folders: Resource<List<Folder>> = Resource.Loading(),
     val pagingTracks: Flow<PagingData<Track>> = emptyFlow()
+)
+
+data class FoldersContentPagingState(
+    val pagingContent: Flow<PagingData<FolderContentItem>> = emptyFlow()
 )

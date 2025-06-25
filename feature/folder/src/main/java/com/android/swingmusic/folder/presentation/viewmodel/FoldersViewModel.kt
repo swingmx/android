@@ -17,6 +17,8 @@ import com.android.swingmusic.folder.domain.FolderRepository
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.folder.presentation.state.FoldersWithPagingTracksState
+import com.android.swingmusic.folder.presentation.state.FoldersContentPagingState
+import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import com.android.swingmusic.player.domain.repository.PLayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -74,10 +76,16 @@ class FoldersViewModel @Inject constructor(
     private var _foldersWithPagingTracks: MutableState<FoldersWithPagingTracksState> =
         mutableStateOf(FoldersWithPagingTracksState())
     val foldersWithPagingTracks: State<FoldersWithPagingTracksState> = _foldersWithPagingTracks
+    
+    // Unified content pagination state with immediate clearing
+    private var _foldersContentPaging: MutableState<FoldersContentPagingState> =
+        mutableStateOf(FoldersContentPagingState())
+    val foldersContentPaging: State<FoldersContentPagingState> = _foldersContentPaging
 
     init {
         // Load initial folder data
         getFoldersWithPagingTracks(homeDir.path)
+        getFoldersContentPaging(homeDir.path)
     }
 
     private fun resetUiToLoadingState() {
@@ -171,6 +179,35 @@ class FoldersViewModel @Inject constructor(
                 }
         }
     }
+    
+    private fun getFoldersContentPaging(path: String) {
+        viewModelScope.launch {
+            // Create fresh pagination flow following Albums pattern
+            val newPagingFlow = folderRepository.getPagingContent(path)
+                .cachedIn(viewModelScope)
+                .combine(updatedTrackFavorites) { pagingData, updatedFavorites ->
+                    pagingData.map { contentItem ->
+                        when (contentItem) {
+                            is FolderContentItem.TrackItem -> {
+                                val track = contentItem.track
+                                val updatedFavorite = updatedFavorites[track.trackHash]
+                                if (updatedFavorite != null) {
+                                    FolderContentItem.TrackItem(track.copy(isFavorite = updatedFavorite))
+                                } else {
+                                    contentItem
+                                }
+                            }
+                            is FolderContentItem.FolderItem -> contentItem
+                        }
+                    }
+                }
+            
+            // Update state following Albums pattern
+            _foldersContentPaging.value = FoldersContentPagingState(
+                pagingContent = newPagingFlow
+            )
+        }
+    }
 
     fun onFolderUiEvent(event: FolderUiEvent) {
         when (event) {
@@ -180,6 +217,7 @@ class FoldersViewModel @Inject constructor(
                     // Clear favorite updates when navigating to a new folder
                     updatedTrackFavorites.update { emptyMap() }
                     getFoldersWithPagingTracks(event.folder.path)
+                    getFoldersContentPaging(event.folder.path)
                 }
             }
 
@@ -188,6 +226,7 @@ class FoldersViewModel @Inject constructor(
                 // Clear favorite updates when navigating to a new folder
                 updatedTrackFavorites.update { emptyMap() }
                 getFoldersWithPagingTracks(event.folder.path)
+                getFoldersContentPaging(event.folder.path)
 
                 if (!_navPaths.value.contains(event.folder)) {
                     _navPaths.value = listOf<Folder>(homeDir)
@@ -210,6 +249,7 @@ class FoldersViewModel @Inject constructor(
                         // Clear favorite updates when navigating to a new folder
                         updatedTrackFavorites.update { emptyMap() }
                         getFoldersWithPagingTracks(backFolder.path)
+                        getFoldersContentPaging(backFolder.path)
                     }
                 }
             }
@@ -218,6 +258,7 @@ class FoldersViewModel @Inject constructor(
                 // Clear favorite updates on retry
                 updatedTrackFavorites.update { emptyMap() }
                 getFoldersWithPagingTracks(_currentFolder.value.path)
+                getFoldersContentPaging(_currentFolder.value.path)
             }
 
             is FolderUiEvent.ToggleTrackFavorite -> {
