@@ -52,7 +52,7 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrC
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
-import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
+import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksPaginatedScreenDestination
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.player.presentation.screen.MiniPlayer
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
             // Map of BottomNavItem to their route prefixes
             val bottomNavRoutePrefixes = mapOf(
                 // BottomNavItem.Home to listOf(HomeDestination.route),
-                BottomNavItem.Folder to listOf(FoldersAndTracksScreenDestination.route),
+                BottomNavItem.Folder to listOf(FoldersAndTracksPaginatedScreenDestination.route),
                 BottomNavItem.Album to listOf(
                     AllAlbumScreenDestination.route,
                     AlbumWithInfoScreenDestination.route
@@ -234,7 +234,7 @@ class MainActivity : ComponentActivity() {
                                                     }
 
                                                     // refresh folders starting from $home
-                                                    if (item.destination.route == FoldersAndTracksScreenDestination.route) {
+                                                    if (item.destination.route == FoldersAndTracksPaginatedScreenDestination.route) {
                                                         foldersViewModel.onFolderUiEvent(
                                                             FolderUiEvent.OnClickNavPath(
                                                                 folder = foldersViewModel.homeDir

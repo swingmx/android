@@ -5,16 +5,24 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
+import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.folder.domain.FolderRepository
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
+import com.android.swingmusic.folder.presentation.state.FoldersWithPagingTracksState
 import com.android.swingmusic.player.domain.repository.PLayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -55,6 +63,22 @@ class FoldersViewModel @Inject constructor(
         )
 
     val foldersAndTracks: State<FoldersAndTracksState> = _foldersAndTracks
+
+    // Track favorite status updates for optimistic UI updates
+    private val updatedTrackFavorites = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+
+    // Paging flow for tracks
+    private val tracksFlow = MutableStateFlow<PagingData<Track>>(PagingData.empty())
+
+    // New pagination state
+    private var _foldersWithPagingTracks: MutableState<FoldersWithPagingTracksState> =
+        mutableStateOf(FoldersWithPagingTracksState())
+    val foldersWithPagingTracks: State<FoldersWithPagingTracksState> = _foldersWithPagingTracks
+
+    init {
+        // Load initial folder data
+        getFoldersWithPagingTracks(homeDir.path)
+    }
 
     private fun resetUiToLoadingState() {
         _foldersAndTracks.value = FoldersAndTracksState(
@@ -114,22 +138,56 @@ class FoldersViewModel @Inject constructor(
         }
     }
 
+    private fun getFoldersWithPagingTracks(path: String) {
+        viewModelScope.launch {
+            // Get folders (only first page needed since folders aren't paginated)
+            val foldersFlow = folderRepository.getFolders(path)
+            foldersFlow.collectLatest { foldersResource ->
+                _foldersWithPagingTracks.value = _foldersWithPagingTracks.value.copy(
+                    folders = foldersResource
+                )
+            }
+        }
+
+        viewModelScope.launch {
+            // Get paginated tracks and combine with favorite updates
+            folderRepository.getPagingTracks(path)
+                .cachedIn(viewModelScope)
+                .combine(updatedTrackFavorites) { pagingData, updatedFavorites ->
+                    pagingData.map { track ->
+                        val updatedFavorite = updatedFavorites[track.trackHash]
+                        if (updatedFavorite != null) {
+                            track.copy(isFavorite = updatedFavorite)
+                        } else {
+                            track
+                        }
+                    }
+                }
+                .collectLatest { pagingData ->
+                    tracksFlow.value = pagingData
+                    _foldersWithPagingTracks.value = _foldersWithPagingTracks.value.copy(
+                        pagingTracks = tracksFlow
+                    )
+                }
+        }
+    }
+
     fun onFolderUiEvent(event: FolderUiEvent) {
         when (event) {
             is FolderUiEvent.OnClickNavPath -> {
                 if (event.folder.path != _currentFolder.value.path) {
-                    resetUiToLoadingState()
-
                     _currentFolder.value = event.folder
-                    getFoldersAndTracks(event.folder.path)
+                    // Clear favorite updates when navigating to a new folder
+                    updatedTrackFavorites.update { emptyMap() }
+                    getFoldersWithPagingTracks(event.folder.path)
                 }
             }
 
             is FolderUiEvent.OnClickFolder -> {
-                resetUiToLoadingState()
-
                 _currentFolder.value = event.folder
-                getFoldersAndTracks(event.folder.path)
+                // Clear favorite updates when navigating to a new folder
+                updatedTrackFavorites.update { emptyMap() }
+                getFoldersWithPagingTracks(event.folder.path)
 
                 if (!_navPaths.value.contains(event.folder)) {
                     _navPaths.value = listOf<Folder>(homeDir)
@@ -147,19 +205,19 @@ class FoldersViewModel @Inject constructor(
                     val currentPathIndex = _navPaths.value.indexOf(event.folder)
                     val backPathIndex = currentPathIndex - 1
                     if (backPathIndex > -1) { // Just to be safe
-                        resetUiToLoadingState()
-
                         val backFolder = _navPaths.value[backPathIndex]
                         _currentFolder.value = backFolder
-
-                        getFoldersAndTracks(backFolder.path)
+                        // Clear favorite updates when navigating to a new folder
+                        updatedTrackFavorites.update { emptyMap() }
+                        getFoldersWithPagingTracks(backFolder.path)
                     }
                 }
             }
 
             is FolderUiEvent.OnRetry -> {
-                resetUiToLoadingState()
-                getFoldersAndTracks(_currentFolder.value.path)
+                // Clear favorite updates on retry
+                updatedTrackFavorites.update { emptyMap() }
+                getFoldersWithPagingTracks(_currentFolder.value.path)
             }
 
             is FolderUiEvent.ToggleTrackFavorite -> {
@@ -170,18 +228,12 @@ class FoldersViewModel @Inject constructor(
 
     private fun toggleTrackFavorite(trackHash: String, isFavorite: Boolean) {
         viewModelScope.launch {
-            // Optimistically update the UI
-            _foldersAndTracks.value = _foldersAndTracks.value.copy(
-                foldersAndTracks = _foldersAndTracks.value.foldersAndTracks.copy(
-                    tracks = _foldersAndTracks.value.foldersAndTracks.tracks.map { track ->
-                        if (track.trackHash == trackHash) {
-                            track.copy(isFavorite = !isFavorite)
-                        } else {
-                            track
-                        }
-                    }
-                )
-            )
+            // Store original favorite status for potential revert
+            val originalFavoriteStatus = updatedTrackFavorites.value[trackHash]
+
+            // Optimistically update the favorite status
+            val newFavoriteStatus = !isFavorite
+            updatedTrackFavorites.update { it + (trackHash to newFavoriteStatus) }
 
             val request = if (isFavorite) {
                 pLayerRepository.removeTrackFromFavorite(trackHash)
@@ -189,41 +241,28 @@ class FoldersViewModel @Inject constructor(
                 pLayerRepository.addTrackToFavorite(trackHash)
             }
 
-            request.collectLatest {
-                when (it) {
+            request.collectLatest { result ->
+                when (result) {
                     is Resource.Loading -> {}
 
                     is Resource.Success -> {
-                        _foldersAndTracks.value = _foldersAndTracks.value.copy(
-                            foldersAndTracks = _foldersAndTracks.value.foldersAndTracks.copy(
-                                tracks = _foldersAndTracks.value.foldersAndTracks.tracks.map { track ->
-                                    if (track.trackHash == trackHash) {
-                                        track.copy(isFavorite = it.data ?: false)
-                                    } else {
-                                        track
-                                    }
-                                }
-                            )
-                        )
+                        // Update with actual result from server
+                        val serverFavoriteStatus = result.data ?: false
+                        updatedTrackFavorites.update { it + (trackHash to serverFavoriteStatus) }
                     }
 
                     is Resource.Error -> {
-                        // Revert the optimistic updates in case of an error
-                        _foldersAndTracks.value = _foldersAndTracks.value.copy(
-                            foldersAndTracks = _foldersAndTracks.value.foldersAndTracks.copy(
-                                tracks = _foldersAndTracks.value.foldersAndTracks.tracks.map { track ->
-                                    if (track.trackHash == trackHash) {
-                                        track.copy(isFavorite = isFavorite)
-                                    } else {
-                                        track
-                                    }
-                                }
-                            )
-                        )
+                        // Revert the optimistic update on error
+                        if (originalFavoriteStatus != null) {
+                            // Restore to the previous local state
+                            updatedTrackFavorites.update { it + (trackHash to originalFavoriteStatus) }
+                        } else {
+                            // Remove from updates to fall back to original track data
+                            updatedTrackFavorites.update { it - trackHash }
+                        }
                     }
                 }
             }
-
         }
     }
 }

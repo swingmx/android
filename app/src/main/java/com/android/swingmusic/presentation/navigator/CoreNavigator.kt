@@ -7,7 +7,7 @@ import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScr
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
-import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
+import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksPaginatedScreenDestination
 import com.android.swingmusic.home.presentation.destinations.HomeDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
@@ -62,7 +62,7 @@ class CoreNavigator(
 
     // Todo: Remove this after adding home content
     override fun gotoFolders() {
-        val targetDestination = FoldersAndTracksScreenDestination()
+        val targetDestination = FoldersAndTracksPaginatedScreenDestination()
 
         navController.navigate(targetDestination) {
             launchSingleTop = true
@@ -140,7 +140,7 @@ class CoreNavigator(
     }
 
     override fun gotoSourceFolder(name: String, path: String) {
-        val targetDestination = FoldersAndTracksScreenDestination(name, path)
+        val targetDestination = FoldersAndTracksPaginatedScreenDestination(name, path)
         navController.navigate(targetDestination) {
             launchSingleTop = true
         }

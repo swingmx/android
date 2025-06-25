@@ -123,7 +123,8 @@ object Map {
         return FoldersAndTracksRequestDto(
             folder = folder,
             tracksOnly = tracksOnly,
-            limit = limit
+            limit = limit,
+            start = start
         )
     }
 
