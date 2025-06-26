@@ -11,12 +11,10 @@ import androidx.paging.map
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
-import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.folder.domain.FolderRepository
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
-import com.android.swingmusic.folder.presentation.state.FoldersWithPagingTracksState
 import com.android.swingmusic.folder.presentation.state.FoldersContentPagingState
 import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import com.android.swingmusic.player.domain.repository.PLayerRepository
@@ -69,117 +67,15 @@ class FoldersViewModel @Inject constructor(
     // Track favorite status updates for optimistic UI updates
     private val updatedTrackFavorites = MutableStateFlow<Map<String, Boolean>>(emptyMap())
 
-    // Paging flow for tracks
-    private val tracksFlow = MutableStateFlow<PagingData<Track>>(PagingData.empty())
-
-    // New pagination state
-    private var _foldersWithPagingTracks: MutableState<FoldersWithPagingTracksState> =
-        mutableStateOf(FoldersWithPagingTracksState())
-    val foldersWithPagingTracks: State<FoldersWithPagingTracksState> = _foldersWithPagingTracks
-    
     // Unified content pagination state with immediate clearing
     private var _foldersContentPaging: MutableState<FoldersContentPagingState> =
         mutableStateOf(FoldersContentPagingState())
     val foldersContentPaging: State<FoldersContentPagingState> = _foldersContentPaging
 
     init {
-        // Load initial folder data
-        getFoldersWithPagingTracks(homeDir.path)
         getFoldersContentPaging(homeDir.path)
     }
 
-    private fun resetUiToLoadingState() {
-        _foldersAndTracks.value = FoldersAndTracksState(
-            foldersAndTracks = FoldersAndTracks(
-                folders = emptyList(),
-                tracks = emptyList()
-            ),
-            isLoading = false,
-            isError = false
-        )
-    }
-
-    private fun getFoldersAndTracks(path: String) {
-        viewModelScope.launch {
-            val request = FoldersAndTracksRequest(path, false)
-            val folderResult = folderRepository.getFoldersAndTracks(request)
-
-            folderResult.collectLatest { result ->
-                when (result) {
-                    is Resource.Success -> {
-                        _foldersAndTracks.value = FoldersAndTracksState(
-                            foldersAndTracks = result.data ?: FoldersAndTracks(
-                                emptyList(),
-                                emptyList()
-                            ),
-                            isLoading = false,
-                            isError = false
-                        )
-                    }
-
-                    is Resource.Error -> {
-                        _foldersAndTracks.value =
-                            _foldersAndTracks.value.copy(
-                                foldersAndTracks = FoldersAndTracks(
-                                    emptyList(),
-                                    emptyList()
-                                ),
-                                isLoading = false,
-                                isError = true,
-                                errorMessage = result.message!!
-                            )
-                    }
-
-                    is Resource.Loading -> {
-                        _foldersAndTracks.value =
-                            _foldersAndTracks.value.copy(
-                                foldersAndTracks = FoldersAndTracks(
-                                    emptyList(),
-                                    emptyList()
-                                ),
-                                isLoading = true,
-                                isError = false
-                            )
-                    }
-                }
-            }
-        }
-    }
-
-    private fun getFoldersWithPagingTracks(path: String) {
-        viewModelScope.launch {
-            // Get folders (only first page needed since folders aren't paginated)
-            val foldersFlow = folderRepository.getFolders(path)
-            foldersFlow.collectLatest { foldersResource ->
-                _foldersWithPagingTracks.value = _foldersWithPagingTracks.value.copy(
-                    folders = foldersResource
-                )
-            }
-        }
-
-        viewModelScope.launch {
-            // Get paginated tracks and combine with favorite updates
-            folderRepository.getPagingTracks(path)
-                .cachedIn(viewModelScope)
-                .combine(updatedTrackFavorites) { pagingData, updatedFavorites ->
-                    pagingData.map { track ->
-                        val updatedFavorite = updatedFavorites[track.trackHash]
-                        if (updatedFavorite != null) {
-                            track.copy(isFavorite = updatedFavorite)
-                        } else {
-                            track
-                        }
-                    }
-                }
-                .collectLatest { pagingData ->
-                    tracksFlow.value = pagingData
-                    _foldersWithPagingTracks.value = _foldersWithPagingTracks.value.copy(
-                        pagingTracks = tracksFlow
-                    )
-                }
-        }
-    }
-    
     private fun getFoldersContentPaging(path: String) {
         viewModelScope.launch {
             // Create fresh pagination flow following Albums pattern
@@ -216,7 +112,6 @@ class FoldersViewModel @Inject constructor(
                     _currentFolder.value = event.folder
                     // Clear favorite updates when navigating to a new folder
                     updatedTrackFavorites.update { emptyMap() }
-                    getFoldersWithPagingTracks(event.folder.path)
                     getFoldersContentPaging(event.folder.path)
                 }
             }
@@ -225,7 +120,6 @@ class FoldersViewModel @Inject constructor(
                 _currentFolder.value = event.folder
                 // Clear favorite updates when navigating to a new folder
                 updatedTrackFavorites.update { emptyMap() }
-                getFoldersWithPagingTracks(event.folder.path)
                 getFoldersContentPaging(event.folder.path)
 
                 if (!_navPaths.value.contains(event.folder)) {
@@ -248,7 +142,6 @@ class FoldersViewModel @Inject constructor(
                         _currentFolder.value = backFolder
                         // Clear favorite updates when navigating to a new folder
                         updatedTrackFavorites.update { emptyMap() }
-                        getFoldersWithPagingTracks(backFolder.path)
                         getFoldersContentPaging(backFolder.path)
                     }
                 }
@@ -257,7 +150,6 @@ class FoldersViewModel @Inject constructor(
             is FolderUiEvent.OnRetry -> {
                 // Clear favorite updates on retry
                 updatedTrackFavorites.update { emptyMap() }
-                getFoldersWithPagingTracks(_currentFolder.value.path)
                 getFoldersContentPaging(_currentFolder.value.path)
             }
 

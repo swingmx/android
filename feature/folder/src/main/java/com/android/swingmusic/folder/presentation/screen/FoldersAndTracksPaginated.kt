@@ -34,6 +34,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -491,7 +492,6 @@ fun FoldersAndTracksPaginatedScreen(
     gotoFolderPath: String? = null
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }
-    val foldersWithPagingTracksState by remember { foldersViewModel.foldersWithPagingTracks }
 
     val navPaths by remember { foldersViewModel.navPaths }
     val homeDir = remember { foldersViewModel.homeDir }
@@ -503,7 +503,12 @@ fun FoldersAndTracksPaginatedScreen(
     val playbackState = playerUiState.playbackState
     
     var isManualRefreshing by remember { mutableStateOf(false) }
-    
+    var routeByGotoFolder by remember { mutableStateOf(false) }
+
+    SideEffect {
+        mediaControllerViewModel.refreshBaseUrl()
+    }
+
     // Fallback timeout to reset refresh state
     LaunchedEffect(isManualRefreshing) {
         if (isManualRefreshing) {
@@ -516,18 +521,22 @@ fun FoldersAndTracksPaginatedScreen(
     }
 
     // override the default back nav behavior
-    BackHandler(enabled = currentFolder.path != homeDir.path) {
-            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
+    val overrideSystemBackNav = currentFolder.path != "\$home"
+    BackHandler(enabled = overrideSystemBackNav && routeByGotoFolder.not()) {
+        foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
     }
 
-    LaunchedEffect(key1 = gotoFolderName, key2 = gotoFolderPath) {
-        if (!gotoFolderName.isNullOrBlank() && !gotoFolderPath.isNullOrBlank()) {
+    LaunchedEffect(key1 = Unit) {
+        if (gotoFolderName != null && gotoFolderPath != null) {
+            routeByGotoFolder = true
+            foldersViewModel.resetNavPaths()
+
             val folder = Folder(
                 name = gotoFolderName,
                 path = gotoFolderPath,
-                isSym = false,
+                trackCount = 0,
                 folderCount = 0,
-                trackCount = 0
+                isSym = false
             )
 
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
@@ -542,6 +551,7 @@ fun FoldersAndTracksPaginatedScreen(
         playbackState = playbackState,
         navPaths = navPaths,
         onClickNavPath = { folder ->
+            routeByGotoFolder = false
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
         },
         onRetry = { event ->
@@ -556,6 +566,7 @@ fun FoldersAndTracksPaginatedScreen(
             isManualRefreshing = isRefreshing
         },
         onClickFolder = { folder ->
+            routeByGotoFolder = false
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
         },
         onClickTrackItem = { index, queue ->

@@ -46,6 +46,7 @@ import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.math.roundToInt
+import androidx.core.net.toUri
 
 
 @HiltViewModel
@@ -273,9 +274,9 @@ class MediaControllerViewModel @Inject constructor(
     private fun createMediaItem(id: Int, track: Track): MediaItem {
         val encodedFilePath = Uri.encode(track.filepath)
         val uriString = "${_baseUrl.value}file/${track.trackHash}/legacy?filepath=$encodedFilePath"
-        val uri = Uri.parse(uriString)
+        val uri = uriString.toUri()
 
-        val artworkUri = Uri.parse("${_baseUrl.value}img/thumbnail/${track.image}")
+        val artworkUri = "${_baseUrl.value}img/thumbnail/${track.image}".toUri()
         val artists = track.trackArtists.joinToString(", ") { it.name }
 
         val mediaMetadata = MediaMetadata.Builder()
