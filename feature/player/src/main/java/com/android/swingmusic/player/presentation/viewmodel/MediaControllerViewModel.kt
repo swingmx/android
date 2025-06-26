@@ -349,18 +349,31 @@ class MediaControllerViewModel @Inject constructor(
         }
 
         if (targetQueue.isEmpty()) {
-            mediaController?.addListener(playerListener)
+            if (workingQueue.isEmpty() && mediaController != null) {
+                mediaController?.addListener(playerListener)
+            }
 
-            onQueueEvent(
-                QueueEvent.RecreateQueue(
-                    source = source,
-                    queue = listOf(playNextTrack),
-                    clickedTrackIndex = 0
-                )
+            workingQueue = mutableListOf(playNextTrack)
+            shuffledQueue.clear()
+
+            loadMediaItems(
+                tracks = workingQueue,
+                startIndex = 0,
+                autoPlay = false
             )
+
+            _playerUiState.value = _playerUiState.value.copy(
+                queue = workingQueue,
+                playingTrackIndex = 0,
+                nowPlayingTrack = playNextTrack,
+                shuffleMode = ShuffleMode.SHUFFLE_OFF,
+                source = source
+            )
+
+            trackToLog = playNextTrack
         } else {
-            val currentPlayingIndex = mediaController?.currentMediaItemIndex ?: -1
-            val insertIndex = if (currentPlayingIndex < 0) 0 else currentPlayingIndex + 1
+            val currentPlayingIndex = mediaController?.currentMediaItemIndex ?: 0
+            val insertIndex = currentPlayingIndex + 1
 
             targetQueue.add(insertIndex, playNextTrack)
             _playerUiState.value = _playerUiState.value.copy(queue = targetQueue)
@@ -377,7 +390,7 @@ class MediaControllerViewModel @Inject constructor(
 
             updateQueueInDatabase(
                 queue = targetQueue,
-                playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
+                playingTrackIndex = currentPlayingIndex
             )
         }
     }
