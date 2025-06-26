@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -62,7 +63,6 @@ import com.android.swingmusic.folder.presentation.state.FoldersWithPagingTracksS
 import com.android.swingmusic.folder.presentation.state.FoldersContentPagingState
 import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
-import com.android.swingmusic.folder.presentation.util.pagingFolderContent
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
@@ -287,10 +287,12 @@ private fun FoldersAndTracksPaginated(
                             }
                         }
 
-                        // Use clean extension function like Albums feature
                         if (pagingContent.loadState.refresh is LoadState.NotLoading) {
-                            pagingFolderContent(pagingContent) { contentItem ->
-                                if (contentItem == null) return@pagingFolderContent
+                            items(
+                                count = pagingContent.itemCount,
+                                key = { index -> index }
+                            ) { index ->
+                                val contentItem = pagingContent[index] ?: return@items
                                 
                                 when (contentItem) {
                                     is FolderContentItem.FolderItem -> {
