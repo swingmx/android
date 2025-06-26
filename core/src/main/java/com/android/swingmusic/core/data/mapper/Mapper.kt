@@ -69,7 +69,7 @@ object Map {
         )
     }
 
-    private fun FolderDto.toFolder(): Folder {
+    fun FolderDto.toFolder(): Folder {
         return Folder(
             trackCount = fileCount ?: 0,
             folderCount = folderCount ?: 0,

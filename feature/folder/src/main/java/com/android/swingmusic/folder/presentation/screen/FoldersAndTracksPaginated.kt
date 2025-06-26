@@ -529,7 +529,7 @@ fun FoldersAndTracksPaginatedScreen(
     LaunchedEffect(key1 = Unit) {
         if (gotoFolderName != null && gotoFolderPath != null) {
             routeByGotoFolder = true
-            foldersViewModel.resetNavPaths()
+            foldersViewModel.resetNavPathsForGotoFolder(gotoFolderPath)
 
             val folder = Folder(
                 name = gotoFolderName,

@@ -7,13 +7,16 @@ import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
+import com.android.swingmusic.core.data.mapper.Map.toFolder
 import com.android.swingmusic.core.data.mapper.Map.toModel
 import com.android.swingmusic.core.data.mapper.Map.toFoldersAndTracksRequestDto
+import com.android.swingmusic.core.data.mapper.Map.toRootDirs
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.core.domain.model.RootDirs
 import com.android.swingmusic.folder.data.paging.FoldersPagingSource
 import com.android.swingmusic.folder.domain.FolderRepository
 import com.android.swingmusic.folder.presentation.model.FolderContentItem
@@ -122,15 +125,7 @@ class DataFolderRepository @Inject constructor(
                     bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
                 )
 
-                val folders = foldersAndTracksDto.foldersDto?.map { folderDto ->
-                    Folder(
-                        trackCount = folderDto.fileCount ?: 0,
-                        folderCount = folderDto.folderCount ?: 0,
-                        isSym = folderDto.isSym ?: false,
-                        name = folderDto.name ?: "",
-                        path = folderDto.path ?: ""
-                    )
-                } ?: emptyList()
+                val folders = foldersAndTracksDto.foldersDto?.map { it.toFolder() } ?: emptyList()
                 emit(Resource.Success(data = folders))
 
             } catch (e: IOException) {
@@ -143,6 +138,39 @@ class DataFolderRepository @Inject constructor(
                 emit(
                     Resource.Error(
                         message = "Unable to fetch folders\nCheck your connection and try again!"
+                    )
+                )
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "Connection Failed"))
+            }
+        }
+    }
+
+    override suspend fun getRootDirectories(): Flow<Resource<RootDirs>> {
+        return flow {
+            try {
+                emit(Resource.Loading())
+
+                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+                val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+                val rootDirsDto = networkApiService.getRootDirectories(
+                    url = "${baseUrl}notsettings/get-root-dirs",
+                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                )
+
+                emit(Resource.Success(data = rootDirsDto.toRootDirs()))
+
+            } catch (e: IOException) {
+                emit(
+                    Resource.Error(
+                        message = "Unable to fetch root directories\nCheck your connection and try again!"
+                    )
+                )
+            } catch (e: HttpException) {
+                emit(
+                    Resource.Error(
+                        message = "Unable to fetch root directories\nCheck your connection and try again!"
                     )
                 )
             } catch (e: Exception) {

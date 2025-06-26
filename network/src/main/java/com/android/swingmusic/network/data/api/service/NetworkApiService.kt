@@ -12,6 +12,7 @@ import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.TopSearchResultsDto
 import com.android.swingmusic.core.data.dto.TrackDto
 import com.android.swingmusic.core.data.dto.TracksSearchResultDto
+import com.android.swingmusic.core.data.dto.RootDirsDto
 import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
 import com.android.swingmusic.network.data.dto.LogTrackRequestDto
 import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
@@ -29,6 +30,12 @@ interface NetworkApiService {
         @Url url: String,
         @Header("Authorization") bearerToken: String,
     ): FoldersAndTracksDto
+
+    @GET
+    suspend fun getRootDirectories(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): RootDirsDto
 
     @POST
     suspend fun logLastPlayedTrackToServer(

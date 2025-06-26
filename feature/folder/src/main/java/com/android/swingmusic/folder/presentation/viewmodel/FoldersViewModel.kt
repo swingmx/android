@@ -5,18 +5,16 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
-import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.folder.domain.FolderRepository
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
+import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.folder.presentation.state.FoldersContentPagingState
-import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import com.android.swingmusic.player.domain.repository.PLayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,8 +44,63 @@ class FoldersViewModel @Inject constructor(
         mutableStateOf(listOf(homeDir))
     val navPaths: State<List<Folder>> = _navPaths
 
-    fun resetNavPaths() {
-        _navPaths.value = listOf(homeDir)
+    fun resetNavPathsForGotoFolder(targetPath: String) {
+        _navPaths.value = buildNavigationPaths(targetPath)
+    }
+
+    private fun fetchRootDirectories() {
+        viewModelScope.launch {
+            folderRepository.getRootDirectories().collectLatest { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        _rootDirectories.value = result.data?.rootDirs ?: emptyList()
+                    }
+
+                    is Resource.Error -> {
+                        _rootDirectories.value = emptyList()
+                    }
+
+                    is Resource.Loading -> {}
+                }
+            }
+        }
+    }
+
+    private fun buildNavigationPaths(targetPath: String): List<Folder> {
+        val rootDirs = _rootDirectories.value
+        if (rootDirs.isEmpty() || targetPath == "\$home") {
+            return listOf(homeDir)
+        }
+
+        val normalizedPath = if (targetPath.startsWith("/home")) {
+            targetPath.removePrefix("/home")
+        } else {
+            targetPath
+        }
+
+        if (normalizedPath.isEmpty() || normalizedPath == "\$home") {
+            return listOf(homeDir)
+        }
+
+        val pathSegments = normalizedPath.split("/").filter { it.isNotEmpty() }
+        val paths = mutableListOf<Folder>()
+
+        paths.add(homeDir)
+        var currentPath = "/home"
+        for (segment in pathSegments) {
+            currentPath = "$currentPath/$segment"
+            paths.add(
+                Folder(
+                    name = segment,
+                    path = currentPath,
+                    trackCount = 0,
+                    folderCount = 0,
+                    isSym = false
+                )
+            )
+        }
+
+        return paths
     }
 
     private var _foldersAndTracks: MutableState<FoldersAndTracksState> =
@@ -64,21 +117,22 @@ class FoldersViewModel @Inject constructor(
 
     val foldersAndTracks: State<FoldersAndTracksState> = _foldersAndTracks
 
-    // Track favorite status updates for optimistic UI updates
     private val updatedTrackFavorites = MutableStateFlow<Map<String, Boolean>>(emptyMap())
 
-    // Unified content pagination state with immediate clearing
+    private var _rootDirectories: MutableState<List<String>> = mutableStateOf(emptyList())
+    val rootDirectories: State<List<String>> = _rootDirectories
+
     private var _foldersContentPaging: MutableState<FoldersContentPagingState> =
         mutableStateOf(FoldersContentPagingState())
     val foldersContentPaging: State<FoldersContentPagingState> = _foldersContentPaging
 
     init {
+        fetchRootDirectories()
         getFoldersContentPaging(homeDir.path)
     }
 
     private fun getFoldersContentPaging(path: String) {
         viewModelScope.launch {
-            // Create fresh pagination flow following Albums pattern
             val newPagingFlow = folderRepository.getPagingContent(path)
                 .cachedIn(viewModelScope)
                 .combine(updatedTrackFavorites) { pagingData, updatedFavorites ->
@@ -93,12 +147,12 @@ class FoldersViewModel @Inject constructor(
                                     contentItem
                                 }
                             }
+
                             is FolderContentItem.FolderItem -> contentItem
                         }
                     }
                 }
-            
-            // Update state following Albums pattern
+
             _foldersContentPaging.value = FoldersContentPagingState(
                 pagingContent = newPagingFlow
             )
@@ -110,7 +164,6 @@ class FoldersViewModel @Inject constructor(
             is FolderUiEvent.OnClickNavPath -> {
                 if (event.folder.path != _currentFolder.value.path) {
                     _currentFolder.value = event.folder
-                    // Clear favorite updates when navigating to a new folder
                     updatedTrackFavorites.update { emptyMap() }
                     getFoldersContentPaging(event.folder.path)
                 }
@@ -118,29 +171,30 @@ class FoldersViewModel @Inject constructor(
 
             is FolderUiEvent.OnClickFolder -> {
                 _currentFolder.value = event.folder
-                // Clear favorite updates when navigating to a new folder
+
                 updatedTrackFavorites.update { emptyMap() }
                 getFoldersContentPaging(event.folder.path)
 
-                if (!_navPaths.value.contains(event.folder)) {
-                    _navPaths.value = listOf<Folder>(homeDir)
-                        .plus(
-                            (_navPaths.value.filter {
-                                event.folder.path.contains(it.path)
-                            }.plus(event.folder))
-                        ).distinctBy { it.path }
+                val normalizedEventPath = event.folder.path.trimEnd('/')
+                val existingFolder = _navPaths.value.find { navFolder ->
+                    navFolder.path.trimEnd('/') == normalizedEventPath
+                }
+
+                if (existingFolder != null) {
+                    _currentFolder.value = existingFolder
+                } else {
+                    _navPaths.value = buildNavigationPaths(event.folder.path)
+                    _currentFolder.value = _navPaths.value.lastOrNull() ?: event.folder
                 }
             }
 
             is FolderUiEvent.OnBackNav -> {
                 if (_navPaths.value.size > 1) {
-                    // Utilizing the fact that we can't have multiple folders with the same name
                     val currentPathIndex = _navPaths.value.indexOf(event.folder)
                     val backPathIndex = currentPathIndex - 1
-                    if (backPathIndex > -1) { // Just to be safe
+                    if (backPathIndex > -1) {
                         val backFolder = _navPaths.value[backPathIndex]
                         _currentFolder.value = backFolder
-                        // Clear favorite updates when navigating to a new folder
                         updatedTrackFavorites.update { emptyMap() }
                         getFoldersContentPaging(backFolder.path)
                     }
@@ -148,7 +202,6 @@ class FoldersViewModel @Inject constructor(
             }
 
             is FolderUiEvent.OnRetry -> {
-                // Clear favorite updates on retry
                 updatedTrackFavorites.update { emptyMap() }
                 getFoldersContentPaging(_currentFolder.value.path)
             }
@@ -161,10 +214,8 @@ class FoldersViewModel @Inject constructor(
 
     private fun toggleTrackFavorite(trackHash: String, isFavorite: Boolean) {
         viewModelScope.launch {
-            // Store original favorite status for potential revert
             val originalFavoriteStatus = updatedTrackFavorites.value[trackHash]
 
-            // Optimistically update the favorite status
             val newFavoriteStatus = !isFavorite
             updatedTrackFavorites.update { it + (trackHash to newFavoriteStatus) }
 
@@ -179,18 +230,14 @@ class FoldersViewModel @Inject constructor(
                     is Resource.Loading -> {}
 
                     is Resource.Success -> {
-                        // Update with actual result from server
                         val serverFavoriteStatus = result.data ?: false
                         updatedTrackFavorites.update { it + (trackHash to serverFavoriteStatus) }
                     }
 
                     is Resource.Error -> {
-                        // Revert the optimistic update on error
                         if (originalFavoriteStatus != null) {
-                            // Restore to the previous local state
                             updatedTrackFavorites.update { it + (trackHash to originalFavoriteStatus) }
                         } else {
-                            // Remove from updates to fall back to original track data
                             updatedTrackFavorites.update { it - trackHash }
                         }
                     }
