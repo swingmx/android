@@ -482,58 +482,24 @@ fun AlbumWithInfo(
                     key = { item: Track -> item.filepath }
                 ) { track ->
                     // Numbered Track Item
-                    Row(
-                        modifier = Modifier
-                            .padding(vertical = 4.dp)
-                            .then(
-                                if (track.trackHash == currentTrack?.trackHash) {
-                                    Modifier.padding(horizontal = 12.dp)
-                                } else Modifier
-                            )
-                            .clip(RoundedCornerShape(12))
-                            .background(
-                                if (track.trackHash == currentTrack?.trackHash) {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = .14F)
-                                } else {
-                                    Color.Unspecified
-                                }
-                            )
-                            .padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(
-                                start =
-                                if (track.trackHash != currentTrack?.trackHash) 12.dp else 0.dp
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .85F),
-                            text = track.trackNumber.toString(),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-
-                        Box(
-                            modifier = Modifier.offset((-4).dp)
-                        ) {
-                            TrackItem(
-                                track = track,
-                                baseUrl = baseUrl,
-                                isAlbumTrack = true,
-                                showMenuIcon = true,
-                                isCurrentTrack = track.trackHash == currentTrack?.trackHash,
-                                playbackState = playbackState,
-                                onClickTrackItem = {
-                                    val trackIndex = sortedTracks.indexOf(track)
-                                    if (trackIndex != -1) {
-                                        onClickAlbumTrack(trackIndex, sortedTracks)
-                                    }
-                                },
-                                onClickMoreVert = {
-                                    clickedTrack = it
-                                    showTrackBottomSheet = true
-                                }
-                            )
+                    TrackItem(
+                        track = track,
+                        baseUrl = baseUrl,
+                        isAlbumTrack = true,
+                        showMenuIcon = true,
+                        isCurrentTrack = track.trackHash == currentTrack?.trackHash,
+                        playbackState = playbackState,
+                        onClickTrackItem = {
+                            val trackIndex = sortedTracks.indexOf(track)
+                            if (trackIndex != -1) {
+                                onClickAlbumTrack(trackIndex, sortedTracks)
+                            }
+                        },
+                        onClickMoreVert = {
+                            clickedTrack = it
+                            showTrackBottomSheet = true
                         }
-                    }
+                    )
 
                     if (track.filepath == sortedTracks.last().filepath) {
                         LazyRow(

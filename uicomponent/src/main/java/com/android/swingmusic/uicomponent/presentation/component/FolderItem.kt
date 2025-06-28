@@ -168,7 +168,7 @@ private fun Int.getFolderHelperText(): String {
 
 @Preview(
     showBackground = true,
-    widthDp = 250,
+    device = Devices.PIXEL_6,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
 )

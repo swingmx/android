@@ -62,7 +62,6 @@ fun TrackItem(
 ) {
     val interaction = remember { MutableInteractionSource() }
 
-    // TODO: Redo this Component using Fractions to avoid overflow in small screens
     Box(
         modifier = Modifier
             .padding(vertical = 4.dp, horizontal = 12.dp)
@@ -83,7 +82,7 @@ fun TrackItem(
                     onClick = { onClickTrackItem() }
                 )
                 .padding(
-                    start = 8.dp,
+                    start = if(isAlbumTrack) 2.dp else 8.dp,
                     top = 8.dp,
                     bottom = 8.dp
                 )
@@ -98,36 +97,38 @@ fun TrackItem(
                 if (isAlbumTrack) {
                     Box(
                         modifier = Modifier
-                            .width(28.dp) // Fixed width for alignment
-                            .padding(end = 12.dp),
-                        contentAlignment = Alignment.CenterEnd // Right-align to extend left
+                            .width(40.dp) // Fixed width for alignment
+                            .padding(end = 8.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         val trackNumberStr = track.trackNumber.toString()
-                        if (trackNumberStr.length <= 2) {
-                            // Single line for 1-2 digit numbers (1-99)
-                            Text(
-                                text = trackNumberStr,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.End
-                            )
-                        } else {
-                            // Split into two lines for 3+ digit numbers (100+)
-                            Column(
-                                horizontalAlignment = Alignment.End
-                            ) {
+                        if(track.trackNumber > 0) {
+                            if (trackNumberStr.length <= 3) {
+                                // Single line for 1-3 digit numbers (1-999)
                                 Text(
-                                    text = trackNumberStr.take(2),
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    text = trackNumberStr,
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     textAlign = TextAlign.End
                                 )
-                                Text(
-                                    text = trackNumberStr.drop(2),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    textAlign = TextAlign.End
-                                )
+                            } else {
+                                // Split into two lines for 4+ digit numbers (1000+)
+                                Column(
+                                    horizontalAlignment = Alignment.End
+                                ) {
+                                    Text(
+                                        text = trackNumberStr.take(3),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.End
+                                    )
+                                    Text(
+                                        text = trackNumberStr.drop(3),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.End
+                                    )
+                                }
                             }
                         }
                     }
@@ -449,7 +450,7 @@ fun AlbumTrackItemPreview() {
             title = "Currently Playing Track",
             trackHash = "track2",
             disc = 1,
-            trackNumber = 15
+            trackNumber = 12
         ),
         Track(
             album = "Sample Album",
@@ -498,6 +499,22 @@ fun AlbumTrackItemPreview() {
             trackHash = "track5",
             disc = 1,
             trackNumber = 9999
+        ),
+        Track(
+            album = "Sample Album",
+            albumTrackArtists = listOf(albumArtist),
+            albumHash = "album123",
+            trackArtists = listOf(albumArtist),
+            bitrate = 583,
+            duration = 12,
+            filepath = "/album/track5.mp3",
+            folder = "/album",
+            image = "album.jpg",
+            isFavorite = false,
+            title = "Zero Track Number",
+            trackHash = "track5",
+            disc = 1,
+            trackNumber = 0
         )
     )
 
