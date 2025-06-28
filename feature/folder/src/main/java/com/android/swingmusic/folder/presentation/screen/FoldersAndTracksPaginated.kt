@@ -505,8 +505,16 @@ fun FoldersAndTracksPaginatedScreen(
     var isManualRefreshing by remember { mutableStateOf(false) }
     var routeByGotoFolder by remember { mutableStateOf(false) }
 
-    SideEffect {
+    // Refresh base URL and reload content when it changes
+    LaunchedEffect(Unit) {
         mediaControllerViewModel.refreshBaseUrl()
+    }
+    
+    LaunchedEffect(baseUrl) {
+        if (baseUrl != null) {
+            // Reload content when base URL becomes available
+            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(currentFolder))
+        }
     }
 
     // Fallback timeout to reset refresh state
