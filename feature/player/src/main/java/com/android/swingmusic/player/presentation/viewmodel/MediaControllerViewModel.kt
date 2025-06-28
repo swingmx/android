@@ -362,6 +362,8 @@ class MediaControllerViewModel @Inject constructor(
                 autoPlay = false
             )
 
+            mediaController?.prepare()
+
             _playerUiState.value = _playerUiState.value.copy(
                 queue = workingQueue,
                 playingTrackIndex = 0,
@@ -405,15 +407,31 @@ class MediaControllerViewModel @Inject constructor(
         }
 
         if (targetQueue.isEmpty()) {
-            mediaController?.addListener(playerListener)
+            if (mediaController != null) {
+                mediaController?.addListener(playerListener)
+            }
 
-            onQueueEvent(
-                QueueEvent.RecreateQueue(
-                    source = source,
-                    queue = listOf(track),
-                    clickedTrackIndex = 0
-                )
+            workingQueue = mutableListOf(track)
+            shuffledQueue.clear()
+
+            loadMediaItems(
+                tracks = workingQueue,
+                startIndex = 0,
+                autoPlay = false
             )
+
+            // Prepare the MediaController so it's ready to play
+            mediaController?.prepare()
+
+            _playerUiState.value = _playerUiState.value.copy(
+                queue = workingQueue,
+                playingTrackIndex = 0,
+                nowPlayingTrack = track,
+                shuffleMode = ShuffleMode.SHUFFLE_OFF,
+                source = source
+            )
+
+            trackToLog = track
         } else {
             targetQueue.add(track)
             _playerUiState.value = _playerUiState.value.copy(queue = targetQueue)
