@@ -504,6 +504,7 @@ fun FoldersAndTracksPaginatedScreen(
     
     var isManualRefreshing by remember { mutableStateOf(false) }
     var routeByGotoFolder by remember { mutableStateOf(false) }
+    var hasInitializedWithBaseUrl by remember { mutableStateOf(false) }
 
     // Refresh base URL and reload content when it changes
     LaunchedEffect(Unit) {
@@ -511,10 +512,13 @@ fun FoldersAndTracksPaginatedScreen(
     }
     
     LaunchedEffect(baseUrl) {
-        if (baseUrl != null) {
-            // Refresh root directories and reload content when base URL becomes available
-            foldersViewModel.refreshRootDirectories()
-            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(currentFolder))
+        if (baseUrl != null && !hasInitializedWithBaseUrl) {
+            // Only reload content if we're at home directory AND not in a "go to folder" scenario
+            if (currentFolder.path == "\$home" && gotoFolderName == null && gotoFolderPath == null) {
+                foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(currentFolder))
+            }
+            
+            hasInitializedWithBaseUrl = true
         }
     }
 
