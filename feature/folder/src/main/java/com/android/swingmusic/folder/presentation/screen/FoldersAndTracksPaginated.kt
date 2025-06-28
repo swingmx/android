@@ -512,7 +512,8 @@ fun FoldersAndTracksPaginatedScreen(
     
     LaunchedEffect(baseUrl) {
         if (baseUrl != null) {
-            // Reload content when base URL becomes available
+            // Refresh root directories and reload content when base URL becomes available
+            foldersViewModel.refreshRootDirectories()
             foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(currentFolder))
         }
     }

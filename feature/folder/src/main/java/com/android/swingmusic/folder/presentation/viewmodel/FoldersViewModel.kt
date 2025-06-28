@@ -72,10 +72,15 @@ class FoldersViewModel @Inject constructor(
             return listOf(homeDir)
         }
 
-        val normalizedPath = if (targetPath.startsWith("/home")) {
-            targetPath.removePrefix("/home")
-        } else {
-            targetPath
+        // Find matching root directory and remove it from target path
+        // Also handle /home as equivalent to $home
+        val normalizedPath = when {
+            targetPath.startsWith("/home") -> targetPath.removePrefix("/home")
+            else -> rootDirs.find { rootDir ->
+                targetPath.startsWith(rootDir)
+            }?.let { matchingRootDir ->
+                targetPath.removePrefix(matchingRootDir)
+            } ?: targetPath
         }
 
         if (normalizedPath.isEmpty() || normalizedPath == "\$home") {
@@ -86,13 +91,22 @@ class FoldersViewModel @Inject constructor(
         val paths = mutableListOf<Folder>()
 
         paths.add(homeDir)
-        var currentPath = "/home"
+        
+        // Find the original root directory that matches this target path
+        val matchingRootDir = when {
+            targetPath.startsWith("/home") -> "/home"
+            else -> rootDirs.find { rootDir ->
+                targetPath.startsWith(rootDir)
+            }
+        }
+        
+        var pathRootDir = matchingRootDir ?: ""
         for (segment in pathSegments) {
-            currentPath = "$currentPath/$segment"
+            pathRootDir = if (pathRootDir.isEmpty()) segment else "$pathRootDir/$segment"
             paths.add(
                 Folder(
                     name = segment,
-                    path = currentPath,
+                    path = pathRootDir,
                     trackCount = 0,
                     folderCount = 0,
                     isSym = false
@@ -129,6 +143,10 @@ class FoldersViewModel @Inject constructor(
     init {
         fetchRootDirectories()
         getFoldersContentPaging(homeDir.path)
+    }
+
+    fun refreshRootDirectories() {
+        fetchRootDirectories()
     }
 
     private fun getFoldersContentPaging(path: String) {
