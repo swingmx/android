@@ -591,6 +591,7 @@ fun FoldersAndTracksPaginatedScreen(
                     ),
                     queue = queue,
                     clickedTrackIndex = index
+                    // Remove isPartialQueue - let ViewModel decide
                 )
             )
         },
