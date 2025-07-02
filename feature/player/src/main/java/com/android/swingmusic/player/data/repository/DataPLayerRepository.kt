@@ -3,6 +3,9 @@ package com.android.swingmusic.player.data.repository
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
+import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
+import com.android.swingmusic.core.data.mapper.Map.toModel
+import com.android.swingmusic.core.data.mapper.Map.toTrack
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.QueueSource
@@ -140,6 +143,35 @@ class DataPLayerRepository @Inject constructor(
             } catch (e: Exception) {
                 emit(Resource.Error(message = "FAILED TO REMOVE TRACK FROM FAVORITE"))
             }
+        }
+    }
+
+    override suspend fun getTracksChunk(folderPath: String, start: Int, limit: Int): List<Track> {
+        return try {
+            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
+            val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
+
+            val requestDto = FoldersAndTracksRequestDto(
+                folder = folderPath,
+                tracksOnly = true,
+                start = start,
+                limit = limit
+            )
+
+            val response = networkApiService.getFoldersAndTracks(
+                requestData = requestDto,
+                url = "${baseUrl}folder",
+                bearerToken = "Bearer $accessToken"
+            )
+
+            response.tracksDto?.map { it.toTrack() } ?: emptyList()
+
+        } catch (e: HttpException) {
+            Timber.e("Network error fetching tracks chunk: $e")
+            emptyList()
+        } catch (e: Exception) {
+            Timber.e("Error fetching tracks chunk: $e")
+            emptyList()
         }
     }
 }
