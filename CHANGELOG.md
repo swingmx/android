@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [Version 24] - Pre-Release
 
 ### Added
 - **Hybrid Queue Expansion for Folders**: Intelligent background loading of complete folder contents
@@ -28,3 +28,19 @@
 - Implemented cooperative multitasking for responsive UI during background loading
 - Enhanced MediaItem ID mapping for shuffle mode compatibility
 - Added proper error handling and cancellation logic for network requests
+
+---
+
+## [Version 23] - 2025-01-02
+- Fix Base URL after Log In
+- Fix Media Controller Init when Queue is Empty
+
+## [Version 22] - 2025-01-02
+- Fix Play Next when Queue is Empty
+
+## [Version 21] - 2025-01-01
+- Get Root Dirs and Fix Back Nav on Folders
+- Fix Back Press after Go to Folder Action
+
+## [Version 20] - 2024-12-31
+- Use Index as Track Keys
