@@ -22,7 +22,12 @@ jobs:
         run: |
           ./gradlew build
           wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar
-          java -jar uber-apk-signer-1.3.0.jar --apks ./app/build/outputs/apk/release/app-release-unsigned.apk
+          java -jar uber-apk-signer-1.3.0.jar \
+            --apks ./app/build/outputs/apk/release/app-release-unsigned.apk \
+            --ks ${{ secrets.KEYSTORE_FILE }} \
+            --ksAlias ${{ secrets.KEYSTORE_ALIAS }} \
+            --ksPass ${{ secrets.KEYSTORE_PASSWORD }} \
+            --ksKeyPass ${{ secrets.KEY_PASSWORD }}
           ls
       - name: Create Release
         id: create_release
@@ -41,6 +46,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./app/build/outputs/apk/release/app-release-aligned-debugSigned.apk
+          asset_path: ./app/build/outputs/apk/release/app-release-aligned-signed.apk
           asset_name: app-release-${{ github.run_number }}.apk
           asset_content_type: application/vnd.android.package-archive
