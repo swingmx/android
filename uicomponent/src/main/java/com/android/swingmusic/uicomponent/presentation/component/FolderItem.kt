@@ -56,7 +56,6 @@ fun FolderItem(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .padding(
                     start = (11.5).dp, // to align well with Track Item
@@ -67,8 +66,8 @@ fun FolderItem(
                 .fillMaxWidth()
         ) {
             Row(
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 // Folder Icon
                 Box(
@@ -90,11 +89,12 @@ fun FolderItem(
 
                 // Folder name, folder count, songs
                 Column(
-                    modifier = Modifier.padding(start = 8.dp)
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .weight(1f)
                 ) {
                     Text(
                         text = folder.name,
-                        modifier = Modifier.width(240.dp),
                         style = MaterialTheme.typography.bodyLarge,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1
@@ -141,13 +141,19 @@ fun FolderItem(
                 }
             }
 
-            // TODO: Return this when contextual menu is ready
-            /*IconButton(onClick = { onClickMoreVert(folder) }) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "MoreVert"
-                )
-            }*/
+            // Reserve space for menu icon to maintain consistent alignment with TrackItem
+            Box(
+                modifier = Modifier.size(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // TODO: Return this when contextual menu is ready
+                /*IconButton(onClick = { onClickMoreVert(folder) }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "MoreVert"
+                    )
+                }*/
+            }
         }
     }
 }
@@ -162,34 +168,109 @@ private fun Int.getFolderHelperText(): String {
 
 @Preview(
     showBackground = true,
-    device = Devices.PIXEL_4,
+    device = Devices.PIXEL_6,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
 )
 @Composable
 fun FolderItemPreview() {
+    // Edge case folders
+    val shortFolder = Folder(
+        trackCount = 1,
+        folderCount = 0,
+        isSym = false,
+        name = "Music",
+        path = "/music"
+    )
+
+    val longFolder = Folder(
+        trackCount = 9999,
+        folderCount = 999,
+        isSym = true,
+        name = "This Is An Extremely Long Folder Name That Should Definitely Cause Text Overflow Issues In Small Screens",
+        path = "/very/long/path/to/folder"
+    )
+
+    val emptyFolder = Folder(
+        trackCount = 0,
+        folderCount = 0,
+        isSym = false,
+        name = "Empty Folder",
+        path = "/empty"
+    )
+
+    val onlyFoldersFolder = Folder(
+        trackCount = 0,
+        folderCount = 15,
+        isSym = false,
+        name = "Parent Directory With Many Subfolders",
+        path = "/parent"
+    )
+
+    val onlyTracksFolder = Folder(
+        trackCount = 250,
+        folderCount = 0,
+        isSym = false,
+        name = "Album With Many Tracks But No Subfolders",
+        path = "/album"
+    )
+
     SwingMusicTheme_Preview {
         Surface {
             Column(modifier = Modifier.fillMaxSize()) {
-                for (count in 0..6) {
-                    val demoFolder =
-                        Folder(
-                            trackCount = (0..6).random(),
-                            folderCount = (0..6).random(),
-                            isSym = false,
-                            name = "Swing Music",
-                            path = "/home"
-                        )
-                    FolderItem(
-                        folder = demoFolder,
-                        onClickFolderItem = {
+                Text(
+                    text = "Folder Edge Cases:",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(16.dp)
+                )
 
-                        },
-                        onClickMoreVert = {
+                // Short folder name
+                FolderItem(
+                    folder = shortFolder,
+                    onClickFolderItem = { },
+                    onClickMoreVert = { }
+                )
 
-                        }
-                    )
-                }
+                // Very long folder name - should ellipse
+                FolderItem(
+                    folder = longFolder,
+                    onClickFolderItem = { },
+                    onClickMoreVert = { }
+                )
+
+                // Empty folder
+                FolderItem(
+                    folder = emptyFolder,
+                    onClickFolderItem = { },
+                    onClickMoreVert = { }
+                )
+
+                // Only folders, no tracks
+                FolderItem(
+                    folder = onlyFoldersFolder,
+                    onClickFolderItem = { },
+                    onClickMoreVert = { }
+                )
+
+                // Only tracks, no folders
+                FolderItem(
+                    folder = onlyTracksFolder,
+                    onClickFolderItem = { },
+                    onClickMoreVert = { }
+                )
+
+                // Mixed content with moderate counts
+                FolderItem(
+                    folder = Folder(
+                        trackCount = 42,
+                        folderCount = 7,
+                        isSym = false,
+                        name = "Mixed Content Folder",
+                        path = "/mixed"
+                    ),
+                    onClickFolderItem = { },
+                    onClickMoreVert = { }
+                )
             }
         }
     }

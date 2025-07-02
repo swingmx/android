@@ -17,5 +17,6 @@ data class PlayerUiState(
     val trackDuration: String = "00:00",
     val isBuffering: Boolean = false,
     val repeatMode: RepeatMode = RepeatMode.REPEAT_ALL,
-    val shuffleMode: ShuffleMode = ShuffleMode.SHUFFLE_OFF
+    val shuffleMode: ShuffleMode = ShuffleMode.SHUFFLE_OFF,
+    val isPartialQueue: Boolean = false
 )

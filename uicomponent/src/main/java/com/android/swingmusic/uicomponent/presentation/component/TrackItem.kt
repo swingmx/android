@@ -4,10 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,9 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -66,7 +62,6 @@ fun TrackItem(
 ) {
     val interaction = remember { MutableInteractionSource() }
 
-    // TODO: Redo this Component using Fractions to avoid overflow in small screens
     Box(
         modifier = Modifier
             .padding(vertical = 4.dp, horizontal = 12.dp)
@@ -77,7 +72,7 @@ fun TrackItem(
         Row(
             modifier = Modifier
                 .background(
-                    color = if (isCurrentTrack && !isAlbumTrack)
+                    color = if (isCurrentTrack)
                         MaterialTheme.colorScheme.onSurface.copy(alpha = .14F) else
                         Color.Unspecified
                 )
@@ -87,15 +82,58 @@ fun TrackItem(
                     onClick = { onClickTrackItem() }
                 )
                 .padding(
-                    start = 8.dp,
+                    start = if(isAlbumTrack) 2.dp else 8.dp,
                     top = 8.dp,
                     bottom = 8.dp
                 )
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Track number for album tracks (positioned before image)
+                if (isAlbumTrack) {
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp) // Fixed width for alignment
+                            .padding(end = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val trackNumberStr = track.trackNumber.toString()
+                        if(track.trackNumber > 0) {
+                            if (trackNumberStr.length <= 3) {
+                                // Single line for 1-3 digit numbers (1-999)
+                                Text(
+                                    text = trackNumberStr,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.End
+                                )
+                            } else {
+                                // Split into two lines for 4+ digit numbers (1000+)
+                                Column(
+                                    horizontalAlignment = Alignment.End
+                                ) {
+                                    Text(
+                                        text = trackNumberStr.take(3),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.End
+                                    )
+                                    Text(
+                                        text = trackNumberStr.drop(3),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.End
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Box(
                     modifier = Modifier
                         .padding(end = 8.dp)
@@ -128,27 +166,25 @@ fun TrackItem(
                 Column(
                     modifier = Modifier
                         .padding(start = 4.dp)
-                        .scrollable(
-                            orientation = Orientation.Horizontal,
-                            state = rememberScrollState()
-                        )
+                        .weight(1f)
                 ) {
                     Text(
                         text = track.title,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.sizeIn(maxWidth = 250.dp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         val artistsJoined = track.trackArtists.joinToString(", ") { it.name }
                         Text(
                             text = artistsJoined,
-                            modifier = Modifier.sizeIn(maxWidth = 185.dp),
+                            modifier = Modifier.weight(1f, fill = false),
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84F),
                             style = MaterialTheme.typography.bodySmall,
                             maxLines = 1,
@@ -175,12 +211,18 @@ fun TrackItem(
                 }
             }
 
-            if (showMenuIcon) {
-                IconButton(onClick = { onClickMoreVert(track) }) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More Icon"
-                    )
+            // Always reserve space for menu icon to maintain consistent alignment
+            Box(
+                modifier = Modifier.size(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (showMenuIcon) {
+                    IconButton(onClick = { onClickMoreVert(track) }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More Icon"
+                        )
+                    }
                 }
             }
         }
@@ -215,33 +257,63 @@ fun TrackItem(
 @Composable
 fun TrackItemPreview() {
 
-    val lilPeep = TrackArtist(
-        artistHash = "lilpeep123",
-        image = "lilpeep.jpg",
-        name = "Lil Peep"
+    // Edge case artists
+    val shortArtist = TrackArtist(
+        artistHash = "short123",
+        image = "short.jpg",
+        name = "Ed"
     )
-    val juice = TrackArtist(
-        artistHash = "juice123",
-        image = "juice.jpg",
-        name = "Juice WRLD"
+    val longArtist = TrackArtist(
+        artistHash = "long123",
+        image = "long.jpg",
+        name = "Artist With Long Name That Should Overflow"
+    )
+    val multipleArtists = listOf(
+        TrackArtist("artist1", "img1.jpg", "The Beatles"),
+        TrackArtist("artist2", "img2.jpg", "Paul McCartney"),
+        TrackArtist("artist3", "img3.jpg", "John Lennon"),
+        TrackArtist("artist4", "img4.jpg", "George Harrison"),
+        TrackArtist("artist5", "img5.jpg", "Ringo Starr")
     )
 
-    val albumArtists = listOf(lilPeep, juice)
-    val artists = listOf(lilPeep, juice)
+    // Edge case tracks
+    val shortTrack = Track(
+        album = "Short", albumTrackArtists = listOf(shortArtist), albumHash = "short123",
+        trackArtists = listOf(shortArtist), bitrate = 320, duration = 30,
+        filepath = "/short.mp3", folder = "/short", image = "short.jpg",
+        isFavorite = false, title = "Hi", trackHash = "short123", disc = 1, trackNumber = 1
+    )
 
-    val track = Track(
-        album = "Sample Album",
-        albumTrackArtists = albumArtists,
-        albumHash = "albumHash123",
-        trackArtists = artists,
+    val longTrack = Track(
+        album = "Very Long Album Name That Should Overflow",
+        albumTrackArtists = listOf(longArtist),
+        albumHash = "long123",
+        trackArtists = listOf(longArtist),
         bitrate = 320,
-        duration = 454, // Sample duration in seconds
-        filepath = "/path/to/track.mp3",
-        folder = "/path/to/album",
-        image = "/path/to/album/artwork.jpg",
+        duration = 3661, // 1 hour 1 minute 1 second
+        filepath = "/very/long/path/to/track.mp3",
+        folder = "/very/long/path",
+        image = "long.jpg",
         isFavorite = true,
-        title = "Sample Track",
-        trackHash = "trackHash123",
+        title = "This Is An Extremely Long Track Title That Should Overflow",
+        trackHash = "long123",
+        disc = 1,
+        trackNumber = 1
+    )
+
+    val multipleArtistsTrack = Track(
+        album = "Collaborative Album",
+        albumTrackArtists = multipleArtists,
+        albumHash = "multi123",
+        trackArtists = multipleArtists,
+        bitrate = 320,
+        duration = 240,
+        filepath = "/collab.mp3",
+        folder = "/collab",
+        image = "collab.jpg",
+        isFavorite = true,
+        title = "Song with Many Artists",
+        trackHash = "multi123",
         disc = 1,
         trackNumber = 1
     )
@@ -249,75 +321,224 @@ fun TrackItemPreview() {
     SwingMusicTheme_Preview {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column {
-                val demoFolder =
-                    Folder((0..6).random(), (0..6).random(), false, "Sample Folder", "/folder")
+                Text(
+                    text = "Edge Cases Preview",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+                // Folders first (as they appear in the app)
                 FolderItem(
-                    folder = demoFolder,
-                    onClickFolderItem = {
-
-                    },
-                    onClickMoreVert = {
-
-                    }
+                    folder = Folder(
+                        trackCount = 24,
+                        folderCount = 3,
+                        isSym = false,
+                        name = "Rock Albums",
+                        path = "/music/rock"
+                    ),
+                    onClickFolderItem = { },
+                    onClickMoreVert = { }
                 )
 
                 FolderItem(
-                    folder = demoFolder,
-                    onClickFolderItem = {
-
-                    },
-                    onClickMoreVert = {
-
-                    }
+                    folder = Folder(
+                        trackCount = 0,
+                        folderCount = 8,
+                        isSym = false,
+                        name = "Very Long Folder Name That Should Ellipse Properly",
+                        path = "/music/long"
+                    ),
+                    onClickFolderItem = { },
+                    onClickMoreVert = { }
                 )
+
+                // Then tracks
                 TrackItem(
                     isCurrentTrack = false,
                     playbackState = PlaybackState.PAUSED,
-                    track = track,
-                    onClickTrackItem = {
-
-                    },
-                    onClickMoreVert = {
-
-                    },
-                    baseUrl = "",
-                )
-
-                TrackItem(
-                    isCurrentTrack = true,
-                    playbackState = PlaybackState.PAUSED,
-                    track = track,
-                    onClickTrackItem = {
-
-                    },
-                    onClickMoreVert = {
-
-                    },
+                    showMenuIcon = true,
+                    track = shortTrack,
+                    onClickTrackItem = { },
+                    onClickMoreVert = { },
                     baseUrl = ""
                 )
-                TrackItem(
-                    isCurrentTrack = false,
-                    track = track,
-                    onClickTrackItem = {
 
-                    },
-                    onClickMoreVert = {
-
-                    },
-                    baseUrl = "",
-                )
                 TrackItem(
                     isCurrentTrack = true,
                     playbackState = PlaybackState.PLAYING,
-                    track = track,
-                    onClickTrackItem = {
-
-                    },
-                    onClickMoreVert = {
-
-                    },
-                    baseUrl = "",
+                    showMenuIcon = true,
+                    track = multipleArtistsTrack,
+                    onClickTrackItem = { },
+                    onClickMoreVert = { },
+                    baseUrl = ""
                 )
+
+                TrackItem(
+                    isCurrentTrack = false,
+                    playbackState = PlaybackState.PAUSED,
+                    showMenuIcon = true,
+                    track = longTrack,
+                    onClickTrackItem = { },
+                    onClickMoreVert = { },
+                    baseUrl = ""
+                )
+
+                TrackItem(
+                    isCurrentTrack = false,
+                    playbackState = PlaybackState.PAUSED,
+                    showMenuIcon = false,
+                    track = longTrack.copy(title = "No Menu Track For Alignment Test"),
+                    onClickTrackItem = { },
+                    onClickMoreVert = { },
+                    baseUrl = ""
+                )
+            }
+        }
+    }
+}
+
+@Preview(
+    showBackground = true,
+    device = Devices.PIXEL_6,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
+)
+@Composable
+fun AlbumTrackItemPreview() {
+
+    val albumArtist = TrackArtist(
+        artistHash = "album123",
+        image = "album.jpg",
+        name = "Album Artist"
+    )
+
+    val featuredArtist = TrackArtist(
+        artistHash = "featured123",
+        image = "featured.jpg",
+        name = "Featured Artist With A Long Name"
+    )
+
+    // Album tracks with different scenarios including extreme track numbers
+    val albumTracks = listOf(
+        Track(
+            album = "Sample Album",
+            albumTrackArtists = listOf(albumArtist),
+            albumHash = "album123",
+            trackArtists = listOf(albumArtist),
+            bitrate = 320,
+            duration = 180,
+            filepath = "/album/track1.mp3",
+            folder = "/album",
+            image = "album.jpg",
+            isFavorite = false,
+            title = "Opening Track",
+            trackHash = "track1",
+            disc = 1,
+            trackNumber = 1
+        ),
+        Track(
+            album = "Sample Album",
+            albumTrackArtists = listOf(albumArtist),
+            albumHash = "album123",
+            trackArtists = listOf(albumArtist),
+            bitrate = 320,
+            duration = 240,
+            filepath = "/album/track2.mp3",
+            folder = "/album",
+            image = "album.jpg",
+            isFavorite = true,
+            title = "Currently Playing Track",
+            trackHash = "track2",
+            disc = 1,
+            trackNumber = 12
+        ),
+        Track(
+            album = "Sample Album",
+            albumTrackArtists = listOf(albumArtist),
+            albumHash = "album123",
+            trackArtists = listOf(albumArtist, featuredArtist),
+            bitrate = 320,
+            duration = 320,
+            filepath = "/album/track3.mp3",
+            folder = "/album",
+            image = "album.jpg",
+            isFavorite = false,
+            title = "Double Digit Track",
+            trackHash = "track3",
+            disc = 1,
+            trackNumber = 99
+        ),
+        Track(
+            album = "Sample Album",
+            albumTrackArtists = listOf(albumArtist),
+            albumHash = "album123",
+            trackArtists = listOf(albumArtist),
+            bitrate = 320,
+            duration = 420,
+            filepath = "/album/track4.mp3",
+            folder = "/album",
+            image = "album.jpg",
+            isFavorite = true,
+            title = "Triple Digit Track Number",
+            trackHash = "track4",
+            disc = 1,
+            trackNumber = 123
+        ),
+        Track(
+            album = "Sample Album",
+            albumTrackArtists = listOf(albumArtist),
+            albumHash = "album123",
+            trackArtists = listOf(albumArtist),
+            bitrate = 320,
+            duration = 12,
+            filepath = "/album/track5.mp3",
+            folder = "/album",
+            image = "album.jpg",
+            isFavorite = false,
+            title = "Extreme Track Number",
+            trackHash = "track5",
+            disc = 1,
+            trackNumber = 9999
+        ),
+        Track(
+            album = "Sample Album",
+            albumTrackArtists = listOf(albumArtist),
+            albumHash = "album123",
+            trackArtists = listOf(albumArtist),
+            bitrate = 583,
+            duration = 12,
+            filepath = "/album/track5.mp3",
+            folder = "/album",
+            image = "album.jpg",
+            isFavorite = false,
+            title = "Zero Track Number",
+            trackHash = "track5",
+            disc = 1,
+            trackNumber = 0
+        )
+    )
+
+    SwingMusicTheme_Preview {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            Column {
+                Text(
+                    text = "Album Track Items",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+                albumTracks.forEachIndexed { index, track ->
+                    TrackItem(
+                        track = track,
+                        isAlbumTrack = true,
+                        isCurrentTrack = index == 1, // Second track is playing
+                        showMenuIcon = true,
+                        playbackState = if (index == 1) PlaybackState.PLAYING else PlaybackState.PAUSED,
+                        onClickTrackItem = { },
+                        onClickMoreVert = { },
+                        baseUrl = ""
+                    )
+                }
             }
         }
     }

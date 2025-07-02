@@ -9,6 +9,7 @@ interface QueueEvent {
         val source: QueueSource,
         val queue: List<Track>,
         val clickedTrackIndex: Int,
+        val isPartialQueue: Boolean = false
     ) : QueueEvent
 
     data class PlayNext(val track: Track, val source: QueueSource) : QueueEvent

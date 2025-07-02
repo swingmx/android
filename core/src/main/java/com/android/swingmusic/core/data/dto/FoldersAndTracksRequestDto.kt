@@ -9,4 +9,6 @@ data class FoldersAndTracksRequestDto(
     val tracksOnly: Boolean?,
     @SerializedName("limit")
     val limit: Int,
+    @SerializedName("start")
+    val start: Int,
 )
