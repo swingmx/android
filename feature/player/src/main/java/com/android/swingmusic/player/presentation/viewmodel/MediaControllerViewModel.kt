@@ -1103,7 +1103,7 @@ class MediaControllerViewModel @Inject constructor(
         queueExpansionJob = viewModelScope.launch {
             try {
                 var start = currentTracks.size
-                val chunkSize = 20
+                val chunkSize = 50
                 
                 while (true) {
                     val newTracks = pLayerRepository.getTracksChunk(
@@ -1135,7 +1135,7 @@ class MediaControllerViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 // Silent cancellation when switching folders
             } catch (e: Exception) {
-                Timber.e("Queue expansion failed: $e")
+                Timber.e("Queue Expansion Failed: $e")
             }
         }
     }
