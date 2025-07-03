@@ -509,7 +509,6 @@ fun FoldersAndTracksPaginatedScreen(
     // Refresh base URL and reload content when it changes
     LaunchedEffect(Unit) {
         mediaControllerViewModel.refreshBaseUrl()
-        foldersViewModel.refreshBaseUrl()
     }
     
     LaunchedEffect(baseUrl) {

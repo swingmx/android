@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
 import androidx.paging.map
-import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
@@ -19,7 +18,6 @@ import com.android.swingmusic.folder.presentation.state.FoldersContentPagingStat
 import com.android.swingmusic.player.domain.repository.PLayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
@@ -29,8 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class FoldersViewModel @Inject constructor(
     private val folderRepository: FolderRepository,
-    private val pLayerRepository: PLayerRepository,
-    private val authRepository: AuthRepository
+    private val pLayerRepository: PLayerRepository
 ) : ViewModel() {
     val homeDir: Folder = Folder(
         path = "\$home",
@@ -71,30 +68,16 @@ class FoldersViewModel @Inject constructor(
         mutableStateOf(FoldersContentPagingState())
     val foldersContentPaging: State<FoldersContentPagingState> = _foldersContentPaging
 
-    // Base URL state management
-    private val _baseUrl: MutableStateFlow<String?> = MutableStateFlow(null)
-    val baseUrl: StateFlow<String?> get() = _baseUrl
-
     init {
-        refreshBaseUrl()
         getFoldersContentPaging(homeDir.path)
     }
+
     fun resetNavPathsForGotoFolder(targetPath: String) {
         _navPaths.value = buildNavigationPaths(targetPath)
     }
 
-    fun refreshBaseUrl() {
-        viewModelScope.launch {
-            _baseUrl.update { authRepository.getBaseUrl() }
-        }
-    }
-
     fun fetchRootDirectoriesWhenReady() {
-        viewModelScope.launch {
-            if (_baseUrl.value != null) {
-                fetchRootDirectories()
-            }
-        }
+        fetchRootDirectories()
     }
 
     private fun fetchRootDirectories() {
@@ -173,6 +156,7 @@ class FoldersViewModel @Inject constructor(
         return paths
     }
 
+    // For empty rootDir result. Also important for root dir fetch error cases.
     private fun buildBasicNavigationFromPath(targetPath: String): List<Folder> {
         val paths = mutableListOf<Folder>()
         paths.add(homeDir)

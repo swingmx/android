@@ -4,6 +4,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.android.swingmusic.core.data.mapper.Map.toArtist
 import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.core.domain.util.CustomPagingException
 import com.android.swingmusic.network.data.api.service.NetworkApiService
 import retrofit2.HttpException
 import java.io.IOException
@@ -36,9 +37,18 @@ class ArtistsPagingSource(
                 nextKey = if (allArtistsDto.artistsDto?.isEmpty() == true) null else nextPageNumber + 1
             )
         } catch (e: IOException) {
-            LoadResult.Error(e)
+            LoadResult.Error(CustomPagingException("Network connection failed. Please check your internet connection.", e))
         } catch (e: HttpException) {
-            LoadResult.Error(e)
+            val errorMessage = when (e.code()) {
+                404 -> "Artists not found."
+                401 -> "Authentication failed. Please log in again."
+                403 -> "Access denied to artists."
+                500 -> "Server error. Please try again later."
+                else -> "Failed to load artists. Please try again."
+            }
+            LoadResult.Error(CustomPagingException(errorMessage, e))
+        } catch (e: Exception) {
+            LoadResult.Error(CustomPagingException("An unexpected error occurred while loading artists.", e))
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.android.swingmusic.core.data.mapper.Map.toAlbum
 import com.android.swingmusic.core.domain.model.Album
+import com.android.swingmusic.core.domain.util.CustomPagingException
 import com.android.swingmusic.network.data.api.service.NetworkApiService
 import retrofit2.HttpException
 import java.io.IOException
@@ -36,9 +37,18 @@ class AlbumsPagingSource(
                 nextKey = if (allAlbumsDto.albumDto?.isEmpty() == true) null else nextPageNumber + 1
             )
         } catch (e: IOException) {
-            LoadResult.Error(e)
+            LoadResult.Error(CustomPagingException("Network connection failed. Please check your internet connection.", e))
         } catch (e: HttpException) {
-            LoadResult.Error(e)
+            val errorMessage = when (e.code()) {
+                404 -> "Albums not found."
+                401 -> "Authentication failed. Please log in again."
+                403 -> "Access denied to albums."
+                500 -> "Server error. Please try again later."
+                else -> "Failed to load albums. Please try again."
+            }
+            LoadResult.Error(CustomPagingException(errorMessage, e))
+        } catch (e: Exception) {
+            LoadResult.Error(CustomPagingException("An unexpected error occurred while loading albums.", e))
         }
     }
 }
