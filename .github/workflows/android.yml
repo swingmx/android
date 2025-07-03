@@ -58,5 +58,6 @@ jobs:
           draft: false
           prerelease: true
           files: app/build/outputs/apk/release/${{ steps.version.outputs.apk_name }}
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
