@@ -1,5 +1,31 @@
 # Changelog
 
+## [Version 30] - 2025-01-03
+- Add auto-generated release notes to workflow
+
+## [Version 29] - 2025-01-03
+- Fix release permissions by using RELEASE_TOKEN
+
+## [Version 28] - 2025-01-03
+- Official Android signing with auto-versioning
+- Improve gitignore to exclude all keystore files
+- Add signing configuration and dynamic versioning support to build
+- Update CI workflow to use official Android signing with auto-versioning
+
+## [Version 27] - 2025-01-03
+- Fix CI APK signing path
+
+## [Version 26] - 2025-01-03
+- Fix GitHub workflow
+- Update GitHub workflow
+
+## [Version 25] - 2025-01-03
+- Add Search feature implementation
+- Implement hybrid queue expansion for folder sources
+- Expand queue when playing Folder tracks
+- Remove isPartialQueue flag from folder screen
+- Update versions and add changelog file
+
 ## [Version 24] - Pre-Release
 
 ### Added
