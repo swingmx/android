@@ -24,7 +24,7 @@ jobs:
           echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > release-key.keystore
           wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar
           java -jar uber-apk-signer-1.3.0.jar \
-            --apks ./app/build/outputs/apk/release/app-release-unsigned.apk \
+            --apks ./app/build/outputs/apk/release/app-release.apk \
             --ks release-key.keystore \
             --ksAlias ${{ secrets.KEYSTORE_ALIAS }} \
             --ksPass ${{ secrets.KEYSTORE_PASSWORD }} \
