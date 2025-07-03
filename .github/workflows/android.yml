@@ -59,4 +59,4 @@ jobs:
           prerelease: true
           files: app/build/outputs/apk/release/${{ steps.version.outputs.apk_name }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
