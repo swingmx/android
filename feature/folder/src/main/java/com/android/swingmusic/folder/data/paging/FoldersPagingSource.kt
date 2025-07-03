@@ -23,12 +23,14 @@ class FoldersPagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, FolderContentItem> {
         return try {
             val nextPageNumber = params.key ?: 0
-            val startIndex = nextPageNumber * params.loadSize
+            // Use consistent page size (20) for startIndex calculation instead of variable params.loadSize
+            val pageSize = 20
+            val startIndex = nextPageNumber * pageSize
 
             val requestDto = FoldersAndTracksRequestDto(
                 folder = folderPath,
                 tracksOnly = false,
-                limit = params.loadSize,
+                limit = pageSize,
                 start = startIndex
             )
 

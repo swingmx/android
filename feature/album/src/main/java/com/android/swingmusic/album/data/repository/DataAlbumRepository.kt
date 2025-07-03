@@ -52,7 +52,7 @@ class DataAlbumRepository @Inject constructor(
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
         return Pager(
-            config = PagingConfig(enablePlaceholders = false, pageSize = 20),
+            config = PagingConfig(enablePlaceholders = false, pageSize = 20, prefetchDistance = 1),
             pagingSourceFactory = {
                 AlbumsPagingSource(
                     baseUrl = "${baseUrl}getall/albums",

@@ -22,7 +22,9 @@ class ArtistsPagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Artist> {
         return try {
             val nextPageNumber = params.key ?: 0
-            val startIndex = nextPageNumber * params.loadSize
+            // Use consistent page size (20) for startIndex calculation instead of variable params.loadSize
+            val pageSize = 20
+            val startIndex = nextPageNumber * pageSize
 
             val allArtistsDto = api.getAllArtists(
                 url = baseUrl,
