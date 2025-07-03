@@ -509,10 +509,14 @@ fun FoldersAndTracksPaginatedScreen(
     // Refresh base URL and reload content when it changes
     LaunchedEffect(Unit) {
         mediaControllerViewModel.refreshBaseUrl()
+        foldersViewModel.refreshBaseUrl()
     }
     
     LaunchedEffect(baseUrl) {
         if (baseUrl != null && !hasInitializedWithBaseUrl) {
+            // Trigger root directories fetch now that base URL is available
+            foldersViewModel.fetchRootDirectoriesWhenReady()
+            
             // Only reload content if we're at home directory AND not in a "go to folder" scenario
             if (currentFolder.path == "\$home" && gotoFolderName == null && gotoFolderPath == null) {
                 foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(currentFolder))

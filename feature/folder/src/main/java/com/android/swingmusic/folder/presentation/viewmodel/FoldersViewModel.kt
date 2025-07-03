@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
 import androidx.paging.map
+import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
@@ -18,6 +19,7 @@ import com.android.swingmusic.folder.presentation.state.FoldersContentPagingStat
 import com.android.swingmusic.player.domain.repository.PLayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
@@ -27,7 +29,8 @@ import javax.inject.Inject
 @HiltViewModel
 class FoldersViewModel @Inject constructor(
     private val folderRepository: FolderRepository,
-    private val pLayerRepository: PLayerRepository
+    private val pLayerRepository: PLayerRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     val homeDir: Folder = Folder(
         path = "\$home",
@@ -44,8 +47,54 @@ class FoldersViewModel @Inject constructor(
         mutableStateOf(listOf(homeDir))
     val navPaths: State<List<Folder>> = _navPaths
 
+
+
+    private var _foldersAndTracks: MutableState<FoldersAndTracksState> = mutableStateOf(
+        FoldersAndTracksState(
+            foldersAndTracks = FoldersAndTracks(
+                folders = emptyList(),
+                tracks = emptyList()
+            ),
+            isLoading = true,
+            isError = false
+        )
+    )
+
+    val foldersAndTracks: State<FoldersAndTracksState> = _foldersAndTracks
+
+    private val updatedTrackFavorites = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+
+    private var _rootDirectories: MutableState<List<String>> = mutableStateOf(emptyList())
+    val rootDirectories: State<List<String>> = _rootDirectories
+
+    private var _foldersContentPaging: MutableState<FoldersContentPagingState> =
+        mutableStateOf(FoldersContentPagingState())
+    val foldersContentPaging: State<FoldersContentPagingState> = _foldersContentPaging
+
+    // Base URL state management
+    private val _baseUrl: MutableStateFlow<String?> = MutableStateFlow(null)
+    val baseUrl: StateFlow<String?> get() = _baseUrl
+
+    init {
+        refreshBaseUrl()
+        getFoldersContentPaging(homeDir.path)
+    }
     fun resetNavPathsForGotoFolder(targetPath: String) {
         _navPaths.value = buildNavigationPaths(targetPath)
+    }
+
+    fun refreshBaseUrl() {
+        viewModelScope.launch {
+            _baseUrl.update { authRepository.getBaseUrl() }
+        }
+    }
+
+    fun fetchRootDirectoriesWhenReady() {
+        viewModelScope.launch {
+            if (_baseUrl.value != null) {
+                fetchRootDirectories()
+            }
+        }
     }
 
     private fun fetchRootDirectories() {
@@ -68,8 +117,15 @@ class FoldersViewModel @Inject constructor(
 
     private fun buildNavigationPaths(targetPath: String): List<Folder> {
         val rootDirs = _rootDirectories.value
-        if (rootDirs.isEmpty() || targetPath == "\$home") {
+
+        if (targetPath == "\$home") {
             return listOf(homeDir)
+        }
+
+        if (rootDirs.isEmpty()) {
+            fetchRootDirectories()
+
+            return buildBasicNavigationFromPath(targetPath)
         }
 
         // Find matching root directory and remove it from target path
@@ -91,7 +147,7 @@ class FoldersViewModel @Inject constructor(
         val paths = mutableListOf<Folder>()
 
         paths.add(homeDir)
-        
+
         // Find the original root directory that matches this target path
         val matchingRootDir = when {
             targetPath.startsWith("/home") -> "/home"
@@ -99,7 +155,7 @@ class FoldersViewModel @Inject constructor(
                 targetPath.startsWith(rootDir)
             }
         }
-        
+
         var pathRootDir = matchingRootDir ?: ""
         for (segment in pathSegments) {
             pathRootDir = if (pathRootDir.isEmpty()) segment else "$pathRootDir/$segment"
@@ -117,36 +173,26 @@ class FoldersViewModel @Inject constructor(
         return paths
     }
 
-    private var _foldersAndTracks: MutableState<FoldersAndTracksState> =
-        mutableStateOf(
-            FoldersAndTracksState(
-                foldersAndTracks = FoldersAndTracks(
-                    folders = emptyList(),
-                    tracks = emptyList()
-                ),
-                isLoading = true,
-                isError = false
+    private fun buildBasicNavigationFromPath(targetPath: String): List<Folder> {
+        val paths = mutableListOf<Folder>()
+        paths.add(homeDir)
+
+        // Extract folder name from path - take the last segment as the current folder name
+        val pathSegments = targetPath.split("/").filter { it.isNotEmpty() }
+        if (pathSegments.isNotEmpty()) {
+            val folderName = pathSegments.last()
+            paths.add(
+                Folder(
+                    name = folderName,
+                    path = targetPath,
+                    trackCount = 0,
+                    folderCount = 0,
+                    isSym = false
+                )
             )
-        )
+        }
 
-    val foldersAndTracks: State<FoldersAndTracksState> = _foldersAndTracks
-
-    private val updatedTrackFavorites = MutableStateFlow<Map<String, Boolean>>(emptyMap())
-
-    private var _rootDirectories: MutableState<List<String>> = mutableStateOf(emptyList())
-    val rootDirectories: State<List<String>> = _rootDirectories
-
-    private var _foldersContentPaging: MutableState<FoldersContentPagingState> =
-        mutableStateOf(FoldersContentPagingState())
-    val foldersContentPaging: State<FoldersContentPagingState> = _foldersContentPaging
-
-    init {
-        fetchRootDirectories()
-        getFoldersContentPaging(homeDir.path)
-    }
-
-    fun refreshRootDirectories() {
-        fetchRootDirectories()
+        return paths
     }
 
     private fun getFoldersContentPaging(path: String) {
