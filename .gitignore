@@ -9,3 +9,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+*.keystore
+keystore-base64.txt
