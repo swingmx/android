@@ -3,7 +3,7 @@
 </div>
 <div align="center" style="font-size: 2rem"><b>Swing Music</b></div>
 
-<!-- <div align="center"><b><sub><code>v2.0.3</code></sub></b></div> -->
+<div align="center"><b><sub><code>v1.0.0</code></sub></b></div>
 
 **<div align="center" style="padding-top: 1.25rem">[Download](https://swingmx.com/downloads) • <a href="https://github.com/sponsors/swingmx" target="_blank">Support Development</a> • [Swing Music Docs](https://swingmx.com/guide/introduction.html) • [r/SwingMusicApp](https://www.reddit.com/r/SwingMusicApp)</div>**
 
