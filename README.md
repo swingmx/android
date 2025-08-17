@@ -1,8 +1,36 @@
-## Android client for [Swing Music](https://github.com/swingmx/swingmusic)
+<div align="center" style="display: flex; justify-content: center; align-items: center;">
+  <img class="lo" src='.github/images/logo-fill.light.svg' style="height: 4rem">
+</div>
+<div align="center" style="font-size: 2rem"><b>Swing Music</b></div>
 
-This project is currently in its early development stages as the [Swing Music team](https://github.com/orgs/swingmx/people) is diligently working to deliver a beta version as soon as possible.
+<!-- <div align="center"><b><sub><code>v2.0.3</code></sub></b></div> -->
 
-[![Android CI](https://github.com/swingmx/android/actions/workflows/android.yml/badge.svg)](https://github.com/swingmx/android/actions/workflows/android.yml)
+**<div align="center" style="padding-top: 1.25rem">[Download](https://swingmx.com/downloads) • <a href="https://github.com/sponsors/swingmx" target="_blank">Support Development</a> • [Swing Music Docs](https://swingmx.com/guide/introduction.html) • [r/SwingMusicApp](https://www.reddit.com/r/SwingMusicApp)</div>**
+
+##
+
+This client application allows you to stream music on your Android device from your Swing Music server.
+
+### Features
+
+Below is a list of the currently implemented features:
+
+- Playback
+- Search tracks
+- Album and artist views
+- Folders view
+- Albums and artist views
+- Playlists can be viewed in the folder view by enabling the `Show Playlists in folder view` option in `Settings > Folders` in the webclient.
+
+More features will be implemented in the future.
+
+### How to use
+
+Download the app from the [releases page](https://github.com/swingmx/android/releases) and install the APK. When you launch the app, you should be prompted to scan a QR code or enter your server details manually.
+
+You can to to `Settings > Pair device` on the webclient to get the QR code.
+
+## Screenshots
 
 <table>
   <tr>
@@ -13,7 +41,7 @@ This project is currently in its early development stages as the [Swing Music te
       <img src="https://github.com/swingmx/android/assets/54077752/59649546-295b-4e40-8e3e-8e03dd1f7dd7" width="320" alt="image" />
     </td>
   </tr>
-  
+<!--   
   <tr>
     <td>
       <img src="https://github.com/swingmx/android/assets/54077752/de0abb9d-95ed-4e2f-91ff-20dbf5288809" width="320" alt="image" />
@@ -21,7 +49,11 @@ This project is currently in its early development stages as the [Swing Music te
     <td>
       <img src="" width="320" alt="" />
     </td>
-  </tr>
+  </tr> -->
 </table>
 
-[![wakatime](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d.svg)](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d)
+<!-- [![wakatime](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d.svg)](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d) -->
+
+### License
+
+This software is provided to you with terms stated in the AGPLv3 License. Read the full text in the `LICENSE` file located at the root of this repository.
