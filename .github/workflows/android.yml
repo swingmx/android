@@ -6,7 +6,9 @@ on:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
+    if: startsWith(github.event.head_commit.message, 'release')
 
     steps:
       - uses: actions/checkout@v4
@@ -32,13 +34,17 @@ jobs:
       - name: Set version info
         id: version
         run: |
-          TAG_NUMBER=${{ github.run_number }}
-          echo "tag_number=$TAG_NUMBER" >> $GITHUB_OUTPUT
-          echo "tag_name=v$TAG_NUMBER" >> $GITHUB_OUTPUT
-          echo "apk_name=Swing Music v-tag-$TAG_NUMBER.apk" >> $GITHUB_OUTPUT
+          PATCH_VERSION=$((${{ github.run_number }} - 43))
+          VERSION_NAME="1.0.$PATCH_VERSION"
+          TAG_NAME="v$VERSION_NAME"
+          APK_NAME="Swing Music v$VERSION_NAME.apk"
+          echo "patch_version=$PATCH_VERSION" >> $GITHUB_OUTPUT
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
 
       - name: Build signed APK
-        run: ./gradlew assembleRelease -PversionCode=${{ steps.version.outputs.tag_number }} -PversionName="1.0.${{ steps.version.outputs.tag_number }}"
+        run: ./gradlew assembleRelease -PversionCode=${{ steps.version.outputs.patch_version }} -PversionName="${{ steps.version.outputs.version_name }}"
         env:
           KEYSTORE_FILE: release-key.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -56,7 +62,7 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag_name }}
           name: Release ${{ steps.version.outputs.tag_name }}
           draft: false
-          prerelease: true
+          prerelease: false
           files: app/build/outputs/apk/release/${{ steps.version.outputs.apk_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
