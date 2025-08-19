@@ -68,7 +68,7 @@ jobs:
       - name: Build signed APK
         run: ./gradlew assembleRelease -PversionCode=${{ github.run_number }} -PversionName="${{ steps.version.outputs.version_number }}"
         env:
-          KEYSTORE_FILE: app/release-key.keystore
+          KEYSTORE_FILE: release-key.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
