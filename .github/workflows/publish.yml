@@ -11,6 +11,11 @@ on:
         required: true
         type: string
         default: '1.x.x'
+      prerelease:
+        description: 'Mark as pre-release'
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -50,6 +55,7 @@ jobs:
             echo "version_number=$VERSION_NUMBER" >> $GITHUB_OUTPUT
             echo "tag_name=v$VERSION_NUMBER" >> $GITHUB_OUTPUT
             echo "apk_name=swingmusic.v$VERSION_NUMBER.apk" >> $GITHUB_OUTPUT
+            echo "prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
           else
             # Push trigger - extract from commit message
             COMMIT_MSG="${{ github.event.head_commit.message }}"
@@ -63,6 +69,7 @@ jobs:
             echo "version_number=$VERSION_NUMBER" >> $GITHUB_OUTPUT
             echo "tag_name=v$VERSION_NUMBER" >> $GITHUB_OUTPUT
             echo "apk_name=swingmusic.v$VERSION_NUMBER.apk" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Build signed APK
@@ -84,7 +91,7 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag_name }}
           name: ${{ steps.version.outputs.tag_name }}
           draft: false
-          prerelease: true
+          prerelease: ${{ steps.version.outputs.prerelease }}
           files: app/build/outputs/apk/release/${{ steps.version.outputs.apk_name }}
           generate_release_notes: true
         env:
