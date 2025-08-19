@@ -90,7 +90,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag_name }}
           name: ${{ steps.version.outputs.tag_name }}
-          draft: false
+          draft: true
           prerelease: ${{ steps.version.outputs.prerelease }}
           files: app/build/outputs/apk/release/${{ steps.version.outputs.apk_name }}
           generate_release_notes: true
