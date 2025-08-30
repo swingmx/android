@@ -5,7 +5,7 @@
 
 <div align="center"><b><sub><code>v1.0.0</code></sub></b></div>
 
-**<div align="center" style="padding-top: 1.25rem">[Download](https://swingmx.com/downloads) • <a href="https://github.com/sponsors/swingmx" target="_blank">Sponsor Us ❤️</a> • [Swing Music Docs](https://swingmx.com/guide/introduction.html) • [r/SwingMusicApp](https://www.reddit.com/r/SwingMusicApp)</div>**
+**<div align="center" style="padding-top: 1.25rem">[Download](https://github.com/swingmx/android/releases) • <a href="https://github.com/sponsors/swingmx" target="_blank">Sponsor Us ❤️</a> • [Swing Music Docs](https://swingmx.com/guide/introduction.html) • [r/SwingMusicApp](https://www.reddit.com/r/SwingMusicApp)</div>**
 
 ##
 
@@ -15,11 +15,10 @@ This client application allows you to stream music on your Android device from y
 
 Below is a list of the currently implemented features:
 
-- Playback
-- Search tracks
-- Album and artist views
 - Folders view
-- Albums and artist views
+- Playback
+- Albums and Artist view
+- Search Tracks, Albums, Artists
 - Playlists can be viewed in the folder view by enabling the `Show Playlists in folder view` option in `Settings > Folders` in the webclient.
 
 More features will be implemented in the future.
@@ -28,7 +27,7 @@ More features will be implemented in the future.
 
 Download the app from the [releases page](https://github.com/swingmx/android/releases) and install the APK. When you launch the app, you should be prompted to scan a QR code or enter your server details manually.
 
-You can to to `Settings > Pair device` on the webclient to get the QR code.
+You can go to `Settings > Pair device` on the webclient to get the QR code.
 
 ## Screenshots
 
