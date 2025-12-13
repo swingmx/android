@@ -12,17 +12,21 @@ import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
+import com.android.swingmusic.settings.domain.repository.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class AllAlbumsViewModel @Inject constructor(
     private val artistRepository: AlbumRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val settingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _baseUrl: MutableStateFlow<String?> = MutableStateFlow(null)
@@ -68,8 +72,13 @@ class AllAlbumsViewModel @Inject constructor(
 
     init {
         getBaseUrl()
-    }
 
+        settingsRepository.albumGridCount
+            .onEach { newCount ->
+                _allAlbumsUiState.value = _allAlbumsUiState.value.copy(gridCount = newCount)
+            }
+            .launchIn(viewModelScope)
+    }
 
     private fun getBaseUrl() {
         viewModelScope.launch {
@@ -86,6 +95,11 @@ class AllAlbumsViewModel @Inject constructor(
         getAlbumCount()
     }
 
+    private fun updateGridCount(count: Int) {
+        viewModelScope.launch {
+            settingsRepository.setAlbumGridCount(count)
+        }
+    }
 
     fun onAlbumsUiEvent(event: AlbumsUiEvent) {
         when (event) {
@@ -117,13 +131,11 @@ class AllAlbumsViewModel @Inject constructor(
             }
 
             is AlbumsUiEvent.OnClickAlbum -> {
-                // TODO: Navigate from the UI (apparently not in the VM)
+                // TODO: Navigate from the UI (handled by UI navigator)
             }
 
             is AlbumsUiEvent.OnUpdateGridCount -> {
-                _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
-                    gridCount = event.newCount
-                )
+                updateGridCount(event.newCount)
             }
 
             is AlbumsUiEvent.OnRetry -> {

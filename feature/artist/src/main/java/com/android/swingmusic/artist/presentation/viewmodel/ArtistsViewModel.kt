@@ -12,15 +12,19 @@ import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
+import com.android.swingmusic.settings.domain.repository.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ArtistsViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val settingsRepository: AppSettingsRepository
 ) : ViewModel() {
     private var baseUrl: MutableState<String?> = mutableStateOf(null)
     val artistsUiState: MutableState<ArtistsUiState> = mutableStateOf(ArtistsUiState())
@@ -61,6 +65,12 @@ class ArtistsViewModel @Inject constructor(
 
     init {
         getBaseUrl()
+
+        settingsRepository.artistGridCount
+            .onEach { newCount ->
+                artistsUiState.value = artistsUiState.value.copy(gridCount = newCount)
+            }
+            .launchIn(viewModelScope)
     }
 
     fun baseUrl() = baseUrl
@@ -77,6 +87,12 @@ class ArtistsViewModel @Inject constructor(
             sortOrder = artistsUiState.value.sortOrder
         )
         getArtistsCount()
+    }
+
+    private fun updateGridCount(count: Int) {
+        viewModelScope.launch {
+            settingsRepository.setArtistGridCount(count)
+        }
     }
 
     fun onArtistUiEvent(event: ArtistUiEvent) {
@@ -109,13 +125,11 @@ class ArtistsViewModel @Inject constructor(
             }
 
             is ArtistUiEvent.OnClickArtist -> {
-                // TODO: Navigate from the UI (apparently not in the VM)
+                // TODO: Navigate from the UI (handled by UI navigator)
             }
 
             is ArtistUiEvent.OnUpdateGridCount -> {
-                artistsUiState.value = artistsUiState.value.copy(
-                    gridCount = event.newCount
-                )
+                updateGridCount(event.newCount)
             }
 
             is ArtistUiEvent.OnRetry -> {
