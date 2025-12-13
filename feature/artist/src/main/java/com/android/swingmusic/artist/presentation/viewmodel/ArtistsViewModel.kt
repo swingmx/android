@@ -17,6 +17,7 @@ import com.android.swingmusic.settings.domain.repository.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -44,32 +45,33 @@ class ArtistsViewModel @Inject constructor(
     )
 
     init {
+        settingsRepository.artistGridCount.onEach { gridCount ->
+            _artistsUiState.value = _artistsUiState.value.copy(gridCount = gridCount)
+        }.launchIn(viewModelScope)
+
         combine(
-            settingsRepository.artistGridCount,
-            settingsRepository.artistSortOrder,
-            settingsRepository.artistSortBy
-        ) { gridCount, sortOrder, sortBy ->
+            settingsRepository.artistSortOrder.distinctUntilChanged(),
+            settingsRepository.artistSortBy.distinctUntilChanged()
+        ) { sortOrder, sortBy ->
             val sortByPair = sortArtistsByEntries.find { it.first == sortBy }
                 ?: Pair(SortBy.LAST_PLAYED, "lastplayed")
 
-            Triple(gridCount, sortOrder, sortByPair)
-        }.onEach { (gridCount, sortOrder, sortByPair) ->
+            Pair(sortOrder, sortByPair)
+        }.onEach { (sortOrder, sortByPair) ->
             _artistsUiState.value = _artistsUiState.value.copy(
-                gridCount = gridCount,
                 sortOrder = sortOrder,
                 sortBy = sortByPair
             )
+            getPagingArtists(
+                sortBy = _artistsUiState.value.sortBy.second,
+                sortOrder = _artistsUiState.value.sortOrder
+            )
         }.launchIn(viewModelScope)
-
-        getPagingArtists(
-            sortBy = _artistsUiState.value.sortBy.second,
-            sortOrder = _artistsUiState.value.sortOrder
-        )
-        getArtistsCount()
     }
 
     init {
         getBaseUrl()
+        getArtistsCount()
     }
 
     fun baseUrl() = baseUrl
@@ -123,20 +125,9 @@ class ArtistsViewModel @Inject constructor(
                             SortOrder.DESCENDING else SortOrder.ASCENDING
 
                         settingsRepository.setArtistSortOrder(newOrder)
-
-                        _artistsUiState.value = _artistsUiState.value.copy(sortOrder = newOrder)
-                        getPagingArtists(
-                            sortBy = event.sortByPair.second,
-                            sortOrder = newOrder
-                        )
                     } else {
                         settingsRepository.setArtistSortOrder(SortOrder.DESCENDING)
                         settingsRepository.setArtistSortBy(event.sortByPair.first)
-
-                        getPagingArtists(
-                            sortBy = event.sortByPair.second,
-                            sortOrder = SortOrder.DESCENDING
-                        )
                     }
                 }
             }

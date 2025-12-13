@@ -16,8 +16,10 @@ import com.android.swingmusic.settings.domain.repository.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -50,32 +52,33 @@ class AllAlbumsViewModel @Inject constructor(
 
     // Settings
     init {
+        settingsRepository.albumGridCount.onEach { gridCount ->
+            _allAlbumsUiState.value = _allAlbumsUiState.value.copy(gridCount = gridCount)
+        }.launchIn(viewModelScope)
+
         combine(
-            settingsRepository.albumGridCount,
-            settingsRepository.albumSortOrder,
-            settingsRepository.albumSortBy
-        ) { gridCount, sortOrder, sortBy ->
+            settingsRepository.albumSortOrder.distinctUntilChanged(),
+            settingsRepository.albumSortBy.distinctUntilChanged()
+        ) { sortOrder, sortBy ->
             val sortByPair = sortAlbumsByEntries.find { it.first == sortBy }
                 ?: Pair(SortBy.LAST_PLAYED, "lastplayed")
 
-            Triple(gridCount, sortOrder, sortByPair)
-        }.onEach { (gridCount, sortOrder, sortByPair) ->
+            Pair(sortOrder, sortByPair)
+        }.onEach { (sortOrder, sortByPair) ->
             _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
-                gridCount = gridCount,
                 sortOrder = sortOrder,
                 sortBy = sortByPair
             )
+            getPagingAlbums(
+                sortBy = sortByPair.second,
+                sortOrder = sortOrder
+            )
         }.launchIn(viewModelScope)
-
-        getPagingAlbums(
-            sortBy = _allAlbumsUiState.value.sortBy.second,
-            sortOrder = _allAlbumsUiState.value.sortOrder
-        )
-        getAlbumCount()
     }
 
     init {
         getBaseUrl()
+        getAlbumCount()
     }
 
     private fun getBaseUrl() {
@@ -127,19 +130,9 @@ class AllAlbumsViewModel @Inject constructor(
                             SortOrder.DESCENDING else SortOrder.ASCENDING
 
                         settingsRepository.setAlbumSortOrder(newOrder)
-
-                        getPagingAlbums(
-                            sortBy = event.sortByPair.second,
-                            sortOrder = newOrder
-                        )
                     } else {
                         settingsRepository.setAlbumSortOrder(SortOrder.DESCENDING)
                         settingsRepository.setAlbumSortBy(event.sortByPair.first)
-
-                        getPagingAlbums(
-                            sortBy = event.sortByPair.second,
-                            sortOrder = SortOrder.DESCENDING
-                        )
                     }
                 }
             }
