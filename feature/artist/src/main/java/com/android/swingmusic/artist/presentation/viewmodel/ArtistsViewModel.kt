@@ -1,6 +1,7 @@
 package com.android.swingmusic.artist.presentation.viewmodel
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,7 +28,8 @@ class ArtistsViewModel @Inject constructor(
     private val settingsRepository: AppSettingsRepository
 ) : ViewModel() {
     private var baseUrl: MutableState<String?> = mutableStateOf(null)
-    val artistsUiState: MutableState<ArtistsUiState> = mutableStateOf(ArtistsUiState())
+    private val _artistsUiState: MutableState<ArtistsUiState> = mutableStateOf(ArtistsUiState())
+    val artistsUiState: State<ArtistsUiState> = _artistsUiState
 
     val sortArtistsByEntries: List<Pair<SortBy, String>> = listOf(
         Pair(SortBy.LAST_PLAYED, "lastplayed"),
@@ -43,7 +45,7 @@ class ArtistsViewModel @Inject constructor(
     private fun getArtistsCount() {
         viewModelScope.launch {
             artistRepository.getArtistsCount().collectLatest {
-                artistsUiState.value = artistsUiState.value.copy(totalArtists = it)
+                _artistsUiState.value = _artistsUiState.value.copy(totalArtists = it)
             }
         }
     }
@@ -54,7 +56,7 @@ class ArtistsViewModel @Inject constructor(
             SortOrder.ASCENDING -> 0
         }
         viewModelScope.launch {
-            artistsUiState.value = artistsUiState.value.copy(
+            _artistsUiState.value = _artistsUiState.value.copy(
                 pagingArtists = artistRepository.getPagingArtists(
                     sortBy = sortBy,
                     sortOrder = order
@@ -68,7 +70,7 @@ class ArtistsViewModel @Inject constructor(
 
         settingsRepository.artistGridCount
             .onEach { newCount ->
-                artistsUiState.value = artistsUiState.value.copy(gridCount = newCount)
+                _artistsUiState.value = _artistsUiState.value.copy(gridCount = newCount)
             }
             .launchIn(viewModelScope)
     }
@@ -83,8 +85,8 @@ class ArtistsViewModel @Inject constructor(
 
     init {
         getPagingArtists(
-            sortBy = artistsUiState.value.sortBy.second,
-            sortOrder = artistsUiState.value.sortOrder
+            sortBy = _artistsUiState.value.sortBy.second,
+            sortOrder = _artistsUiState.value.sortOrder
         )
         getArtistsCount()
     }
@@ -99,21 +101,21 @@ class ArtistsViewModel @Inject constructor(
         when (event) {
             is ArtistUiEvent.OnSortBy -> {
                 // Retry fetching artist count if the previous sorting resulted to Error
-                if (artistsUiState.value.totalArtists is Resource.Error) {
+                if (_artistsUiState.value.totalArtists is Resource.Error) {
                     getArtistsCount()
                 }
 
-                if (event.sortByPair == artistsUiState.value.sortBy) {
-                    val newOrder = if (artistsUiState.value.sortOrder == SortOrder.ASCENDING)
+                if (event.sortByPair == _artistsUiState.value.sortBy) {
+                    val newOrder = if (_artistsUiState.value.sortOrder == SortOrder.ASCENDING)
                         SortOrder.DESCENDING else SortOrder.ASCENDING
 
-                    artistsUiState.value = artistsUiState.value.copy(sortOrder = newOrder)
+                    _artistsUiState.value = _artistsUiState.value.copy(sortOrder = newOrder)
                     getPagingArtists(
                         sortBy = event.sortByPair.second,
                         sortOrder = newOrder
                     )
                 } else {
-                    artistsUiState.value = artistsUiState.value.copy(
+                    _artistsUiState.value = _artistsUiState.value.copy(
                         sortBy = event.sortByPair,
                         sortOrder = SortOrder.DESCENDING
                     )
@@ -133,14 +135,14 @@ class ArtistsViewModel @Inject constructor(
             }
 
             is ArtistUiEvent.OnRetry -> {
-                if (artistsUiState.value.totalArtists is Resource.Error) {
+                if (_artistsUiState.value.totalArtists is Resource.Error) {
                     getArtistsCount()
                 }
             }
 
             is ArtistUiEvent.OnPullToRefresh -> {
-                val sortBy = artistsUiState.value.sortBy
-                val sortOrder = artistsUiState.value.sortOrder
+                val sortBy = _artistsUiState.value.sortBy
+                val sortOrder = _artistsUiState.value.sortOrder
 
                 getPagingArtists(
                     sortBy = sortBy.second,
