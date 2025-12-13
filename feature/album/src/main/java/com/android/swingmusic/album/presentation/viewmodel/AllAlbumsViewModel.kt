@@ -17,6 +17,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -70,21 +71,34 @@ class AllAlbumsViewModel @Inject constructor(
         }
     }
 
+    // Settings
+    init {
+        combine(
+            settingsRepository.albumGridCount,
+            settingsRepository.albumSortOrder,
+            settingsRepository.albumSortBy
+        ) { gridCount, sortOrder, sortBy ->
+            val sortByPair = sortAlbumsByEntries.find { it.first == sortBy }
+                ?: Pair(SortBy.LAST_PLAYED, "lastplayed")
+
+            Triple(gridCount, sortOrder, sortByPair)
+        }.onEach { (gridCount, sortOrder, sortByPair) ->
+            _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
+                gridCount = gridCount,
+                sortOrder = sortOrder,
+                sortBy = sortByPair
+            )
+        }.launchIn(viewModelScope)
+    }
+
     init {
         getBaseUrl()
-
-        settingsRepository.albumGridCount
-            .onEach { newCount ->
-                _allAlbumsUiState.value = _allAlbumsUiState.value.copy(gridCount = newCount)
-            }
-            .launchIn(viewModelScope)
     }
 
     private fun getBaseUrl() {
         viewModelScope.launch {
             _baseUrl.value = authRepository.getBaseUrl()
         }
-
     }
 
     init {
@@ -104,29 +118,31 @@ class AllAlbumsViewModel @Inject constructor(
     fun onAlbumsUiEvent(event: AlbumsUiEvent) {
         when (event) {
             is AlbumsUiEvent.OnSortBy -> {
-                // Retry fetching artist count if the previous sorting resulted to Error
-                if (_allAlbumsUiState.value.totalAlbums is Resource.Error) {
-                    getAlbumCount()
-                }
+                viewModelScope.launch {
+                    // Retry fetching artist count if the previous sorting resulted to Error
+                    if (_allAlbumsUiState.value.totalAlbums is Resource.Error) {
+                        getAlbumCount()
+                    }
 
-                if (event.sortByPair == _allAlbumsUiState.value.sortBy) {
-                    val newOrder = if (_allAlbumsUiState.value.sortOrder == SortOrder.ASCENDING)
-                        SortOrder.DESCENDING else SortOrder.ASCENDING
+                    if (event.sortByPair == _allAlbumsUiState.value.sortBy) {
+                        val newOrder = if (_allAlbumsUiState.value.sortOrder == SortOrder.ASCENDING)
+                            SortOrder.DESCENDING else SortOrder.ASCENDING
 
-                    _allAlbumsUiState.value = _allAlbumsUiState.value.copy(sortOrder = newOrder)
-                    getPagingAlbums(
-                        sortBy = event.sortByPair.second,
-                        sortOrder = newOrder
-                    )
-                } else {
-                    _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
-                        sortBy = event.sortByPair,
-                        sortOrder = SortOrder.DESCENDING
-                    )
-                    getPagingAlbums(
-                        sortBy = event.sortByPair.second,
-                        sortOrder = SortOrder.DESCENDING
-                    )
+                        settingsRepository.setAlbumSortOrder(newOrder)
+
+                        getPagingAlbums(
+                            sortBy = event.sortByPair.second,
+                            sortOrder = newOrder
+                        )
+                    } else {
+                        settingsRepository.setAlbumSortOrder(SortOrder.DESCENDING)
+                        settingsRepository.setAlbumSortBy(event.sortByPair.first)
+
+                        getPagingAlbums(
+                            sortBy = event.sortByPair.second,
+                            sortOrder = SortOrder.DESCENDING
+                        )
+                    }
                 }
             }
 

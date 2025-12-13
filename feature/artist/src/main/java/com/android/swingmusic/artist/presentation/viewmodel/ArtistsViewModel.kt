@@ -16,6 +16,7 @@ import com.android.swingmusic.core.domain.util.SortOrder
 import com.android.swingmusic.settings.domain.repository.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -66,13 +67,26 @@ class ArtistsViewModel @Inject constructor(
     }
 
     init {
-        getBaseUrl()
+        combine(
+            settingsRepository.artistGridCount,
+            settingsRepository.artistSortOrder,
+            settingsRepository.artistSortBy
+        ) { gridCount, sortOrder, sortBy ->
+            val sortByPair = sortArtistsByEntries.find { it.first == sortBy }
+                ?: Pair(SortBy.LAST_PLAYED, "lastplayed")
 
-        settingsRepository.artistGridCount
-            .onEach { newCount ->
-                _artistsUiState.value = _artistsUiState.value.copy(gridCount = newCount)
-            }
-            .launchIn(viewModelScope)
+            Triple(gridCount, sortOrder, sortByPair)
+        }.onEach { (gridCount, sortOrder, sortByPair) ->
+            _artistsUiState.value = _artistsUiState.value.copy(
+                gridCount = gridCount,
+                sortOrder = sortOrder,
+                sortBy = sortByPair
+            )
+        }.launchIn(viewModelScope)
+    }
+
+    init {
+        getBaseUrl()
     }
 
     fun baseUrl() = baseUrl
@@ -100,29 +114,32 @@ class ArtistsViewModel @Inject constructor(
     fun onArtistUiEvent(event: ArtistUiEvent) {
         when (event) {
             is ArtistUiEvent.OnSortBy -> {
-                // Retry fetching artist count if the previous sorting resulted to Error
-                if (_artistsUiState.value.totalArtists is Resource.Error) {
-                    getArtistsCount()
-                }
+                viewModelScope.launch {
+                    // Retry fetching artist count if the previous sorting resulted to Error
+                    if (_artistsUiState.value.totalArtists is Resource.Error) {
+                        getArtistsCount()
+                    }
 
-                if (event.sortByPair == _artistsUiState.value.sortBy) {
-                    val newOrder = if (_artistsUiState.value.sortOrder == SortOrder.ASCENDING)
-                        SortOrder.DESCENDING else SortOrder.ASCENDING
+                    if (event.sortByPair == _artistsUiState.value.sortBy) {
+                        val newOrder = if (_artistsUiState.value.sortOrder == SortOrder.ASCENDING)
+                            SortOrder.DESCENDING else SortOrder.ASCENDING
 
-                    _artistsUiState.value = _artistsUiState.value.copy(sortOrder = newOrder)
-                    getPagingArtists(
-                        sortBy = event.sortByPair.second,
-                        sortOrder = newOrder
-                    )
-                } else {
-                    _artistsUiState.value = _artistsUiState.value.copy(
-                        sortBy = event.sortByPair,
-                        sortOrder = SortOrder.DESCENDING
-                    )
-                    getPagingArtists(
-                        sortBy = event.sortByPair.second,
-                        sortOrder = SortOrder.DESCENDING
-                    )
+                        settingsRepository.setArtistSortOrder(newOrder)
+
+                        _artistsUiState.value = _artistsUiState.value.copy(sortOrder = newOrder)
+                        getPagingArtists(
+                            sortBy = event.sortByPair.second,
+                            sortOrder = newOrder
+                        )
+                    } else {
+                        settingsRepository.setArtistSortOrder(SortOrder.DESCENDING)
+                        settingsRepository.setArtistSortBy(event.sortByPair.first)
+
+                        getPagingArtists(
+                            sortBy = event.sortByPair.second,
+                            sortOrder = SortOrder.DESCENDING
+                        )
+                    }
                 }
             }
 

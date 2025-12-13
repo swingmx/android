@@ -47,6 +47,9 @@ dependencies {
     // Core
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    // Project Core
+    implementation(project(":core"))
+
 
     // Compose
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
