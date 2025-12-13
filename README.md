@@ -9,6 +9,8 @@
 
 ##
 
+![Image](.github/images/readme.webp)
+
 This client application allows you to stream music on your Android device from your Swing Music server.
 
 ### Features
@@ -28,10 +30,6 @@ More features will be implemented in the future.
 Download the app from the [releases page](https://github.com/swingmx/android/releases) and install the APK. When you launch the app, you should be prompted to scan a QR code or enter your server details manually.
 
 You can go to `Settings > Pair device` on the webclient to get the QR code.
-
-## Screenshots
-
-![Image](.github/images/readme.webp)
 
 <!-- [![wakatime](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d.svg)](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d) -->
 
