@@ -5,6 +5,7 @@ import android.content.Context
 import com.android.swingmusic.auth.data.api.service.AuthApiService
 import com.android.swingmusic.auth.data.datastore.AuthTokensDataStore
 import com.android.swingmusic.database.data.dao.BaseUrlDao
+import com.chuckerteam.chucker.api.ChuckerInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,10 +34,13 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun providesOkHttpClient(): OkHttpClient {
+    fun providesOkHttpClient(
+        @ApplicationContext context: Context
+    ): OkHttpClient {
         val interceptor = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
         return OkHttpClient.Builder()
             .addInterceptor(interceptor)
+            .addInterceptor(ChuckerInterceptor(context))
             .callTimeout(15, TimeUnit.SECONDS)
             .connectTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)

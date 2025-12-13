@@ -12,17 +12,24 @@ import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
+import com.android.swingmusic.settings.domain.repository.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class AllAlbumsViewModel @Inject constructor(
     private val artistRepository: AlbumRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val settingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _baseUrl: MutableStateFlow<String?> = MutableStateFlow(null)
@@ -42,6 +49,43 @@ class AllAlbumsViewModel @Inject constructor(
         Pair(SortBy.DATE, "date"),
         Pair(SortBy.DURATION, "duration"),
     )
+
+    // Settings
+    init {
+        settingsRepository.albumGridCount.onEach { gridCount ->
+            _allAlbumsUiState.value = _allAlbumsUiState.value.copy(gridCount = gridCount)
+        }.launchIn(viewModelScope)
+
+        combine(
+            settingsRepository.albumSortOrder.distinctUntilChanged(),
+            settingsRepository.albumSortBy.distinctUntilChanged()
+        ) { sortOrder, sortBy ->
+            val sortByPair = sortAlbumsByEntries.find { it.first == sortBy }
+                ?: Pair(SortBy.LAST_PLAYED, "lastplayed")
+
+            Pair(sortOrder, sortByPair)
+        }.onEach { (sortOrder, sortByPair) ->
+            _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
+                sortOrder = sortOrder,
+                sortBy = sortByPair
+            )
+            getPagingAlbums(
+                sortBy = sortByPair.second,
+                sortOrder = sortOrder
+            )
+        }.launchIn(viewModelScope)
+    }
+
+    init {
+        getBaseUrl()
+        getAlbumCount()
+    }
+
+    private fun getBaseUrl() {
+        viewModelScope.launch {
+            _baseUrl.value = authRepository.getBaseUrl()
+        }
+    }
 
     private fun getAlbumCount() {
         viewModelScope.launch {
@@ -66,64 +110,39 @@ class AllAlbumsViewModel @Inject constructor(
         }
     }
 
-    init {
-        getBaseUrl()
-    }
-
-
-    private fun getBaseUrl() {
+    private fun updateGridCount(count: Int) {
         viewModelScope.launch {
-            _baseUrl.value = authRepository.getBaseUrl()
+            settingsRepository.setAlbumGridCount(count)
         }
-
     }
-
-    init {
-        getPagingAlbums(
-            sortBy = _allAlbumsUiState.value.sortBy.second,
-            sortOrder = _allAlbumsUiState.value.sortOrder
-        )
-        getAlbumCount()
-    }
-
 
     fun onAlbumsUiEvent(event: AlbumsUiEvent) {
         when (event) {
             is AlbumsUiEvent.OnSortBy -> {
-                // Retry fetching artist count if the previous sorting resulted to Error
-                if (_allAlbumsUiState.value.totalAlbums is Resource.Error) {
-                    getAlbumCount()
-                }
+                viewModelScope.launch {
+                    // Retry fetching artist count if the previous sorting resulted to Error
+                    if (_allAlbumsUiState.value.totalAlbums is Resource.Error) {
+                        getAlbumCount()
+                    }
 
-                if (event.sortByPair == _allAlbumsUiState.value.sortBy) {
-                    val newOrder = if (_allAlbumsUiState.value.sortOrder == SortOrder.ASCENDING)
-                        SortOrder.DESCENDING else SortOrder.ASCENDING
+                    if (event.sortByPair == _allAlbumsUiState.value.sortBy) {
+                        val newOrder = if (_allAlbumsUiState.value.sortOrder == SortOrder.ASCENDING)
+                            SortOrder.DESCENDING else SortOrder.ASCENDING
 
-                    _allAlbumsUiState.value = _allAlbumsUiState.value.copy(sortOrder = newOrder)
-                    getPagingAlbums(
-                        sortBy = event.sortByPair.second,
-                        sortOrder = newOrder
-                    )
-                } else {
-                    _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
-                        sortBy = event.sortByPair,
-                        sortOrder = SortOrder.DESCENDING
-                    )
-                    getPagingAlbums(
-                        sortBy = event.sortByPair.second,
-                        sortOrder = SortOrder.DESCENDING
-                    )
+                        settingsRepository.setAlbumSortOrder(newOrder)
+                    } else {
+                        settingsRepository.setAlbumSortOrder(SortOrder.DESCENDING)
+                        settingsRepository.setAlbumSortBy(event.sortByPair.first)
+                    }
                 }
             }
 
             is AlbumsUiEvent.OnClickAlbum -> {
-                // TODO: Navigate from the UI (apparently not in the VM)
+                // TODO: Navigate from the UI (handled by UI navigator)
             }
 
             is AlbumsUiEvent.OnUpdateGridCount -> {
-                _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
-                    gridCount = event.newCount
-                )
+                updateGridCount(event.newCount)
             }
 
             is AlbumsUiEvent.OnRetry -> {

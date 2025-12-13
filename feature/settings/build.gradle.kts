@@ -6,13 +6,14 @@ plugins {
 }
 
 android {
-    namespace = "com.android.swingmusic.artist"
-    compileSdk = 34
+    namespace = "com.android.swingmusic.settings"
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 26
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
@@ -30,9 +31,11 @@ android {
     buildFeatures {
         compose = true
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.0"
     }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -41,20 +44,12 @@ android {
 }
 
 dependencies {
-
-    // Local Modules
-    implementation(project(":auth"))
-    implementation(project(":core"))
-    implementation(project(":network"))
-    implementation(project(":uicomponent"))
-    implementation(project(":feature:player"))
-    implementation(project(":feature:settings"))
-    // Common Feature
-    implementation(project(":feature:common"))
-
     // Core
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    // Project Core
+    implementation(project(":core"))
+
 
     // Compose
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
@@ -65,33 +60,29 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // Hilt
+    // Hilt DI
     implementation("com.google.dagger:hilt-android:2.50")
     ksp("com.google.dagger:hilt-android-compiler:2.50")
 
     // Hilt Navigation-Compose
-    implementation ("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.5.0")
+
+    //Prefs Datastore
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
 
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
-
-    // Raamcosta Navigation
+    // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
     ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
 
-    // Pagination
-    implementation ("androidx.paging:paging-compose")
-
-    // Coil Image Loader
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 }
 
 kotlin {
@@ -107,5 +98,5 @@ kotlin {
 
 ksp {
     arg("compose-destinations.mode", "destinations")
-    arg("compose-destinations.moduleName", "feature:artist")
+    arg("compose-destinations.moduleName", "settings")
 }
