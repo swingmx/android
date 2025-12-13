@@ -48,6 +48,42 @@ class AllAlbumsViewModel @Inject constructor(
         Pair(SortBy.DURATION, "duration"),
     )
 
+    // Settings
+    init {
+        combine(
+            settingsRepository.albumGridCount,
+            settingsRepository.albumSortOrder,
+            settingsRepository.albumSortBy
+        ) { gridCount, sortOrder, sortBy ->
+            val sortByPair = sortAlbumsByEntries.find { it.first == sortBy }
+                ?: Pair(SortBy.LAST_PLAYED, "lastplayed")
+
+            Triple(gridCount, sortOrder, sortByPair)
+        }.onEach { (gridCount, sortOrder, sortByPair) ->
+            _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
+                gridCount = gridCount,
+                sortOrder = sortOrder,
+                sortBy = sortByPair
+            )
+        }.launchIn(viewModelScope)
+
+        getPagingAlbums(
+            sortBy = _allAlbumsUiState.value.sortBy.second,
+            sortOrder = _allAlbumsUiState.value.sortOrder
+        )
+        getAlbumCount()
+    }
+
+    init {
+        getBaseUrl()
+    }
+
+    private fun getBaseUrl() {
+        viewModelScope.launch {
+            _baseUrl.value = authRepository.getBaseUrl()
+        }
+    }
+
     private fun getAlbumCount() {
         viewModelScope.launch {
             artistRepository.getAlbumCount().collectLatest {
@@ -69,44 +105,6 @@ class AllAlbumsViewModel @Inject constructor(
                 ).cachedIn(viewModelScope)
             )
         }
-    }
-
-    // Settings
-    init {
-        combine(
-            settingsRepository.albumGridCount,
-            settingsRepository.albumSortOrder,
-            settingsRepository.albumSortBy
-        ) { gridCount, sortOrder, sortBy ->
-            val sortByPair = sortAlbumsByEntries.find { it.first == sortBy }
-                ?: Pair(SortBy.LAST_PLAYED, "lastplayed")
-
-            Triple(gridCount, sortOrder, sortByPair)
-        }.onEach { (gridCount, sortOrder, sortByPair) ->
-            _allAlbumsUiState.value = _allAlbumsUiState.value.copy(
-                gridCount = gridCount,
-                sortOrder = sortOrder,
-                sortBy = sortByPair
-            )
-        }.launchIn(viewModelScope)
-    }
-
-    init {
-        getBaseUrl()
-    }
-
-    private fun getBaseUrl() {
-        viewModelScope.launch {
-            _baseUrl.value = authRepository.getBaseUrl()
-        }
-    }
-
-    init {
-        getPagingAlbums(
-            sortBy = _allAlbumsUiState.value.sortBy.second,
-            sortOrder = _allAlbumsUiState.value.sortOrder
-        )
-        getAlbumCount()
     }
 
     private fun updateGridCount(count: Int) {
