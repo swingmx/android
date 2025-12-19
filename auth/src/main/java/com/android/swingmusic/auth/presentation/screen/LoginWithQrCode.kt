@@ -98,12 +98,13 @@ fun LoginWithQrCode(
         else -> ""
     }
 
-    LaunchedEffect(key1 = authUiState.authState, block = {
-        if (authUiState.authState == AuthState.AUTHENTICATED) {
-            // authNavigator.gotoHomeNavGraph()
-            authNavigator.gotoFolders()
+    LaunchedEffect(Unit) {
+        authViewModel.authStateEvent.collect { state ->
+            if (state == AuthState.AUTHENTICATED) {
+                authNavigator.gotoFolders()
+            }
         }
-    })
+    }
 
     Scaffold {
         Scaffold(
