@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -99,7 +98,6 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.android.swingmusic.uicomponent.presentation.util.formatDate
 import com.android.swingmusic.uicomponent.presentation.util.formattedAlbumDuration
@@ -1040,7 +1038,7 @@ fun AlbumWithInfoScreenPreview() {
         )
     )
 
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         AlbumWithInfo(
             currentTrack = tracks[5],
             sortedTracks = tracks,
@@ -1177,7 +1175,7 @@ fun ShimmerLoadingAlbumScreen() {
 )
 @Composable
 fun ShimmerPreview() {
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         //  ShimmerLoadingAlbumScreen()
     }
 }

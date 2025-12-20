@@ -15,7 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 
 @Composable
 fun PlayingTrackIndicator(
@@ -64,7 +64,7 @@ fun PlayingTrackIndicator(
 @Preview
 @Composable
 fun PlayingTrackIndicatorPreview() {
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         Box(
             modifier = Modifier.size(48.dp)
         ) {

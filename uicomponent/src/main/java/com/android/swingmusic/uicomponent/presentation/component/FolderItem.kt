@@ -37,7 +37,7 @@ import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 
 @Composable
 fun FolderItem(
@@ -215,7 +215,7 @@ fun FolderItemPreview() {
         path = "/album"
     )
 
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         Surface {
             Column(modifier = Modifier.fillMaxSize()) {
                 Text(

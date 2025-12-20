@@ -113,19 +113,3 @@ fun SwingMusicTheme(
         content = content
     )
 }
-
-
-/**TODO: Use this For Previews where context is not required
- * Since LocalContext.current is breaking previews in the current compose versions (1.6.8)*/
-
-@Composable
-fun SwingMusicTheme_Preview(
-    content: @Composable () -> Unit
-) {
-    MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) darkColorScheme else lightColorScheme,
-        typography = Typography,
-    ) {
-        content()
-    }
-}

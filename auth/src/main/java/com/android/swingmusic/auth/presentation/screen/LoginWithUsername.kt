@@ -66,7 +66,7 @@ import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.ramcosta.composedestinations.annotation.Destination
 
 @Composable
@@ -387,7 +387,7 @@ fun LoginWithUsernameScreen(
 )
 @Composable
 fun LoginWithUsernamePreview() {
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         var baseUrl = remember { "https://default" }
         var username = remember { "" }
         var password = remember { "" }
