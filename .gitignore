@@ -11,3 +11,4 @@
 local.properties
 *.keystore
 keystore-base64.txt
+/.kotlin/sessions

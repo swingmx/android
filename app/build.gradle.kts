@@ -13,7 +13,7 @@ android {
     defaultConfig {
         applicationId = "com.android.swingmusic"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = project.findProperty("versionCode")?.toString()?.toInt() ?: 1
         versionName = project.findProperty("versionName")?.toString() ?: "1.0.0"
 
@@ -36,6 +36,7 @@ android {
         debug {
             isDebuggable = true
             applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "Swing Music [D]")
         }
         release {
             isMinifyEnabled = true
@@ -99,8 +100,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
 
     // Hilt DI
-    implementation("com.google.dagger:hilt-android:2.50")
-    ksp("com.google.dagger:hilt-android-compiler:2.50")
+    implementation("com.google.dagger:hilt-android:2.53.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.53.1")
 
     // Hilt Navigation-Compose
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
