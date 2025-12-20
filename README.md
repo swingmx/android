@@ -3,7 +3,7 @@
 </div>
 <div align="center" style="font-size: 2rem"><b>Swing Music Android Client</b></div>
 
-<div align="center"><b><sub><code>v1.0.0</code></sub></b></div>
+<div align="center"><b><sub><code>v1.0.1</code></sub></b></div>
 
 **<div align="center" style="padding-top: 1.25rem">[Download](https://github.com/swingmx/android/releases) • <a href="https://github.com/sponsors/swingmx" target="_blank">Sponsor Us ❤️</a> • [Swing Music Docs](https://swingmx.com/guide/introduction.html) • [r/SwingMusicApp](https://www.reddit.com/r/SwingMusicApp)</div>**
 
