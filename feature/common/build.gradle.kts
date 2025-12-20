@@ -1,15 +1,15 @@
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.android.swingmusic.common"
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 26
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -35,8 +35,8 @@ android {
 
 dependencies {
     // Raamcosta Navigation
-    implementation("io.github.raamcosta.compose-destinations:core:1.9.63")
-    ksp("io.github.raamcosta.compose-destinations:ksp:1.9.63")
+    implementation(libs.compose.destinations.core)
+    ksp(libs.compose.destinations.ksp)
 }
 
 kotlin {
