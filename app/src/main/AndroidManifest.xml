@@ -37,7 +37,7 @@
             android:name=".presentation.activity.MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"
-            android:configChanges="orientation|screenSize|uiMode"
+            android:configChanges="orientation"
             android:theme="@style/Theme.SwingMusic">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

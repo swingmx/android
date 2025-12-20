@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.HorizontalPager
@@ -522,6 +523,7 @@ private fun NowPlaying(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(MaterialTheme.colorScheme.inverseOnSurface)
+                    .navigationBarsPadding()
                     .padding(vertical = 12.dp, horizontal = 32.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
