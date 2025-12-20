@@ -90,11 +90,11 @@ class DataAuthRepository @Inject constructor(
             )
 
             result.toModel()
-        } catch (e: Exception) {
-            Timber.e(message = "Failed to get refresh tokens!")
-            null
         } catch (e: HttpException) {
             Timber.e(message = "Connection Failed!")
+            null
+        } catch (e: Exception) {
+            Timber.e(message = "Failed to get refresh tokens!")
             null
         }
     }
@@ -107,10 +107,10 @@ class DataAuthRepository @Inject constructor(
                 val result = authApiService.getAllUsers("$baseUrl/auth/users").toModel()
                 emit(Resource.Success(data = result))
 
-            } catch (e: Exception) {
-                emit(Resource.Error(message = "Failed to load users!"))
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "Connection Failed!"))
+            } catch (e: Exception) {
+                emit(Resource.Error(message = "Failed to load users!"))
             }
         }
     }

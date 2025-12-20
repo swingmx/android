@@ -16,10 +16,12 @@ import com.android.swingmusic.auth.presentation.state.AuthUiState
 import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.core.data.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -35,6 +37,9 @@ class AuthViewModel @Inject constructor(
 
     private val _isUserLoggedIn = MutableStateFlow<Boolean?>(null)
     val isUserLoggedIn: StateFlow<Boolean?> = _isUserLoggedIn.asStateFlow()
+
+    private val _authStateEvent = Channel<AuthState>(Channel.BUFFERED)
+    val authStateEvent = _authStateEvent.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -151,6 +156,8 @@ class AuthViewModel @Inject constructor(
                             authError = AuthError.None,
                             baseUrl = baseUrl
                         )
+
+                        _authStateEvent.trySend(AuthState.AUTHENTICATED)
                     }
                 }
             }
@@ -165,7 +172,7 @@ class AuthViewModel @Inject constructor(
             val url = pair.first
             val pairCode = pair.second
 
-            if (url.isEmpty() or pairCode.isEmpty()) {
+            if (url.isEmpty() || pairCode.isEmpty()) {
                 _authUiState.value = _authUiState.value.copy(
                     authState = AuthState.LOGGED_OUT,
                     isLoading = false,
@@ -210,6 +217,8 @@ class AuthViewModel @Inject constructor(
                             authError = AuthError.None,
                             baseUrl = url
                         )
+
+                        _authStateEvent.trySend(AuthState.AUTHENTICATED)
                     }
                 }
             }
