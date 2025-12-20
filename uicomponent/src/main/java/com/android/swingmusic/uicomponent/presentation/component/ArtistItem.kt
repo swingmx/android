@@ -27,7 +27,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 
 @Composable
 fun ArtistItem(
@@ -96,7 +96,7 @@ fun ArtistItemPreview() {
         return Artist(artisthash, colors, createdDate, helpText, image, name)
     }
 
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         Surface {
             ArtistItem(
                 modifier = Modifier.size(150.dp),

@@ -49,7 +49,7 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import kotlin.math.roundToInt
 
 @Composable
@@ -237,7 +237,7 @@ fun MiniPlayer(
 )
 @Composable
 fun MiniPlayerPreview() {
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         MiniPlayer(
             baseUrl = "",
             trackTitle = "Track title is too large to be displayed",

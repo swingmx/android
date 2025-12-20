@@ -44,7 +44,7 @@ import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.Screen
 import com.android.swingmusic.uicomponent.presentation.util.formatDate
 
@@ -245,7 +245,7 @@ fun AlbumItemPreview() {
         title = "Death Race For Love",
         versions = listOf("bonus edition")
     )
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         Surface {
             LazyVerticalGrid(
                 modifier = Modifier

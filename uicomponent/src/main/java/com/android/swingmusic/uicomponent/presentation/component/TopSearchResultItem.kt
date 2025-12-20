@@ -39,7 +39,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.core.domain.model.TopResultItem
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 
 @Composable
@@ -235,7 +235,7 @@ fun TopSearchResultItem(
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = false)
 @Composable
 private fun TopSearchResultItemPreview() {
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         TopSearchResultItem(
             baseUrl = "",
             isLoadingTracks = false,

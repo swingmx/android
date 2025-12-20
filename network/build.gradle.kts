@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.android.swingmusic.network"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26

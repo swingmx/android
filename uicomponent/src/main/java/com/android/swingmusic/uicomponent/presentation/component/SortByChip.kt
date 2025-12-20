@@ -28,7 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.R as UiComponents
 
 @Composable
@@ -105,7 +105,7 @@ fun SortByChip(
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun SortByChipPreview() {
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         Surface {
             Row(
                 modifier = Modifier.padding(8.dp)

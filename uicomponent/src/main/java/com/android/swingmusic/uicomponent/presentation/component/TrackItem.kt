@@ -46,7 +46,7 @@ import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 
 @Composable
@@ -318,7 +318,7 @@ fun TrackItemPreview() {
         trackNumber = 1
     )
 
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column {
                 Text(
@@ -518,7 +518,7 @@ fun AlbumTrackItemPreview() {
         )
     )
 
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column {
                 Text(

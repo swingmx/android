@@ -59,6 +59,7 @@ import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.uicomponent.R
 import com.ramcosta.composedestinations.annotation.Destination
 import kotlinx.coroutines.launch
+import qrscanner.CameraLens
 import qrscanner.QrScanner
 
 @Destination
@@ -175,14 +176,15 @@ fun LoginWithQrCode(
                                 .clipToBounds()
                                 .clip(shape = RoundedCornerShape(size = 14.dp)),
                             flashlightOn = flashLightOn,
-                            launchGallery = false,
+                            cameraLens = CameraLens.Back,
+                            openImagePicker = false,
                             onCompletion = {
                                 encodedString = it
                                 startScanner = false
 
                                 authViewModel.onAuthUiEvent(AuthUiEvent.LogInWithQrCode(encoded = it))
                             },
-                            onGalleryCallBackHandler = {},
+                            imagePickerHandler = {},
                             onFailure = {
                                 coroutineScope.launch {
                                     if (it.isEmpty()) {

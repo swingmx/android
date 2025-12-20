@@ -87,7 +87,7 @@ import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme_Preview
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.Screen
 import com.android.swingmusic.uicomponent.presentation.util.formattedAlbumDuration
 import com.ramcosta.composedestinations.annotation.Destination
@@ -1473,7 +1473,7 @@ fun ArtistInfoPreview() {
         )
     )
 
-    SwingMusicTheme_Preview {
+    SwingMusicTheme {
         ArtistInfo(
             baseUrl = "",
             artistInfo = sampleArtistInfo,
