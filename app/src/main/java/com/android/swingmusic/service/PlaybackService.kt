@@ -12,8 +12,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.android.swingmusic.R
 import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -36,6 +38,11 @@ class PlaybackService : MediaSessionService() {
     @OptIn(UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
+
+        val notificationProvider = DefaultMediaNotificationProvider.Builder(this)
+            .setChannelName(R.string.media3_notification_channel_name)
+            .build()
+        setMediaNotificationProvider(notificationProvider)
 
         serviceScope.launch {
             val accessToken = authRepository.getAccessToken()

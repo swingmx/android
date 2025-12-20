@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Swing Music</string>
+    <string name="media3_notification_channel_name">Swing Music Player</string>
 </resources>

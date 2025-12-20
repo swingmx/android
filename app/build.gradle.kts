@@ -36,7 +36,7 @@ android {
         debug {
             isDebuggable = true
             applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "Swing Music [D]")
+            resValue("string", "app_name", "[Debug]")
         }
         release {
             isMinifyEnabled = true
