@@ -283,22 +283,15 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                         }
 
                         isUserLoggedIn?.let { value ->
+                            val navigator = CoreNavigator(navController)
+
                             // Always use AnimatedPlayerSheet - it handles "no track" case internally
                             AnimatedPlayerSheet(
                                 paddingValues = paddingValues,
                                 mediaControllerViewModel = mediaControllerViewModel,
+                                navigator = navigator,
                                 onProgressChange = { progress ->
                                     sheetProgress = progress
-                                },
-                                onClickArtist = { artistHash ->
-                                    navController.navigate(
-                                        ArtistInfoScreenDestination(
-                                            artistHash = artistHash,
-                                            loadNewArtist = true
-                                        ).route
-                                    ) {
-                                        launchSingleTop = true
-                                    }
                                 }
                             ) {
                                 SwingMusicAppNavigationWithAnimatedPlayer(

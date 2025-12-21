@@ -49,6 +49,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.rememberModalBottomSheetState
+import com.android.swingmusic.core.domain.model.BottomSheetItemModel
+import com.android.swingmusic.core.domain.util.BottomSheetAction
+import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -93,6 +97,7 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
@@ -107,6 +112,8 @@ import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
+import com.android.swingmusic.uicomponent.presentation.util.getName
+import com.android.swingmusic.uicomponent.presentation.util.getSourceType
 import ir.mahozad.multiplatform.wavyslider.WaveAnimationSpecs
 import ir.mahozad.multiplatform.wavyslider.WaveDirection
 import ir.mahozad.multiplatform.wavyslider.material3.WavySlider
@@ -138,8 +145,8 @@ private val TOTAL_INITIAL_SIZE = INITIAL_IMAGE_SIZE + INITIAL_PADDING
 fun AnimatedPlayerSheet(
     paddingValues: PaddingValues,
     mediaControllerViewModel: MediaControllerViewModel,
+    navigator: CommonNavigator,
     onProgressChange: (progress: Float) -> Unit = {},
-    onClickArtist: (artistHash: String) -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
@@ -255,7 +262,7 @@ fun AnimatedPlayerSheet(
                 onPageSelect = { page ->
                     mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(page))
                 },
-                onClickArtist = onClickArtist,
+                onClickArtist = { navigator.gotoArtistInfo(it) },
                 onToggleRepeatMode = {
                     mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnToggleRepeatMode)
                 },
@@ -307,6 +314,25 @@ fun AnimatedPlayerSheet(
             },
             onTogglePlayerState = {
                 mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
+            },
+            onClickArtist = { navigator.gotoArtistInfo(it) },
+            onGotoAlbum = { navigator.gotoAlbumWithInfo(it) },
+            onGotoFolder = { name, path -> navigator.gotoSourceFolder(name, path) },
+            onPlayNext = { nextTrack ->
+                mediaControllerViewModel.onQueueEvent(
+                    QueueEvent.PlayNext(nextTrack, playerUiState.source)
+                )
+            },
+            onToggleTrackFavorite = { trackHash, isFavorite ->
+                mediaControllerViewModel.onPlayerUiEvent(
+                    PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)
+                )
+            },
+            onCloseSheets = {
+                coroutineScope.launch {
+                    queueSheetOffset.snapTo(queueInitialOffset)
+                    bottomSheetState.bottomSheetState.partialExpand()
+                }
             }
         )
     }
@@ -347,7 +373,6 @@ private fun AnimatedSheetContent(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
-    val density = LocalDensity.current
     val screenWidthDp = configuration.screenWidthDp.dp
 
     // Horizontal swipe state for collapsed mode
@@ -746,7 +771,12 @@ private fun AnimatedSheetContent(
                                             item {
                                                 Text(
                                                     modifier = Modifier.clickable(
-                                                        onClick = { onClickArtist(trackArtist.artistHash) },
+                                                        onClick = {
+                                                            onClickArtist(trackArtist.artistHash)
+                                                            coroutineScope.launch {
+                                                                bottomSheetState.bottomSheetState.partialExpand()
+                                                            }
+                                                        },
                                                         indication = null,
                                                         interactionSource = remember { MutableInteractionSource() }
                                                     ),
@@ -1099,6 +1129,7 @@ private fun AnimatedSheetContent(
  * - Direction-aware snapping (20% threshold up, 90% down)
  * - Opacity based on drag progress
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QueueSheetOverlay(
     queue: List<Track>,
@@ -1111,13 +1142,32 @@ private fun QueueSheetOverlay(
     initialOffset: Float,
     expandedOffset: Float,
     onClickQueueItem: (Int) -> Unit,
-    onTogglePlayerState: () -> Unit
+    onTogglePlayerState: () -> Unit,
+    onClickArtist: (artistHash: String) -> Unit,
+    onGotoAlbum: (albumHash: String) -> Unit,
+    onGotoFolder: (name: String, path: String) -> Unit,
+    onPlayNext: (track: Track) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
+    onCloseSheets: () -> Unit
 ) {
-    val configuration = LocalWindowInfo.current
+    val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
-    val screenHeightPx = with(density) { configuration.containerSize.height.dp.toPx() }
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     val lazyColumnState = rememberLazyListState()
+
+    // Bottom sheet state for track menu
+    val sheetState = rememberModalBottomSheetState()
+    var showTrackBottomSheet by remember { mutableStateOf(false) }
+    var clickedTrack: Track? by remember { mutableStateOf(null) }
+
+    // Update clicked track when queue changes
+    LaunchedEffect(queue) {
+        clickedTrack?.let { track ->
+            val updatedTrack = queue.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+    }
 
     // Track drag direction
     var lastOffset by remember { mutableFloatStateOf(animatedOffset.value) }
@@ -1142,6 +1192,73 @@ private fun QueueSheetOverlay(
     LaunchedEffect(queueProgress) {
         if (queueProgress > 0.9f && (playingTrackIndex - 1) in queue.indices) {
             lazyColumnState.scrollToItem(playingTrackIndex - 1)
+        }
+    }
+
+    // Track menu bottom sheet
+    if (showTrackBottomSheet) {
+        clickedTrack?.let { track ->
+            CustomTrackBottomSheet(
+                scope = coroutineScope,
+                sheetState = sheetState,
+                clickedTrack = track,
+                isFavorite = track.isFavorite,
+                baseUrl = baseUrl,
+                bottomSheetItems = listOf(
+                    BottomSheetItemModel(
+                        label = "Go to Artist",
+                        enabled = true,
+                        painterId = R.drawable.ic_artist,
+                        track = track,
+                        sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
+                    ),
+                    BottomSheetItemModel(
+                        label = "Go to Album",
+                        painterId = R.drawable.ic_album,
+                        track = track,
+                        sheetAction = BottomSheetAction.GotoAlbum
+                    ),
+                    BottomSheetItemModel(
+                        label = "Go to Folder",
+                        enabled = true,
+                        painterId = R.drawable.folder_outlined_open,
+                        track = track,
+                        sheetAction = BottomSheetAction.GotoFolder(
+                            name = track.folder.getFolderName(),
+                            path = track.folder
+                        )
+                    ),
+                    BottomSheetItemModel(
+                        label = "Play Next",
+                        enabled = true,
+                        painterId = R.drawable.play_next,
+                        track = track,
+                        sheetAction = BottomSheetAction.PlayNext
+                    )
+                ),
+                onHideBottomSheet = { showTrackBottomSheet = it },
+                onClickSheetItem = { sheetTrack, sheetAction ->
+                    when (sheetAction) {
+                        is BottomSheetAction.GotoAlbum -> {
+                            onGotoAlbum(sheetTrack.albumHash)
+                            onCloseSheets()
+                        }
+                        is BottomSheetAction.GotoFolder -> {
+                            onGotoFolder(sheetAction.name, sheetAction.path)
+                            onCloseSheets()
+                        }
+                        is BottomSheetAction.PlayNext -> onPlayNext(sheetTrack)
+                        else -> {}
+                    }
+                },
+                onChooseArtist = { hash ->
+                    onClickArtist(hash)
+                    onCloseSheets()
+                },
+                onToggleTrackFavorite = { trackHash, isFavorite ->
+                    onToggleTrackFavorite(trackHash, isFavorite)
+                }
+            )
         }
     }
 
@@ -1193,7 +1310,7 @@ private fun QueueSheetOverlay(
                     color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 )
-                .padding(horizontal = 12.dp),
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Drag handle
@@ -1212,13 +1329,72 @@ private fun QueueSheetOverlay(
 
             // Header
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Queue",
+                    text = "Now Playing",
                     style = MaterialTheme.typography.headlineMedium
                 )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Queue source indicator
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        when (source) {
+                            is QueueSource.ALBUM -> {
+                                onGotoAlbum(source.albumHash)
+                                onCloseSheets()
+                            }
+                            is QueueSource.ARTIST -> {
+                                onClickArtist(source.artistHash)
+                                onCloseSheets()
+                            }
+                            is QueueSource.FOLDER -> {
+                                onGotoFolder(source.name, source.path)
+                                onCloseSheets()
+                            }
+                            else -> {}
+                        }
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = source.getSourceType(),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94f)
+                )
+
+                if (source.getName().isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .size(4.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .36f))
+                    )
+
+                    Text(
+                        text = source.getName(),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94f)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -1227,6 +1403,7 @@ private fun QueueSheetOverlay(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14f))
                     .clickable { onTogglePlayerState() }
@@ -1296,7 +1473,8 @@ private fun QueueSheetOverlay(
                 state = lazyColumnState,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 itemsIndexed(
                     items = queue,
@@ -1307,14 +1485,13 @@ private fun QueueSheetOverlay(
                         playbackState = playbackState,
                         isCurrentTrack = index == playingTrackIndex,
                         baseUrl = baseUrl,
-                        showMenuIcon = false,
+                        showMenuIcon = true,
                         onClickTrackItem = { onClickQueueItem(index) },
-                        onClickMoreVert = {}
+                        onClickMoreVert = {
+                            clickedTrack = it
+                            showTrackBottomSheet = true
+                        }
                     )
-
-                    if (index == queue.lastIndex) {
-                        Spacer(modifier = Modifier.height(80.dp))
-                    }
                 }
             }
         }
