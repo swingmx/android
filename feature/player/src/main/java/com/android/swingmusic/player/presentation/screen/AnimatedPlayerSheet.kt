@@ -402,7 +402,10 @@ private fun AnimatedSheetContent(
     val contentOpacity = ((effectiveProgress - 0.2f) / 0.6f).coerceIn(0f, 1f)
 
     // Mini player elements opacity (inverse)
-    val miniPlayerOpacity = (1f - (progress.value / 0.3f)).coerceIn(0f, 1f)
+    // Visible when: collapsed OR queue sheet is nearly fully expanded
+    val collapsedOpacity = (1f - (progress.value / 0.3f)).coerceIn(0f, 1f)
+    val queueExpandedOpacity = ((queueProgress - 0.7f) / 0.3f).coerceIn(0f, 1f)
+    val miniPlayerOpacity = maxOf(collapsedOpacity, queueExpandedOpacity)
 
     // Update the sheet shape
     LaunchedEffect(sheetCornerRadius) {
@@ -478,7 +481,7 @@ private fun AnimatedSheetContent(
             .fillMaxHeight()
     ) {
         // Blurred background (only visible when expanded)
-        if (effectiveProgress > 0.1f) {
+        if (effectiveProgress > 0f) {
             AsyncImage(
                 modifier = Modifier
                     .fillMaxSize()
@@ -604,6 +607,7 @@ private fun AnimatedSheetContent(
                                     },
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(imageData)
+                                    .size(coil.size.Size.ORIGINAL)
                                     .crossfade(true)
                                     .build(),
                                 placeholder = painterResource(R.drawable.audio_fallback),
@@ -666,7 +670,11 @@ private fun AnimatedSheetContent(
             }
 
             // Progress bar for collapsed state
-            if (progress.value < 0.05f) {
+            AnimatedVisibility(
+                visible = progress.value < 0.01f,
+                enter = fadeIn(animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(200))
+            ) {
                 LinearProgressIndicator(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -922,36 +930,91 @@ private fun AnimatedSheetContent(
                             }
                         }
 
-                        // Bitrate badge
+                        // Queue drag zone - contains bitrate badge
+                        var lastDragOffset by remember { mutableFloatStateOf(queueSheetOffset.value) }
+                        var isDraggingUp by remember { mutableStateOf(false) }
+
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(24))
-                                .background(
-                                    if (isDarkTheme) fileTypeTextColor.copy(alpha = .075f)
-                                    else fileTypeBadgeColor
-                                )
-                                .wrapContentSize()
-                                .padding(8.dp)
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .pointerInput(Unit) {
+                                    detectDragGestures(
+                                        onDragStart = { lastDragOffset = queueSheetOffset.value },
+                                        onDragEnd = {
+                                            coroutineScope.launch {
+                                                val queueSheetProgress =
+                                                    (queueInitialOffset - queueSheetOffset.value) /
+                                                            (queueInitialOffset - queueExpandedOffset)
+
+                                                val threshold = if (isDraggingUp) 0.12f else 0.88f
+
+                                                val targetOffset =
+                                                    if (queueSheetProgress > threshold) {
+                                                        queueExpandedOffset
+                                                    } else {
+                                                        queueInitialOffset
+                                                    }
+
+                                                queueSheetOffset.animateTo(
+                                                    targetValue = targetOffset,
+                                                    animationSpec = spring(
+                                                        dampingRatio = 0.8f,
+                                                        stiffness = 400f
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    ) { _, dragAmount ->
+                                        coroutineScope.launch {
+                                            // Multiplier speeds up drag response (2.5x faster)
+                                            val newOffset =
+                                                (queueSheetOffset.value + (dragAmount.y * 2.5f))
+                                                    .coerceIn(
+                                                        queueExpandedOffset,
+                                                        queueInitialOffset
+                                                    )
+
+                                            isDraggingUp = newOffset < lastDragOffset
+                                            lastDragOffset = newOffset
+
+                                            queueSheetOffset.snapTo(newOffset)
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = fileType,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = fileTypeTextColor
-                                )
-                                Text(
-                                    text = " • ",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = fileTypeTextColor
-                                )
-                                Text(
-                                    text = "${track.bitrate} Kbps",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = fileTypeTextColor
-                                )
+                            // Bitrate badge
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(24))
+                                    .background(
+                                        if (isDarkTheme) fileTypeTextColor.copy(alpha = .075f)
+                                        else fileTypeBadgeColor
+                                    )
+                                    .wrapContentSize()
+                                    .padding(8.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = fileType,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = fileTypeTextColor
+                                    )
+                                    Text(
+                                        text = " • ",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = fileTypeTextColor
+                                    )
+                                    Text(
+                                        text = "${track.bitrate} Kbps",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = fileTypeTextColor
+                                    )
+                                }
                             }
                         }
 
@@ -978,7 +1041,15 @@ private fun AnimatedSheetContent(
 
                             // Queue icon - triggers queue sheet
                             IconButton(onClick = {
-                                // Queue sheet will appear via drag from bottom zone
+                                coroutineScope.launch {
+                                    queueSheetOffset.animateTo(
+                                        targetValue = queueExpandedOffset,
+                                        animationSpec = spring(
+                                            dampingRatio = 0.8f,
+                                            stiffness = 400f
+                                        )
+                                    )
+                                }
                             }) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.play_list),
@@ -1000,58 +1071,6 @@ private fun AnimatedSheetContent(
                 }
             }
 
-            // Queue drag zone (only when primary sheet is expanded)
-            if (primarySheetProgress >= 0.95f) {
-                var lastDragOffset by remember { mutableFloatStateOf(queueSheetOffset.value) }
-                var isDraggingUp by remember { mutableStateOf(false) }
-
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .pointerInput(Unit) {
-                            detectDragGestures(
-                                onDragStart = { lastDragOffset = queueSheetOffset.value },
-                                onDragEnd = {
-                                    coroutineScope.launch {
-                                        val queueSheetProgress =
-                                            (queueInitialOffset - queueSheetOffset.value) /
-                                                    (queueInitialOffset - queueExpandedOffset)
-
-                                        val threshold = if (isDraggingUp) 0.20f else 0.90f
-
-                                        val targetOffset = if (queueSheetProgress > threshold) {
-                                            queueExpandedOffset
-                                        } else {
-                                            queueInitialOffset
-                                        }
-
-                                        queueSheetOffset.animateTo(
-                                            targetValue = targetOffset,
-                                            animationSpec = spring(
-                                                dampingRatio = 0.8f,
-                                                stiffness = 400f
-                                            )
-                                        )
-                                    }
-                                }
-                            ) { _, dragAmount ->
-                                coroutineScope.launch {
-                                    val newOffset = (queueSheetOffset.value + dragAmount.y)
-                                        .coerceIn(queueExpandedOffset, queueInitialOffset)
-
-                                    isDraggingUp = newOffset < lastDragOffset
-                                    lastDragOffset = newOffset
-
-                                    queueSheetOffset.snapTo(newOffset)
-                                }
-                            }
-                        }
-                ) {
-                    // Empty drag zone content
-                }
-            }
         }
     } // End of Box wrapper
 }
@@ -1110,7 +1129,7 @@ private fun QueueSheetOverlay(
         }
     }
 
-    // Main Queue Sheet Container
+    // Main Queue Sheet Container - uses direct offset like primary sheet
     Box(
         modifier = Modifier
             .fillMaxSize()
