@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -52,7 +51,7 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrC
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
-import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksPaginatedScreenDestination
+import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.player.presentation.screen.MiniPlayer
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
@@ -113,7 +112,6 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -153,7 +151,7 @@ class MainActivity : ComponentActivity() {
             // Map of BottomNavItem to their route prefixes
             val bottomNavRoutePrefixes = mapOf(
                 // BottomNavItem.Home to listOf(HomeDestination.route),
-                BottomNavItem.Folder to listOf(FoldersAndTracksPaginatedScreenDestination.route),
+                BottomNavItem.Folder to listOf(FoldersAndTracksScreenDestination.route),
                 BottomNavItem.Album to listOf(
                     AllAlbumScreenDestination.route,
                     AlbumWithInfoScreenDestination.route
@@ -241,7 +239,7 @@ class MainActivity : ComponentActivity() {
                                                     }
 
                                                     // refresh folders starting from $home
-                                                    if (item.destination.route == FoldersAndTracksPaginatedScreenDestination.route) {
+                                                    if (item.destination.route == FoldersAndTracksScreenDestination.route) {
                                                         foldersViewModel.onFolderUiEvent(
                                                             FolderUiEvent.OnClickNavPath(
                                                                 folder = foldersViewModel.homeDir

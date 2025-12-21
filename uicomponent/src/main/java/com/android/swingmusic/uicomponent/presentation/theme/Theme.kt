@@ -1,6 +1,9 @@
 package com.android.swingmusic.uicomponent.presentation.theme
 
 import android.os.Build
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -8,8 +11,11 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 
 private val lightColorScheme = lightColorScheme(
     primary = light_primary,
@@ -75,9 +81,6 @@ private val darkColorScheme = darkColorScheme(
     scrim = dark_scrim,
 )
 
-/** @param [navBarColor] device navigation bar color. null by default which translates to surface
- * */
-
 @Composable
 fun SwingMusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -94,18 +97,21 @@ fun SwingMusicTheme(
         darkTheme -> darkColorScheme
         else -> lightColorScheme
     }
-    /*val view = LocalView.current
+
+    val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = navBarColor?.toArgb() ?: colorScheme.surface.toArgb()
-
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars =
-                !darkTheme
+            val activity = view.context as ComponentActivity
+            val effectiveNavBarColor = (navBarColor ?: colorScheme.inverseOnSurface).toArgb()
+            activity.enableEdgeToEdge(
+                navigationBarStyle = if (darkTheme) {
+                    SystemBarStyle.dark(effectiveNavBarColor)
+                } else {
+                    SystemBarStyle.light(effectiveNavBarColor, effectiveNavBarColor)
+                }
+            )
         }
-    }*/
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,

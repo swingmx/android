@@ -7,7 +7,7 @@ import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfo
 import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenOnArtistDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
-import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksPaginatedScreenDestination
+import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.destinations.HomeDestination
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
@@ -23,7 +23,7 @@ object NavGraphs {
 
         // TODO: Use Home instead of Folder as the startRoute
         override val startRoute: Route =
-            if (isUserLoggedIn) FoldersAndTracksPaginatedScreenDestination else LoginWithQrCodeDestination
+            if (isUserLoggedIn) FoldersAndTracksScreenDestination else LoginWithQrCodeDestination
 
         override val destinationsByRoute: Map<String, DestinationSpec<*>>
             get() {
@@ -35,7 +35,7 @@ object NavGraphs {
                 val pastAuthDestSpec = listOf(
                     // shown on bottom nav
                     HomeDestination,
-                    FoldersAndTracksPaginatedScreenDestination,
+                    FoldersAndTracksScreenDestination,
                     AllAlbumScreenDestination,
                     AllArtistsScreenDestination,
                     SearchScreenDestination,
