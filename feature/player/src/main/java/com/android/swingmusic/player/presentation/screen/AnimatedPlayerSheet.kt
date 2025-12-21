@@ -37,7 +37,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -78,6 +81,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -98,6 +102,8 @@ import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.util.calculateCurrentOffsetForPage
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
+import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 import ir.mahozad.multiplatform.wavyslider.WaveAnimationSpecs
@@ -107,12 +113,6 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.pow
 import kotlin.math.roundToInt
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.ui.platform.LocalWindowInfo
-import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
-import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 
 // Constants for sheet sizing (matching SheetDemo)
 private val INITIAL_IMAGE_SIZE = 38.dp
@@ -178,7 +178,8 @@ fun AnimatedPlayerSheet(
     val coroutineScope = rememberCoroutineScope()
 
     // Peek height: image size + paddings (sits on top of bottom nav)
-    val calculatedPeekHeight = TOTAL_INITIAL_SIZE + INITIAL_PADDING + (INITIAL_PADDING/2) + paddingValues.calculateBottomPadding()
+    val calculatedPeekHeight =
+        TOTAL_INITIAL_SIZE + INITIAL_PADDING + (INITIAL_PADDING / 2) + paddingValues.calculateBottomPadding()
 
     val bottomSheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -508,65 +509,120 @@ private fun AnimatedSheetContent(
         }
 
         Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .padding(containerPadding)
-    ) {
-        // Image container with transformation
-        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = imageTopPadding)
-                .then(
-                    // Horizontal swipe for prev/next in collapsed state
-                    if (progress.value < 0.3f) {
-                        Modifier.pointerInput(Unit) {
-                            detectHorizontalDragGestures(
-                                onDragEnd = {
-                                    if (swipeDistance > 50) {
-                                        onClickPrev()
-                                    } else if (swipeDistance < -50) {
-                                        onClickNext()
+                .fillMaxHeight()
+        ) {
+            // Image container with transformation
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = imageTopPadding)
+                    .padding(horizontal = containerPadding)
+                    .then(
+                        // Horizontal swipe for prev/next in collapsed state
+                        if (progress.value < 0.3f) {
+                            Modifier.pointerInput(Unit) {
+                                detectHorizontalDragGestures(
+                                    onDragEnd = {
+                                        if (swipeDistance > 50) {
+                                            onClickPrev()
+                                        } else if (swipeDistance < -50) {
+                                            onClickNext()
+                                        }
+                                        swipeDistance = 0f
                                     }
-                                    swipeDistance = 0f
+                                ) { change, dragAmount ->
+                                    change.consume()
+                                    swipeDistance += dragAmount
                                 }
-                            ) { change, dragAmount ->
-                                change.consume()
-                                swipeDistance += dragAmount
+                            }
+                        } else Modifier
+                    )
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        if (progress.value < 0.5f && queueProgress < 0.1f) {
+                            coroutineScope.launch {
+                                bottomSheetState.bottomSheetState.expand()
                             }
                         }
-                    } else Modifier
-                )
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    if (progress.value < 0.5f && queueProgress < 0.1f) {
-                        coroutineScope.launch {
-                            bottomSheetState.bottomSheetState.expand()
-                        }
                     }
-                }
-        ) {
-            // Mini player row (visible when collapsed)
-            if (progress.value < 0.5f) {
+            ) {
+                // Unified layout: Pager + Title + Play/Pause in a Row
+                // Title and icon fade out as sheet expands
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .alpha(miniPlayerOpacity)
                         .offset { IntOffset((swipeDistance / 3).roundToInt(), 0) },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
+                    // Pager takes only the space it needs when collapsed, expands when opened
+                    val pagerWidth = lerp(
+                        INITIAL_IMAGE_SIZE,
+                        screenWidthDp - (containerPadding * 2),
+                        effectiveProgress
+                    )
+
+                    HorizontalPager(
+                        modifier = Modifier.width(pagerWidth),
+                        state = pagerState,
+                        pageSize = androidx.compose.foundation.pager.PageSize.Fill,
+                        beyondViewportPageCount = 1,
+                        userScrollEnabled = effectiveProgress > 0.5f,
                         verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Image placeholder for collapsed state (actual image below)
-                        Spacer(modifier = Modifier.width(imageSize + 8.dp))
+                    ) { page ->
+                        val imageData = if (page == playingTrackIndex) {
+                            "${baseUrl}img/thumbnail/${queue.getOrNull(playingTrackIndex)?.image ?: track.image}"
+                        } else {
+                            "${baseUrl}img/thumbnail/${queue.getOrNull(page)?.image ?: track.image}"
+                        }
+
+                        val pageOffset = pagerState.calculateCurrentOffsetForPage(page)
+
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AsyncImage(
+                                modifier = Modifier
+                                    .width(imageSize)
+                                    .heightIn(max = imageSize)
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(imageCornerRadius))
+                                    .graphicsLayer {
+                                        val scale = androidx.compose.ui.util.lerp(
+                                            1f,
+                                            1f + (0.25f * effectiveProgress),
+                                            pageOffset
+                                        )
+                                        scaleX = scale
+                                        scaleY = scale
+                                        clip = true
+                                        shape = RoundedCornerShape(imageCornerRadius)
+                                    },
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(imageData)
+                                    .crossfade(true)
+                                    .build(),
+                                placeholder = painterResource(R.drawable.audio_fallback),
+                                fallback = painterResource(R.drawable.audio_fallback),
+                                error = painterResource(R.drawable.audio_fallback),
+                                contentDescription = "Track Image",
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+
+                    // Title and Play/Pause - fade out when expanding
+                    if (miniPlayerOpacity > 0f) {
+                        Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
+                            modifier = Modifier
+                                .weight(1f)
+                                .alpha(miniPlayerOpacity),
                             text = track.title,
                             maxLines = 1,
                             style = MaterialTheme.typography.bodyMedium,
@@ -577,488 +633,426 @@ private fun AnimatedSheetContent(
                             else
                                 MaterialTheme.colorScheme.onSurface.copy(alpha = .84f)
                         )
-                    }
 
-                    // Play/Pause button (collapsed state)
-                    IconButton(
-                        modifier = Modifier.padding(end = 8.dp),
-                        onClick = {
-                            if (playbackState == PlaybackState.ERROR) {
-                                onResumePlayBackFromError()
-                            } else {
-                                onTogglePlayerState()
+                        IconButton(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .alpha(miniPlayerOpacity),
+                            onClick = {
+                                if (playbackState == PlaybackState.ERROR) {
+                                    onResumePlayBackFromError()
+                                } else {
+                                    onTogglePlayerState()
+                                }
                             }
-                        }
-                    ) {
-                        if (isBuffering) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 0.75.dp,
-                                strokeCap = StrokeCap.Round
+                        ) {
+                            if (isBuffering) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 0.75.dp,
+                                    strokeCap = StrokeCap.Round
+                                )
+                            }
+                            Icon(
+                                painter = painterResource(
+                                    id = if (playbackState == PlaybackState.PLAYING)
+                                        R.drawable.pause_icon else R.drawable.play_arrow
+                                ),
+                                contentDescription = "Play/Pause"
                             )
                         }
-                        Icon(
-                            painter = painterResource(
-                                id = if (playbackState == PlaybackState.PLAYING)
-                                    R.drawable.pause_icon else R.drawable.play_arrow
-                            ),
-                            contentDescription = "Play/Pause"
-                        )
                     }
                 }
             }
 
-            // Animated image (transforms from 38dp to full width)
-            if (effectiveProgress > 0.3f) {
-                // Use HorizontalPager for expanded state
-                HorizontalPager(
-                    modifier = Modifier.fillMaxWidth(),
-                    state = pagerState,
-                    beyondViewportPageCount = 2,
-                    verticalAlignment = Alignment.CenterVertically
-                ) { page ->
-                    val imageData = if (page == playingTrackIndex) {
-                        "${baseUrl}img/thumbnail/${queue.getOrNull(playingTrackIndex)?.image ?: track.image}"
-                    } else {
-                        "${baseUrl}img/thumbnail/${queue.getOrNull(page)?.image ?: track.image}"
-                    }
-                    val pageOffset = pagerState.calculateCurrentOffsetForPage(page)
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        AsyncImage(
-                            modifier = Modifier
-                                .width(imageSize)
-                                .heightIn(max = imageSize)
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(imageCornerRadius))
-                                .graphicsLayer {
-                                    val scale =
-                                        androidx.compose.ui.util.lerp(1f, 1.25f, pageOffset)
-                                    scaleX = scale
-                                    scaleY = scale
-                                    clip = true
-                                    shape = RoundedCornerShape(imageCornerRadius)
-                                },
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(imageData)
-                                .crossfade(true)
-                                .build(),
-                            placeholder = painterResource(R.drawable.audio_fallback),
-                            fallback = painterResource(R.drawable.audio_fallback),
-                            error = painterResource(R.drawable.audio_fallback),
-                            contentDescription = "Track Image",
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                }
-            } else {
-                // Simple image for collapsed/transitioning state
-                AsyncImage(
+            // Progress bar for collapsed state
+            if (progress.value < 0.05f) {
+                LinearProgressIndicator(
                     modifier = Modifier
-                        .width(imageSize)
-                        .heightIn(max = imageSize)
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(imageCornerRadius))
-                        .align(Alignment.CenterStart),
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data("${baseUrl}img/thumbnail/small/${track.image}")
-                        .crossfade(true)
-                        .build(),
-                    placeholder = painterResource(R.drawable.audio_fallback),
-                    fallback = painterResource(R.drawable.audio_fallback),
-                    error = painterResource(R.drawable.audio_fallback),
-                    contentDescription = "Track Image",
-                    contentScale = ContentScale.Crop
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .alpha(miniPlayerOpacity),
+                    gapSize = 0.dp,
+                    drawStopIndicator = {},
+                    progress = { seekPosition },
+                    strokeCap = StrokeCap.Square
                 )
             }
-        }
 
-        // Progress bar for collapsed state
-        if (progress.value < 0.3f) {
-            LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .alpha(miniPlayerOpacity),
-                gapSize = 0.dp,
-                drawStopIndicator = {},
-                progress = { seekPosition },
-                strokeCap = StrokeCap.Square
-            )
-        }
+            // Image and Content spacer
+            Spacer(modifier = Modifier.height(imageContentSpacing))
 
-        // Image and Content spacer
-        Spacer(modifier = Modifier.height(imageContentSpacing))
-
-        // Expanded content (fades in at 20% progress)
-        AnimatedVisibility(
-            visible = effectiveProgress > 0.2f,
-            enter = fadeIn(animationSpec = tween(200)),
-            exit = fadeOut(animationSpec = tween(200))
-        ) {
-            Box(modifier = Modifier.alpha(contentOpacity)) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
+            // Expanded content (fades in at 20% progress)
+            AnimatedVisibility(
+                visible = effectiveProgress > 0.2f,
+                enter = fadeIn(animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(200))
+            ) {
+                Box(modifier = Modifier.alpha(contentOpacity)) {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Track title and artist
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column(modifier = Modifier.fillMaxWidth(.78f)) {
-                                Text(
-                                    text = track.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontSize = 18.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                            // Track title and artist
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth(.78f)) {
+                                    Text(
+                                        text = track.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontSize = 18.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
 
-                                Spacer(modifier = Modifier.height(6.dp))
+                                    Spacer(modifier = Modifier.height(6.dp))
 
-                                LazyRow(modifier = Modifier.fillMaxWidth()) {
-                                    track.trackArtists.forEachIndexed { index, trackArtist ->
-                                        item {
-                                            Text(
-                                                modifier = Modifier.clickable(
-                                                    onClick = { onClickArtist(trackArtist.artistHash) },
-                                                    indication = null,
-                                                    interactionSource = remember { MutableInteractionSource() }
-                                                ),
-                                                text = trackArtist.name,
-                                                maxLines = 1,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurface.copy(
-                                                    alpha = .84f
-                                                ),
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            if (index != track.trackArtists.lastIndex) {
+                                    LazyRow(modifier = Modifier.fillMaxWidth()) {
+                                        track.trackArtists.forEachIndexed { index, trackArtist ->
+                                            item {
                                                 Text(
-                                                    text = ", ",
+                                                    modifier = Modifier.clickable(
+                                                        onClick = { onClickArtist(trackArtist.artistHash) },
+                                                        indication = null,
+                                                        interactionSource = remember { MutableInteractionSource() }
+                                                    ),
+                                                    text = trackArtist.name,
+                                                    maxLines = 1,
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = MaterialTheme.colorScheme.onSurface.copy(
                                                         alpha = .84f
-                                                    )
+                                                    ),
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
+                                                if (index != track.trackArtists.lastIndex) {
+                                                    Text(
+                                                        text = ", ",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurface.copy(
+                                                            alpha = .84f
+                                                        )
+                                                    )
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
 
-                            IconButton(
-                                modifier = Modifier.clip(CircleShape),
-                                onClick = { onToggleFavorite(track.isFavorite, track.trackHash) }
-                            ) {
-                                val icon = if (track.isFavorite) R.drawable.fav_filled
-                                else R.drawable.fav_not_filled
-                                Icon(
-                                    painter = painterResource(id = icon),
-                                    contentDescription = "Favorite"
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(28.dp))
-
-                        // Seek bar
-                        Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                            WavySlider(
-                                modifier = Modifier.height(12.dp),
-                                value = seekPosition,
-                                onValueChangeFinished = {},
-                                onValueChange = { value -> onSeekPlayBack(value) },
-                                waveLength = 32.dp,
-                                waveHeight = if (animateWave) 8.dp else 0.dp,
-                                waveVelocity = 16.dp to WaveDirection.HEAD,
-                                waveThickness = 4.dp,
-                                trackThickness = 4.dp,
-                                incremental = false,
-                                animationSpecs = WaveAnimationSpecs(
-                                    waveHeightAnimationSpec = tween(
-                                        durationMillis = 300,
-                                        easing = FastOutSlowInEasing
-                                    ),
-                                    waveVelocityAnimationSpec = tween(
-                                        durationMillis = 300,
-                                        easing = LinearOutSlowInEasing
-                                    ),
-                                    waveAppearanceAnimationSpec = tween(
-                                        durationMillis = 300,
-                                        easing = EaseOutQuad
-                                    )
-                                )
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = playbackDuration,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84f)
-                                )
-                                Text(
-                                    text = if (playbackState == PlaybackState.ERROR)
-                                        track.duration.formatDuration() else trackDuration,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84f)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Playback controls
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            IconButton(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(
-                                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
-                                    ),
-                                onClick = { onClickPrev() }
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.prev),
-                                    contentDescription = "Previous"
-                                )
-                            }
-
-                            Box(
-                                modifier = Modifier.clickable(
-                                    indication = null,
-                                    interactionSource = remember { MutableInteractionSource() },
+                                IconButton(
+                                    modifier = Modifier.clip(CircleShape),
                                     onClick = {
-                                        if (playbackState != PlaybackState.ERROR) {
-                                            onTogglePlayerState()
-                                        } else {
-                                            onResumePlayBackFromError()
-                                        }
+                                        onToggleFavorite(
+                                            track.isFavorite,
+                                            track.trackHash
+                                        )
                                     }
-                                )
-                            ) {
-                                Box(
-                                    modifier = Modifier.wrapContentSize(),
-                                    contentAlignment = Alignment.Center
                                 ) {
-                                    if (playbackState == PlaybackState.ERROR) {
-                                        Icon(
-                                            modifier = Modifier
-                                                .padding(horizontal = 5.dp)
-                                                .size(70.dp),
-                                            painter = painterResource(id = playbackStateIcon),
-                                            tint = if (isBuffering)
-                                                MaterialTheme.colorScheme.onErrorContainer.copy(
-                                                    alpha = .25f
-                                                )
-                                            else
-                                                MaterialTheme.colorScheme.onErrorContainer.copy(
-                                                    alpha = .75f
-                                                ),
-                                            contentDescription = "Error state"
-                                        )
-                                    } else {
-                                        Box(
-                                            modifier = Modifier
-                                                .height(70.dp)
-                                                .width(80.dp)
-                                                .clip(RoundedCornerShape(32))
-                                                .background(MaterialTheme.colorScheme.secondaryContainer),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                modifier = Modifier.size(44.dp),
-                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                painter = painterResource(id = playbackStateIcon),
-                                                contentDescription = "Play/Pause"
-                                            )
-                                        }
-                                    }
-
-                                    if (isBuffering) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(50.dp),
-                                            strokeCap = StrokeCap.Round,
-                                            strokeWidth = 1.dp,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                    }
+                                    val icon = if (track.isFavorite) R.drawable.fav_filled
+                                    else R.drawable.fav_not_filled
+                                    Icon(
+                                        painter = painterResource(id = icon),
+                                        contentDescription = "Favorite"
+                                    )
                                 }
                             }
 
-                            IconButton(
+                            Spacer(modifier = Modifier.height(28.dp))
+
+                            // Seek bar
+                            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                                WavySlider(
+                                    modifier = Modifier.height(12.dp),
+                                    value = seekPosition,
+                                    onValueChangeFinished = {},
+                                    onValueChange = { value -> onSeekPlayBack(value) },
+                                    waveLength = 32.dp,
+                                    waveHeight = if (animateWave) 8.dp else 0.dp,
+                                    waveVelocity = 16.dp to WaveDirection.HEAD,
+                                    waveThickness = 4.dp,
+                                    trackThickness = 4.dp,
+                                    incremental = false,
+                                    animationSpecs = WaveAnimationSpecs(
+                                        waveHeightAnimationSpec = tween(
+                                            durationMillis = 300,
+                                            easing = FastOutSlowInEasing
+                                        ),
+                                        waveVelocityAnimationSpec = tween(
+                                            durationMillis = 300,
+                                            easing = LinearOutSlowInEasing
+                                        ),
+                                        waveAppearanceAnimationSpec = tween(
+                                            durationMillis = 300,
+                                            easing = EaseOutQuad
+                                        )
+                                    )
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = playbackDuration,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84f)
+                                    )
+                                    Text(
+                                        text = if (playbackState == PlaybackState.ERROR)
+                                            track.duration.formatDuration() else trackDuration,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84f)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Playback controls
+                            Row(
                                 modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(
-                                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
-                                    ),
-                                onClick = { onClickNext() }
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.next),
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    contentDescription = "Next"
+                                IconButton(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
+                                        ),
+                                    onClick = { onClickPrev() }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.prev),
+                                        contentDescription = "Previous"
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier.clickable(
+                                        indication = null,
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        onClick = {
+                                            if (playbackState != PlaybackState.ERROR) {
+                                                onTogglePlayerState()
+                                            } else {
+                                                onResumePlayBackFromError()
+                                            }
+                                        }
+                                    )
+                                ) {
+                                    Box(
+                                        modifier = Modifier.wrapContentSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (playbackState == PlaybackState.ERROR) {
+                                            Icon(
+                                                modifier = Modifier
+                                                    .padding(horizontal = 5.dp)
+                                                    .size(70.dp),
+                                                painter = painterResource(id = playbackStateIcon),
+                                                tint = if (isBuffering)
+                                                    MaterialTheme.colorScheme.onErrorContainer.copy(
+                                                        alpha = .25f
+                                                    )
+                                                else
+                                                    MaterialTheme.colorScheme.onErrorContainer.copy(
+                                                        alpha = .75f
+                                                    ),
+                                                contentDescription = "Error state"
+                                            )
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .height(70.dp)
+                                                    .width(80.dp)
+                                                    .clip(RoundedCornerShape(32))
+                                                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    modifier = Modifier.size(44.dp),
+                                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    painter = painterResource(id = playbackStateIcon),
+                                                    contentDescription = "Play/Pause"
+                                                )
+                                            }
+                                        }
+
+                                        if (isBuffering) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(50.dp),
+                                                strokeCap = StrokeCap.Round,
+                                                strokeWidth = 1.dp,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                        }
+                                    }
+                                }
+
+                                IconButton(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
+                                        ),
+                                    onClick = { onClickNext() }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.next),
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        contentDescription = "Next"
+                                    )
+                                }
+                            }
+                        }
+
+                        // Bitrate badge
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(24))
+                                .background(
+                                    if (isDarkTheme) fileTypeTextColor.copy(alpha = .075f)
+                                    else fileTypeBadgeColor
+                                )
+                                .wrapContentSize()
+                                .padding(8.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = fileType,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = fileTypeTextColor
+                                )
+                                Text(
+                                    text = " • ",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = fileTypeTextColor
+                                )
+                                Text(
+                                    text = "${track.bitrate} Kbps",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = fileTypeTextColor
                                 )
                             }
                         }
-                    }
 
-                    // Bitrate badge
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(24))
-                            .background(
-                                if (isDarkTheme) fileTypeTextColor.copy(alpha = .075f)
-                                else fileTypeBadgeColor
-                            )
-                            .wrapContentSize()
-                            .padding(8.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = fileType,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = fileTypeTextColor
-                            )
-                            Text(
-                                text = " • ",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = fileTypeTextColor
-                            )
-                            Text(
-                                text = "${track.bitrate} Kbps",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = fileTypeTextColor
-                            )
-                        }
-                    }
+                        // Navigation and Control Icons
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                                .background(MaterialTheme.colorScheme.inverseOnSurface)
+                                .navigationBarsPadding()
+                                .padding(vertical = 12.dp, horizontal = 32.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            IconButton(onClick = { onToggleRepeatMode() }) {
+                                Icon(
+                                    painter = painterResource(id = repeatModeIcon),
+                                    tint = if (repeatMode == RepeatMode.REPEAT_OFF)
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .3f)
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    contentDescription = "Repeat"
+                                )
+                            }
 
-                    // Navigation and Control Icons
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                            .background(MaterialTheme.colorScheme.inverseOnSurface)
-                            .navigationBarsPadding()
-                            .padding(vertical = 12.dp, horizontal = 32.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        IconButton(onClick = { onToggleRepeatMode() }) {
-                            Icon(
-                                painter = painterResource(id = repeatModeIcon),
-                                tint = if (repeatMode == RepeatMode.REPEAT_OFF)
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = .3f)
-                                else MaterialTheme.colorScheme.onSurface,
-                                contentDescription = "Repeat"
-                            )
-                        }
+                            // Queue icon - triggers queue sheet
+                            IconButton(onClick = {
+                                // Queue sheet will appear via drag from bottom zone
+                            }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.play_list),
+                                    contentDescription = "Queue"
+                                )
+                            }
 
-                        // Queue icon - triggers queue sheet
-                        IconButton(onClick = {
-                            // Queue sheet will appear via drag from bottom zone
-                        }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.play_list),
-                                contentDescription = "Queue"
-                            )
-                        }
-
-                        IconButton(onClick = { onToggleShuffleMode() }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.shuffle),
-                                tint = if (shuffleMode == ShuffleMode.SHUFFLE_OFF)
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = .3f)
-                                else MaterialTheme.colorScheme.onSurface,
-                                contentDescription = "Shuffle"
-                            )
+                            IconButton(onClick = { onToggleShuffleMode() }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.shuffle),
+                                    tint = if (shuffleMode == ShuffleMode.SHUFFLE_OFF)
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .3f)
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    contentDescription = "Shuffle"
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Queue drag zone (only when primary sheet is expanded)
-        if (primarySheetProgress >= 0.95f) {
-            var lastDragOffset by remember { mutableFloatStateOf(queueSheetOffset.value) }
-            var isDraggingUp by remember { mutableStateOf(false) }
+            // Queue drag zone (only when primary sheet is expanded)
+            if (primarySheetProgress >= 0.95f) {
+                var lastDragOffset by remember { mutableFloatStateOf(queueSheetOffset.value) }
+                var isDraggingUp by remember { mutableStateOf(false) }
 
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { lastDragOffset = queueSheetOffset.value },
-                            onDragEnd = {
-                                coroutineScope.launch {
-                                    val queueSheetProgress =
-                                        (queueInitialOffset - queueSheetOffset.value) /
-                                                (queueInitialOffset - queueExpandedOffset)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragStart = { lastDragOffset = queueSheetOffset.value },
+                                onDragEnd = {
+                                    coroutineScope.launch {
+                                        val queueSheetProgress =
+                                            (queueInitialOffset - queueSheetOffset.value) /
+                                                    (queueInitialOffset - queueExpandedOffset)
 
-                                    val threshold = if (isDraggingUp) 0.20f else 0.90f
+                                        val threshold = if (isDraggingUp) 0.20f else 0.90f
 
-                                    val targetOffset = if (queueSheetProgress > threshold) {
-                                        queueExpandedOffset
-                                    } else {
-                                        queueInitialOffset
-                                    }
+                                        val targetOffset = if (queueSheetProgress > threshold) {
+                                            queueExpandedOffset
+                                        } else {
+                                            queueInitialOffset
+                                        }
 
-                                    queueSheetOffset.animateTo(
-                                        targetValue = targetOffset,
-                                        animationSpec = spring(
-                                            dampingRatio = 0.8f,
-                                            stiffness = 400f
+                                        queueSheetOffset.animateTo(
+                                            targetValue = targetOffset,
+                                            animationSpec = spring(
+                                                dampingRatio = 0.8f,
+                                                stiffness = 400f
+                                            )
                                         )
-                                    )
+                                    }
+                                }
+                            ) { _, dragAmount ->
+                                coroutineScope.launch {
+                                    val newOffset = (queueSheetOffset.value + dragAmount.y)
+                                        .coerceIn(queueExpandedOffset, queueInitialOffset)
+
+                                    isDraggingUp = newOffset < lastDragOffset
+                                    lastDragOffset = newOffset
+
+                                    queueSheetOffset.snapTo(newOffset)
                                 }
                             }
-                        ) { _, dragAmount ->
-                            coroutineScope.launch {
-                                val newOffset = (queueSheetOffset.value + dragAmount.y)
-                                    .coerceIn(queueExpandedOffset, queueInitialOffset)
-
-                                isDraggingUp = newOffset < lastDragOffset
-                                lastDragOffset = newOffset
-
-                                queueSheetOffset.snapTo(newOffset)
-                            }
                         }
-                    }
-            ) {
-                // Empty drag zone content
+                ) {
+                    // Empty drag zone content
+                }
             }
         }
-    }
     } // End of Box wrapper
 }
 
@@ -1084,10 +1078,10 @@ private fun QueueSheetOverlay(
     onClickQueueItem: (Int) -> Unit,
     onTogglePlayerState: () -> Unit
 ) {
-    val configuration = LocalConfiguration.current
+    val configuration = LocalWindowInfo.current
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
-    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val screenHeightPx = with(density) { configuration.containerSize.height.dp.toPx() }
     val lazyColumnState = rememberLazyListState()
 
     // Track drag direction
@@ -1215,7 +1209,7 @@ private fun QueueSheetOverlay(
                     ) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data("${baseUrl}img/thumbnail/small/${playingTrack.image}")
+                                .data("${baseUrl}img/thumbnail/${playingTrack.image}")
                                 .crossfade(true)
                                 .build(),
                             placeholder = painterResource(R.drawable.audio_fallback),
