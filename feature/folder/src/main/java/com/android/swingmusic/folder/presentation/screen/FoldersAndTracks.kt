@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -34,7 +33,6 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,7 +50,6 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.android.swingmusic.album.presentation.event.AlbumWithInfoUiEvent
 import com.android.swingmusic.album.presentation.viewmodel.AlbumWithInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
-import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.Track
@@ -60,11 +57,9 @@ import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
-import com.android.swingmusic.folder.presentation.state.FoldersWithPagingTracksState
 import com.android.swingmusic.folder.presentation.state.FoldersContentPagingState
 import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
-import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
@@ -73,12 +68,11 @@ import com.android.swingmusic.uicomponent.presentation.component.FolderItem
 import com.android.swingmusic.uicomponent.presentation.component.PathIndicatorItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.ramcosta.composedestinations.annotation.Destination
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun FoldersAndTracksPaginated(
+private fun FoldersAndTracks(
     currentFolder: Folder,
     homeDir: Folder,
     foldersContentPagingState: FoldersContentPagingState,
@@ -483,7 +477,7 @@ private fun FoldersAndTracksPaginated(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Destination
 @Composable
-fun FoldersAndTracksPaginatedScreen(
+fun FoldersAndTracksScreen(
     foldersViewModel: FoldersViewModel,
     albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
@@ -559,7 +553,7 @@ fun FoldersAndTracksPaginatedScreen(
         }
     }
 
-    FoldersAndTracksPaginated(
+    FoldersAndTracks(
         currentFolder = currentFolder,
         homeDir = homeDir,
         foldersContentPagingState = foldersViewModel.foldersContentPaging.value,

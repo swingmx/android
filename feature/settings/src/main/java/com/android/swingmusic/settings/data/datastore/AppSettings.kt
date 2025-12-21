@@ -17,7 +17,7 @@ import javax.inject.Singleton
 
 @Singleton
 class AppSettings @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private companion object {
         private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_settings")

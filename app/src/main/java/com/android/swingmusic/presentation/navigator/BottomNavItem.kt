@@ -3,20 +3,20 @@ package com.android.swingmusic.presentation.navigator
 import androidx.annotation.DrawableRes
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
-import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksPaginatedScreenDestination
+import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
 import com.ramcosta.composedestinations.spec.DestinationSpec
 import com.android.swingmusic.uicomponent.R as UiComponent
 
 sealed class BottomNavItem(
     var title: String,
-    @DrawableRes var icon: Int,
+    @param:DrawableRes var icon: Int,
     var destination: DestinationSpec<*>
 ) {
     data object Folder : BottomNavItem(
         title = "Folders",
         icon = UiComponent.drawable.folder_filled,
-        destination = FoldersAndTracksPaginatedScreenDestination
+        destination = FoldersAndTracksScreenDestination
     )
 
     data object Album : BottomNavItem(
