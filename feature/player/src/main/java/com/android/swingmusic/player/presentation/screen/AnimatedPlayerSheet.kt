@@ -2,6 +2,7 @@
 
 package com.android.swingmusic.player.presentation.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
@@ -200,6 +201,21 @@ fun AnimatedPlayerSheet(
             val progress =
                 (queueInitialOffset - queueSheetOffset.value) / (queueInitialOffset - queueExpandedOffset)
             progress.coerceIn(0f, 1f)
+        }
+    }
+
+    // Handle back press: close queue sheet first, then collapse primary sheet
+    val isPrimarySheetExpanded = bottomSheetState.bottomSheetState.currentValue == SheetValue.Expanded
+    BackHandler(enabled = isQueueSheetOpen || isPrimarySheetExpanded) {
+        coroutineScope.launch {
+            if (isQueueSheetOpen) {
+                queueSheetOffset.animateTo(
+                    targetValue = queueInitialOffset,
+                    animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f)
+                )
+            } else if (isPrimarySheetExpanded) {
+                bottomSheetState.bottomSheetState.partialExpand()
+            }
         }
     }
 
