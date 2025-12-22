@@ -548,7 +548,7 @@ fun FoldersAndTracksScreen(
         foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
     }
 
-    LaunchedEffect(key1 = Unit) {
+    LaunchedEffect(gotoFolderName, gotoFolderPath) {
         if (gotoFolderName != null && gotoFolderPath != null) {
             routeByGotoFolder = true
             foldersViewModel.resetNavPathsForGotoFolder(gotoFolderPath)
