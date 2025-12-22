@@ -13,10 +13,16 @@
                 android:pivotY="480"
                 android:scaleX="1"
                 android:scaleY="1">
-                <path
-                    android:name="artist_path"
-                    android:fillColor="@android:color/white"
-                    android:pathData="M700,800Q658,800 629,771Q600,742 600,700Q600,658 629,629Q658,600 700,600Q708,600 718,601.5Q728,603 740,608L740,400L880,400L880,480L800,480L800,700Q800,742 771,771Q742,800 700,800ZM440,480Q374,480 327,433Q280,386 280,320Q280,254 327,207Q374,160 440,160Q506,160 553,207Q600,254 600,320Q600,386 553,433Q506,480 440,480ZM120,800L120,688Q120,653 137.5,625Q155,597 184,582Q246,551 310,535.5Q374,520 440,520Q482,520 523.5,526.5Q565,533 607,546Q541,586 525,660.5Q509,735 551,800L120,800Z"/>
+                <group
+                    android:name="rotate_group"
+                    android:pivotX="480"
+                    android:pivotY="480"
+                    android:rotation="0">
+                    <path
+                        android:name="artist_path"
+                        android:fillColor="@android:color/white"
+                        android:pathData="M700,800Q658,800 629,771Q600,742 600,700Q600,658 629,629Q658,600 700,600Q708,600 718,601.5Q728,603 740,608L740,400L880,400L880,480L800,480L800,700Q800,742 771,771Q742,800 700,800ZM440,480Q374,480 327,433Q280,386 280,320Q280,254 327,207Q374,160 440,160Q506,160 553,207Q600,254 600,320Q600,386 553,433Q506,480 440,480ZM120,800L120,688Q120,653 137.5,625Q155,597 184,582Q246,551 310,535.5Q374,520 440,520Q482,520 523.5,526.5Q565,533 607,546Q541,586 525,660.5Q509,735 551,800L120,800Z"/>
+                </group>
             </group>
         </vector>
     </aapt:attr>
@@ -71,6 +77,26 @@
                     android:valueTo="1"
                     android:valueType="floatType"
                     android:interpolator="@android:interpolator/decelerate_cubic"/>
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="rotate_group">
+        <aapt:attr name="android:animation">
+            <set android:ordering="sequentially">
+                <objectAnimator
+                    android:duration="200"
+                    android:propertyName="rotation"
+                    android:valueFrom="0"
+                    android:valueTo="-20"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"/>
+                <objectAnimator
+                    android:duration="250"
+                    android:propertyName="rotation"
+                    android:valueFrom="-20"
+                    android:valueTo="0"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/overshoot"/>
             </set>
         </aapt:attr>
     </target>

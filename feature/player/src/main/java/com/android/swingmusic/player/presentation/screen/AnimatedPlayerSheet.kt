@@ -87,6 +87,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -338,6 +342,7 @@ fun AnimatedPlayerSheet(
     }
 }
 
+@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 private fun AnimatedSheetContent(
     track: Track,
@@ -698,10 +703,11 @@ private fun AnimatedSheetContent(
                                     strokeCap = StrokeCap.Round
                                 )
                             }
+                            val animatedPlayPause = AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_pause)
                             Icon(
-                                painter = painterResource(
-                                    id = if (playbackState == PlaybackState.PLAYING)
-                                        R.drawable.pause_icon else R.drawable.play_arrow
+                                painter = rememberAnimatedVectorPainter(
+                                    animatedImageVector = animatedPlayPause,
+                                    atEnd = playbackState == PlaybackState.PLAYING
                                 ),
                                 contentDescription = "Play/Pause"
                             )
@@ -876,6 +882,10 @@ private fun AnimatedSheetContent(
                             Spacer(modifier = Modifier.height(24.dp))
 
                             // Playback controls
+                            // Animation toggle states for prev/next
+                            var prevAnimAtEnd by remember { mutableStateOf(false) }
+                            var nextAnimAtEnd by remember { mutableStateOf(false) }
+
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -883,16 +893,23 @@ private fun AnimatedSheetContent(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
+                                val animatedPrev = AnimatedImageVector.animatedVectorResource(R.drawable.avd_prev)
                                 IconButton(
                                     modifier = Modifier
                                         .clip(CircleShape)
                                         .background(
                                             MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
                                         ),
-                                    onClick = { onClickPrev() }
+                                    onClick = {
+                                        prevAnimAtEnd = !prevAnimAtEnd
+                                        onClickPrev()
+                                    }
                                 ) {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.prev),
+                                        painter = rememberAnimatedVectorPainter(
+                                            animatedImageVector = animatedPrev,
+                                            atEnd = prevAnimAtEnd
+                                        ),
                                         contentDescription = "Previous"
                                     )
                                 }
@@ -939,10 +956,14 @@ private fun AnimatedSheetContent(
                                                     .background(MaterialTheme.colorScheme.secondaryContainer),
                                                 contentAlignment = Alignment.Center
                                             ) {
+                                                val animatedPlayPauseLarge = AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_pause)
                                                 Icon(
                                                     modifier = Modifier.size(44.dp),
                                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                    painter = painterResource(id = playbackStateIcon),
+                                                    painter = rememberAnimatedVectorPainter(
+                                                        animatedImageVector = animatedPlayPauseLarge,
+                                                        atEnd = playbackState == PlaybackState.PLAYING
+                                                    ),
                                                     contentDescription = "Play/Pause"
                                                 )
                                             }
@@ -959,16 +980,23 @@ private fun AnimatedSheetContent(
                                     }
                                 }
 
+                                val animatedNext = AnimatedImageVector.animatedVectorResource(R.drawable.avd_next)
                                 IconButton(
                                     modifier = Modifier
                                         .clip(CircleShape)
                                         .background(
                                             MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
                                         ),
-                                    onClick = { onClickNext() }
+                                    onClick = {
+                                        nextAnimAtEnd = !nextAnimAtEnd
+                                        onClickNext()
+                                    }
                                 ) {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.next),
+                                        painter = rememberAnimatedVectorPainter(
+                                            animatedImageVector = animatedNext,
+                                            atEnd = nextAnimAtEnd
+                                        ),
                                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                         contentDescription = "Next"
                                     )
