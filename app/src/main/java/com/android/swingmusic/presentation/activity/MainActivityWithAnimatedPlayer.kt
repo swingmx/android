@@ -35,6 +35,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -188,6 +193,9 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
             // Track sheet progress for nav bar animation
             var sheetProgress by remember { mutableFloatStateOf(0f) }
 
+            // Track animation state for each nav item
+            val animationStates = remember { mutableStateMapOf<BottomNavItem, Boolean>() }
+
             // Calculate nav bar animation values
             val navBarSlideProgress = (sheetProgress / 0.2f).coerceIn(0f, 1f)
             val navBarAlpha = 1f - navBarSlideProgress
@@ -218,21 +226,32 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                                     horizontalArrangement = Arrangement.Center
                                 ) {
                                     bottomNavItems.forEach { item ->
+                                        val isSelected = navController.currentDestination?.route?.let { route ->
+                                            bottomNavRoutePrefixes[item]?.any { prefix ->
+                                                route.startsWith(prefix)
+                                            } == true
+                                        } == true
+
+                                        val animatedIcon = AnimatedImageVector.animatedVectorResource(item.animatedIcon)
+                                        val atEnd = animationStates[item] ?: false
+
                                         NavigationBarItem(
                                             icon = {
                                                 Icon(
-                                                    painter = painterResource(id = item.icon),
-                                                    contentDescription = null
+                                                    painter = rememberAnimatedVectorPainter(
+                                                        animatedImageVector = animatedIcon,
+                                                        atEnd = atEnd
+                                                    ),
+                                                    contentDescription = item.title
                                                 )
                                             },
-                                            selected = navController.currentDestination?.route?.let { route ->
-                                                bottomNavRoutePrefixes[item]?.any { prefix ->
-                                                    route.startsWith(prefix)
-                                                } == true
-                                            } == true,
+                                            selected = isSelected,
                                             alwaysShowLabel = false,
                                             label = { Text(text = item.title) },
                                             onClick = {
+                                                // Trigger animation on click
+                                                animationStates[item] = !(animationStates[item] ?: false)
+
                                                 // Whatever you do, DON'T TOUCH this
                                                 if (navController.currentDestination?.route != item.destination.route) {
                                                     navController.navigate(item.destination.route) {
