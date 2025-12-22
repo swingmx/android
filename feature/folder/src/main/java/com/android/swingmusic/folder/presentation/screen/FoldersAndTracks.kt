@@ -444,6 +444,7 @@ private fun FoldersAndTracks(
 
                         if (pagingContent.itemCount == 0 &&
                             pagingContent.loadState.refresh !is LoadState.Loading &&
+                            pagingContent.loadState.refresh !is LoadState.Error &&
                             !isManualRefreshing
                         ) {
                             item {
