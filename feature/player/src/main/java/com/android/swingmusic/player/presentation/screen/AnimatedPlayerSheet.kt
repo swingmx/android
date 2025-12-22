@@ -10,6 +10,9 @@ import androidx.compose.animation.core.EaseOutQuad
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -77,6 +80,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -753,6 +757,7 @@ private fun AnimatedSheetContent(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+
                             // Track title and artist
                             Row(
                                 modifier = Modifier
@@ -808,8 +813,27 @@ private fun AnimatedSheetContent(
                                     }
                                 }
 
+                                var heartBounce by remember { mutableStateOf(false) }
+                                val heartScale by animateFloatAsState(
+                                    targetValue = if (heartBounce) 1.3f else 1f,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessMedium
+                                    ),
+                                    finishedListener = { heartBounce = false },
+                                    label = "heartScale"
+                                )
+
+                                LaunchedEffect(track.isFavorite) {
+                                    if (track.isFavorite) {
+                                        heartBounce = true
+                                    }
+                                }
+
                                 IconButton(
-                                    modifier = Modifier.clip(CircleShape),
+                                    modifier = Modifier
+                                        .scale(heartScale)
+                                        .clip(CircleShape),
                                     onClick = {
                                         onToggleFavorite(
                                             track.isFavorite,
@@ -817,12 +841,19 @@ private fun AnimatedSheetContent(
                                         )
                                     }
                                 ) {
-                                    val icon = if (track.isFavorite) R.drawable.fav_filled
-                                    else R.drawable.fav_not_filled
-                                    Icon(
-                                        painter = painterResource(id = icon),
-                                        contentDescription = "Favorite"
-                                    )
+                                    Crossfade(
+                                        targetState = track.isFavorite,
+                                        animationSpec = tween(200),
+                                        label = "heartCrossfade"
+                                    ) { isFavorite ->
+                                        Icon(
+                                            painter = painterResource(
+                                                id = if (isFavorite) R.drawable.fav_filled
+                                                else R.drawable.fav_not_filled
+                                            ),
+                                            contentDescription = "Favorite"
+                                        )
+                                    }
                                 }
                             }
 
