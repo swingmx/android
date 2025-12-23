@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.android.swingmusic.presentation.activity
 
 import android.annotation.SuppressLint
@@ -87,6 +89,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+@Deprecated(
+    message = "Legacy MainActivity. Use MainActivityWithAnimatedPlayer instead.",
+    replaceWith = ReplaceWith("MainActivityWithAnimatedPlayer")
+)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val mediaControllerViewModel: MediaControllerViewModel by viewModels<MediaControllerViewModel>()

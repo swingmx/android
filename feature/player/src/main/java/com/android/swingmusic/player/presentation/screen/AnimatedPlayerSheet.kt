@@ -85,12 +85,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
@@ -179,9 +183,9 @@ fun AnimatedPlayerSheet(
     var primarySheetProgress by remember { mutableFloatStateOf(0f) }
 
     // Queue sheet calculations
-    val configuration = LocalWindowInfo.current
+    val configuration = LocalConfiguration.current
     val density = LocalDensity.current
-    val screenHeightPx = with(density) { configuration.containerSize.height.dp.toPx() }
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     val queueInitialOffset = screenHeightPx * 1f // push sheet off-screen
 
     // Calculate expanded offset based on initial image size + padding + system bar
@@ -1072,9 +1076,8 @@ private fun AnimatedSheetContent(
                                         }
                                     ) { _, dragAmount ->
                                         coroutineScope.launch {
-                                            // Multiplier speeds up drag response (2.5x faster)
                                             val newOffset =
-                                                (queueSheetOffset.value + (dragAmount.y * 2.5f))
+                                                (queueSheetOffset.value + (dragAmount.y * 1.5f))
                                                     .coerceIn(
                                                         queueExpandedOffset,
                                                         queueInitialOffset
@@ -1240,17 +1243,63 @@ private fun QueueSheetOverlay(
         }
     }
 
-    // Opacity based on drag progress - reaches 1.0 at 50% drag
+    // Opacity based on drag progress - reaches 1.0 at 80% drag
     val queueOpacity by remember {
         derivedStateOf {
-            (queueProgress / 0.5f).coerceIn(0f, 1f)
+            (queueProgress / 0.8f).coerceIn(0f, 1f)
         }
     }
 
-    // Scroll to playing track when sheet opens
+    // Track if we've scrolled to playing track this session
+    var hasScrolledToPlayingTrack by remember { mutableStateOf(false) }
+
+    // Scroll to playing track only on first open
     LaunchedEffect(queueProgress) {
-        if (queueProgress > 0.9f && (playingTrackIndex - 1) in queue.indices) {
+        if (!hasScrolledToPlayingTrack && queueProgress > 0.9f && (playingTrackIndex - 1) in queue.indices) {
             lazyColumnState.scrollToItem(playingTrackIndex - 1)
+            hasScrolledToPlayingTrack = true
+        }
+    }
+
+    // Nested scroll connection to drag sheet down when list is at top
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // When at top of list and user drags down, move sheet instead
+                // available.y > 0 means finger moving down (trying to scroll up/backward)
+                val isAtTop = !lazyColumnState.canScrollBackward
+                val isDraggingDown = available.y > 0
+
+                if (isAtTop && isDraggingDown) {
+                    val newOffset = (animatedOffset.value + available.y)
+                        .coerceIn(expandedOffset, initialOffset)
+
+                    coroutineScope.launch {
+                        isDraggingUp = false
+                        lastOffset = newOffset
+                        animatedOffset.snapTo(newOffset)
+                    }
+                    return Offset(0f, available.y)
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                // Snap sheet to position after fling
+                if (animatedOffset.value > expandedOffset) {
+                    val threshold = 0.90f
+                    val targetOffset = if (queueProgress > threshold) {
+                        expandedOffset
+                    } else {
+                        initialOffset
+                    }
+                    animatedOffset.animateTo(
+                        targetValue = targetOffset,
+                        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f)
+                    )
+                }
+                return super.onPostFling(consumed, available)
+            }
         }
     }
 
@@ -1532,8 +1581,9 @@ private fun QueueSheetOverlay(
                 state = lazyColumnState,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                    .fillMaxWidth()
+                    .nestedScroll(nestedScrollConnection),
+                contentPadding = PaddingValues(bottom = 120.dp)
             ) {
                 itemsIndexed(
                     items = queue,
