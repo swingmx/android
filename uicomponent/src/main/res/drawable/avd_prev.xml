@@ -1,0 +1,91 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:name="prev_vector"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <group
+                android:name="translate_group"
+                android:translateX="0"
+                android:pivotX="12"
+                android:pivotY="12">
+                <group
+                    android:name="scale_group"
+                    android:pivotX="12"
+                    android:pivotY="12"
+                    android:scaleX="1"
+                    android:scaleY="1">
+                    <path
+                        android:name="prev_path"
+                        android:fillColor="@android:color/white"
+                        android:pathData="M6,6h2v12L6,18zM9.5,12l8.5,6L18,6l-8.5,6zM16,14.14L12.97,12 16,9.86v4.28z"/>
+                </group>
+            </group>
+        </vector>
+    </aapt:attr>
+    <!-- Shift left then back -->
+    <target android:name="translate_group">
+        <aapt:attr name="android:animation">
+            <set android:ordering="sequentially">
+                <objectAnimator
+                    android:duration="150"
+                    android:propertyName="translateX"
+                    android:valueFrom="0"
+                    android:valueTo="-3"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"/>
+                <objectAnimator
+                    android:duration="200"
+                    android:propertyName="translateX"
+                    android:valueFrom="-3"
+                    android:valueTo="0"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/overshoot"/>
+            </set>
+        </aapt:attr>
+    </target>
+    <!-- Scale bounce -->
+    <target android:name="scale_group">
+        <aapt:attr name="android:animation">
+            <set android:ordering="sequentially">
+                <objectAnimator
+                    android:duration="150"
+                    android:propertyName="scaleX"
+                    android:valueFrom="1"
+                    android:valueTo="0.85"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"/>
+                <objectAnimator
+                    android:duration="200"
+                    android:propertyName="scaleX"
+                    android:valueFrom="0.85"
+                    android:valueTo="1"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/overshoot"/>
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="scale_group">
+        <aapt:attr name="android:animation">
+            <set android:ordering="sequentially">
+                <objectAnimator
+                    android:duration="150"
+                    android:propertyName="scaleY"
+                    android:valueFrom="1"
+                    android:valueTo="0.85"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"/>
+                <objectAnimator
+                    android:duration="200"
+                    android:propertyName="scaleY"
+                    android:valueFrom="0.85"
+                    android:valueTo="1"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/overshoot"/>
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>

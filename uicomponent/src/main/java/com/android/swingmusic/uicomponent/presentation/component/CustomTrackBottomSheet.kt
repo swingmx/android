@@ -1,5 +1,10 @@
 package com.android.swingmusic.uicomponent.presentation.component
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,6 +30,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ColorMatrixColorFilter
@@ -95,15 +102,44 @@ fun CustomTrackBottomSheet(
                     Box(
                         modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd
                     ) {
-                        IconButton(modifier = Modifier.clip(CircleShape), onClick = {
-                            onToggleTrackFavorite(track.trackHash, track.isFavorite)
-                        }) {
-                            val icon = if (isFavorite) R.drawable.fav_filled
-                            else R.drawable.fav_not_filled
-                            Icon(
-                                painter = painterResource(id = icon),
-                                contentDescription = "Favorite"
-                            )
+                        var heartBounce by remember { mutableStateOf(false) }
+                        val heartScale by animateFloatAsState(
+                            targetValue = if (heartBounce) 1.3f else 1f,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium
+                            ),
+                            finishedListener = { heartBounce = false },
+                            label = "heartScale"
+                        )
+
+                        LaunchedEffect(isFavorite) {
+                            if (isFavorite) {
+                                heartBounce = true
+                            }
+                        }
+
+                        IconButton(
+                            modifier = Modifier
+                                .scale(heartScale)
+                                .clip(CircleShape),
+                            onClick = {
+                                onToggleTrackFavorite(track.trackHash, track.isFavorite)
+                            }
+                        ) {
+                            Crossfade(
+                                targetState = isFavorite,
+                                animationSpec = tween(200),
+                                label = "heartCrossfade"
+                            ) { favorite ->
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (favorite) R.drawable.fav_filled
+                                        else R.drawable.fav_not_filled
+                                    ),
+                                    contentDescription = "Favorite"
+                                )
+                            }
                         }
                     }
                 }

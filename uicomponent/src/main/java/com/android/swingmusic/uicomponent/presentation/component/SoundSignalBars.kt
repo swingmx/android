@@ -31,7 +31,7 @@ fun SoundSignalBars(animate: Boolean) {
         initialHeights.map { mutableFloatStateOf(it) }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(animate) {
         if (animate) {
             while (true) {
                 barStates.forEach { barState ->

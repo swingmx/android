@@ -57,8 +57,8 @@ import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
-import com.android.swingmusic.folder.presentation.state.FoldersContentPagingState
 import com.android.swingmusic.folder.presentation.model.FolderContentItem
+import com.android.swingmusic.folder.presentation.state.FoldersContentPagingState
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
@@ -67,6 +67,7 @@ import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBott
 import com.android.swingmusic.uicomponent.presentation.component.FolderItem
 import com.android.swingmusic.uicomponent.presentation.component.PathIndicatorItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
+import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.ramcosta.composedestinations.annotation.Destination
 import java.util.Locale
 
@@ -97,7 +98,7 @@ private fun FoldersAndTracks(
     var clickedTrack: Track? by remember { mutableStateOf(null) }
 
     val pagingContent = foldersContentPagingState.pagingContent.collectAsLazyPagingItems()
-    
+
     // Track state updates and reset manual refreshing
     LaunchedEffect(pagingContent.loadState, pagingContent.itemCount) {
         // Reset manual refreshing when content loads successfully
@@ -109,14 +110,17 @@ private fun FoldersAndTracks(
                         onManualRefreshingChange(false)
                     }
                 }
+
                 is LoadState.Error -> {
                     // Error occurred, stop refreshing
                     onManualRefreshingChange(false)
                 }
-                else -> { /* Keep refreshing */ }
+
+                else -> { /* Keep refreshing */
+                }
             }
         }
-        
+
         // Reset bottom sheet if content is refreshed
         if (pagingContent.loadState.refresh is LoadState.NotLoading) {
             if (clickedTrack != null) {
@@ -288,7 +292,7 @@ private fun FoldersAndTracks(
                                 key = { index -> index }
                             ) { index ->
                                 val contentItem = pagingContent[index] ?: return@items
-                                
+
                                 when (contentItem) {
                                     is FolderContentItem.FolderItem -> {
                                         FolderItem(
@@ -299,6 +303,7 @@ private fun FoldersAndTracks(
                                             onClickMoreVert = {}
                                         )
                                     }
+
                                     is FolderContentItem.TrackItem -> {
                                         val track = contentItem.track
                                         TrackItem(
@@ -310,8 +315,8 @@ private fun FoldersAndTracks(
                                             onClickTrackItem = {
                                                 // Get all tracks for queue creation
                                                 val allTracks = (0 until pagingContent.itemCount)
-                                                    .mapNotNull { i -> 
-                                                        (pagingContent[i] as? FolderContentItem.TrackItem)?.track 
+                                                    .mapNotNull { i ->
+                                                        (pagingContent[i] as? FolderContentItem.TrackItem)?.track
                                                     }
                                                 val trackIndex = allTracks.indexOf(track)
                                                 onClickTrackItem(trackIndex, allTracks)
@@ -324,7 +329,7 @@ private fun FoldersAndTracks(
                                     }
                                 }
                             }
-                            
+
                             // Add bottom spacing
                             item {
                                 Spacer(modifier = Modifier.height(200.dp))
@@ -344,6 +349,7 @@ private fun FoldersAndTracks(
                                     }
                                 }
                             }
+
                             is LoadState.Error -> {
                                 item {
                                     Box(
@@ -354,7 +360,8 @@ private fun FoldersAndTracks(
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
-                                                text = appendState.error.message ?: "Error loading more content",
+                                                text = appendState.error.message
+                                                    ?: "Error loading more content",
                                                 textAlign = TextAlign.Center,
                                                 style = MaterialTheme.typography.bodyMedium
                                             )
@@ -366,6 +373,7 @@ private fun FoldersAndTracks(
                                     }
                                 }
                             }
+
                             else -> {}
                         }
 
@@ -384,6 +392,7 @@ private fun FoldersAndTracks(
                                     }
                                 }
                             }
+
                             is LoadState.Error -> {
                                 if (isManualRefreshing) {
                                     onManualRefreshingChange(false)
@@ -423,16 +432,19 @@ private fun FoldersAndTracks(
                                     }
                                 }
                             }
+
                             is LoadState.NotLoading -> {
                                 if (isManualRefreshing) {
                                     onManualRefreshingChange(false)
                                 }
                             }
+
                             else -> {}
                         }
 
                         if (pagingContent.itemCount == 0 &&
                             pagingContent.loadState.refresh !is LoadState.Loading &&
+                            pagingContent.loadState.refresh !is LoadState.Error &&
                             !isManualRefreshing
                         ) {
                             item {
@@ -492,10 +504,10 @@ fun FoldersAndTracksScreen(
 
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
-    
+
     val currentTrackHash = playerUiState.nowPlayingTrack?.trackHash ?: ""
     val playbackState = playerUiState.playbackState
-    
+
     var isManualRefreshing by remember { mutableStateOf(false) }
     var routeByGotoFolder by remember { mutableStateOf(false) }
     var hasInitializedWithBaseUrl by remember { mutableStateOf(false) }
@@ -504,17 +516,17 @@ fun FoldersAndTracksScreen(
     LaunchedEffect(Unit) {
         mediaControllerViewModel.refreshBaseUrl()
     }
-    
+
     LaunchedEffect(baseUrl) {
         if (baseUrl != null && !hasInitializedWithBaseUrl) {
             // Trigger root directories fetch now that base URL is available
             foldersViewModel.fetchRootDirectoriesWhenReady()
-            
+
             // Only reload content if we're at home directory AND not in a "go to folder" scenario
             if (currentFolder.path == "\$home" && gotoFolderName == null && gotoFolderPath == null) {
                 foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(currentFolder))
             }
-            
+
             hasInitializedWithBaseUrl = true
         }
     }
@@ -536,7 +548,7 @@ fun FoldersAndTracksScreen(
         foldersViewModel.onFolderUiEvent(FolderUiEvent.OnBackNav(currentFolder))
     }
 
-    LaunchedEffect(key1 = Unit) {
+    LaunchedEffect(gotoFolderName, gotoFolderPath) {
         if (gotoFolderName != null && gotoFolderPath != null) {
             routeByGotoFolder = true
             foldersViewModel.resetNavPathsForGotoFolder(gotoFolderPath)
@@ -553,94 +565,96 @@ fun FoldersAndTracksScreen(
         }
     }
 
-    FoldersAndTracks(
-        currentFolder = currentFolder,
-        homeDir = homeDir,
-        foldersContentPagingState = foldersViewModel.foldersContentPaging.value,
-        currentTrackHash = currentTrackHash,
-        playbackState = playbackState,
-        navPaths = navPaths,
-        onClickNavPath = { folder ->
-            routeByGotoFolder = false
-            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
-        },
-        onRetry = { event ->
-            foldersViewModel.onFolderUiEvent(event)
-        },
-        onPullToRefresh = { event ->
-            isManualRefreshing = true
-            foldersViewModel.onFolderUiEvent(event)
-        },
-        isManualRefreshing = isManualRefreshing,
-        onManualRefreshingChange = { isRefreshing ->
-            isManualRefreshing = isRefreshing
-        },
-        onClickFolder = { folder ->
-            routeByGotoFolder = false
-            foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
-        },
-        onClickTrackItem = { index, queue ->
-            mediaControllerViewModel.onQueueEvent(
-                QueueEvent.RecreateQueue(
-                    source = QueueSource.FOLDER(
-                        path = currentFolder.path,
-                        name = currentFolder.name
-                    ),
-                    queue = queue,
-                    clickedTrackIndex = index
-                    // Remove isPartialQueue - let ViewModel decide
-                )
-            )
-        },
-        onToggleTrackFavorite = { trackHash, isFavorite ->
-            foldersViewModel.onFolderUiEvent(
-                FolderUiEvent.ToggleTrackFavorite(
-                    trackHash,
-                    isFavorite
-                )
-            )
-        },
-        onGetSheetAction = { track, sheetAction ->
-            when (sheetAction) {
-                is BottomSheetAction.GotoAlbum -> {
-                    albumWithInfoViewModel.onAlbumWithInfoUiEvent(
-                        AlbumWithInfoUiEvent.OnLoadAlbumWithInfo(
-                            track.albumHash
-                        )
+    SwingMusicTheme {
+        FoldersAndTracks(
+            currentFolder = currentFolder,
+            homeDir = homeDir,
+            foldersContentPagingState = foldersViewModel.foldersContentPaging.value,
+            currentTrackHash = currentTrackHash,
+            playbackState = playbackState,
+            navPaths = navPaths,
+            onClickNavPath = { folder ->
+                routeByGotoFolder = false
+                foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickNavPath(folder))
+            },
+            onRetry = { event ->
+                foldersViewModel.onFolderUiEvent(event)
+            },
+            onPullToRefresh = { event ->
+                isManualRefreshing = true
+                foldersViewModel.onFolderUiEvent(event)
+            },
+            isManualRefreshing = isManualRefreshing,
+            onManualRefreshingChange = { isRefreshing ->
+                isManualRefreshing = isRefreshing
+            },
+            onClickFolder = { folder ->
+                routeByGotoFolder = false
+                foldersViewModel.onFolderUiEvent(FolderUiEvent.OnClickFolder(folder))
+            },
+            onClickTrackItem = { index, queue ->
+                mediaControllerViewModel.onQueueEvent(
+                    QueueEvent.RecreateQueue(
+                        source = QueueSource.FOLDER(
+                            path = currentFolder.path,
+                            name = currentFolder.name
+                        ),
+                        queue = queue,
+                        clickedTrackIndex = index
+                        // Remove isPartialQueue - let ViewModel decide
                     )
-                    navigator.gotoAlbumWithInfo(track.albumHash)
-                }
-
-                is BottomSheetAction.AddToQueue -> {
-                    mediaControllerViewModel.onQueueEvent(
-                        QueueEvent.AddToQueue(
-                            track = track,
-                            source = QueueSource.FOLDER(
-                                path = currentFolder.path,
-                                name = currentFolder.name
+                )
+            },
+            onToggleTrackFavorite = { trackHash, isFavorite ->
+                foldersViewModel.onFolderUiEvent(
+                    FolderUiEvent.ToggleTrackFavorite(
+                        trackHash,
+                        isFavorite
+                    )
+                )
+            },
+            onGetSheetAction = { track, sheetAction ->
+                when (sheetAction) {
+                    is BottomSheetAction.GotoAlbum -> {
+                        albumWithInfoViewModel.onAlbumWithInfoUiEvent(
+                            AlbumWithInfoUiEvent.OnLoadAlbumWithInfo(
+                                track.albumHash
                             )
                         )
-                    )
-                }
+                        navigator.gotoAlbumWithInfo(track.albumHash)
+                    }
 
-                is BottomSheetAction.PlayNext -> {
-                    mediaControllerViewModel.onQueueEvent(
-                        QueueEvent.PlayNext(
-                            track = track,
-                            source = QueueSource.FOLDER(
-                                path = currentFolder.path,
-                                name = currentFolder.name
+                    is BottomSheetAction.AddToQueue -> {
+                        mediaControllerViewModel.onQueueEvent(
+                            QueueEvent.AddToQueue(
+                                track = track,
+                                source = QueueSource.FOLDER(
+                                    path = currentFolder.path,
+                                    name = currentFolder.name
+                                )
                             )
                         )
-                    )
-                }
+                    }
 
-                else -> {}
-            }
-        },
-        onGotoArtist = { hash ->
-            navigator.gotoArtistInfo(hash)
-        },
-        baseUrl = baseUrl ?: ""
-    )
+                    is BottomSheetAction.PlayNext -> {
+                        mediaControllerViewModel.onQueueEvent(
+                            QueueEvent.PlayNext(
+                                track = track,
+                                source = QueueSource.FOLDER(
+                                    path = currentFolder.path,
+                                    name = currentFolder.name
+                                )
+                            )
+                        )
+                    }
+
+                    else -> {}
+                }
+            },
+            onGotoArtist = { hash ->
+                navigator.gotoArtistInfo(hash)
+            },
+            baseUrl = baseUrl ?: ""
+        )
+    }
 }

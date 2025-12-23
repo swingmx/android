@@ -1,0 +1,51 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:name="play_pause_vector"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <group
+                android:name="icon_group"
+                android:pivotX="12"
+                android:pivotY="12">
+                <!-- Left half of play triangle / Left pause bar -->
+                <path
+                    android:name="left_path"
+                    android:fillColor="@android:color/white"
+                    android:pathData="M8,5 L12,7.5 L12,16.5 L8,19 Z"/>
+                <!-- Right half of play triangle / Right pause bar -->
+                <path
+                    android:name="right_path"
+                    android:fillColor="@android:color/white"
+                    android:pathData="M12,7.5 L19,12 L12,16.5 L12,12 Z"/>
+            </group>
+        </vector>
+    </aapt:attr>
+    <!-- Morph left path: left triangle half -> left pause bar -->
+    <target android:name="left_path">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="300"
+                android:propertyName="pathData"
+                android:valueFrom="M8,5 L12,7.5 L12,16.5 L8,19 Z"
+                android:valueTo="M6,5 L10,5 L10,19 L6,19 Z"
+                android:valueType="pathType"
+                android:interpolator="@android:interpolator/fast_out_slow_in"/>
+        </aapt:attr>
+    </target>
+    <!-- Morph right path: right triangle half -> right pause bar -->
+    <target android:name="right_path">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="300"
+                android:propertyName="pathData"
+                android:valueFrom="M12,7.5 L19,12 L12,16.5 L12,12 Z"
+                android:valueTo="M14,5 L18,5 L18,19 L14,19 Z"
+                android:valueType="pathType"
+                android:interpolator="@android:interpolator/fast_out_slow_in"/>
+        </aapt:attr>
+    </target>
+</animated-vector>
