@@ -14,6 +14,8 @@ import com.android.swingmusic.auth.presentation.event.AuthUiEvent.OnUsernameChan
 import com.android.swingmusic.auth.presentation.state.AuthState
 import com.android.swingmusic.auth.presentation.state.AuthUiState
 import com.android.swingmusic.auth.presentation.util.AuthError
+import com.android.swingmusic.auth.presentation.util.AuthUtils.normalizeUrl
+import com.android.swingmusic.auth.presentation.util.AuthUtils.validInputUrl
 import com.android.swingmusic.core.data.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -93,11 +95,15 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun logInWithUsernameAndPassword() {
-        val baseUrl = _authUiState.value.baseUrl
+        val inputBaseUrl = _authUiState.value.baseUrl
+        val baseUrl = normalizeUrl(inputBaseUrl)
         val username = _authUiState.value.username
         val password = _authUiState.value.password
 
         viewModelScope.launch {
+            // Persist the normalized URL back to UI state so the user sees the auto-prepended scheme
+            _authUiState.value = _authUiState.value.copy(baseUrl = baseUrl)
+
             if (baseUrl.isNullOrEmpty() || !validInputUrl(baseUrl)) {
                 _authUiState.value = _authUiState.value.copy(
                     authState = AuthState.LOGGED_OUT,
@@ -223,11 +229,6 @@ class AuthViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    private fun validInputUrl(url: String?): Boolean {
-        val urlRegex = Regex("^(https?|ftp)://[^\\s/$.?#].\\S*$")
-        return url?.matches(urlRegex) == true
     }
 
     fun onAuthUiEvent(event: AuthUiEvent) {
