@@ -101,9 +101,7 @@ class AuthViewModel @Inject constructor(
         val password = _authUiState.value.password
 
         viewModelScope.launch {
-            // Persist the normalized URL back to UI state so the user sees the auto-prepended scheme
-            _authUiState.value = _authUiState.value.copy(baseUrl = baseUrl)
-
+            // Validate the normalized URL first; only persist back to UI if it's valid
             if (baseUrl.isNullOrEmpty() || !validInputUrl(baseUrl)) {
                 _authUiState.value = _authUiState.value.copy(
                     authState = AuthState.LOGGED_OUT,
@@ -112,6 +110,9 @@ class AuthViewModel @Inject constructor(
                 )
                 return@launch
             }
+
+            // Persist the normalized, validated URL back to UI so the user sees the auto-prepended scheme
+            _authUiState.value = _authUiState.value.copy(baseUrl = baseUrl)
 
             if (username.isNullOrEmpty() || password.isNullOrEmpty()) {
                 _authUiState.value = _authUiState.value.copy(

@@ -20,14 +20,27 @@ class AuthUtilsTest {
     }
 
     @Test
-    fun `normalizeUrl trims whitespace`() {
+    fun `normalizeUrl trims whitespace without scheme`() {
         assertEquals("https://example.com", AuthUtils.normalizeUrl("  example.com  "))
+    }
+
+    @Test
+    fun `normalizeUrl trims whitespace with scheme`() {
+        assertEquals("https://example.com", AuthUtils.normalizeUrl("   https://example.com   "))
     }
 
     @Test
     fun `normalizeUrl prepends https when scheme is missing`() {
         assertEquals("https://example.com", AuthUtils.normalizeUrl("example.com"))
         assertEquals("https://sub.domain.com", AuthUtils.normalizeUrl("sub.domain.com"))
+    }
+
+    @Test
+    fun `normalizeUrl handles ports and IPs when missing scheme`() {
+        assertEquals("https://example.com:8080", AuthUtils.normalizeUrl("example.com:8080"))
+        assertEquals("https://192.168.1.1", AuthUtils.normalizeUrl("192.168.1.1"))
+        assertEquals("https://192.168.1.1:8443", AuthUtils.normalizeUrl("192.168.1.1:8443"))
+        assertEquals("https://localhost:3000", AuthUtils.normalizeUrl("localhost:3000"))
     }
 
     @Test
@@ -51,6 +64,26 @@ class AuthUtilsTest {
     }
 
     @Test
+    fun `validInputUrl accepts domains with ports`() {
+        assertTrue(AuthUtils.validInputUrl("https://example.com:8080"))
+        assertTrue(AuthUtils.validInputUrl("http://sub.example.co.uk:3000/path"))
+    }
+
+    @Test
+    fun `validInputUrl accepts localhost and IPv4 with optional ports`() {
+        assertTrue(AuthUtils.validInputUrl("http://localhost"))
+        assertTrue(AuthUtils.validInputUrl("http://localhost:3000/health"))
+        assertTrue(AuthUtils.validInputUrl("https://192.168.1.1"))
+        assertTrue(AuthUtils.validInputUrl("https://192.168.1.1:8443/api"))
+    }
+
+    @Test
+    fun `validInputUrl rejects malformed IPv4`() {
+        assertFalse(AuthUtils.validInputUrl("https://999.1.1.1"))
+        assertFalse(AuthUtils.validInputUrl("http://256.256.256.256"))
+    }
+
+    @Test
     fun `validInputUrl rejects missing scheme`() {
         assertFalse(AuthUtils.validInputUrl("example.com"))
         assertFalse(AuthUtils.validInputUrl("www.example.com"))
@@ -68,9 +101,10 @@ class AuthUtilsTest {
     }
 
     @Test
-    fun `validInputUrl rejects obvious invalid urls`() {
+    fun `validInputUrl rejects obvious invalid urls and custom schemes`() {
         assertFalse(AuthUtils.validInputUrl("https:///example.com"))
         assertFalse(AuthUtils.validInputUrl("https://"))
         assertFalse(AuthUtils.validInputUrl("not a url"))
+        assertFalse(AuthUtils.validInputUrl("custom+scheme://host/path"))
     }
 }

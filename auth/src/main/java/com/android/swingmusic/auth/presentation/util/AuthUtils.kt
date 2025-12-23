@@ -9,8 +9,24 @@ object AuthUtils {
         return if (hasScheme) trimmed else "https://$trimmed"
     }
 
+    /**
+     * Validates URLs for login input.
+     *
+     * Rules:
+     * - Allowed schemes: http, https, ftp
+     * - Host: domain (with subdomains), localhost, or IPv4 address
+     * - Optional port
+     * - Optional path/query/fragment
+     */
     fun validInputUrl(url: String?): Boolean {
-        val urlRegex = Regex("^(https?|ftp)://[^\\s/$.?#].\\S*$")
+        val urlRegex = Regex(
+            pattern = "^(https?|ftp)://(" +
+                    "localhost|" +
+                    "(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}|" +
+                    "(?:(?:25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)){3})" +
+                    ")(?::\\d{1,5})?(?:/\\S*)?$",
+            options = setOf(RegexOption.IGNORE_CASE)
+        )
         return url?.matches(urlRegex) == true
     }
 }
