@@ -922,8 +922,6 @@ class MediaControllerViewModel @Inject constructor(
                         )
                     }
                 }
-
-                activateHapticResponse()
             }
         }
     }

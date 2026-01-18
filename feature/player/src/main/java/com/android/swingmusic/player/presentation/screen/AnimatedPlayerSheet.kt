@@ -4,23 +4,29 @@ package com.android.swingmusic.player.presentation.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.EaseOutQuad
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.VectorConverter
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -52,10 +58,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.rememberModalBottomSheetState
-import com.android.swingmusic.core.domain.model.BottomSheetItemModel
-import com.android.swingmusic.core.domain.util.BottomSheetAction
-import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +66,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -81,36 +84,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
-import androidx.compose.animation.graphics.res.animatedVectorResource
-import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
-import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
+import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.core.domain.util.RepeatMode
@@ -120,6 +124,7 @@ import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.util.calculateCurrentOffsetForPage
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
@@ -177,6 +182,9 @@ fun AnimatedPlayerSheet(
     // Track primary sheet progress for queue sheet trigger
     var primarySheetProgress by remember { mutableFloatStateOf(0f) }
 
+    // Track if closing sheet is allowed (set by long-press)
+    var allowSheetClose by remember { mutableStateOf(false) }
+
     // Queue sheet calculations
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
@@ -202,17 +210,26 @@ fun AnimatedPlayerSheet(
     val bottomSheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded,
-            skipHiddenState = false
+            skipHiddenState = false,
+            confirmValueChange = { newValue ->
+                // Only allow Hidden if long-press activated it
+                newValue != SheetValue.Hidden || allowSheetClose
+            }
         )
     )
 
-    // Clear queue only when transitioning TO Hidden (not on re-entry)
+    // Handle sheet state changes
     LaunchedEffect(Unit) {
         var previousValue = bottomSheetState.bottomSheetState.currentValue
         snapshotFlow { bottomSheetState.bottomSheetState.currentValue }
             .collect { currentValue ->
+                // Clear queue when transitioning TO Hidden
                 if (currentValue == SheetValue.Hidden && previousValue != SheetValue.Hidden) {
                     mediaControllerViewModel.onQueueEvent(QueueEvent.ClearQueue)
+                }
+                // Reset close permission when sheet settles to any state
+                if (currentValue != previousValue) {
+                    allowSheetClose = false
                 }
                 previousValue = currentValue
             }
@@ -238,7 +255,8 @@ fun AnimatedPlayerSheet(
     }
 
     // Handle back press: close queue sheet first, then collapse primary sheet
-    val isPrimarySheetExpanded = bottomSheetState.bottomSheetState.currentValue == SheetValue.Expanded
+    val isPrimarySheetExpanded =
+        bottomSheetState.bottomSheetState.currentValue == SheetValue.Expanded
     BackHandler(enabled = isQueueSheetOpen || isPrimarySheetExpanded) {
         coroutineScope.launch {
             if (isQueueSheetOpen) {
@@ -266,58 +284,61 @@ fun AnimatedPlayerSheet(
                     track = playingTrack,
                     queue = playerUiState.queue,
                     playingTrackIndex = playerUiState.playingTrackIndex,
-                seekPosition = playerUiState.seekPosition,
-                playbackDuration = playerUiState.playbackDuration,
-                trackDuration = playerUiState.trackDuration,
-                playbackState = playerUiState.playbackState,
-                isBuffering = playerUiState.isBuffering,
-                repeatMode = playerUiState.repeatMode,
-                shuffleMode = playerUiState.shuffleMode,
-                baseUrl = baseUrl ?: "",
-                bottomSheetState = bottomSheetState,
-                systemBarHeight = systemBarHeight,
-                onShapeChange = { shape -> dynamicShape = shape },
-                onProgressChange = { progress ->
-                    primarySheetProgress = progress
-                    onProgressChange(progress)
-                },
-                primarySheetProgress = primarySheetProgress,
-                queueSheetOffset = queueSheetOffset,
-                queueInitialOffset = queueInitialOffset,
-                queueExpandedOffset = queueExpandedOffset,
-                queueProgress = queueProgress,
-                onPageSelect = { page ->
-                    mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(page))
-                },
-                onClickArtist = { navigator.gotoArtistInfo(it) },
-                onToggleRepeatMode = {
-                    mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnToggleRepeatMode)
-                },
-                onClickPrev = {
-                    mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnPrev)
-                },
-                onTogglePlayerState = {
-                    mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
-                },
-                onResumePlayBackFromError = {
-                    mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnResumePlaybackFromError)
-                },
-                onClickNext = {
-                    mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnNext)
-                },
-                onToggleShuffleMode = {
-                    mediaControllerViewModel.onPlayerUiEvent(
-                        PlayerUiEvent.OnToggleShuffleMode(toggleShuffle = true)
-                    )
-                },
-                onSeekPlayBack = { value ->
-                    mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnSeekPlayBack(value))
-                },
-                onToggleFavorite = { isFavorite, trackHash ->
-                    mediaControllerViewModel.onPlayerUiEvent(
-                        PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)
-                    )
-                }
+                    seekPosition = playerUiState.seekPosition,
+                    playbackDuration = playerUiState.playbackDuration,
+                    trackDuration = playerUiState.trackDuration,
+                    playbackState = playerUiState.playbackState,
+                    isBuffering = playerUiState.isBuffering,
+                    repeatMode = playerUiState.repeatMode,
+                    shuffleMode = playerUiState.shuffleMode,
+                    baseUrl = baseUrl ?: "",
+                    bottomSheetState = bottomSheetState,
+                    systemBarHeight = systemBarHeight,
+                    onShapeChange = { shape -> dynamicShape = shape },
+                    onProgressChange = { progress ->
+                        primarySheetProgress = progress
+                        onProgressChange(progress)
+                    },
+                    primarySheetProgress = primarySheetProgress,
+                    queueSheetOffset = queueSheetOffset,
+                    queueInitialOffset = queueInitialOffset,
+                    queueExpandedOffset = queueExpandedOffset,
+                    queueProgress = queueProgress,
+                    onPageSelect = { page ->
+                        mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(page))
+                    },
+                    onClickArtist = { navigator.gotoArtistInfo(it) },
+                    onToggleRepeatMode = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnToggleRepeatMode)
+                    },
+                    onClickPrev = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnPrev)
+                    },
+                    onTogglePlayerState = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
+                    },
+                    onResumePlayBackFromError = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnResumePlaybackFromError)
+                    },
+                    onClickNext = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnNext)
+                    },
+                    onToggleShuffleMode = {
+                        mediaControllerViewModel.onPlayerUiEvent(
+                            PlayerUiEvent.OnToggleShuffleMode(toggleShuffle = true)
+                        )
+                    },
+                    onSeekPlayBack = { value ->
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnSeekPlayBack(value))
+                    },
+                    onToggleFavorite = { isFavorite, trackHash ->
+                        mediaControllerViewModel.onPlayerUiEvent(
+                            PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)
+                        )
+                    },
+                    onAllowSheetClose = {
+                        allowSheetClose = true
+                    }
                 )
             }
         }
@@ -366,7 +387,7 @@ fun AnimatedPlayerSheet(
     }
 }
 
-@OptIn(ExperimentalAnimationGraphicsApi::class)
+@OptIn(ExperimentalAnimationGraphicsApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun AnimatedSheetContent(
     track: Track,
@@ -398,12 +419,14 @@ private fun AnimatedSheetContent(
     onClickNext: () -> Unit,
     onToggleShuffleMode: () -> Unit,
     onSeekPlayBack: (Float) -> Unit,
-    onToggleFavorite: (Boolean, String) -> Unit
+    onToggleFavorite: (Boolean, String) -> Unit,
+    onAllowSheetClose: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
     // Whatever AS says about this, don't be tempted to change it... ref: Eric
     val screenWidthDp = configuration.screenWidthDp.dp
+    val hapticFeedback = LocalHapticFeedback.current
 
     // Horizontal swipe state for collapsed mode
     var swipeDistance by remember { mutableFloatStateOf(0f) }
@@ -420,7 +443,8 @@ private fun AnimatedSheetContent(
         kotlinx.coroutines.delay(50) // Extra settling time after reaching state
         try {
             initialOffset.value = bottomSheetState.bottomSheetState.requireOffset()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 
     // Calculate progress using captured initial offset
@@ -458,8 +482,9 @@ private fun AnimatedSheetContent(
     // Dynamic spacing between image and content
     val imageContentSpacing = lerp(60.dp, 16.dp, progress.value)
 
-    // Dynamic sheet corner radius: 12dp at peek → 0dp at 50% progress
-    val sheetCornerRadius = lerp(12.dp, 0.dp, (progress.value / 0.5f).coerceIn(0f, 1f))
+    // Dynamic sheet corner radius: 12dp at peek → 0dp at full expansion
+    // Using pow(3) easing to maintain curved shape longer, then flatten quickly near the top
+    val sheetCornerRadius = lerp(12.dp, 0.dp, progress.value.pow(3))
 
     // Dynamic container padding
     val containerPadding = lerp(INITIAL_PADDING, 24.dp, effectiveProgress)
@@ -588,34 +613,80 @@ private fun AnimatedSheetContent(
                     .fillMaxWidth()
                     .padding(top = imageTopPadding)
                     .padding(horizontal = containerPadding)
-                    .then(
-                        // Horizontal swipe for prev/next in collapsed state
-                        if (progress.value < 0.3f) {
-                            Modifier.pointerInput(Unit) {
-                                detectHorizontalDragGestures(
-                                    onDragEnd = {
-                                        if (swipeDistance > 50) {
-                                            onClickPrev()
-                                        } else if (swipeDistance < -50) {
-                                            onClickNext()
-                                        }
-                                        swipeDistance = 0f
-                                    }
-                                ) { change, dragAmount ->
-                                    change.consume()
-                                    swipeDistance += dragAmount
+                    .pointerInput(progress.value < 0.3f, queueProgress < 0.1f) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            var longPressTriggered = false
+                            var closePermissionGranted = false
+                            var totalDragX = 0f
+                            var totalDragY = 0f
+                            var lastX = down.position.x
+                            var lastY = down.position.y
+
+                            // Launch coroutine to trigger haptic after 500ms
+                            val longPressJob = coroutineScope.launch {
+                                kotlinx.coroutines.delay(500L)
+                                if (progress.value < 0.3f) {
+                                    longPressTriggered = true
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    swipeDistance = 0f
                                 }
                             }
-                        } else Modifier
-                    )
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) {
-                        if (progress.value < 0.5f && queueProgress < 0.1f) {
-                            coroutineScope.launch {
-                                bottomSheetState.bottomSheetState.expand()
+
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id }
+
+                                if (change == null || change.changedToUp()) {
+                                    // Finger lifted - cancel long press job if still pending
+                                    longPressJob.cancel()
+
+                                    if (!longPressTriggered && progress.value < 0.3f) {
+                                        // Check for tap vs horizontal swipe
+                                        if (kotlin.math.abs(totalDragX) > 50) {
+                                            // Horizontal swipe
+                                            if (totalDragX > 50) onClickPrev()
+                                            else onClickNext()
+                                        } else if (progress.value < 0.5f && queueProgress < 0.1f) {
+                                            // Tap - expand sheet
+                                            coroutineScope.launch {
+                                                bottomSheetState.bottomSheetState.expand()
+                                            }
+                                        }
+                                    }
+                                    break
+                                }
+
+                                // Track movement
+                                val currentX = change.position.x
+                                val currentY = change.position.y
+                                totalDragX += currentX - lastX
+                                totalDragY += currentY - lastY
+                                lastX = currentX
+                                lastY = currentY
+
+                                // Cancel long-press if user starts dragging (not a hold gesture)
+                                if (kotlin.math.abs(totalDragY) > 20f || kotlin.math.abs(totalDragX) > 20f) {
+                                    longPressJob.cancel()
+                                }
+
+                                // Update swipe distance for visual feedback
+                                if (progress.value < 0.3f && !longPressTriggered) {
+                                    swipeDistance = totalDragX
+                                }
+
+                                // Allow sheet close only when dragging DOWN after long press
+                                if (longPressTriggered &&
+                                    !closePermissionGranted &&
+                                    totalDragY > 10f
+                                ) {
+                                    onAllowSheetClose()
+                                    closePermissionGranted = true
+                                }
                             }
+
+                            // Reset swipe distance on gesture end
+                            swipeDistance = 0f
                         }
                     }
             ) {
@@ -723,7 +794,8 @@ private fun AnimatedSheetContent(
                                     strokeCap = StrokeCap.Round
                                 )
                             }
-                            val animatedPlayPause = AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_pause)
+                            val animatedPlayPause =
+                                AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_pause)
                             Icon(
                                 painter = rememberAnimatedVectorPainter(
                                     animatedImageVector = animatedPlayPause,
@@ -940,7 +1012,8 @@ private fun AnimatedSheetContent(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
-                                val animatedPrev = AnimatedImageVector.animatedVectorResource(R.drawable.avd_prev)
+                                val animatedPrev =
+                                    AnimatedImageVector.animatedVectorResource(R.drawable.avd_prev)
                                 IconButton(
                                     modifier = Modifier
                                         .clip(CircleShape)
@@ -1003,7 +1076,8 @@ private fun AnimatedSheetContent(
                                                     .background(MaterialTheme.colorScheme.secondaryContainer),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                val animatedPlayPauseLarge = AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_pause)
+                                                val animatedPlayPauseLarge =
+                                                    AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_pause)
                                                 Icon(
                                                     modifier = Modifier.size(44.dp),
                                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -1027,7 +1101,8 @@ private fun AnimatedSheetContent(
                                     }
                                 }
 
-                                val animatedNext = AnimatedImageVector.animatedVectorResource(R.drawable.avd_next)
+                                val animatedNext =
+                                    AnimatedImageVector.animatedVectorResource(R.drawable.avd_next)
                                 IconButton(
                                     modifier = Modifier
                                         .clip(CircleShape)
@@ -1363,10 +1438,12 @@ private fun QueueSheetOverlay(
                             onGotoAlbum(sheetTrack.albumHash)
                             onCloseSheets()
                         }
+
                         is BottomSheetAction.GotoFolder -> {
                             onGotoFolder(sheetAction.name, sheetAction.path)
                             onCloseSheets()
                         }
+
                         is BottomSheetAction.PlayNext -> onPlayNext(sheetTrack)
                         else -> {}
                     }
@@ -1476,14 +1553,17 @@ private fun QueueSheetOverlay(
                                 onGotoAlbum(source.albumHash)
                                 onCloseSheets()
                             }
+
                             is QueueSource.ARTIST -> {
                                 onClickArtist(source.artistHash)
                                 onCloseSheets()
                             }
+
                             is QueueSource.FOLDER -> {
                                 onGotoFolder(source.name, source.path)
                                 onCloseSheets()
                             }
+
                             else -> {}
                         }
                     }
