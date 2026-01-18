@@ -129,6 +129,7 @@ import com.android.swingmusic.uicomponent.presentation.util.getSourceType
 import ir.mahozad.multiplatform.wavyslider.WaveAnimationSpecs
 import ir.mahozad.multiplatform.wavyslider.WaveDirection
 import ir.mahozad.multiplatform.wavyslider.material3.WavySlider
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.pow
@@ -164,13 +165,7 @@ fun AnimatedPlayerSheet(
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
 
-    val track = playerUiState.nowPlayingTrack
-
-    // If no track playing, just show content without the sheet
-    if (track == null) {
-        content(paddingValues)
-        return
-    }
+    val playingTrack = playerUiState.nowPlayingTrack
 
     // Dynamic sheet corner shape
     var dynamicShape by remember {
@@ -197,19 +192,38 @@ fun AnimatedPlayerSheet(
 
     val coroutineScope = rememberCoroutineScope()
 
-    // Peek height: image size + paddings (sits on top of bottom nav)
-    val calculatedPeekHeight =
-        TOTAL_INITIAL_SIZE + INITIAL_PADDING + (INITIAL_PADDING / 2) + paddingValues.calculateBottomPadding()
+    // Peek height: 0 when no track, otherwise bottom nav + image size + paddings
+    val calculatedPeekHeight = if (playingTrack != null) {
+        paddingValues.calculateBottomPadding() + TOTAL_INITIAL_SIZE + INITIAL_PADDING
+    } else {
+        0.dp
+    }
 
     val bottomSheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded,
-            skipHiddenState = true,
-            confirmValueChange = { newValue ->
-                newValue != SheetValue.Hidden
-            }
+            skipHiddenState = false
         )
     )
+
+    // Clear queue only when transitioning TO Hidden (not on re-entry)
+    LaunchedEffect(Unit) {
+        var previousValue = bottomSheetState.bottomSheetState.currentValue
+        snapshotFlow { bottomSheetState.bottomSheetState.currentValue }
+            .collect { currentValue ->
+                if (currentValue == SheetValue.Hidden && previousValue != SheetValue.Hidden) {
+                    mediaControllerViewModel.onQueueEvent(QueueEvent.ClearQueue)
+                }
+                previousValue = currentValue
+            }
+    }
+
+    // Show sheet when queue has tracks
+    LaunchedEffect(playerUiState.queue) {
+        if (playerUiState.queue.isNotEmpty() && bottomSheetState.bottomSheetState.currentValue == SheetValue.Hidden) {
+            bottomSheetState.bottomSheetState.partialExpand()
+        }
+    }
 
     // Check if queue sheet is open
     val isQueueSheetOpen = queueSheetOffset.value < (screenHeightPx * 0.25f)
@@ -247,10 +261,11 @@ fun AnimatedPlayerSheet(
         sheetContainerColor = MaterialTheme.colorScheme.inverseOnSurface,
         sheetSwipeEnabled = !isQueueSheetOpen,
         sheetContent = {
-            AnimatedSheetContent(
-                track = track,
-                queue = playerUiState.queue,
-                playingTrackIndex = playerUiState.playingTrackIndex,
+            if (playingTrack != null) {
+                AnimatedSheetContent(
+                    track = playingTrack,
+                    queue = playerUiState.queue,
+                    playingTrackIndex = playerUiState.playingTrackIndex,
                 seekPosition = playerUiState.seekPosition,
                 playbackDuration = playerUiState.playbackDuration,
                 trackDuration = playerUiState.trackDuration,
@@ -303,19 +318,20 @@ fun AnimatedPlayerSheet(
                         PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)
                     )
                 }
-            )
+                )
+            }
         }
     ) { innerPadding ->
         content(innerPadding)
     }
 
-    // Queue Sheet - appears when primary sheet is fully expanded
-    if (primarySheetProgress >= 0.95f) {
+    // Queue Sheet - appears when primary sheet is fully expanded and has a track
+    if (primarySheetProgress >= 0.95f && playingTrack != null) {
         QueueSheetOverlay(
             queue = playerUiState.queue,
             source = playerUiState.source,
             playingTrackIndex = playerUiState.playingTrackIndex,
-            playingTrack = track,
+            playingTrack = playingTrack,
             playbackState = playerUiState.playbackState,
             baseUrl = baseUrl ?: "",
             animatedOffset = queueSheetOffset,
@@ -386,44 +402,40 @@ private fun AnimatedSheetContent(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
+    // Whatever AS says about this, don't be tempted to change it... ref: Eric
     val screenWidthDp = configuration.screenWidthDp.dp
 
     // Horizontal swipe state for collapsed mode
     var swipeDistance by remember { mutableFloatStateOf(0f) }
 
-    // Store initial offset when first available
+    // Store initial offset after sheet settles
     val initialOffset = remember { mutableStateOf<Float?>(null) }
 
-    // Calculate progress using actual initial offset
+    // Capture initial offset after sheet reaches PartiallyExpanded state
+    LaunchedEffect(Unit) {
+        initialOffset.value = null
+        // Wait for sheet to reach PartiallyExpanded state
+        snapshotFlow { bottomSheetState.bottomSheetState.currentValue }
+            .first { it == SheetValue.PartiallyExpanded }
+        kotlinx.coroutines.delay(50) // Extra settling time after reaching state
+        try {
+            initialOffset.value = bottomSheetState.bottomSheetState.requireOffset()
+        } catch (_: Exception) {}
+    }
+
+    // Calculate progress using captured initial offset
     val progress = remember {
         derivedStateOf {
-            try {
-                val currentOffset = bottomSheetState.bottomSheetState.requireOffset()
-
-                if (initialOffset.value == null && currentOffset.isFinite() && currentOffset > 0f) {
-                    initialOffset.value = currentOffset
-                }
-
-                val collapsedOffset = initialOffset.value ?: currentOffset
-                val expandedOffset = 0f
-                val range = collapsedOffset - expandedOffset
-
-                // Avoid division by zero or NaN
-                if (range <= 0f || !range.isFinite()) {
-                    when (bottomSheetState.bottomSheetState.currentValue) {
-                        SheetValue.PartiallyExpanded -> 0f
-                        SheetValue.Expanded -> 1f
-                        SheetValue.Hidden -> 0f
-                    }
-                } else {
-                    val rawProgress = (collapsedOffset - currentOffset) / range
+            val captured = initialOffset.value
+            if (captured == null) {
+                0f // Return 0 until initialized
+            } else {
+                try {
+                    val currentOffset = bottomSheetState.bottomSheetState.requireOffset()
+                    val rawProgress = (captured - currentOffset) / captured
                     rawProgress.coerceIn(0f, 1f)
-                }
-            } catch (e: Exception) {
-                when (bottomSheetState.bottomSheetState.currentValue) {
-                    SheetValue.PartiallyExpanded -> 0f
-                    SheetValue.Expanded -> 1f
-                    SheetValue.Hidden -> 0f
+                } catch (_: Exception) {
+                    0f
                 }
             }
         }

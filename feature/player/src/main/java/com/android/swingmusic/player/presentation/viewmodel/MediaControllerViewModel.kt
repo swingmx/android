@@ -908,6 +908,19 @@ class MediaControllerViewModel @Inject constructor(
                     shuffledQueue.clear()
                     mediaController?.clearMediaItems()
                     trackToLog = null
+
+                    _playerUiState.update { currentState ->
+                        currentState.copy(
+                            nowPlayingTrack = null,
+                            queue = emptyList(),
+                            playingTrackIndex = 0,
+                            seekPosition = 0f,
+                            playbackDuration = "00:00",
+                            trackDuration = "00:00",
+                            isBuffering = false,
+                            playbackState = PlaybackState.PAUSED
+                        )
+                    }
                 }
 
                 activateHapticResponse()
