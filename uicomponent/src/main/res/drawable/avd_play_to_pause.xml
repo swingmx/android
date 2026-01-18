@@ -1,0 +1,46 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:name="play_pause_vector"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <group android:name="icon_group"
+                android:pivotX="12"
+                android:pivotY="12">
+                <path
+                    android:name="left_path"
+                    android:fillColor="@android:color/white"
+                    android:pathData="M6,4 L6,20 L10,20 L10,4 Z"/>
+                <path
+                    android:name="right_path"
+                    android:fillColor="@android:color/white"
+                    android:pathData="M14,4 L14,20 L18,20 L18,4 Z"/>
+            </group>
+        </vector>
+    </aapt:attr>
+    <target android:name="left_path">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="300"
+                android:propertyName="pathData"
+                android:valueFrom="M6,4 L6,20 L10,20 L10,4 Z"
+                android:valueTo="M8,5 L8,19 L8,19 L8,5 Z"
+                android:valueType="pathType"
+                android:interpolator="@android:interpolator/fast_out_slow_in"/>
+        </aapt:attr>
+    </target>
+    <target android:name="right_path">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="300"
+                android:propertyName="pathData"
+                android:valueFrom="M14,4 L14,20 L18,20 L18,4 Z"
+                android:valueTo="M8,5 L8,19 L19,12 L19,12 Z"
+                android:valueType="pathType"
+                android:interpolator="@android:interpolator/fast_out_slow_in"/>
+        </aapt:attr>
+    </target>
+</animated-vector>

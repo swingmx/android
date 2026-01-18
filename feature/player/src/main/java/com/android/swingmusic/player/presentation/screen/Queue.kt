@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.android.swingmusic.player.presentation.screen
 
 import android.content.res.Configuration
@@ -412,7 +414,10 @@ private fun Queue(
 /**
  * A Composable that ties [Queue] to [MediaControllerViewModel] where its sates are hoisted
  * */
-
+@Deprecated(
+    message = "Legacy QueueScreen. Use AnimatedPlayerSheet with QueueSheetOverlay instead.",
+    replaceWith = ReplaceWith("AnimatedPlayerSheet")
+)
 @Destination
 @Composable
 fun QueueScreen(
