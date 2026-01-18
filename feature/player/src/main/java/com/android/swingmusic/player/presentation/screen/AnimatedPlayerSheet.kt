@@ -140,7 +140,7 @@ import java.util.Locale
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-// Constants for sheet sizing (matching SheetDemo)
+// Constants for sheet sizing
 private val INITIAL_IMAGE_SIZE = 38.dp
 private val INITIAL_PADDING = 8.dp
 private val TOTAL_INITIAL_SIZE = INITIAL_IMAGE_SIZE + INITIAL_PADDING
