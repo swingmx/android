@@ -59,4 +59,21 @@ class AppSettingsDataRepository @Inject constructor(
     override suspend fun setArtistSortOrder(order: SortOrder) {
         appSettings.updateArtistSortOrder(order.name)
     }
+
+    // --- Lyrics Settings ---
+    override val useLyricsPlugin: Flow<Boolean> = appSettings.getUseLyricsPlugin
+    override val lyricsAutoDownload: Flow<Boolean> = appSettings.getLyricsAutoDownload
+    override val lyricsOverrideUnsynced: Flow<Boolean> = appSettings.getLyricsOverrideUnsynced
+
+    override suspend fun setUseLyricsPlugin(enabled: Boolean) {
+        appSettings.updateUseLyricsPlugin(enabled)
+    }
+
+    override suspend fun setLyricsAutoDownload(enabled: Boolean) {
+        appSettings.updateLyricsAutoDownload(enabled)
+    }
+
+    override suspend fun setLyricsOverrideUnsynced(enabled: Boolean) {
+        appSettings.updateLyricsOverrideUnsynced(enabled)
+    }
 }

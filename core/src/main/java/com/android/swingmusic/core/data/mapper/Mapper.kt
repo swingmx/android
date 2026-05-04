@@ -18,6 +18,9 @@ import com.android.swingmusic.core.data.dto.FolderDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.GenreDto
+import com.android.swingmusic.core.data.dto.LyricsDto
+import com.android.swingmusic.core.data.dto.LyricsLineDto
+import com.android.swingmusic.core.data.dto.PluginLyricsResultDto
 import com.android.swingmusic.core.data.dto.RootDirsDto
 import com.android.swingmusic.core.data.dto.TopResultItemDto
 import com.android.swingmusic.core.data.dto.TopSearchResultsDto
@@ -42,6 +45,8 @@ import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.Genre
+import com.android.swingmusic.core.domain.model.Lyrics
+import com.android.swingmusic.core.domain.model.LyricsLine
 import com.android.swingmusic.core.domain.model.RootDirs
 import com.android.swingmusic.core.domain.model.TopResultItem
 import com.android.swingmusic.core.domain.model.TopSearchResults
@@ -109,6 +114,34 @@ object Map {
         return FoldersAndTracks(
             folders = foldersDto?.map { it.toFolder() } ?: emptyList<Folder>(),
             tracks = tracksDto?.map { it.toTrack() } ?: emptyList<Track>()
+        )
+    }
+
+    fun LyricsLineDto.toLyricsLine(): LyricsLine {
+        return LyricsLine(
+            time = time ?: 0L,
+            text = text ?: ""
+        )
+    }
+
+    fun LyricsDto.toLyrics(): Lyrics {
+        val lines = lyrics?.map { it.toLyricsLine() } ?: emptyList()
+        val hasError = error == true
+        return Lyrics(
+            synced = synced ?: true,
+            lines = if (hasError) emptyList() else lines,
+            copyright = copyright ?: "",
+            exists = !hasError && lines.isNotEmpty()
+        )
+    }
+
+    fun PluginLyricsResultDto.toLyrics(): Lyrics {
+        val lines = lyrics?.map { it.toLyricsLine() } ?: emptyList()
+        return Lyrics(
+            synced = true,
+            lines = lines,
+            copyright = "",
+            exists = lines.isNotEmpty()
         )
     }
 

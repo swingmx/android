@@ -3,6 +3,7 @@ package com.android.swingmusic.settings.data.datastore
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -29,6 +30,10 @@ class AppSettings @Inject constructor(
         private val ARTIST_GRID_COUNT = intPreferencesKey("artist_grid_count")
         private val ARTIST_SORT_BY = stringPreferencesKey("artist_sort_by")
         private val ARTIST_SORT_ORDER = stringPreferencesKey("artist_sort_order")
+
+        private val USE_LYRICS_PLUGIN = booleanPreferencesKey("use_lyrics_plugin")
+        private val LYRICS_AUTO_DOWNLOAD = booleanPreferencesKey("lyrics_auto_download")
+        private val LYRICS_OVERRIDE_UNSYNCED = booleanPreferencesKey("lyrics_override_unsynced")
     }
 
     // Album Flows
@@ -72,4 +77,24 @@ class AppSettings @Inject constructor(
 
     suspend fun updateArtistSortOrder(value: String) =
         context.dataStore.edit { it[ARTIST_SORT_ORDER] = value }
+
+    // Lyrics Flows
+    val getUseLyricsPlugin: Flow<Boolean> = context.dataStore.data.map {
+        it[USE_LYRICS_PLUGIN] ?: false
+    }
+    val getLyricsAutoDownload: Flow<Boolean> = context.dataStore.data.map {
+        it[LYRICS_AUTO_DOWNLOAD] ?: false
+    }
+    val getLyricsOverrideUnsynced: Flow<Boolean> = context.dataStore.data.map {
+        it[LYRICS_OVERRIDE_UNSYNCED] ?: false
+    }
+
+    suspend fun updateUseLyricsPlugin(value: Boolean) =
+        context.dataStore.edit { it[USE_LYRICS_PLUGIN] = value }
+
+    suspend fun updateLyricsAutoDownload(value: Boolean) =
+        context.dataStore.edit { it[LYRICS_AUTO_DOWNLOAD] = value }
+
+    suspend fun updateLyricsOverrideUnsynced(value: Boolean) =
+        context.dataStore.edit { it[LYRICS_OVERRIDE_UNSYNCED] = value }
 }
