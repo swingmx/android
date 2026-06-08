@@ -178,7 +178,7 @@ class LyricsViewModel @Inject constructor(
         if (advanceJob?.isActive == true) return
 
         advanceJob = viewModelScope.launch {
-            val sleep = (diff - 300).coerceAtLeast(0)
+            val sleep = diff.coerceAtLeast(0)
             delay(sleep)
             val current = _state.value
             if (current.trackHash != s.trackHash) return@launch

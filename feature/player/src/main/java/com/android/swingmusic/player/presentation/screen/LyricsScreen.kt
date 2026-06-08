@@ -13,13 +13,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,8 +69,8 @@ fun LyricsScreen(
     }
 
     LaunchedEffect(playerUiState.seekPosition, lyricsState.exists, lyricsState.synced) {
-        if (lyricsState.exists && lyricsState.synced) {
-            val positionMs = (playerUiState.seekPosition * 1000F).toLong()
+        if (lyricsState.exists && lyricsState.synced && track != null) {
+            val positionMs = (playerUiState.seekPosition * track.duration * 1000F).toLong()
             lyricsViewModel.onEvent(LyricsUiEvent.PositionChanged(positionMs))
         }
     }
@@ -119,11 +120,12 @@ private fun LyricsHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack) {
-            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
         }
         if (track != null) {
             AsyncImage(
