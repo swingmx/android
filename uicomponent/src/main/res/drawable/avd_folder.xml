@@ -1,0 +1,63 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:name="folder_vector"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <group
+                android:name="scale_group"
+                android:pivotX="12"
+                android:pivotY="12"
+                android:scaleX="1"
+                android:scaleY="1">
+                <path
+                    android:name="folder_path"
+                    android:fillColor="@android:color/white"
+                    android:pathData="M10,4H4c-1.1,0 -1.99,0.9 -1.99,2L2,18c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V8c0,-1.1 -0.9,-2 -2,-2h-8l-2,-2z"/>
+            </group>
+        </vector>
+    </aapt:attr>
+    <target android:name="scale_group">
+        <aapt:attr name="android:animation">
+            <set android:ordering="sequentially">
+                <objectAnimator
+                    android:duration="250"
+                    android:propertyName="scaleX"
+                    android:valueFrom="1"
+                    android:valueTo="1.25"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/overshoot"/>
+                <objectAnimator
+                    android:duration="200"
+                    android:propertyName="scaleX"
+                    android:valueFrom="1.25"
+                    android:valueTo="1"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/decelerate_cubic"/>
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="scale_group">
+        <aapt:attr name="android:animation">
+            <set android:ordering="sequentially">
+                <objectAnimator
+                    android:duration="250"
+                    android:propertyName="scaleY"
+                    android:valueFrom="1"
+                    android:valueTo="1.25"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/overshoot"/>
+                <objectAnimator
+                    android:duration="200"
+                    android:propertyName="scaleY"
+                    android:valueFrom="1.25"
+                    android:valueTo="1"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/decelerate_cubic"/>
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>

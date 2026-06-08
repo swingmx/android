@@ -16,7 +16,9 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            // Disabled: Hilt annotation processing in app module needs to see DAO classes
+            // App module's R8 will still minify this code in the final APK
+            isMinifyEnabled = false
         }
     }
     compileOptions {

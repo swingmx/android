@@ -103,7 +103,6 @@ private fun AllArtists(
 
     var isGridCountMenuExpanded by remember { mutableStateOf(false) }
 
-    // TODO: Add pinch to reduce Grid count... as seen in Google Photos
     Scaffold {
         Scaffold(
             modifier = Modifier.padding(it),

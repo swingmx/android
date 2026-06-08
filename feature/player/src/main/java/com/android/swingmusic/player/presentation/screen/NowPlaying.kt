@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.android.swingmusic.player.presentation.screen
 
 import android.content.res.Configuration
@@ -598,7 +600,10 @@ private fun NowPlaying(
 /**
  * Expose a public Composable tied to MediaControllerViewModel
  * **/
-
+@Deprecated(
+    message = "Legacy NowPlayingScreen. Use AnimatedPlayerSheet instead.",
+    replaceWith = ReplaceWith("AnimatedPlayerSheet")
+)
 @Destination
 @Composable
 fun NowPlayingScreen(

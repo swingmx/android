@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.android.swingmusic.presentation.activity
 
 import android.annotation.SuppressLint
@@ -15,11 +13,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,10 +28,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.session.MediaController
@@ -55,9 +62,7 @@ import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
-import com.android.swingmusic.player.presentation.screen.MiniPlayer
-import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
-import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
+import com.android.swingmusic.player.presentation.screen.AnimatedPlayerSheet
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.presentation.navigator.BottomNavItem
 import com.android.swingmusic.presentation.navigator.CoreNavigator
@@ -81,20 +86,32 @@ import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaul
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
-import com.ramcosta.composedestinations.utils.destination
 import android.Manifest
 import android.os.Build
+import androidx.activity.enableEdgeToEdge
 import com.android.swingmusic.BuildConfig
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
-@Deprecated(
-    message = "Legacy MainActivity. Use MainActivityWithAnimatedPlayer instead.",
-    replaceWith = ReplaceWith("MainActivityWithAnimatedPlayer")
-)
+/**
+ * MainActivityWithAnimatedPlayer - Alternative MainActivity with animated bottom sheet player.
+ *
+ * This activity replaces the traditional MiniPlayer + navigation-based NowPlaying approach
+ * with a continuous drag-animated bottom sheet that transforms from mini player to full player.
+ *
+ * Key differences from MainActivity:
+ * - Uses AnimatedPlayerSheet instead of MiniPlayer
+ * - Navigation bar animates based on sheet expansion progress
+ * - No navigation to NowPlayingScreen - player is always a sheet overlay
+ *
+ * To use this activity:
+ * 1. Update AndroidManifest.xml to set this as the launcher activity
+ * 2. Or change the activity reference in your launch intent
+ */
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivityWithAnimatedPlayer : ComponentActivity() {
     private val mediaControllerViewModel: MediaControllerViewModel by viewModels<MediaControllerViewModel>()
     private val authViewModel: AuthViewModel by viewModels<AuthViewModel>()
     private val foldersViewModel: FoldersViewModel by viewModels<FoldersViewModel>()
@@ -126,6 +143,8 @@ class MainActivity : ComponentActivity() {
 
         scheduleTokenRefreshWork(applicationContext)
 
+        // enableEdgeToEdge()
+
         setContent {
             val isUserLoggedIn by authViewModel.isUserLoggedIn.collectAsState()
 
@@ -135,15 +154,13 @@ class MainActivity : ComponentActivity() {
             val newBackStackEntry by navController.currentBackStackEntryAsState()
             val route = newBackStackEntry?.destination?.route
 
-            val hideForDestination = listOf(
-                LoginWithUsernameScreenDestination,
-                LoginWithQrCodeDestination,
-                NowPlayingScreenDestination,
-                QueueScreenDestination
+            // Destinations where bottom nav should be hidden (check by route string)
+            val hideForRoutes = listOf(
+                LoginWithUsernameScreenDestination.route,
+                LoginWithQrCodeDestination.route
             )
 
-            val showBottomNav =
-                route != null && newBackStackEntry?.destination() !in hideForDestination
+            val showBottomNav = route != null && hideForRoutes.none { route.startsWith(it) }
 
             val bottomNavItems: List<BottomNavItem> = listOf(
                 // BottomNavItem.Home,
@@ -173,101 +190,104 @@ class MainActivity : ComponentActivity() {
                 )
             )
 
+            // Track sheet progress for nav bar animation
+            var sheetProgress by remember { mutableFloatStateOf(0f) }
+
+            // Track animation state for each nav item
+            val animationStates = remember { mutableStateMapOf<BottomNavItem, Boolean>() }
+
+            // Calculate nav bar animation values
+            val navBarSlideProgress = (sheetProgress / 0.2f).coerceIn(0f, 1f)
+            val navBarAlpha = 1f - navBarSlideProgress
 
             SwingMusicTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            // Show mini player whenever bottom nav is visible
-                            if (showBottomNav) {
-                                MiniPlayer(
-                                    mediaControllerViewModel = mediaControllerViewModel,
-                                    onClickPlayerItem = {
-                                        navController.navigate(
-                                            NowPlayingScreenDestination.route
-                                        ) {
-                                            launchSingleTop = true
-                                            restoreState = false
-                                        }
+                        // Only show navigation bar when logged in and not on auth screens
+                        if (showBottomNav) {
+                            val density = LocalDensity.current
+                            val navBarHeightPx = with(density) { 80.dp.toPx() }
+
+                            NavigationBar(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .offset {
+                                        IntOffset(
+                                            0,
+                                            (navBarHeightPx * navBarSlideProgress).roundToInt()
+                                        )
                                     }
-                                )
-
-                                // Show spacer only when there's a playing track
-                                playerState.value.nowPlayingTrack?.let {
-                                    Box(
-                                        modifier = Modifier
-                                            .height(12.dp)
-                                            .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.inverseOnSurface)
-                                    )
-                                }
-                            }
-
-                            if (showBottomNav) {
-                                NavigationBar(
+                                    .alpha(navBarAlpha),
+                                containerColor = MaterialTheme.colorScheme.inverseOnSurface
+                            ) {
+                                Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    containerColor = MaterialTheme.colorScheme.inverseOnSurface
+                                    horizontalArrangement = Arrangement.Center
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        bottomNavItems.forEach { item ->
-                                            NavigationBarItem(
-                                                icon = {
-                                                    Icon(
-                                                        painter = painterResource(id = item.icon),
-                                                        contentDescription = null
-                                                    )
-                                                },
-                                                selected = navController.currentDestination?.route?.let { route ->
-                                                    bottomNavRoutePrefixes[item]?.any { prefix ->
-                                                        route.startsWith(prefix)
-                                                    } == true
-                                                } == true,
-                                                alwaysShowLabel = false,
-                                                label = { Text(text = item.title) },
-                                                onClick = {
-                                                    // Whatever you do, DON'T TOUCH this
-                                                    if (navController.currentDestination?.route != item.destination.route) {
-                                                        navController.navigate(item.destination.route) {
-                                                            launchSingleTop = true
-                                                            restoreState = false
+                                    bottomNavItems.forEach { item ->
+                                        val isSelected = navController.currentDestination?.route?.let { route ->
+                                            bottomNavRoutePrefixes[item]?.any { prefix ->
+                                                route.startsWith(prefix)
+                                            } == true
+                                        } == true
 
-                                                            popUpTo(navController.graph.startDestinationId) {
-                                                                saveState = false
-                                                                inclusive = false
-                                                            }
+                                        val animatedIcon = AnimatedImageVector.animatedVectorResource(item.animatedIcon)
+                                        val atEnd = animationStates[item] ?: false
+
+                                        NavigationBarItem(
+                                            icon = {
+                                                Icon(
+                                                    painter = rememberAnimatedVectorPainter(
+                                                        animatedImageVector = animatedIcon,
+                                                        atEnd = atEnd
+                                                    ),
+                                                    contentDescription = item.title
+                                                )
+                                            },
+                                            selected = isSelected,
+                                            alwaysShowLabel = false,
+                                            label = { Text(text = item.title) },
+                                            onClick = {
+                                                // Trigger animation on click
+                                                animationStates[item] = !(animationStates[item] ?: false)
+
+                                                // Whatever you do, DON'T TOUCH this
+                                                if (navController.currentDestination?.route != item.destination.route) {
+                                                    navController.navigate(item.destination.route) {
+                                                        launchSingleTop = true
+                                                        restoreState = false
+
+                                                        popUpTo(navController.graph.startDestinationId) {
+                                                            saveState = false
+                                                            inclusive = false
                                                         }
                                                     }
-
-                                                    // refresh folders starting from $home
-                                                    if (item.destination.route == FoldersAndTracksScreenDestination.route) {
-                                                        foldersViewModel.onFolderUiEvent(
-                                                            FolderUiEvent.OnClickNavPath(
-                                                                folder = foldersViewModel.homeDir
-                                                            )
-                                                        )
-                                                    }
-
-                                                    // refresh Search screen
-                                                    if (item.destination.route == SearchScreenDestination.route) {
-                                                        searchViewModel.onSearchUiEvent(
-                                                            SearchUiEvent.OnClearSearchStates
-                                                        )
-                                                    }
                                                 }
-                                            )
-                                        }
+
+                                                // refresh folders starting from $home
+                                                if (item.destination.route == FoldersAndTracksScreenDestination.route) {
+                                                    foldersViewModel.onFolderUiEvent(
+                                                        FolderUiEvent.OnClickNavPath(
+                                                            folder = foldersViewModel.homeDir
+                                                        )
+                                                    )
+                                                }
+
+                                                // refresh Search screen
+                                                if (item.destination.route == SearchScreenDestination.route) {
+                                                    searchViewModel.onSearchUiEvent(
+                                                        SearchUiEvent.OnClearSearchStates
+                                                    )
+                                                }
+                                            }
+                                        )
                                     }
                                 }
                             }
                         }
                     }
-                ) {
+                ) { paddingValues ->
                     Surface(modifier = Modifier.fillMaxSize()) {
                         AnimatedVisibility(
                             visible = isUserLoggedIn == null,
@@ -282,15 +302,27 @@ class MainActivity : ComponentActivity() {
                         }
 
                         isUserLoggedIn?.let { value ->
-                            SwingMusicAppNavigation(
-                                isUserLoggedIn = value,
-                                navController = navController,
-                                authViewModel = authViewModel,
+                            val navigator = CoreNavigator(navController)
+
+                            // Always use AnimatedPlayerSheet - it handles "no track" case internally
+                            AnimatedPlayerSheet(
+                                paddingValues = paddingValues,
                                 mediaControllerViewModel = mediaControllerViewModel,
-                                foldersViewModel = foldersViewModel,
-                                artistInfoViewModel = artistInfoViewModel,
-                                searchViewModel = searchViewModel
-                            )
+                                navigator = navigator,
+                                onProgressChange = { progress ->
+                                    sheetProgress = progress
+                                }
+                            ) {
+                                SwingMusicAppNavigationWithAnimatedPlayer(
+                                    isUserLoggedIn = value,
+                                    navController = navController,
+                                    authViewModel = authViewModel,
+                                    mediaControllerViewModel = mediaControllerViewModel,
+                                    foldersViewModel = foldersViewModel,
+                                    artistInfoViewModel = artistInfoViewModel,
+                                    searchViewModel = searchViewModel
+                                )
+                            }
                         }
                     }
                 }
@@ -340,7 +372,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterialNavigationApi::class)
 @ExperimentalAnimationApi
 @Composable
-internal fun SwingMusicAppNavigation(
+internal fun SwingMusicAppNavigationWithAnimatedPlayer(
     isUserLoggedIn: Boolean,
     navController: NavHostController,
     authViewModel: AuthViewModel,

@@ -1,0 +1,1700 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
+package com.android.swingmusic.player.presentation.screen
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.EaseOutQuad
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.BottomSheetScaffoldState
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.android.swingmusic.common.presentation.navigator.CommonNavigator
+import com.android.swingmusic.core.domain.model.BottomSheetItemModel
+import com.android.swingmusic.core.domain.model.Track
+import com.android.swingmusic.core.domain.util.BottomSheetAction
+import com.android.swingmusic.core.domain.util.PlaybackState
+import com.android.swingmusic.core.domain.util.QueueSource
+import com.android.swingmusic.core.domain.util.RepeatMode
+import com.android.swingmusic.core.domain.util.ShuffleMode
+import com.android.swingmusic.player.presentation.event.PlayerUiEvent
+import com.android.swingmusic.player.presentation.event.QueueEvent
+import com.android.swingmusic.player.presentation.util.calculateCurrentOffsetForPage
+import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
+import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
+import com.android.swingmusic.uicomponent.presentation.component.TrackItem
+import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
+import com.android.swingmusic.uicomponent.presentation.util.formatDuration
+import com.android.swingmusic.uicomponent.presentation.util.getName
+import com.android.swingmusic.uicomponent.presentation.util.getSourceType
+import ir.mahozad.multiplatform.wavyslider.WaveAnimationSpecs
+import ir.mahozad.multiplatform.wavyslider.WaveDirection
+import ir.mahozad.multiplatform.wavyslider.material3.WavySlider
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.util.Locale
+import kotlin.math.pow
+import kotlin.math.roundToInt
+
+// Constants for sheet sizing
+private val INITIAL_IMAGE_SIZE = 38.dp
+private val INITIAL_PADDING = 8.dp
+private val TOTAL_INITIAL_SIZE = INITIAL_IMAGE_SIZE + INITIAL_PADDING
+
+/**
+ * Animated Bottom Sheet Player that transforms from a mini player to full player.
+ *
+ * Animation Behavior:
+ * - Image transforms from 38dp square to full width based on expansion progress
+ * - Content fades in at 20% expansion with dynamic spacing and padding
+ * - Sheet corners transition from rounded to square during expansion
+ * - Navigation bar in parent should animate out based on onProgressChange callback
+ *
+ * Queue Sheet:
+ * - Appears when primary sheet is 95%+ expanded
+ * - Custom draggable implementation with spring animations
+ * - Reverse animation effect: queue expansion reverses primary sheet visuals
+ */
+@Composable
+fun AnimatedPlayerSheet(
+    paddingValues: PaddingValues,
+    mediaControllerViewModel: MediaControllerViewModel,
+    navigator: CommonNavigator,
+    onProgressChange: (progress: Float) -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit
+) {
+    val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
+    val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
+
+    val playingTrack = playerUiState.nowPlayingTrack
+
+    // Dynamic sheet corner shape
+    var dynamicShape by remember {
+        mutableStateOf(
+            RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
+        )
+    }
+
+    // Track primary sheet progress for queue sheet trigger
+    var primarySheetProgress by remember { mutableFloatStateOf(0f) }
+
+    // Track if closing sheet is allowed (set by long-press)
+    var allowSheetClose by remember { mutableStateOf(false) }
+
+    // Queue sheet calculations
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val queueInitialOffset = screenHeightPx * 1f // push sheet off-screen
+
+    // Calculate expanded offset based on initial image size + padding + system bar
+    val systemBarHeight = paddingValues.calculateTopPadding()
+    val imageHeightWithPadding = INITIAL_IMAGE_SIZE + (INITIAL_PADDING * 2) + systemBarHeight
+    val queueExpandedOffset = with(density) { imageHeightWithPadding.toPx() }
+
+    val queueSheetOffset = remember { Animatable(queueInitialOffset, Float.VectorConverter) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    // Peek height: 0 when no track, otherwise bottom nav + image size + paddings
+    val calculatedPeekHeight = if (playingTrack != null) {
+        paddingValues.calculateBottomPadding() + TOTAL_INITIAL_SIZE + INITIAL_PADDING
+    } else {
+        0.dp
+    }
+
+    val bottomSheetState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.PartiallyExpanded,
+            skipHiddenState = false,
+            confirmValueChange = { newValue ->
+                // Only allow Hidden if long-press activated it
+                newValue != SheetValue.Hidden || allowSheetClose
+            }
+        )
+    )
+
+    // Handle sheet state changes
+    LaunchedEffect(Unit) {
+        var previousValue = bottomSheetState.bottomSheetState.currentValue
+        snapshotFlow { bottomSheetState.bottomSheetState.currentValue }
+            .collect { currentValue ->
+                // Clear queue when transitioning TO Hidden
+                if (currentValue == SheetValue.Hidden && previousValue != SheetValue.Hidden) {
+                    mediaControllerViewModel.onQueueEvent(QueueEvent.ClearQueue)
+                }
+                // Reset close permission when sheet settles to any state
+                if (currentValue != previousValue) {
+                    allowSheetClose = false
+                }
+                previousValue = currentValue
+            }
+    }
+
+    // Show sheet when queue has tracks
+    LaunchedEffect(playerUiState.queue) {
+        if (playerUiState.queue.isNotEmpty() && bottomSheetState.bottomSheetState.currentValue == SheetValue.Hidden) {
+            bottomSheetState.bottomSheetState.partialExpand()
+        }
+    }
+
+    // Check if queue sheet is open
+    val isQueueSheetOpen = queueSheetOffset.value < (screenHeightPx * 0.25f)
+
+    // Calculate queue progress for primary sheet visual effects
+    val queueProgress by remember {
+        derivedStateOf {
+            val progress =
+                (queueInitialOffset - queueSheetOffset.value) / (queueInitialOffset - queueExpandedOffset)
+            progress.coerceIn(0f, 1f)
+        }
+    }
+
+    // Handle back press: close queue sheet first, then collapse primary sheet
+    val isPrimarySheetExpanded =
+        bottomSheetState.bottomSheetState.currentValue == SheetValue.Expanded
+    BackHandler(enabled = isQueueSheetOpen || isPrimarySheetExpanded) {
+        coroutineScope.launch {
+            if (isQueueSheetOpen) {
+                queueSheetOffset.animateTo(
+                    targetValue = queueInitialOffset,
+                    animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f)
+                )
+            } else if (isPrimarySheetExpanded) {
+                bottomSheetState.bottomSheetState.partialExpand()
+            }
+        }
+    }
+
+    BottomSheetScaffold(
+        scaffoldState = bottomSheetState,
+        sheetPeekHeight = calculatedPeekHeight,
+        sheetMaxWidth = Dp.Unspecified,
+        sheetDragHandle = {},
+        sheetShape = dynamicShape,
+        sheetContainerColor = MaterialTheme.colorScheme.inverseOnSurface,
+        sheetSwipeEnabled = !isQueueSheetOpen,
+        sheetContent = {
+            if (playingTrack != null) {
+                AnimatedSheetContent(
+                    track = playingTrack,
+                    queue = playerUiState.queue,
+                    playingTrackIndex = playerUiState.playingTrackIndex,
+                    seekPosition = playerUiState.seekPosition,
+                    playbackDuration = playerUiState.playbackDuration,
+                    trackDuration = playerUiState.trackDuration,
+                    playbackState = playerUiState.playbackState,
+                    isBuffering = playerUiState.isBuffering,
+                    repeatMode = playerUiState.repeatMode,
+                    shuffleMode = playerUiState.shuffleMode,
+                    baseUrl = baseUrl ?: "",
+                    bottomSheetState = bottomSheetState,
+                    systemBarHeight = systemBarHeight,
+                    onShapeChange = { shape -> dynamicShape = shape },
+                    onProgressChange = { progress ->
+                        primarySheetProgress = progress
+                        onProgressChange(progress)
+                    },
+                    primarySheetProgress = primarySheetProgress,
+                    queueSheetOffset = queueSheetOffset,
+                    queueInitialOffset = queueInitialOffset,
+                    queueExpandedOffset = queueExpandedOffset,
+                    queueProgress = queueProgress,
+                    onPageSelect = { page ->
+                        mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(page))
+                    },
+                    onClickArtist = { navigator.gotoArtistInfo(it) },
+                    onToggleRepeatMode = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnToggleRepeatMode)
+                    },
+                    onClickPrev = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnPrev)
+                    },
+                    onTogglePlayerState = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
+                    },
+                    onResumePlayBackFromError = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnResumePlaybackFromError)
+                    },
+                    onClickNext = {
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnNext)
+                    },
+                    onToggleShuffleMode = {
+                        mediaControllerViewModel.onPlayerUiEvent(
+                            PlayerUiEvent.OnToggleShuffleMode(toggleShuffle = true)
+                        )
+                    },
+                    onSeekPlayBack = { value ->
+                        mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnSeekPlayBack(value))
+                    },
+                    onToggleFavorite = { isFavorite, trackHash ->
+                        mediaControllerViewModel.onPlayerUiEvent(
+                            PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)
+                        )
+                    },
+                    onAllowSheetClose = {
+                        allowSheetClose = true
+                    }
+                )
+            }
+        }
+    ) { innerPadding ->
+        content(innerPadding)
+    }
+
+    // Queue Sheet - appears when primary sheet is fully expanded and has a track
+    if (primarySheetProgress >= 0.95f && playingTrack != null) {
+        QueueSheetOverlay(
+            queue = playerUiState.queue,
+            source = playerUiState.source,
+            playingTrackIndex = playerUiState.playingTrackIndex,
+            playingTrack = playingTrack,
+            playbackState = playerUiState.playbackState,
+            baseUrl = baseUrl ?: "",
+            animatedOffset = queueSheetOffset,
+            initialOffset = queueInitialOffset,
+            expandedOffset = queueExpandedOffset,
+            onClickQueueItem = { index ->
+                mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(index))
+            },
+            onTogglePlayerState = {
+                mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
+            },
+            onClickArtist = { navigator.gotoArtistInfo(it) },
+            onGotoAlbum = { navigator.gotoAlbumWithInfo(it) },
+            onGotoFolder = { name, path -> navigator.gotoSourceFolder(name, path) },
+            onPlayNext = { nextTrack ->
+                mediaControllerViewModel.onQueueEvent(
+                    QueueEvent.PlayNext(nextTrack, playerUiState.source)
+                )
+            },
+            onToggleTrackFavorite = { trackHash, isFavorite ->
+                mediaControllerViewModel.onPlayerUiEvent(
+                    PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)
+                )
+            },
+            onCloseSheets = {
+                coroutineScope.launch {
+                    queueSheetOffset.snapTo(queueInitialOffset)
+                    bottomSheetState.bottomSheetState.partialExpand()
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalAnimationGraphicsApi::class, ExperimentalFoundationApi::class)
+@Composable
+private fun AnimatedSheetContent(
+    track: Track,
+    queue: List<Track>,
+    playingTrackIndex: Int,
+    seekPosition: Float,
+    playbackDuration: String,
+    trackDuration: String,
+    playbackState: PlaybackState,
+    isBuffering: Boolean,
+    repeatMode: RepeatMode,
+    shuffleMode: ShuffleMode,
+    baseUrl: String,
+    bottomSheetState: BottomSheetScaffoldState,
+    systemBarHeight: Dp,
+    onShapeChange: (RoundedCornerShape) -> Unit,
+    onProgressChange: (Float) -> Unit,
+    primarySheetProgress: Float,
+    queueSheetOffset: Animatable<Float, AnimationVector1D>,
+    queueInitialOffset: Float,
+    queueExpandedOffset: Float,
+    queueProgress: Float,
+    onPageSelect: (Int) -> Unit,
+    onClickArtist: (String) -> Unit,
+    onToggleRepeatMode: () -> Unit,
+    onClickPrev: () -> Unit,
+    onTogglePlayerState: () -> Unit,
+    onResumePlayBackFromError: () -> Unit,
+    onClickNext: () -> Unit,
+    onToggleShuffleMode: () -> Unit,
+    onSeekPlayBack: (Float) -> Unit,
+    onToggleFavorite: (Boolean, String) -> Unit,
+    onAllowSheetClose: () -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
+    // Whatever AS says about this, don't be tempted to change it... ref: Eric
+    val screenWidthDp = configuration.screenWidthDp.dp
+    val hapticFeedback = LocalHapticFeedback.current
+
+    // Horizontal swipe state for collapsed mode
+    var swipeDistance by remember { mutableFloatStateOf(0f) }
+
+    // Store initial offset after sheet settles
+    val initialOffset = remember { mutableStateOf<Float?>(null) }
+
+    // Capture initial offset after sheet reaches PartiallyExpanded state
+    LaunchedEffect(Unit) {
+        initialOffset.value = null
+        // Wait for sheet to reach PartiallyExpanded state
+        snapshotFlow { bottomSheetState.bottomSheetState.currentValue }
+            .first { it == SheetValue.PartiallyExpanded }
+        kotlinx.coroutines.delay(50) // Extra settling time after reaching state
+        try {
+            initialOffset.value = bottomSheetState.bottomSheetState.requireOffset()
+        } catch (_: Exception) {
+        }
+    }
+
+    // Calculate progress using captured initial offset
+    val progress = remember {
+        derivedStateOf {
+            val captured = initialOffset.value
+            if (captured == null) {
+                0f // Return 0 until initialized
+            } else {
+                try {
+                    val currentOffset = bottomSheetState.bottomSheetState.requireOffset()
+                    val rawProgress = (captured - currentOffset) / captured
+                    rawProgress.coerceIn(0f, 1f)
+                } catch (_: Exception) {
+                    0f
+                }
+            }
+        }
+    }
+
+    // Effective progress considers queue sheet position
+    // When queue is fully up, effective progress becomes 0 (image shrinks back)
+    val effectiveProgress = progress.value * (1f - queueProgress)
+
+    // Image size interpolation with easing curve
+    val fraction = effectiveProgress.pow(0.75f)
+    val imageSize = lerp(INITIAL_IMAGE_SIZE, screenWidthDp, fraction).coerceAtMost(screenWidthDp)
+
+    // Image corner radius
+    val imageCornerRadius = lerp(8.dp, 16.dp, effectiveProgress)
+
+    // Dynamic top padding to avoid status bar overlay
+    val imageTopPadding = lerp(0.dp, systemBarHeight, progress.value)
+
+    // Dynamic spacing between image and content
+    val imageContentSpacing = lerp(60.dp, 16.dp, progress.value)
+
+    // Dynamic sheet corner radius: 12dp at peek → 0dp at full expansion
+    // Using pow(3) easing to maintain curved shape longer, then flatten quickly near the top
+    val sheetCornerRadius = lerp(12.dp, 0.dp, progress.value.pow(3))
+
+    // Dynamic container padding
+    val containerPadding = lerp(INITIAL_PADDING, 24.dp, effectiveProgress)
+
+    // Content opacity: starts at 20%, full at 80%
+    val contentOpacity = ((effectiveProgress - 0.2f) / 0.6f).coerceIn(0f, 1f)
+
+    // Mini player elements opacity (inverse)
+    // Visible when: collapsed OR queue sheet is nearly fully expanded
+    val collapsedOpacity = (1f - (progress.value / 0.3f)).coerceIn(0f, 1f)
+    val queueExpandedOpacity = ((queueProgress - 0.7f) / 0.3f).coerceIn(0f, 1f)
+    val miniPlayerOpacity = maxOf(collapsedOpacity, queueExpandedOpacity)
+
+    // Update the sheet shape
+    LaunchedEffect(sheetCornerRadius) {
+        onShapeChange(RoundedCornerShape(topStart = sheetCornerRadius, topEnd = sheetCornerRadius))
+    }
+
+    // Notify progress changes
+    LaunchedEffect(progress.value) {
+        onProgressChange(progress.value)
+    }
+
+    // Track info for file type badge
+    val fileType by remember(track.filepath) {
+        derivedStateOf {
+            track.filepath.substringAfterLast(".").uppercase(Locale.ROOT)
+        }
+    }
+
+    val isDarkTheme = isSystemInDarkTheme()
+    val inverseOnSurface = MaterialTheme.colorScheme.inverseOnSurface
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val fileTypeBadgeColor = when (track.bitrate) {
+        in 321..1023 -> if (isDarkTheme) Color(0xFF172B2E) else Color(0xFFAEFAF4)
+        in 1024..Int.MAX_VALUE -> if (isDarkTheme) Color(0XFF443E30) else Color(0xFFFFFBCC)
+        else -> inverseOnSurface
+    }
+    val fileTypeTextColor = when (track.bitrate) {
+        in 321..1023 -> if (isDarkTheme) Color(0XFF33FFEE) else Color(0xFF172B2E)
+        in 1024..Int.MAX_VALUE -> if (isDarkTheme) Color(0XFFEFE143) else Color(0xFF221700)
+        else -> onSurface
+    }
+
+    val animateWave = playbackState == PlaybackState.PLAYING && !isBuffering
+    val repeatModeIcon = when (repeatMode) {
+        RepeatMode.REPEAT_ONE -> R.drawable.repeat_one
+        else -> R.drawable.repeat_all
+    }
+    val playbackStateIcon = when (playbackState) {
+        PlaybackState.PLAYING -> R.drawable.pause_icon
+        PlaybackState.PAUSED -> R.drawable.play_arrow
+        PlaybackState.ERROR -> R.drawable.error
+    }
+
+    // Pager state for expanded mode artwork swiping
+    val pagerState = rememberPagerState(
+        initialPage = playingTrackIndex,
+        pageCount = { if (queue.isEmpty()) 1 else queue.size }
+    )
+
+    var isInitialComposition by remember { mutableStateOf(true) }
+
+    LaunchedEffect(playingTrackIndex, pagerState) {
+        if (playingTrackIndex in queue.indices) {
+            if (playingTrackIndex != pagerState.currentPage) {
+                pagerState.animateScrollToPage(playingTrackIndex)
+            }
+        }
+
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            if (isInitialComposition) {
+                isInitialComposition = false
+            } else {
+                if (playingTrackIndex != page) {
+                    onPageSelect(page)
+                }
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+    ) {
+        // Blurred background (only visible when expanded)
+        if (effectiveProgress > 0f) {
+            AsyncImage(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(effectiveProgress),
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data("${baseUrl}img/thumbnail/${track.image}")
+                    .crossfade(true)
+                    .transformations(listOf(BlurTransformation(scale = 0.25f, radius = 25)))
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(effectiveProgress)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface.copy(alpha = .75f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 1f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 1f)
+                            )
+                        )
+                    )
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+        ) {
+            // Image container with transformation
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = imageTopPadding)
+                    .padding(horizontal = containerPadding)
+                    .pointerInput(progress.value < 0.3f, queueProgress < 0.1f) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            var longPressTriggered = false
+                            var closePermissionGranted = false
+                            var totalDragX = 0f
+                            var totalDragY = 0f
+                            var lastX = down.position.x
+                            var lastY = down.position.y
+
+                            // Launch coroutine to trigger haptic after 500ms
+                            val longPressJob = coroutineScope.launch {
+                                kotlinx.coroutines.delay(500L)
+                                if (progress.value < 0.3f) {
+                                    longPressTriggered = true
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    swipeDistance = 0f
+                                }
+                            }
+
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id }
+
+                                if (change == null || change.changedToUp()) {
+                                    // Finger lifted - cancel long press job if still pending
+                                    longPressJob.cancel()
+
+                                    if (!longPressTriggered && progress.value < 0.3f) {
+                                        // Check for tap vs horizontal swipe
+                                        if (kotlin.math.abs(totalDragX) > 50) {
+                                            // Horizontal swipe
+                                            if (totalDragX > 50) onClickPrev()
+                                            else onClickNext()
+                                        } else if (progress.value < 0.5f && queueProgress < 0.1f) {
+                                            // Tap - expand sheet
+                                            coroutineScope.launch {
+                                                bottomSheetState.bottomSheetState.expand()
+                                            }
+                                        }
+                                    }
+                                    break
+                                }
+
+                                // Track movement
+                                val currentX = change.position.x
+                                val currentY = change.position.y
+                                totalDragX += currentX - lastX
+                                totalDragY += currentY - lastY
+                                lastX = currentX
+                                lastY = currentY
+
+                                // Cancel long-press if user starts dragging (not a hold gesture)
+                                if (kotlin.math.abs(totalDragY) > 20f || kotlin.math.abs(totalDragX) > 20f) {
+                                    longPressJob.cancel()
+                                }
+
+                                // Update swipe distance for visual feedback
+                                if (progress.value < 0.3f && !longPressTriggered) {
+                                    swipeDistance = totalDragX
+                                }
+
+                                // Allow sheet close only when dragging DOWN after long press
+                                if (longPressTriggered &&
+                                    !closePermissionGranted &&
+                                    totalDragY > 10f
+                                ) {
+                                    onAllowSheetClose()
+                                    closePermissionGranted = true
+                                }
+                            }
+
+                            // Reset swipe distance on gesture end
+                            swipeDistance = 0f
+                        }
+                    }
+            ) {
+                // Unified layout: Pager + Title + Play/Pause in a Row
+                // Title and icon fade out as sheet expands
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset { IntOffset((swipeDistance / 3).roundToInt(), 0) },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Pager takes only the space it needs when collapsed, expands when opened
+                    val pagerWidth = lerp(
+                        INITIAL_IMAGE_SIZE,
+                        screenWidthDp - (containerPadding * 2),
+                        effectiveProgress
+                    )
+
+                    HorizontalPager(
+                        modifier = Modifier.width(pagerWidth),
+                        state = pagerState,
+                        pageSize = androidx.compose.foundation.pager.PageSize.Fill,
+                        beyondViewportPageCount = 1,
+                        userScrollEnabled = effectiveProgress > 0.5f,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) { page ->
+                        val imageData = if (page == playingTrackIndex) {
+                            "${baseUrl}img/thumbnail/${queue.getOrNull(playingTrackIndex)?.image ?: track.image}"
+                        } else {
+                            "${baseUrl}img/thumbnail/${queue.getOrNull(page)?.image ?: track.image}"
+                        }
+
+                        val pageOffset = pagerState.calculateCurrentOffsetForPage(page)
+
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AsyncImage(
+                                modifier = Modifier
+                                    .width(imageSize)
+                                    .heightIn(max = imageSize)
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(imageCornerRadius))
+                                    .graphicsLayer {
+                                        val scale = androidx.compose.ui.util.lerp(
+                                            1f,
+                                            1f + (0.25f * effectiveProgress),
+                                            pageOffset
+                                        )
+                                        scaleX = scale
+                                        scaleY = scale
+                                        clip = true
+                                        shape = RoundedCornerShape(imageCornerRadius)
+                                    },
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(imageData)
+                                    .size(coil.size.Size.ORIGINAL)
+                                    .crossfade(true)
+                                    .build(),
+                                placeholder = painterResource(R.drawable.audio_fallback),
+                                fallback = painterResource(R.drawable.audio_fallback),
+                                error = painterResource(R.drawable.audio_fallback),
+                                contentDescription = "Track Image",
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+
+                    // Title and Play/Pause - fade out when expanding
+                    if (miniPlayerOpacity > 0f) {
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            modifier = Modifier
+                                .weight(1f)
+                                .alpha(miniPlayerOpacity),
+                            text = track.title,
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            overflow = TextOverflow.Ellipsis,
+                            color = if (swipeDistance.toInt() != 0)
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = .25f)
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = .84f)
+                        )
+
+                        IconButton(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .alpha(miniPlayerOpacity),
+                            onClick = {
+                                if (playbackState == PlaybackState.ERROR) {
+                                    onResumePlayBackFromError()
+                                } else {
+                                    onTogglePlayerState()
+                                }
+                            }
+                        ) {
+                            if (isBuffering) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 0.75.dp,
+                                    strokeCap = StrokeCap.Round
+                                )
+                            }
+                            val animatedPlayPause =
+                                AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_pause)
+                            Icon(
+                                painter = rememberAnimatedVectorPainter(
+                                    animatedImageVector = animatedPlayPause,
+                                    atEnd = playbackState == PlaybackState.PLAYING
+                                ),
+                                contentDescription = "Play/Pause"
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Progress bar for collapsed state
+            AnimatedVisibility(
+                visible = progress.value < 0.01f,
+                enter = fadeIn(animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(200))
+            ) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .alpha(miniPlayerOpacity),
+                    gapSize = 0.dp,
+                    drawStopIndicator = {},
+                    progress = { seekPosition },
+                    strokeCap = StrokeCap.Square
+                )
+            }
+
+            // Image and Content spacer
+            Spacer(modifier = Modifier.height(imageContentSpacing))
+
+            // Expanded content (fades in at 20% progress)
+            AnimatedVisibility(
+                visible = effectiveProgress > 0.2f,
+                enter = fadeIn(animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(200))
+            ) {
+                Box(modifier = Modifier.alpha(contentOpacity)) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+
+                            // Track title and artist
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth(.78f)) {
+                                    Text(
+                                        text = track.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontSize = 18.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    LazyRow(modifier = Modifier.fillMaxWidth()) {
+                                        track.trackArtists.forEachIndexed { index, trackArtist ->
+                                            item {
+                                                Text(
+                                                    modifier = Modifier.clickable(
+                                                        onClick = {
+                                                            onClickArtist(trackArtist.artistHash)
+                                                            coroutineScope.launch {
+                                                                bottomSheetState.bottomSheetState.partialExpand()
+                                                            }
+                                                        },
+                                                        indication = null,
+                                                        interactionSource = remember { MutableInteractionSource() }
+                                                    ),
+                                                    text = trackArtist.name,
+                                                    maxLines = 1,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurface.copy(
+                                                        alpha = .84f
+                                                    ),
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                if (index != track.trackArtists.lastIndex) {
+                                                    Text(
+                                                        text = ", ",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurface.copy(
+                                                            alpha = .84f
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                var heartBounce by remember { mutableStateOf(false) }
+                                val heartScale by animateFloatAsState(
+                                    targetValue = if (heartBounce) 1.3f else 1f,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessMedium
+                                    ),
+                                    finishedListener = { heartBounce = false },
+                                    label = "heartScale"
+                                )
+
+                                LaunchedEffect(track.isFavorite) {
+                                    if (track.isFavorite) {
+                                        heartBounce = true
+                                    }
+                                }
+
+                                IconButton(
+                                    modifier = Modifier
+                                        .scale(heartScale)
+                                        .clip(CircleShape),
+                                    onClick = {
+                                        onToggleFavorite(
+                                            track.isFavorite,
+                                            track.trackHash
+                                        )
+                                    }
+                                ) {
+                                    Crossfade(
+                                        targetState = track.isFavorite,
+                                        animationSpec = tween(200),
+                                        label = "heartCrossfade"
+                                    ) { isFavorite ->
+                                        Icon(
+                                            painter = painterResource(
+                                                id = if (isFavorite) R.drawable.fav_filled
+                                                else R.drawable.fav_not_filled
+                                            ),
+                                            contentDescription = "Favorite"
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(28.dp))
+
+                            // Seek bar
+                            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                                WavySlider(
+                                    modifier = Modifier.height(12.dp),
+                                    value = seekPosition,
+                                    onValueChangeFinished = {},
+                                    onValueChange = { value -> onSeekPlayBack(value) },
+                                    waveLength = 32.dp,
+                                    waveHeight = if (animateWave) 8.dp else 0.dp,
+                                    waveVelocity = 16.dp to WaveDirection.HEAD,
+                                    waveThickness = 4.dp,
+                                    trackThickness = 4.dp,
+                                    incremental = false,
+                                    animationSpecs = WaveAnimationSpecs(
+                                        waveHeightAnimationSpec = tween(
+                                            durationMillis = 300,
+                                            easing = FastOutSlowInEasing
+                                        ),
+                                        waveVelocityAnimationSpec = tween(
+                                            durationMillis = 300,
+                                            easing = LinearOutSlowInEasing
+                                        ),
+                                        waveAppearanceAnimationSpec = tween(
+                                            durationMillis = 300,
+                                            easing = EaseOutQuad
+                                        )
+                                    )
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = playbackDuration,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84f)
+                                    )
+                                    Text(
+                                        text = if (playbackState == PlaybackState.ERROR)
+                                            track.duration.formatDuration() else trackDuration,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .84f)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Playback controls
+                            // Animation toggle states for prev/next
+                            var prevAnimAtEnd by remember { mutableStateOf(false) }
+                            var nextAnimAtEnd by remember { mutableStateOf(false) }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                val animatedPrev =
+                                    AnimatedImageVector.animatedVectorResource(R.drawable.avd_prev)
+                                IconButton(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
+                                        ),
+                                    onClick = {
+                                        prevAnimAtEnd = !prevAnimAtEnd
+                                        onClickPrev()
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = rememberAnimatedVectorPainter(
+                                            animatedImageVector = animatedPrev,
+                                            atEnd = prevAnimAtEnd
+                                        ),
+                                        contentDescription = "Previous"
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier.clickable(
+                                        indication = null,
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        onClick = {
+                                            if (playbackState != PlaybackState.ERROR) {
+                                                onTogglePlayerState()
+                                            } else {
+                                                onResumePlayBackFromError()
+                                            }
+                                        }
+                                    )
+                                ) {
+                                    Box(
+                                        modifier = Modifier.wrapContentSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (playbackState == PlaybackState.ERROR) {
+                                            Icon(
+                                                modifier = Modifier
+                                                    .padding(horizontal = 5.dp)
+                                                    .size(70.dp),
+                                                painter = painterResource(id = playbackStateIcon),
+                                                tint = if (isBuffering)
+                                                    MaterialTheme.colorScheme.onErrorContainer.copy(
+                                                        alpha = .25f
+                                                    )
+                                                else
+                                                    MaterialTheme.colorScheme.onErrorContainer.copy(
+                                                        alpha = .75f
+                                                    ),
+                                                contentDescription = "Error state"
+                                            )
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .height(70.dp)
+                                                    .width(80.dp)
+                                                    .clip(RoundedCornerShape(32))
+                                                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                val animatedPlayPauseLarge =
+                                                    AnimatedImageVector.animatedVectorResource(R.drawable.avd_play_pause)
+                                                Icon(
+                                                    modifier = Modifier.size(44.dp),
+                                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    painter = rememberAnimatedVectorPainter(
+                                                        animatedImageVector = animatedPlayPauseLarge,
+                                                        atEnd = playbackState == PlaybackState.PLAYING
+                                                    ),
+                                                    contentDescription = "Play/Pause"
+                                                )
+                                            }
+                                        }
+
+                                        if (isBuffering) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(50.dp),
+                                                strokeCap = StrokeCap.Round,
+                                                strokeWidth = 1.dp,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                        }
+                                    }
+                                }
+
+                                val animatedNext =
+                                    AnimatedImageVector.animatedVectorResource(R.drawable.avd_next)
+                                IconButton(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
+                                        ),
+                                    onClick = {
+                                        nextAnimAtEnd = !nextAnimAtEnd
+                                        onClickNext()
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = rememberAnimatedVectorPainter(
+                                            animatedImageVector = animatedNext,
+                                            atEnd = nextAnimAtEnd
+                                        ),
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        contentDescription = "Next"
+                                    )
+                                }
+                            }
+                        }
+
+                        // Queue drag zone - contains bitrate badge
+                        var lastDragOffset by remember { mutableFloatStateOf(queueSheetOffset.value) }
+                        var isDraggingUp by remember { mutableStateOf(false) }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .pointerInput(Unit) {
+                                    detectDragGestures(
+                                        onDragStart = { lastDragOffset = queueSheetOffset.value },
+                                        onDragEnd = {
+                                            coroutineScope.launch {
+                                                val queueSheetProgress =
+                                                    (queueInitialOffset - queueSheetOffset.value) /
+                                                            (queueInitialOffset - queueExpandedOffset)
+
+                                                val threshold = if (isDraggingUp) 0.12f else 0.88f
+
+                                                val targetOffset =
+                                                    if (queueSheetProgress > threshold) {
+                                                        queueExpandedOffset
+                                                    } else {
+                                                        queueInitialOffset
+                                                    }
+
+                                                queueSheetOffset.animateTo(
+                                                    targetValue = targetOffset,
+                                                    animationSpec = spring(
+                                                        dampingRatio = 0.8f,
+                                                        stiffness = 400f
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    ) { _, dragAmount ->
+                                        coroutineScope.launch {
+                                            val newOffset =
+                                                (queueSheetOffset.value + (dragAmount.y * 1.5f))
+                                                    .coerceIn(
+                                                        queueExpandedOffset,
+                                                        queueInitialOffset
+                                                    )
+
+                                            isDraggingUp = newOffset < lastDragOffset
+                                            lastDragOffset = newOffset
+
+                                            queueSheetOffset.snapTo(newOffset)
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // Bitrate badge
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(24))
+                                    .background(
+                                        if (isDarkTheme) fileTypeTextColor.copy(alpha = .075f)
+                                        else fileTypeBadgeColor
+                                    )
+                                    .wrapContentSize()
+                                    .padding(8.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = fileType,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = fileTypeTextColor
+                                    )
+                                    Text(
+                                        text = " • ",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = fileTypeTextColor
+                                    )
+                                    Text(
+                                        text = "${track.bitrate} Kbps",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = fileTypeTextColor
+                                    )
+                                }
+                            }
+                        }
+
+                        // Navigation and Control Icons
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                                .background(MaterialTheme.colorScheme.inverseOnSurface)
+                                .navigationBarsPadding()
+                                .padding(vertical = 12.dp, horizontal = 32.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            IconButton(onClick = { onToggleRepeatMode() }) {
+                                Icon(
+                                    painter = painterResource(id = repeatModeIcon),
+                                    tint = if (repeatMode == RepeatMode.REPEAT_OFF)
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .3f)
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    contentDescription = "Repeat"
+                                )
+                            }
+
+                            // Queue icon - triggers queue sheet
+                            IconButton(onClick = {
+                                coroutineScope.launch {
+                                    queueSheetOffset.animateTo(
+                                        targetValue = queueExpandedOffset,
+                                        animationSpec = spring(
+                                            dampingRatio = 0.8f,
+                                            stiffness = 400f
+                                        )
+                                    )
+                                }
+                            }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.play_list),
+                                    contentDescription = "Queue"
+                                )
+                            }
+
+                            IconButton(onClick = { onToggleShuffleMode() }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.shuffle),
+                                    tint = if (shuffleMode == ShuffleMode.SHUFFLE_OFF)
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .3f)
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    contentDescription = "Shuffle"
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    } // End of Box wrapper
+}
+
+/**
+ * Queue Sheet Overlay - Secondary sheet that appears when primary player is fully expanded.
+ *
+ * Behavior:
+ * - Draggable from bottom with spring animations
+ * - Direction-aware snapping (20% threshold up, 90% down)
+ * - Opacity based on drag progress
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QueueSheetOverlay(
+    queue: List<Track>,
+    source: QueueSource,
+    playingTrackIndex: Int,
+    playingTrack: Track,
+    playbackState: PlaybackState,
+    baseUrl: String,
+    animatedOffset: Animatable<Float, AnimationVector1D>,
+    initialOffset: Float,
+    expandedOffset: Float,
+    onClickQueueItem: (Int) -> Unit,
+    onTogglePlayerState: () -> Unit,
+    onClickArtist: (artistHash: String) -> Unit,
+    onGotoAlbum: (albumHash: String) -> Unit,
+    onGotoFolder: (name: String, path: String) -> Unit,
+    onPlayNext: (track: Track) -> Unit,
+    onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
+    onCloseSheets: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val coroutineScope = rememberCoroutineScope()
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val lazyColumnState = rememberLazyListState()
+
+    // Bottom sheet state for track menu
+    val sheetState = rememberModalBottomSheetState()
+    var showTrackBottomSheet by remember { mutableStateOf(false) }
+    var clickedTrack: Track? by remember { mutableStateOf(null) }
+
+    // Update clicked track when queue changes
+    LaunchedEffect(queue) {
+        clickedTrack?.let { track ->
+            val updatedTrack = queue.find { it.trackHash == track.trackHash }
+            clickedTrack = updatedTrack ?: track
+        }
+    }
+
+    // Track drag direction
+    var lastOffset by remember { mutableFloatStateOf(animatedOffset.value) }
+    var isDraggingUp by remember { mutableStateOf(false) }
+
+    // Calculate drag progress
+    val queueProgress by remember {
+        derivedStateOf {
+            val progress = (initialOffset - animatedOffset.value) / (initialOffset - expandedOffset)
+            progress.coerceIn(0f, 1f)
+        }
+    }
+
+    // Opacity based on drag progress - reaches 1.0 at 80% drag
+    val queueOpacity by remember {
+        derivedStateOf {
+            (queueProgress / 0.8f).coerceIn(0f, 1f)
+        }
+    }
+
+    // Track if we've scrolled to playing track this session
+    var hasScrolledToPlayingTrack by remember { mutableStateOf(false) }
+
+    // Scroll to playing track only on first open
+    LaunchedEffect(queueProgress) {
+        if (!hasScrolledToPlayingTrack && queueProgress > 0.9f && (playingTrackIndex - 1) in queue.indices) {
+            lazyColumnState.scrollToItem(playingTrackIndex - 1)
+            hasScrolledToPlayingTrack = true
+        }
+    }
+
+    // Nested scroll connection to drag sheet down when list is at top
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // When at top of list and user drags down, move sheet instead
+                // available.y > 0 means finger moving down (trying to scroll up/backward)
+                val isAtTop = !lazyColumnState.canScrollBackward
+                val isDraggingDown = available.y > 0
+
+                if (isAtTop && isDraggingDown) {
+                    val newOffset = (animatedOffset.value + available.y)
+                        .coerceIn(expandedOffset, initialOffset)
+
+                    coroutineScope.launch {
+                        isDraggingUp = false
+                        lastOffset = newOffset
+                        animatedOffset.snapTo(newOffset)
+                    }
+                    return Offset(0f, available.y)
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                // Snap sheet to position after fling
+                if (animatedOffset.value > expandedOffset) {
+                    val threshold = 0.90f
+                    val targetOffset = if (queueProgress > threshold) {
+                        expandedOffset
+                    } else {
+                        initialOffset
+                    }
+                    animatedOffset.animateTo(
+                        targetValue = targetOffset,
+                        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f)
+                    )
+                }
+                return super.onPostFling(consumed, available)
+            }
+        }
+    }
+
+    // Track menu bottom sheet
+    if (showTrackBottomSheet) {
+        clickedTrack?.let { track ->
+            CustomTrackBottomSheet(
+                scope = coroutineScope,
+                sheetState = sheetState,
+                clickedTrack = track,
+                isFavorite = track.isFavorite,
+                baseUrl = baseUrl,
+                bottomSheetItems = listOf(
+                    BottomSheetItemModel(
+                        label = "Go to Artist",
+                        enabled = true,
+                        painterId = R.drawable.ic_artist,
+                        track = track,
+                        sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
+                    ),
+                    BottomSheetItemModel(
+                        label = "Go to Album",
+                        painterId = R.drawable.ic_album,
+                        track = track,
+                        sheetAction = BottomSheetAction.GotoAlbum
+                    ),
+                    BottomSheetItemModel(
+                        label = "Go to Folder",
+                        enabled = true,
+                        painterId = R.drawable.folder_outlined_open,
+                        track = track,
+                        sheetAction = BottomSheetAction.GotoFolder(
+                            name = track.folder.getFolderName(),
+                            path = track.folder
+                        )
+                    ),
+                    BottomSheetItemModel(
+                        label = "Play Next",
+                        enabled = true,
+                        painterId = R.drawable.play_next,
+                        track = track,
+                        sheetAction = BottomSheetAction.PlayNext
+                    )
+                ),
+                onHideBottomSheet = { showTrackBottomSheet = it },
+                onClickSheetItem = { sheetTrack, sheetAction ->
+                    when (sheetAction) {
+                        is BottomSheetAction.GotoAlbum -> {
+                            onGotoAlbum(sheetTrack.albumHash)
+                            onCloseSheets()
+                        }
+
+                        is BottomSheetAction.GotoFolder -> {
+                            onGotoFolder(sheetAction.name, sheetAction.path)
+                            onCloseSheets()
+                        }
+
+                        is BottomSheetAction.PlayNext -> onPlayNext(sheetTrack)
+                        else -> {}
+                    }
+                },
+                onChooseArtist = { hash ->
+                    onClickArtist(hash)
+                    onCloseSheets()
+                },
+                onToggleTrackFavorite = { trackHash, isFavorite ->
+                    onToggleTrackFavorite(trackHash, isFavorite)
+                }
+            )
+        }
+    }
+
+    // Main Queue Sheet Container - uses direct offset like primary sheet
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .alpha(queueOpacity)
+            .offset { IntOffset(0, animatedOffset.value.roundToInt()) }
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { lastOffset = animatedOffset.value },
+                    onDragEnd = {
+                        coroutineScope.launch {
+                            val threshold = if (isDraggingUp) 0.20f else 0.90f
+                            val targetOffset = if (queueProgress > threshold) {
+                                expandedOffset
+                            } else {
+                                initialOffset
+                            }
+
+                            animatedOffset.animateTo(
+                                targetValue = targetOffset,
+                                animationSpec = spring(
+                                    dampingRatio = 0.8f,
+                                    stiffness = 400f
+                                )
+                            )
+                        }
+                    },
+                    onDrag = { _, dragAmount ->
+                        coroutineScope.launch {
+                            val newOffset = (animatedOffset.value + dragAmount.y)
+                                .coerceIn(expandedOffset, initialOffset)
+
+                            isDraggingUp = newOffset < lastOffset
+                            lastOffset = newOffset
+
+                            animatedOffset.snapTo(newOffset)
+                        }
+                    }
+                )
+            }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                )
+                .navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Drag handle
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .width(32.dp)
+                    .height(4.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Now Playing",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Queue source indicator
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        when (source) {
+                            is QueueSource.ALBUM -> {
+                                onGotoAlbum(source.albumHash)
+                                onCloseSheets()
+                            }
+
+                            is QueueSource.ARTIST -> {
+                                onClickArtist(source.artistHash)
+                                onCloseSheets()
+                            }
+
+                            is QueueSource.FOLDER -> {
+                                onGotoFolder(source.name, source.path)
+                                onCloseSheets()
+                            }
+
+                            else -> {}
+                        }
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = source.getSourceType(),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94f)
+                )
+
+                if (source.getName().isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .size(4.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .36f))
+                    )
+
+                    Text(
+                        text = source.getName(),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .94f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Currently playing track card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14f))
+                    .clickable { onTogglePlayerState() }
+                    .padding(8.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(0.8f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data("${baseUrl}img/thumbnail/${playingTrack.image}")
+                                .crossfade(true)
+                                .build(),
+                            placeholder = painterResource(R.drawable.audio_fallback),
+                            fallback = painterResource(R.drawable.audio_fallback),
+                            error = painterResource(R.drawable.audio_fallback),
+                            contentDescription = "Track Image",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                        )
+
+                        Column(modifier = Modifier.padding(horizontal = 12.dp)) {
+                            Text(
+                                text = playingTrack.title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                text = playingTrack.trackArtists.joinToString(", ") { it.name },
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .80f),
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    // Sound Bars
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .padding(end = 8.dp)
+                    ) {
+                        SoundSignalBars(animate = playbackState == PlaybackState.PLAYING)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Queue items
+            LazyColumn(
+                state = lazyColumnState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .nestedScroll(nestedScrollConnection),
+                contentPadding = PaddingValues(bottom = 120.dp)
+            ) {
+                itemsIndexed(
+                    items = queue,
+                    key = { index, track -> "$index:${track.filepath}" }
+                ) { index, track ->
+                    TrackItem(
+                        track = track,
+                        playbackState = playbackState,
+                        isCurrentTrack = index == playingTrackIndex,
+                        baseUrl = baseUrl,
+                        showMenuIcon = true,
+                        onClickTrackItem = { onClickQueueItem(index) },
+                        onClickMoreVert = {
+                            clickedTrack = it
+                            showTrackBottomSheet = true
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
