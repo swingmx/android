@@ -383,21 +383,26 @@ class MediaControllerViewModel @Inject constructor(
             val currentPlayingIndex = mediaController?.currentMediaItemIndex ?: 0
             val insertIndex = currentPlayingIndex + 1
 
-            targetQueue.add(insertIndex, playNextTrack)
-            _playerUiState.value = _playerUiState.value.copy(queue = targetQueue)
+            val newQueue = targetQueue.toMutableList().apply { add(insertIndex, playNextTrack) }
+            if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
+                shuffledQueue = newQueue
+            } else {
+                workingQueue = newQueue
+            }
+            _playerUiState.value = _playerUiState.value.copy(queue = newQueue)
 
-            val mediaItems = targetQueue.mapIndexed { index, track ->
+            val mediaItems = newQueue.mapIndexed { index, track ->
                 createMediaItem(id = index, track = track)
             }
 
             mediaController?.replaceMediaItems(
                 insertIndex,
-                targetQueue.lastIndex,
+                newQueue.lastIndex,
                 mediaItems.drop(insertIndex)
             )
 
             updateQueueInDatabase(
-                queue = targetQueue,
+                queue = newQueue,
                 playingTrackIndex = currentPlayingIndex
             )
         }
@@ -439,11 +444,16 @@ class MediaControllerViewModel @Inject constructor(
 
             trackToLog = track
         } else {
-            targetQueue.add(track)
-            _playerUiState.value = _playerUiState.value.copy(queue = targetQueue)
+            val newQueue = targetQueue.toMutableList().apply { add(track) }
+            if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
+                shuffledQueue = newQueue
+            } else {
+                workingQueue = newQueue
+            }
+            _playerUiState.value = _playerUiState.value.copy(queue = newQueue)
 
             val newMediaItem = createMediaItem(
-                id = targetQueue.lastIndex,
+                id = newQueue.lastIndex,
                 track = track
             )
 
@@ -452,7 +462,7 @@ class MediaControllerViewModel @Inject constructor(
             }
 
             updateQueueInDatabase(
-                queue = targetQueue,
+                queue = newQueue,
                 playingTrackIndex = mediaController?.currentMediaItemIndex ?: 0
             )
         }
