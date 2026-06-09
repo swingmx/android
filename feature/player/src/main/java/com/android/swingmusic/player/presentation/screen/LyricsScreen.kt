@@ -1,5 +1,9 @@
 package com.android.swingmusic.player.presentation.screen
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,6 +57,7 @@ import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.viewmodel.LyricsViewModel
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.ramcosta.composedestinations.annotation.Destination
+import kotlin.math.abs
 
 @Destination
 @Composable
@@ -254,31 +261,53 @@ private fun SyncedLyricsList(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         itemsIndexed(state.lines, key = { i, _ -> i }) { index, line ->
             val current = state.currentLine
-            val alpha = when {
-                index == current -> 1F
-                index < current -> 0.55F
-                index == current + 1 -> 0.9F
-                index == current + 2 -> 0.8F
-                else -> 0.7F
+            val isActive = index == current
+            val distance = if (current < 0) Int.MAX_VALUE else abs(index - current)
+            val isPast = current >= 0 && index < current
+
+            val targetScale = when {
+                isActive -> 1F
+                distance == 1 -> 0.72F
+                distance == 2 -> 0.62F
+                else -> 0.56F
             }
-            val color = if (index == current) {
-                MaterialTheme.colorScheme.onSurface
-            } else {
-                MaterialTheme.colorScheme.onSurface.copy(alpha = alpha)
+            val targetAlpha = when {
+                isActive -> 1F
+                isPast -> 0.35F
+                distance == 1 -> 0.75F
+                distance == 2 -> 0.55F
+                else -> 0.4F
             }
+
+            val animatedScale by animateFloatAsState(
+                targetValue = targetScale,
+                animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+                label = "lyricScale"
+            )
+            val animatedColor by animateColorAsState(
+                targetValue = MaterialTheme.colorScheme.onSurface.copy(alpha = targetAlpha),
+                animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+                label = "lyricColor"
+            )
 
             Text(
                 text = line.text.ifBlank { "♪" },
-                fontSize = 28.sp,
-                fontWeight = if (index == current) FontWeight.Bold else FontWeight.SemiBold,
-                color = color,
+                fontSize = 32.sp,
+                lineHeight = 40.sp,
+                fontWeight = if (isActive) FontWeight.Bold else FontWeight.SemiBold,
+                color = animatedColor,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onSeek(line.time) }
+                    .graphicsLayer {
+                        scaleX = animatedScale
+                        scaleY = animatedScale
+                        transformOrigin = TransformOrigin(0F, 0.5F)
+                    }
                     .padding(vertical = 4.dp)
             )
         }
