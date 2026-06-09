@@ -9,6 +9,11 @@ import com.android.swingmusic.core.data.dto.ArtistInfoDto
 import com.android.swingmusic.core.data.dto.ArtistsSearchResultDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
+import com.android.swingmusic.core.data.dto.LyricsCheckDto
+import com.android.swingmusic.core.data.dto.LyricsDto
+import com.android.swingmusic.core.data.dto.LyricsRequestDto
+import com.android.swingmusic.core.data.dto.PluginLyricsRequestDto
+import com.android.swingmusic.core.data.dto.PluginLyricsResultDto
 import com.android.swingmusic.core.data.dto.TopSearchResultsDto
 import com.android.swingmusic.core.data.dto.TrackDto
 import com.android.swingmusic.core.data.dto.TracksSearchResultDto
@@ -161,4 +166,25 @@ interface NetworkApiService {
         @Query("itemtype") itemType: String = "artists",
         @Query("q") searchParams: String
     ): ArtistsSearchResultDto
+
+    @POST
+    suspend fun getLyrics(
+        @Url url: String,
+        @Body request: LyricsRequestDto,
+        @Header("Authorization") bearerToken: String
+    ): LyricsDto
+
+    @POST
+    suspend fun checkLyricsExist(
+        @Url url: String,
+        @Body request: LyricsRequestDto,
+        @Header("Authorization") bearerToken: String
+    ): LyricsCheckDto
+
+    @POST
+    suspend fun searchLyricsOnline(
+        @Url url: String,
+        @Body request: PluginLyricsRequestDto,
+        @Header("Authorization") bearerToken: String
+    ): PluginLyricsResultDto
 }

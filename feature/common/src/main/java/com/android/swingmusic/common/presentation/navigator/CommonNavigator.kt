@@ -25,4 +25,6 @@ interface CommonNavigator {
 
     fun gotoSourceFolder(name: String, path: String)
 
+    fun gotoLyrics()
+
 }

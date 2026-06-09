@@ -540,15 +540,14 @@ private fun NowPlaying(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // TODO: Return this when lyrics is ready
-                /*IconButton(onClick = {
+                IconButton(onClick = {
                     onClickLyricsIcon()
                 }) {
                     Icon(
                         painter = painterResource(id = R.drawable.lyrics_icon),
                         contentDescription = "Lyrics"
                     )
-                }*/
+                }
 
                 IconButton(onClick = {
                     onToggleRepeatMode(repeatMode)
@@ -672,9 +671,7 @@ fun NowPlayingScreen(
             )
         },
         onClickLyricsIcon = {
-            mediaControllerViewModel.onPlayerUiEvent(
-                PlayerUiEvent.OnClickLyricsIcon
-            )
+            navigator.gotoLyrics()
         },
         onToggleFavorite = { isFavorite, trackHash ->
             mediaControllerViewModel.onPlayerUiEvent(

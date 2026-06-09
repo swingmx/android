@@ -46,6 +46,7 @@ dependencies {
     implementation(project(":uicomponent"))
     // Common
     implementation(project(":feature:common"))
+    implementation(project(":feature:settings"))
 
     // Core
     implementation(libs.androidx.core.ktx)
@@ -66,6 +67,7 @@ dependencies {
     // Hilt DI
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     // Retrofit
     implementation(libs.retrofit)

@@ -20,4 +20,12 @@ interface AppSettingsRepository {
     suspend fun setArtistGridCount(count: Int)
     suspend fun setArtistSortBy(sortBy: SortBy)
     suspend fun setArtistSortOrder(order: SortOrder)
+
+    val useLyricsPlugin: Flow<Boolean>
+    val lyricsAutoDownload: Flow<Boolean>
+    val lyricsOverrideUnsynced: Flow<Boolean>
+
+    suspend fun setUseLyricsPlugin(enabled: Boolean)
+    suspend fun setLyricsAutoDownload(enabled: Boolean)
+    suspend fun setLyricsOverrideUnsynced(enabled: Boolean)
 }

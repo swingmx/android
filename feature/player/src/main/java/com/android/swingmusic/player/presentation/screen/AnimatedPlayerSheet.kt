@@ -338,6 +338,12 @@ fun AnimatedPlayerSheet(
                     },
                     onAllowSheetClose = {
                         allowSheetClose = true
+                    },
+                    onClickLyricsIcon = {
+                        coroutineScope.launch {
+                            bottomSheetState.bottomSheetState.partialExpand()
+                            navigator.gotoLyrics()
+                        }
                     }
                 )
             }
@@ -420,7 +426,8 @@ private fun AnimatedSheetContent(
     onToggleShuffleMode: () -> Unit,
     onSeekPlayBack: (Float) -> Unit,
     onToggleFavorite: (Boolean, String) -> Unit,
-    onAllowSheetClose: () -> Unit
+    onAllowSheetClose: () -> Unit,
+    onClickLyricsIcon: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
@@ -1224,6 +1231,13 @@ private fun AnimatedSheetContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
+                            IconButton(onClick = { onClickLyricsIcon() }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.lyrics_icon),
+                                    contentDescription = "Lyrics"
+                                )
+                            }
+
                             IconButton(onClick = { onToggleRepeatMode() }) {
                                 Icon(
                                     painter = painterResource(id = repeatModeIcon),
