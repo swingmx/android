@@ -39,6 +39,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
@@ -90,7 +94,9 @@ private fun FoldersAndTracks(
     onGotoArtist: (hash: String) -> Unit,
     baseUrl: String,
     isManualRefreshing: Boolean,
-    onManualRefreshingChange: (Boolean) -> Unit
+    onManualRefreshingChange: (Boolean) -> Unit,
+    getSavedScroll: (path: String) -> Pair<Int, Int>?,
+    onSaveScroll: (path: String, index: Int, offset: Int) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -98,6 +104,14 @@ private fun FoldersAndTracks(
     var clickedTrack: Track? by remember { mutableStateOf(null) }
 
     val pagingContent = foldersContentPagingState.pagingContent.collectAsLazyPagingItems()
+
+    val pathsEverShown = remember { mutableStateOf(setOf<String>()) }
+    val isKnownPath = currentFolder.path.trimEnd('/') in pathsEverShown.value
+    LaunchedEffect(pagingContent.itemCount, currentFolder.path) {
+        if (pagingContent.itemCount > 0) {
+            pathsEverShown.value = pathsEverShown.value + currentFolder.path.trimEnd('/')
+        }
+    }
 
     // Track state updates and reset manual refreshing
     LaunchedEffect(pagingContent.loadState, pagingContent.itemCount) {
@@ -134,6 +148,26 @@ private fun FoldersAndTracks(
 
     val lazyColumnState = rememberLazyListState()
     val pathsLazyRowState = rememberLazyListState()
+
+    LaunchedEffect(currentFolder.path) {
+        val effectPath = currentFolder.path
+        val saved = getSavedScroll(effectPath)
+        if (saved != null) {
+            snapshotFlow { lazyColumnState.layoutInfo.totalItemsCount }
+                .filter { it > saved.first }
+                .first()
+            lazyColumnState.scrollToItem(saved.first, saved.second)
+        }
+
+        snapshotFlow {
+            lazyColumnState.firstVisibleItemIndex to lazyColumnState.firstVisibleItemScrollOffset
+        }
+            .drop(1)
+            .collect { (index, offset) ->
+                onSaveScroll(effectPath, index, offset)
+            }
+    }
+
     Scaffold { it ->
         PullToRefreshBox(
             modifier = Modifier.fillMaxSize(),
@@ -141,9 +175,7 @@ private fun FoldersAndTracks(
             state = refreshState,
             onRefresh = {
                 onManualRefreshingChange(true)
-                // Call fresh data load instead of refresh to avoid pagination issues
-                val event = FolderUiEvent.OnClickFolder(currentFolder)
-                onPullToRefresh(event)
+                onPullToRefresh(FolderUiEvent.OnPullToRefresh(currentFolder))
             },
             indicator = {
                 PullToRefreshDefaults.Indicator(
@@ -379,7 +411,7 @@ private fun FoldersAndTracks(
 
                         when (val refresh = pagingContent.loadState.refresh) {
                             is LoadState.Loading -> {
-                                if (pagingContent.itemCount == 0 && !isManualRefreshing) {
+                                if (pagingContent.itemCount == 0 && !isManualRefreshing && !isKnownPath) {
                                     item {
                                         Box(
                                             modifier = Modifier
@@ -654,7 +686,11 @@ fun FoldersAndTracksScreen(
             onGotoArtist = { hash ->
                 navigator.gotoArtistInfo(hash)
             },
-            baseUrl = baseUrl ?: ""
+            baseUrl = baseUrl ?: "",
+            getSavedScroll = { path -> foldersViewModel.getScrollPosition(path) },
+            onSaveScroll = { path, index, offset ->
+                foldersViewModel.saveScrollPosition(path, index, offset)
+            }
         )
     }
 }

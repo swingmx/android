@@ -11,5 +11,7 @@ interface FolderUiEvent {
 
     data class OnRetry(val event: FolderUiEvent) : FolderUiEvent
 
+    data class OnPullToRefresh(val folder: Folder) : FolderUiEvent
+
     data class ToggleTrackFavorite(val trackHash: String, val isFavorite: Boolean) : FolderUiEvent
 }

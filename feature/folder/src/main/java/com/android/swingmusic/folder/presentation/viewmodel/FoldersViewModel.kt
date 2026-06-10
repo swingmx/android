@@ -68,6 +68,20 @@ class FoldersViewModel @Inject constructor(
         mutableStateOf(FoldersContentPagingState())
     val foldersContentPaging: State<FoldersContentPagingState> = _foldersContentPaging
 
+    private val pathFlowCache =
+        mutableMapOf<String, kotlinx.coroutines.flow.Flow<androidx.paging.PagingData<FolderContentItem>>>()
+
+    private val folderScrollPositions = mutableMapOf<String, Pair<Int, Int>>()
+
+    private fun normalizeFolderPath(path: String): String = path.trimEnd('/')
+
+    fun saveScrollPosition(path: String, index: Int, offset: Int) {
+        folderScrollPositions[normalizeFolderPath(path)] = index to offset
+    }
+
+    fun getScrollPosition(path: String): Pair<Int, Int>? =
+        folderScrollPositions[normalizeFolderPath(path)]
+
     init {
         getFoldersContentPaging(homeDir.path)
     }
@@ -179,9 +193,20 @@ class FoldersViewModel @Inject constructor(
         return paths
     }
 
-    private fun getFoldersContentPaging(path: String) {
+    private fun getFoldersContentPaging(path: String, forceRefresh: Boolean = false) {
+        val key = normalizeFolderPath(path)
+        if (forceRefresh) {
+            pathFlowCache.remove(key)
+            updatedTrackFavorites.update { emptyMap() }
+        }
+
+        pathFlowCache[key]?.let { cachedFlow ->
+            _foldersContentPaging.value = FoldersContentPagingState(pagingContent = cachedFlow)
+            return
+        }
+
         viewModelScope.launch {
-            val newPagingFlow = folderRepository.getPagingContent(path)
+            val newFlow = folderRepository.getPagingContent(path)
                 .cachedIn(viewModelScope)
                 .combine(updatedTrackFavorites) { pagingData, updatedFavorites ->
                     pagingData.map { contentItem ->
@@ -201,9 +226,8 @@ class FoldersViewModel @Inject constructor(
                     }
                 }
 
-            _foldersContentPaging.value = FoldersContentPagingState(
-                pagingContent = newPagingFlow
-            )
+            pathFlowCache[key] = newFlow
+            _foldersContentPaging.value = FoldersContentPagingState(pagingContent = newFlow)
         }
     }
 
@@ -212,15 +236,12 @@ class FoldersViewModel @Inject constructor(
             is FolderUiEvent.OnClickNavPath -> {
                 if (event.folder.path != _currentFolder.value.path) {
                     _currentFolder.value = event.folder
-                    updatedTrackFavorites.update { emptyMap() }
                     getFoldersContentPaging(event.folder.path)
                 }
             }
 
             is FolderUiEvent.OnClickFolder -> {
                 _currentFolder.value = event.folder
-
-                updatedTrackFavorites.update { emptyMap() }
                 getFoldersContentPaging(event.folder.path)
 
                 val normalizedEventPath = event.folder.path.trimEnd('/')
@@ -243,15 +264,17 @@ class FoldersViewModel @Inject constructor(
                     if (backPathIndex > -1) {
                         val backFolder = _navPaths.value[backPathIndex]
                         _currentFolder.value = backFolder
-                        updatedTrackFavorites.update { emptyMap() }
                         getFoldersContentPaging(backFolder.path)
                     }
                 }
             }
 
             is FolderUiEvent.OnRetry -> {
-                updatedTrackFavorites.update { emptyMap() }
-                getFoldersContentPaging(_currentFolder.value.path)
+                getFoldersContentPaging(_currentFolder.value.path, forceRefresh = true)
+            }
+
+            is FolderUiEvent.OnPullToRefresh -> {
+                getFoldersContentPaging(event.folder.path, forceRefresh = true)
             }
 
             is FolderUiEvent.ToggleTrackFavorite -> {
