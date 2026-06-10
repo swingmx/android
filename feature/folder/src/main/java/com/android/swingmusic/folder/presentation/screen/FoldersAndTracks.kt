@@ -150,10 +150,11 @@ private fun FoldersAndTracks(
     val pathsLazyRowState = rememberLazyListState()
 
     LaunchedEffect(currentFolder.path) {
-        val saved = getSavedScroll(currentFolder.path)
+        val effectPath = currentFolder.path
+        val saved = getSavedScroll(effectPath)
         if (saved != null) {
             snapshotFlow { lazyColumnState.layoutInfo.totalItemsCount }
-                .filter { it > 0 }
+                .filter { it > saved.first }
                 .first()
             lazyColumnState.scrollToItem(saved.first, saved.second)
         }
@@ -163,7 +164,7 @@ private fun FoldersAndTracks(
         }
             .drop(1)
             .collect { (index, offset) ->
-                onSaveScroll(currentFolder.path, index, offset)
+                onSaveScroll(effectPath, index, offset)
             }
     }
 
