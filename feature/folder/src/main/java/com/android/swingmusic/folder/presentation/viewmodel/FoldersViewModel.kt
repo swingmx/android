@@ -68,6 +68,17 @@ class FoldersViewModel @Inject constructor(
         mutableStateOf(FoldersContentPagingState())
     val foldersContentPaging: State<FoldersContentPagingState> = _foldersContentPaging
 
+    private val folderScrollPositions = mutableMapOf<String, Pair<Int, Int>>()
+
+    private fun normalizeFolderPath(path: String): String = path.trimEnd('/')
+
+    fun saveScrollPosition(path: String, index: Int, offset: Int) {
+        folderScrollPositions[normalizeFolderPath(path)] = index to offset
+    }
+
+    fun getScrollPosition(path: String): Pair<Int, Int>? =
+        folderScrollPositions[normalizeFolderPath(path)]
+
     init {
         getFoldersContentPaging(homeDir.path)
     }
