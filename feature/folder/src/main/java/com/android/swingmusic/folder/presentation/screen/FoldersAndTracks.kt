@@ -99,6 +99,14 @@ private fun FoldersAndTracks(
 
     val pagingContent = foldersContentPagingState.pagingContent.collectAsLazyPagingItems()
 
+    val pathsEverShown = remember { mutableStateOf(setOf<String>()) }
+    val isKnownPath = currentFolder.path.trimEnd('/') in pathsEverShown.value
+    LaunchedEffect(pagingContent.itemCount, currentFolder.path) {
+        if (pagingContent.itemCount > 0) {
+            pathsEverShown.value = pathsEverShown.value + currentFolder.path.trimEnd('/')
+        }
+    }
+
     // Track state updates and reset manual refreshing
     LaunchedEffect(pagingContent.loadState, pagingContent.itemCount) {
         // Reset manual refreshing when content loads successfully
@@ -141,9 +149,7 @@ private fun FoldersAndTracks(
             state = refreshState,
             onRefresh = {
                 onManualRefreshingChange(true)
-                // Call fresh data load instead of refresh to avoid pagination issues
-                val event = FolderUiEvent.OnClickFolder(currentFolder)
-                onPullToRefresh(event)
+                onPullToRefresh(FolderUiEvent.OnPullToRefresh(currentFolder))
             },
             indicator = {
                 PullToRefreshDefaults.Indicator(
@@ -379,7 +385,7 @@ private fun FoldersAndTracks(
 
                         when (val refresh = pagingContent.loadState.refresh) {
                             is LoadState.Loading -> {
-                                if (pagingContent.itemCount == 0 && !isManualRefreshing) {
+                                if (pagingContent.itemCount == 0 && !isManualRefreshing && !isKnownPath) {
                                     item {
                                         Box(
                                             modifier = Modifier
