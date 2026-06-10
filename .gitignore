@@ -13,3 +13,4 @@ local.properties
 keystore-base64.txt
 /.kotlin/sessions
 /application.backup
+.claude/settings.local.json

@@ -24,6 +24,13 @@
 - Maintain separation of concerns
 - Don't create new files unless absolutely necessary - prefer editing existing ones
 
+### Screens follow the MVI skill
+For new screens, or when refactoring an existing screen, follow the pattern in `.claude/skills/mvi-screen.md` (invoke `/mvi-screen` for full templates). Key points:
+- Five files per screen: `XxxScreen.kt` (Screen + stateless ScreenContent), `XxxViewModel.kt`, `XxxUiState.kt`, `XxxUiEvent.kt`, `XxxUiEffect.kt`.
+- Initial data fetches go in the ViewModel's `init { }` block, not in a `LaunchedEffect` in the Screen.
+- One-shot effects (navigation, snackbar, toast) flow through `Channel<UiEffect>` and are collected with `ObserverAsEvent` (in `uicomponent/.../util/`). Never raw `LaunchedEffect { effects.collect { } }`.
+- `ScreenContent` is stateless and takes `uiState` + `onEvent` so it can be previewed. The outer `Screen` binds the VM and effects.
+
 ## Testing
 - Always check if tests exist before assuming test framework
 - Look for existing test patterns in the codebase
