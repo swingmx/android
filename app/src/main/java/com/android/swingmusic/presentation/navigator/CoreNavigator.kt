@@ -12,6 +12,7 @@ import com.android.swingmusic.home.presentation.destinations.HomeDestination
 import com.android.swingmusic.player.presentation.screen.destinations.LyricsScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
+import com.android.swingmusic.settings.presentation.screen.destinations.SettingsScreenDestination
 import com.ramcosta.composedestinations.navigation.navigate
 
 class CoreNavigator(
@@ -149,6 +150,12 @@ class CoreNavigator(
 
     override fun gotoLyrics() {
         navController.navigate(LyricsScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoSettings() {
+        navController.navigate(SettingsScreenDestination) {
             launchSingleTop = true
         }
     }

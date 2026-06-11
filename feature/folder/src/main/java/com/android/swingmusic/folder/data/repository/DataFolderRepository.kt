@@ -91,6 +91,13 @@ class DataFolderRepository @Inject constructor(
         val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
+        if (baseUrl.isNullOrBlank()) {
+            // Not signed in yet (or just signed out). Returning an empty flow avoids
+            // capturing a null base into the PagingSource and firing requests to
+            // urls like http://default/nullfolder.
+            return emptyFlow()
+        }
+
         return Pager(
             config = PagingConfig(enablePlaceholders = false, pageSize = 20, prefetchDistance = 1),
             pagingSourceFactory = {

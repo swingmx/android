@@ -16,5 +16,5 @@ interface BaseUrlDao {
     suspend fun getBaseUrl(): BaseUrlEntity?
 
     @Query("DELETE FROM base_url")
-    fun clearBaseUrl()
+    suspend fun clearBaseUrl()
 }

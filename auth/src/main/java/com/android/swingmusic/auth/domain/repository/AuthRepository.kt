@@ -49,4 +49,6 @@ interface AuthRepository {
     fun processQrCodeData(encoded: String): Pair<String, String>
 
     suspend fun logInWithQrCode(url: String, pairCode: String): Flow<Resource<LogInResult>>
+
+    suspend fun signOut()
 }

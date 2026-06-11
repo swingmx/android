@@ -27,4 +27,6 @@ interface CommonNavigator {
 
     fun gotoLyrics()
 
+    fun gotoSettings()
+
 }

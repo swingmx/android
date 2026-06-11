@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,10 +19,12 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -96,7 +99,8 @@ private fun FoldersAndTracks(
     isManualRefreshing: Boolean,
     onManualRefreshingChange: (Boolean) -> Unit,
     getSavedScroll: (path: String) -> Pair<Int, Int>?,
-    onSaveScroll: (path: String, index: Int, offset: Int) -> Unit
+    onSaveScroll: (path: String, index: Int, offset: Int) -> Unit,
+    onClickSettings: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -190,15 +194,29 @@ private fun FoldersAndTracks(
             Scaffold(
                 modifier = Modifier.padding(it),
                 topBar = {
-                    Text(
-                        modifier = Modifier.padding(
-                            top = 16.dp,
-                            start = 16.dp,
-                            bottom = 8.dp
-                        ),
-                        text = "Folders",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                top = 16.dp,
+                                start = 16.dp,
+                                end = 8.dp,
+                                bottom = 8.dp
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = "Folders",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        IconButton(onClick = onClickSettings) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings"
+                            )
+                        }
+                    }
                 }
             ) { paddingValues ->
                 Surface(
@@ -690,7 +708,8 @@ fun FoldersAndTracksScreen(
             getSavedScroll = { path -> foldersViewModel.getScrollPosition(path) },
             onSaveScroll = { path, index, offset ->
                 foldersViewModel.saveScrollPosition(path, index, offset)
-            }
+            },
+            onClickSettings = { navigator.gotoSettings() }
         )
     }
 }

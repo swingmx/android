@@ -49,4 +49,8 @@ class AuthTokensDataStore @Inject constructor(
             data[MAX_AGE] = maxAge
         }
     }
+
+    suspend fun clear() {
+        context.dataStore.edit { it.clear() }
+    }
 }

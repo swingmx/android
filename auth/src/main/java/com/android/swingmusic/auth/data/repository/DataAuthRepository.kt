@@ -46,15 +46,20 @@ class DataAuthRepository @Inject constructor(
     override suspend fun getBaseUrl(): String? {
         if (BaseUrlHolder.baseUrl == null) {
             BaseUrlHolder.baseUrl = withContext(Dispatchers.IO) {
-                baseUrlDao.getBaseUrl()?.toModel()?.url
+                baseUrlDao.getBaseUrl()?.toModel()?.url?.normalizeBaseUrl()
             }
         }
         return BaseUrlHolder.baseUrl
     }
 
     override suspend fun storeBaseUrl(url: String) {
-        baseUrlDao.insertBaseUrl(BaseUrl(url = "$url/").toEntity()) // BASE_URL must end with '/'
+        val normalized = url.normalizeBaseUrl()
+        baseUrlDao.insertBaseUrl(BaseUrl(url = normalized).toEntity())
+        BaseUrlHolder.baseUrl = normalized
     }
+
+    // BASE_URL must end with a single '/'. Idempotent against legacy values with 0, 1, or many trailing slashes.
+    private fun String.normalizeBaseUrl(): String = trimEnd('/') + "/"
 
     override suspend fun getAccessToken(): String? {
         if (AuthTokenHolder.accessToken == null) {
@@ -84,8 +89,14 @@ class DataAuthRepository @Inject constructor(
             val refreshToken = getRefreshToken()
             val baseUrl = BaseUrlHolder.baseUrl ?: getBaseUrl()
 
+            if (baseUrl.isNullOrBlank() || refreshToken.isNullOrBlank()) {
+                // Not signed in. Skip the refresh attempt so we don't fire requests
+                // like http://default/null/auth/refresh while between sessions.
+                return null
+            }
+
             val result = authApiService.refreshTokens(
-                url = "$baseUrl/auth/refresh",
+                url = "${baseUrl.trimEnd('/')}/auth/refresh",
                 bearerRefreshToken = "Bearer $refreshToken"
             )
 
@@ -218,5 +229,14 @@ class DataAuthRepository @Inject constructor(
                 emit(Resource.Error(message = "PAIRING FAILED"))
             }
         }
+    }
+
+    override suspend fun signOut() {
+        authTokensDataStore.clear()
+        baseUrlDao.clearBaseUrl()
+        userDao.clearLoggedInUser()
+        AuthTokenHolder.accessToken = null
+        AuthTokenHolder.refreshToken = null
+        BaseUrlHolder.baseUrl = null
     }
 }
