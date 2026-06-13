@@ -33,14 +33,12 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -69,7 +67,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.LyricsLine
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
@@ -81,76 +78,14 @@ import com.android.swingmusic.player.presentation.viewmodel.LyricsViewModel
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.ramcosta.composedestinations.annotation.Destination
 import kotlin.math.abs
-
-@Destination
-@Composable
-fun LyricsScreen(
-    mediaControllerViewModel: MediaControllerViewModel,
-    navigator: CommonNavigator,
-    lyricsViewModel: LyricsViewModel = hiltViewModel()
-) {
-    val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
-    val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
-    val lyricsState by lyricsViewModel.state.collectAsState()
-    val track = playerUiState.nowPlayingTrack
-
-    LaunchedEffect(track?.trackHash) {
-        track?.let { lyricsViewModel.onEvent(LyricsUiEvent.LoadLyrics(it)) }
-    }
-
-    LaunchedEffect(playerUiState.seekPosition, lyricsState.exists, lyricsState.synced) {
-        if (lyricsState.exists && lyricsState.synced && track != null) {
-            val positionMs = (playerUiState.seekPosition * track.duration * 1000F).toLong()
-            lyricsViewModel.onEvent(LyricsUiEvent.PositionChanged(positionMs))
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            LyricsHeader(
-                track = track,
-                baseUrl = baseUrl ?: "",
-                synced = lyricsState.synced,
-                exists = lyricsState.exists,
-                onBack = { navigator.navigateBack() },
-                onClickArtist = { hash -> navigator.gotoArtistInfo(hash) }
-            )
-        }
-    ) { padding ->
-        LyricsBody(
-            padding = padding,
-            track = track,
-            state = lyricsState,
-            onSeek = { timeMs ->
-                if (track != null) {
-                    val durationMs = track.duration * 1000F
-                    if (durationMs > 0F) {
-                        val fraction = (timeMs.toFloat() / durationMs).coerceIn(0F, 1F)
-                        mediaControllerViewModel.onPlayerUiEvent(
-                            PlayerUiEvent.OnSeekPlayBack(
-                                fraction
-                            )
-                        )
-                    }
-                }
-            },
-            onUserScrolled = { lyricsViewModel.onEvent(LyricsUiEvent.SetUserScrolled(it)) },
-            onSearchOnline = {
-                track?.let { lyricsViewModel.onEvent(LyricsUiEvent.SearchOnline(it)) }
-            }
-        )
-    }
-}
 
 /**
  * Edge-to-edge lyrics overlay shown on top of the animated player sheet.
  *
- * Unlike [LyricsScreen] this is not a navigation destination: it renders above the
- * player without collapsing it, so dismissing returns to the expanded player rather
- * than popping the back stack. The overlay is non-dismissable by tap/swipe — it is
- * closed only via the header chevron or the back gesture.
+ * It renders above the player without collapsing it, so dismissing returns to the
+ * expanded player rather than popping the back stack. The overlay is non-dismissable
+ * by tap/swipe — it is closed only via the header chevron or the back gesture.
  */
 @Composable
 fun LyricsOverlay(
@@ -415,76 +350,6 @@ private fun LyricsOverlayHeader(
                 imageVector = Icons.Filled.KeyboardArrowDown,
                 contentDescription = "Close lyrics"
             )
-        }
-    }
-}
-
-@Composable
-private fun LyricsHeader(
-    track: Track?,
-    baseUrl: String,
-    synced: Boolean,
-    exists: Boolean,
-    onBack: () -> Unit,
-    onClickArtist: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-        }
-        if (track != null) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data("${baseUrl}img/thumbnail/${track.image}")
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            )
-            Spacer(Modifier.size(12.dp))
-            Column(modifier = Modifier.weight(1F)) {
-                Text(
-                    text = track.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1
-                )
-                val artistText = track.trackArtists.joinToString(", ") { it.name }
-                Text(
-                    text = artistText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7F),
-                    maxLines = 1,
-                    modifier = if (track.trackArtists.isNotEmpty()) {
-                        Modifier.clickable {
-                            onClickArtist(track.trackArtists.first().artistHash)
-                        }
-                    } else Modifier
-                )
-            }
-            if (exists && !synced) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "unsynced",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
         }
     }
 }
