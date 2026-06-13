@@ -670,9 +670,8 @@ fun NowPlayingScreen(
                 PlayerUiEvent.OnSeekPlayBack(it)
             )
         },
-        onClickLyricsIcon = {
-            navigator.gotoLyrics()
-        },
+        // Legacy screen: lyrics are shown via the overlay on the animated player, not here.
+        onClickLyricsIcon = { },
         onToggleFavorite = { isFavorite, trackHash ->
             mediaControllerViewModel.onPlayerUiEvent(
                 PlayerUiEvent.OnToggleFavorite(isFavorite, trackHash)

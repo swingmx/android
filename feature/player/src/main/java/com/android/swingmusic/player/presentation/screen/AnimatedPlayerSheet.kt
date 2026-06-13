@@ -185,6 +185,9 @@ fun AnimatedPlayerSheet(
     // Track if closing sheet is allowed (set by long-press)
     var allowSheetClose by remember { mutableStateOf(false) }
 
+    // Lyrics overlay visibility (shown on top of the player without leaving the screen)
+    var showLyrics by remember { mutableStateOf(false) }
+
     // Queue sheet calculations
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
@@ -277,7 +280,7 @@ fun AnimatedPlayerSheet(
         sheetDragHandle = {},
         sheetShape = dynamicShape,
         sheetContainerColor = MaterialTheme.colorScheme.inverseOnSurface,
-        sheetSwipeEnabled = !isQueueSheetOpen,
+        sheetSwipeEnabled = !isQueueSheetOpen && !showLyrics,
         sheetContent = {
             if (playingTrack != null) {
                 AnimatedSheetContent(
@@ -340,10 +343,7 @@ fun AnimatedPlayerSheet(
                         allowSheetClose = true
                     },
                     onClickLyricsIcon = {
-                        coroutineScope.launch {
-                            bottomSheetState.bottomSheetState.partialExpand()
-                            navigator.gotoLyrics()
-                        }
+                        showLyrics = true
                     }
                 )
             }
@@ -352,8 +352,14 @@ fun AnimatedPlayerSheet(
         content(innerPadding)
     }
 
-    // Queue Sheet - appears when primary sheet is fully expanded and has a track
-    if (primarySheetProgress >= 0.95f && playingTrack != null) {
+    // Queue Sheet - appears when primary sheet is fully expanded and has a track.
+    // Only compose it while it's actually open or animating (offset moved off its parked
+    // position). When fully parked, its offset (screenHeightDp, which omits the system-bar
+    // height) leaves an invisible sliver of the alpha(0) sheet over the player's bottom
+    // controls that would otherwise swallow their taps.
+    if (primarySheetProgress >= 0.95f && playingTrack != null &&
+        queueSheetOffset.value < queueInitialOffset - 1f
+    ) {
         QueueSheetOverlay(
             queue = playerUiState.queue,
             source = playerUiState.source,
@@ -391,6 +397,13 @@ fun AnimatedPlayerSheet(
             }
         )
     }
+
+    // Lyrics overlay - rendered last so it sits above the player and queue sheets
+    LyricsOverlay(
+        visible = showLyrics,
+        mediaControllerViewModel = mediaControllerViewModel,
+        onDismiss = { showLyrics = false }
+    )
 }
 
 @OptIn(ExperimentalAnimationGraphicsApi::class, ExperimentalFoundationApi::class)

@@ -9,7 +9,6 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrC
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.destinations.HomeDestination
-import com.android.swingmusic.player.presentation.screen.destinations.LyricsScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
@@ -44,7 +43,6 @@ object NavGraphs {
                     // inner destinations
                     NowPlayingScreenDestination,
                     QueueScreenDestination,
-                    LyricsScreenDestination,
                     AlbumWithInfoScreenDestination,
                     ViewAllScreenOnArtistDestination,
                     ArtistInfoScreenDestination,
