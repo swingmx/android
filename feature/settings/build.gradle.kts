@@ -46,6 +46,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     // Project Core
     implementation(project(":core"))
+    implementation(project(":auth"))
+    implementation(project(":database"))
+    implementation(project(":uicomponent"))
+    implementation(project(":feature:common"))
 
 
     // Compose

@@ -96,6 +96,7 @@ dependencies {
     implementation(project(":feature:artist"))
     implementation(project(":feature:album"))
     implementation(project(":feature:search"))
+    implementation(project(":feature:settings"))
     // Common Feature
     implementation(project(":feature:common"))
 

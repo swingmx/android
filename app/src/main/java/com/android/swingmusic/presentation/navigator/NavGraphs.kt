@@ -14,6 +14,7 @@ import com.android.swingmusic.player.presentation.screen.destinations.NowPlaying
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
+import com.android.swingmusic.settings.presentation.screen.destinations.SettingsScreenDestination
 import com.ramcosta.composedestinations.spec.DestinationSpec
 import com.ramcosta.composedestinations.spec.NavGraphSpec
 import com.ramcosta.composedestinations.spec.Route
@@ -49,6 +50,7 @@ object NavGraphs {
                     ViewAllScreenOnArtistDestination,
                     ArtistInfoScreenDestination,
                     ViewAllSearchResultsDestination,
+                    SettingsScreenDestination,
                 )
 
                 return (preAuthDestSpec + pastAuthDestSpec).associateBy { it.route }
