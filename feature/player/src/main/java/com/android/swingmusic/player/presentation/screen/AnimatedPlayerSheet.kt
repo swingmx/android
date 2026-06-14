@@ -64,6 +64,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -164,6 +167,7 @@ fun AnimatedPlayerSheet(
     paddingValues: PaddingValues,
     mediaControllerViewModel: MediaControllerViewModel,
     navigator: CommonNavigator,
+    snackbarHostState: SnackbarHostState,
     onProgressChange: (progress: Float) -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
@@ -187,6 +191,7 @@ fun AnimatedPlayerSheet(
 
     // Lyrics overlay visibility (shown on top of the player without leaving the screen)
     var showLyrics by remember { mutableStateOf(false) }
+
 
     // Queue sheet calculations
     val configuration = LocalConfiguration.current
@@ -226,9 +231,21 @@ fun AnimatedPlayerSheet(
         var previousValue = bottomSheetState.bottomSheetState.currentValue
         snapshotFlow { bottomSheetState.bottomSheetState.currentValue }
             .collect { currentValue ->
-                // Clear queue when transitioning TO Hidden
+                // Clear queue when transitioning TO Hidden (drag-down-to-dismiss),
+                // with a haptic and an Undo snackbar to restore.
                 if (currentValue == SheetValue.Hidden && previousValue != SheetValue.Hidden) {
+                    // ClearQueue fires the vibrant destructive haptic from the VM.
                     mediaControllerViewModel.onQueueEvent(QueueEvent.ClearQueue)
+                    coroutineScope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Queue cleared",
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            mediaControllerViewModel.restoreClearedQueue()
+                        }
+                    }
                 }
                 // Reset close permission when sheet settles to any state
                 if (currentValue != previousValue) {
@@ -254,22 +271,6 @@ fun AnimatedPlayerSheet(
             val progress =
                 (queueInitialOffset - queueSheetOffset.value) / (queueInitialOffset - queueExpandedOffset)
             progress.coerceIn(0f, 1f)
-        }
-    }
-
-    // Handle back press: close queue sheet first, then collapse primary sheet
-    val isPrimarySheetExpanded =
-        bottomSheetState.bottomSheetState.currentValue == SheetValue.Expanded
-    BackHandler(enabled = isQueueSheetOpen || isPrimarySheetExpanded) {
-        coroutineScope.launch {
-            if (isQueueSheetOpen) {
-                queueSheetOffset.animateTo(
-                    targetValue = queueInitialOffset,
-                    animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f)
-                )
-            } else if (isPrimarySheetExpanded) {
-                bottomSheetState.bottomSheetState.partialExpand()
-            }
         }
     }
 
@@ -350,6 +351,24 @@ fun AnimatedPlayerSheet(
         }
     ) { innerPadding ->
         content(innerPadding)
+    }
+
+    // Back press handling — declared AFTER the BottomSheetScaffold (and therefore after the
+    // NavHost content), so this handler wins over the current screen's nav-back while the
+    // player is expanded or the queue is open. Close the queue first, then minimize.
+    val isPrimarySheetExpanded =
+        bottomSheetState.bottomSheetState.currentValue == SheetValue.Expanded
+    BackHandler(enabled = isQueueSheetOpen || isPrimarySheetExpanded) {
+        coroutineScope.launch {
+            if (isQueueSheetOpen) {
+                queueSheetOffset.animateTo(
+                    targetValue = queueInitialOffset,
+                    animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f)
+                )
+            } else if (isPrimarySheetExpanded) {
+                bottomSheetState.bottomSheetState.partialExpand()
+            }
+        }
     }
 
     // Queue Sheet - appears when primary sheet is fully expanded and has a track.
@@ -575,7 +594,10 @@ private fun AnimatedSheetContent(
             }
         }
 
-        snapshotFlow { pagerState.currentPage }.collect { page ->
+        // Commit the track change only once the pager has settled (i.e. on release),
+        // not while dragging. currentPage flips at the halfway point, which caused
+        // premature / unwanted track switches on partial swipes.
+        snapshotFlow { pagerState.settledPage }.collect { page ->
             if (isInitialComposition) {
                 isInitialComposition = false
             } else {
@@ -636,6 +658,9 @@ private fun AnimatedSheetContent(
                     .pointerInput(progress.value < 0.3f, queueProgress < 0.1f) {
                         awaitEachGesture {
                             val down = awaitFirstDown(requireUnconsumed = false)
+                            // Drag-to-dismiss only applies when the gesture starts on the
+                            // mini-player, so minimizing the full player can't reach Hidden.
+                            val startedCollapsed = progress.value < 0.3f
                             var longPressTriggered = false
                             var closePermissionGranted = false
                             var totalDragX = 0f
@@ -695,10 +720,13 @@ private fun AnimatedSheetContent(
                                     swipeDistance = totalDragX
                                 }
 
-                                // Allow sheet close only when dragging DOWN after long press
-                                if (longPressTriggered &&
-                                    !closePermissionGranted &&
-                                    totalDragY > 10f
+                                // Allow the sheet to settle to Hidden on a deliberate downward,
+                                // vertical-dominant drag of the mini-player (no long-press). The
+                                // sheet's own drag then dismisses it, which clears the queue.
+                                if (!closePermissionGranted &&
+                                    startedCollapsed &&
+                                    totalDragY > 24f &&
+                                    kotlin.math.abs(totalDragY) > kotlin.math.abs(totalDragX)
                                 ) {
                                     onAllowSheetClose()
                                     closePermissionGranted = true
@@ -969,11 +997,23 @@ private fun AnimatedSheetContent(
 
                             // Seek bar
                             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                                // Seek only on release: while dragging we track the value
+                                // locally and show it, then commit a single seek on finish.
+                                // Avoids a flood of seek/API calls during the drag.
+                                var isSeeking by remember { mutableStateOf(false) }
+                                var seekValue by remember { mutableFloatStateOf(seekPosition) }
+
                                 WavySlider(
                                     modifier = Modifier.height(12.dp),
-                                    value = seekPosition,
-                                    onValueChangeFinished = {},
-                                    onValueChange = { value -> onSeekPlayBack(value) },
+                                    value = if (isSeeking) seekValue else seekPosition,
+                                    onValueChange = { value ->
+                                        isSeeking = true
+                                        seekValue = value
+                                    },
+                                    onValueChangeFinished = {
+                                        onSeekPlayBack(seekValue)
+                                        isSeeking = false
+                                    },
                                     waveLength = 32.dp,
                                     waveHeight = if (animateWave) 8.dp else 0.dp,
                                     waveVelocity = 16.dp to WaveDirection.HEAD,
@@ -1379,12 +1419,12 @@ private fun QueueSheetOverlay(
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // When at top of list and user drags down, move sheet instead
-                // available.y > 0 means finger moving down (trying to scroll up/backward)
+                // available.y > 0 = finger moving down, < 0 = finger moving up.
                 val isAtTop = !lazyColumnState.canScrollBackward
-                val isDraggingDown = available.y > 0
+                val sheetNotFullyOpen = animatedOffset.value > expandedOffset + 1f
 
-                if (isAtTop && isDraggingDown) {
+                // At the top of the list and dragging down → drag the sheet down.
+                if (isAtTop && available.y > 0) {
                     val newOffset = (animatedOffset.value + available.y)
                         .coerceIn(expandedOffset, initialOffset)
 
@@ -1395,6 +1435,22 @@ private fun QueueSheetOverlay(
                     }
                     return Offset(0f, available.y)
                 }
+
+                // Sheet not fully open and dragging up → drag the sheet back up instead
+                // of letting the list capture the reversal. Keeps a quick down-then-up
+                // gesture controlling the sheet rather than scrolling the tracks list.
+                if (sheetNotFullyOpen && available.y < 0) {
+                    val newOffset = (animatedOffset.value + available.y)
+                        .coerceIn(expandedOffset, initialOffset)
+
+                    coroutineScope.launch {
+                        isDraggingUp = true
+                        lastOffset = newOffset
+                        animatedOffset.snapTo(newOffset)
+                    }
+                    return Offset(0f, available.y)
+                }
+
                 return Offset.Zero
             }
 
@@ -1633,7 +1689,17 @@ private fun QueueSheetOverlay(
                     .padding(horizontal = 12.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14f))
-                    .clickable { onTogglePlayerState() }
+                    // Tapping the pinned now-playing closes the queue — the exact inverse of
+                    // the Queue icon — leaving the player sheet expanded behind it. Play/pause
+                    // is handled by the button on the right.
+                    .clickable {
+                        coroutineScope.launch {
+                            animatedOffset.animateTo(
+                                targetValue = initialOffset,
+                                animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f)
+                            )
+                        }
+                    }
                     .padding(8.dp),
                 contentAlignment = Alignment.CenterStart
             ) {

@@ -23,6 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -201,8 +203,10 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
             val navBarAlpha = 1f - navBarSlideProgress
 
             SwingMusicTheme {
+                val snackbarHostState = remember { SnackbarHostState() }
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
+                    snackbarHost = { SnackbarHost(snackbarHostState) },
                     bottomBar = {
                         // Only show navigation bar when logged in and not on auth screens
                         if (showBottomNav) {
@@ -309,6 +313,7 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                                 paddingValues = paddingValues,
                                 mediaControllerViewModel = mediaControllerViewModel,
                                 navigator = navigator,
+                                snackbarHostState = snackbarHostState,
                                 onProgressChange = { progress ->
                                     sheetProgress = progress
                                 }
