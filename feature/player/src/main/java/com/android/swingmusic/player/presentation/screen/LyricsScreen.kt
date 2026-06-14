@@ -1,6 +1,7 @@
 package com.android.swingmusic.player.presentation.screen
 
 import android.content.res.Configuration
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -11,8 +12,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,8 +59,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -195,7 +200,7 @@ private fun LyricsOverlayContent(
             progress = { progress },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(2.dp),
+                .height(1.dp),
             color = MaterialTheme.colorScheme.primary,
             trackColor = MaterialTheme.colorScheme.outlineVariant,
             gapSize = 0.dp,
@@ -395,6 +400,7 @@ private fun LyricsBody(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SyncedLyricsList(
     state: LyricsUiState,
@@ -402,6 +408,8 @@ private fun SyncedLyricsList(
     onUserScrolled: (Boolean) -> Unit
 ) {
     val listState = rememberLazyListState()
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
 
     LaunchedEffect(listState.isScrollInProgress) {
         if (listState.isScrollInProgress) onUserScrolled(true)
@@ -467,7 +475,15 @@ private fun SyncedLyricsList(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onSeek(line.time) }
+                    .combinedClickable(
+                        onClick = { onSeek(line.time) },
+                        onLongClick = {
+                            if (line.text.isNotBlank()) {
+                                clipboard.setText(AnnotatedString(line.text.trim()))
+                                Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
                     .padding(horizontal = 24.dp, vertical = 4.dp)
             ) {
                 Text(
@@ -501,10 +517,13 @@ private fun SyncedLyricsList(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun UnsyncedLyricsList(
     state: com.android.swingmusic.player.presentation.state.LyricsUiState
 ) {
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
@@ -515,7 +534,16 @@ private fun UnsyncedLyricsList(
                 text = line.text.ifBlank { " " },
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.combinedClickable(
+                    onClick = { },
+                    onLongClick = {
+                        if (line.text.isNotBlank()) {
+                            clipboard.setText(AnnotatedString(line.text.trim()))
+                            Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
             )
         }
         if (state.copyright.isNotBlank()) {

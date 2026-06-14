@@ -165,8 +165,13 @@ class MediaControllerViewModel @Inject constructor(
                         mediaController?.pause()
                         mediaController?.play()
                     } else {
-                        mediaController?.play()
-                        mediaController?.pause()
+                        // Paused on reconnect: seed the UI state directly. A
+                        // play()/pause() toggle here is async and can race,
+                        // intermittently leaving a paused track playing (e.g. when
+                        // the player is first expanded after reconnect).
+                        _playerUiState.value = _playerUiState.value.copy(
+                            playbackState = PlaybackState.PAUSED
+                        )
                     }
 
                     currentMediaItemId?.let {
@@ -653,6 +658,16 @@ class MediaControllerViewModel @Inject constructor(
     }
 
     fun onPlayerUiEvent(event: PlayerUiEvent) {
+        // Central soft haptic for committed, state-changing actions.
+        when (event) {
+            is OnTogglePlayerState, is OnNext, is OnPrev, is OnSeekPlayBack,
+            is OnToggleFavorite, is OnToggleRepeatMode,
+            is PlayerUiEvent.OnToggleShuffleMode, is OnResumePlaybackFromError ->
+                softHaptic()
+
+            else -> Unit
+        }
+
         mediaController?.let { controller ->
             when (event) {
                 is OnSeekPlayBack -> {
@@ -848,6 +863,28 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
+    private data class ClearedQueueSnapshot(
+        val tracks: List<Track>,
+        val index: Int,
+        val source: QueueSource,
+        val wasPlaying: Boolean
+    )
+
+    // Holds the last cleared queue so a drag-to-dismiss can be undone.
+    private var clearedQueueSnapshot: ClearedQueueSnapshot? = null
+
+    fun restoreClearedQueue() {
+        val snapshot = clearedQueueSnapshot ?: return
+        clearedQueueSnapshot = null
+        if (snapshot.tracks.isEmpty()) return
+        createNewQueue(
+            tracks = snapshot.tracks,
+            startIndex = snapshot.index.coerceIn(0, snapshot.tracks.lastIndex),
+            autoPlay = snapshot.wasPlaying,
+            source = snapshot.source
+        )
+    }
+
     fun onQueueEvent(event: QueueEvent) {
         when (event) {
             is QueueEvent.RecreateQueue -> {
@@ -898,6 +935,7 @@ class MediaControllerViewModel @Inject constructor(
                 mediaController?.prepare()
                 mediaController?.seekTo(event.index, 0L)
                 mediaController?.playWhenReady = true
+                softHaptic()
             }
 
             is QueueEvent.PlayNext -> {
@@ -911,6 +949,23 @@ class MediaControllerViewModel @Inject constructor(
             }
 
             is QueueEvent.ClearQueue -> {
+                // Snapshot the queue first so the clear can be undone.
+                val current = _playerUiState.value
+                clearedQueueSnapshot = if (current.queue.isNotEmpty()) {
+                    // Vibrant feedback for this destructive action.
+                    destructiveHaptic()
+                    ClearedQueueSnapshot(
+                        // Defensive copy: _playerUiState.queue can be the same list
+                        // instance as workingQueue, which clearQueue() empties in place.
+                        tracks = current.queue.toList(),
+                        index = current.playingTrackIndex,
+                        source = current.source,
+                        wasPlaying = current.playbackState == PlaybackState.PLAYING
+                    )
+                } else {
+                    null
+                }
+
                 viewModelScope.launch {
                     pLayerRepository.clearQueue()
 
@@ -1165,6 +1220,20 @@ class MediaControllerViewModel @Inject constructor(
         val timings = longArrayOf(0, 30, 60, 30)
         val amplitudes = intArrayOf(0, 30, 0, 30)
 
+        val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+        vibrator.vibrate(effect)
+    }
+
+    /** A single soft tick for committed, state-changing player actions. */
+    private fun softHaptic() {
+        val effect = VibrationEffect.createOneShot(18, 30)
+        vibrator.vibrate(effect)
+    }
+
+    /** A pronounced double-buzz for destructive actions (e.g. clearing the queue). */
+    private fun destructiveHaptic() {
+        val timings = longArrayOf(0, 50, 60, 90)
+        val amplitudes = intArrayOf(0, 200, 0, 255)
         val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
         vibrator.vibrate(effect)
     }
