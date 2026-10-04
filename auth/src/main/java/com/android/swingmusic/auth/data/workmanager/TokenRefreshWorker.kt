@@ -22,6 +22,8 @@ class TokenRefreshWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result {
+        if (!authRepository.isLoggedIn()) return Result.success()
+
         return when (authRepository.refreshTokens()) {
             is TokenRefreshResult.Refreshed -> Result.success()
             is TokenRefreshResult.Failed -> Result.retry()

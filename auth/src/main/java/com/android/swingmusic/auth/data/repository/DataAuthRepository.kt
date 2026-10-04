@@ -217,7 +217,8 @@ class DataAuthRepository @Inject constructor(
     override suspend fun endSession(reason: SessionEndReason) {
         withContext(NonCancellable) {
             endSessionMutex.withLock {
-                if (authTokensDataStore.isLoggedIn.first() == false) return@withLock
+                // Nothing to end: also covers fresh installs, where the flag isn't set yet.
+                if (!isLoggedIn()) return@withLock
 
                 authTokensDataStore.clearSession(expired = reason == SessionEndReason.EXPIRED)
                 AuthTokenHolder.accessToken = null

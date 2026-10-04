@@ -141,6 +141,7 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
         lifecycleScope.launch {
             authViewModel.isUserLoggedIn.collectLatest {
                 if (it == true) {
+                    scheduleTokenRefreshWork(applicationContext)
                     mediaControllerViewModel.refreshBaseUrl()
                     initializeMediaController()
                 }
@@ -156,8 +157,6 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
         if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
         }
-
-        scheduleTokenRefreshWork(applicationContext)
 
         // enableEdgeToEdge()
 
