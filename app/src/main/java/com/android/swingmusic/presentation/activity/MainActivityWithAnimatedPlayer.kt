@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,6 +52,8 @@ import androidx.media3.session.SessionToken
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import coil.annotation.ExperimentalCoilApi
+import coil.imageLoader
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
@@ -64,7 +67,15 @@ import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
-import com.android.swingmusic.home.presentation.screen.destinations.ProfileScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.LibraryScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.PairDeviceScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.StatsScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.SettingsScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.AccountScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.LyricsSettingsScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.StorageScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.AboutScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.ProfileScreenDestination
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.player.presentation.screen.AnimatedPlayerSheet
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
@@ -130,6 +141,8 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
         lifecycleScope.launch {
             authViewModel.isUserLoggedIn.collectLatest {
                 if (it == true) {
+                    scheduleTokenRefreshWork(applicationContext)
+                    mediaControllerViewModel.refreshBaseUrl()
                     initializeMediaController()
                 }
             }
@@ -137,15 +150,13 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
     }
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-    @OptIn(ExperimentalAnimationApi::class)
+    @OptIn(ExperimentalAnimationApi::class, ExperimentalCoilApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
         }
-
-        scheduleTokenRefreshWork(applicationContext)
 
         // enableEdgeToEdge()
 
@@ -155,6 +166,17 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
             val playerState = mediaControllerViewModel.playerUiState.collectAsState()
 
             val navController = rememberNavController()
+
+            LaunchedEffect(Unit) {
+                authViewModel.sessionEnded.collect { reason ->
+                    mediaControllerViewModel.endSession()
+                    imageLoader.memoryCache?.clear()
+                    imageLoader.diskCache?.clear()
+                    authViewModel.onSessionEnded(reason)
+                    CoreNavigator(navController).gotoLoginWithQrCode()
+                }
+            }
+
             val newBackStackEntry by navController.currentBackStackEntryAsState()
             val route = newBackStackEntry?.destination?.route
 
@@ -168,7 +190,6 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
 
             val bottomNavItems: List<BottomNavItem> = listOf(
                 BottomNavItem.Home,
-                BottomNavItem.Folder,
                 BottomNavItem.Album,
                 // BottomNavItem.Playlist,
                 BottomNavItem.Artist,
@@ -179,9 +200,17 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
             val bottomNavRoutePrefixes = mapOf(
                 BottomNavItem.Home to listOf(
                     HomeScreenDestination.route,
-                    ProfileScreenDestination.route
+                    ProfileScreenDestination.route,
+                    LibraryScreenDestination.route,
+                    PairDeviceScreenDestination.route,
+                    StatsScreenDestination.route,
+                    SettingsScreenDestination.route,
+                    AccountScreenDestination.route,
+                    LyricsSettingsScreenDestination.route,
+                    StorageScreenDestination.route,
+                    AboutScreenDestination.route,
+                    FoldersAndTracksScreenDestination.route
                 ),
-                BottomNavItem.Folder to listOf(FoldersAndTracksScreenDestination.route),
                 BottomNavItem.Album to listOf(
                     AllAlbumScreenDestination.route,
                     AlbumWithInfoScreenDestination.route

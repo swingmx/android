@@ -13,4 +13,7 @@ interface LastPlayedTrackDao {
 
     @Query("SELECT * FROM last_played_track LIMIT 1")
     suspend fun getLastPlayedTrack(): LastPlayedTrackEntity?
+
+    @Query("DELETE FROM last_played_track")
+    suspend fun clearLastPlayedTrack()
 }

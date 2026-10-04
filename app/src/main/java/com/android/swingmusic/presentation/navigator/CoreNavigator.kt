@@ -9,7 +9,15 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUse
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
-import com.android.swingmusic.home.presentation.screen.destinations.ProfileScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.LibraryScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.PairDeviceScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.StatsScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.SettingsScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.AccountScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.LyricsSettingsScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.StorageScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.AboutScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.ProfileScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
 import com.ramcosta.composedestinations.navigation.navigate
@@ -40,7 +48,7 @@ class CoreNavigator(
             launchSingleTop = true
             restoreState = false
 
-            popUpTo(navController.graph.startDestinationId) {
+            popUpTo(navController.graph.id) {
                 inclusive = true
                 saveState = false
             }
@@ -54,7 +62,7 @@ class CoreNavigator(
             launchSingleTop = true
             restoreState = false
 
-            popUpTo(navController.graph.startDestinationId) {
+            popUpTo(navController.graph.id) {
                 inclusive = true
                 saveState = false
             }
@@ -63,6 +71,60 @@ class CoreNavigator(
 
     override fun gotoProfile() {
         navController.navigate(ProfileScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoStats() {
+        navController.navigate(StatsScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoLibrary() {
+        navController.navigate(LibraryScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoPairDevice() {
+        navController.navigate(PairDeviceScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoFolders() {
+        navController.navigate(FoldersAndTracksScreenDestination()) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoSettings() {
+        navController.navigate(SettingsScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoAccountSettings() {
+        navController.navigate(AccountScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoLyricsSettings() {
+        navController.navigate(LyricsSettingsScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoStorageSettings() {
+        navController.navigate(StorageScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoAbout() {
+        navController.navigate(AboutScreenDestination) {
             launchSingleTop = true
         }
     }

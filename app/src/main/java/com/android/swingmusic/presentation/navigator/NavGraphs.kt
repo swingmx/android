@@ -9,7 +9,15 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrC
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
-import com.android.swingmusic.home.presentation.screen.destinations.ProfileScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.LibraryScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.PairDeviceScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.StatsScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.SettingsScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.AccountScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.LyricsSettingsScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.StorageScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.AboutScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.ProfileScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
@@ -35,7 +43,6 @@ object NavGraphs {
                 val pastAuthDestSpec = listOf(
                     // shown on bottom nav
                     HomeScreenDestination,
-                    FoldersAndTracksScreenDestination,
                     AllAlbumScreenDestination,
                     AllArtistsScreenDestination,
                     SearchScreenDestination,
@@ -48,6 +55,15 @@ object NavGraphs {
                     ArtistInfoScreenDestination,
                     ViewAllSearchResultsDestination,
                     ProfileScreenDestination,
+                    LibraryScreenDestination,
+                    PairDeviceScreenDestination,
+                    StatsScreenDestination,
+                    SettingsScreenDestination,
+                    AccountScreenDestination,
+                    LyricsSettingsScreenDestination,
+                    StorageScreenDestination,
+                    AboutScreenDestination,
+                    FoldersAndTracksScreenDestination,
                 )
 
                 return (preAuthDestSpec + pastAuthDestSpec).associateBy { it.route }

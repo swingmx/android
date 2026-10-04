@@ -2,7 +2,7 @@ package com.android.swingmusic.auth.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
+import com.android.swingmusic.auth.domain.model.SessionEndReason
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent
 import com.android.swingmusic.auth.presentation.event.AuthUiEvent.ClearErrorState
@@ -43,19 +43,44 @@ class AuthViewModel @Inject constructor(
     private val _authStateEvent = Channel<AuthState>(Channel.BUFFERED)
     val authStateEvent = _authStateEvent.receiveAsFlow()
 
+    val sessionEnded = authRepository.sessionEnded
+
     init {
         viewModelScope.launch {
             authRepository.initializeBaseUrlAndAuthTokens()
+
+            val isLoggedIn = authRepository.isLoggedIn()
+            _isUserLoggedIn.update { isLoggedIn }
+
+            if (isLoggedIn) {
+                // Confirms the session with the server; a rejected token ends it.
+                authRepository.fetchCurrentUser()
+            } else if (authRepository.isSessionExpired()) {
+                _authUiState.update { it.copy(sessionExpired = true) }
+            }
         }
-        refreshLoginState()
         refreshBaseUrlBaseUrl()
     }
 
-    private fun refreshLoginState() {
-        viewModelScope.launch {
-            val token = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-            _isUserLoggedIn.update { !token.isNullOrEmpty() }
+    fun onSessionEnded(reason: SessionEndReason) {
+        _isUserLoggedIn.update { false }
+        _authUiState.update {
+            it.copy(
+                password = "",
+                authState = AuthState.LOGGED_OUT,
+                isLoading = false,
+                authError = AuthError.None,
+                sessionExpired = reason == SessionEndReason.EXPIRED
+            )
         }
+        refreshBaseUrlBaseUrl()
+    }
+
+    private suspend fun onLoggedIn() {
+        authRepository.markLoggedIn()
+        _isUserLoggedIn.update { true }
+        _authUiState.update { it.copy(sessionExpired = false) }
+        viewModelScope.launch { authRepository.fetchCurrentUser() }
     }
 
     private fun refreshBaseUrlBaseUrl() {
@@ -63,11 +88,6 @@ class AuthViewModel @Inject constructor(
             val url = authRepository.getBaseUrl()
             _authUiState.update { it.copy(baseUrl = url) }
         }
-    }
-
-    private suspend fun getAuthenticatedUser() {
-        val user = authRepository.getLoggedInUser()
-        // TODO: Call this at :home, update userUi
     }
 
     private fun clearErrorState() {
@@ -154,7 +174,7 @@ class AuthViewModel @Inject constructor(
                         authRepository.storeBaseUrl(baseUrl)
                         authRepository.storeAuthTokens(accessToken, refreshToken, mxAge)
 
-                        refreshLoginState()
+                        onLoggedIn()
                         refreshBaseUrlBaseUrl()
 
                         _authUiState.value = _authUiState.value.copy(
@@ -215,7 +235,7 @@ class AuthViewModel @Inject constructor(
                         authRepository.storeAuthTokens(accessToken, refreshToken, maxAge)
                         authRepository.storeBaseUrl(url)
 
-                        refreshLoginState()
+                        onLoggedIn()
                         refreshBaseUrlBaseUrl()
 
                         _authUiState.value = _authUiState.value.copy(

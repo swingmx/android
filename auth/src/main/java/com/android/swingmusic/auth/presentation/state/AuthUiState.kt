@@ -8,5 +8,6 @@ data class AuthUiState(
     val password: String? = "",
     val authState: AuthState = AuthState.LOGGED_OUT,
     val isLoading: Boolean = false,
-    val authError: AuthError = AuthError.None
+    val authError: AuthError = AuthError.None,
+    val sessionExpired: Boolean = false
 )

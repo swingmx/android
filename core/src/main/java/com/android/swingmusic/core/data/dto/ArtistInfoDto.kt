@@ -11,10 +11,10 @@ data class ArtistInfoDto(
     @SerializedName("tracks")
     val tracks: List<TrackDto>?,
     @SerializedName("stats")
-    val stats: List<ArtistStatDto>?
+    val stats: List<StatItemDto>?
 )
 
-data class ArtistStatDto(
+data class StatItemDto(
     @SerializedName("cssclass")
     val cssClass: String?,
     @SerializedName("value")

@@ -22,3 +22,6 @@ val borderWhite10 = Color(0x1AFFFFFF)
 val destructive = Color(0xFFFF6467)
 val destructiveContainer = Color(0xFF450A0A)
 val onDestructiveContainer = Color(0xFFFCA5A5)
+
+val warningContainer = Color(0xFF3B2A06)
+val onWarningContainer = Color(0xFFFCD34D)

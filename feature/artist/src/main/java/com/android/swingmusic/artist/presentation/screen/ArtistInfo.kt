@@ -86,7 +86,7 @@ import com.android.swingmusic.core.domain.model.AlbumsAndAppearances
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
-import com.android.swingmusic.core.domain.model.ArtistStat
+import com.android.swingmusic.core.domain.model.StatItem
 import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Genre
 import com.android.swingmusic.core.domain.model.Track
@@ -852,7 +852,7 @@ private fun ArtistInfo(
 }
 
 @Composable
-private fun ArtistStatsSection(stats: List<ArtistStat>, baseUrl: String) {
+private fun ArtistStatsSection(stats: List<StatItem>, baseUrl: String) {
     Column(modifier = Modifier.padding(top = 16.dp)) {
         Text(
             text = "Stats",
@@ -872,7 +872,7 @@ private fun ArtistStatsSection(stats: List<ArtistStat>, baseUrl: String) {
 }
 
 @Composable
-private fun ArtistStatCard(stat: ArtistStat, baseUrl: String) {
+private fun ArtistStatCard(stat: StatItem, baseUrl: String) {
     Column(
         modifier = Modifier
             .size(width = 150.dp, height = 130.dp)
@@ -932,7 +932,7 @@ private fun ArtistStatCard(stat: ArtistStat, baseUrl: String) {
     }
 }
 
-private fun ArtistStat.icon(): ImageVector = when (type) {
+private fun StatItem.icon(): ImageVector = when (type) {
     "play_duration" -> Icons.Rounded.Schedule
     "played" -> Icons.Rounded.PlayCircle
     "toptrack" -> Icons.Rounded.MusicNote
@@ -947,9 +947,9 @@ private fun ArtistStatsSectionPreview() {
     SwingMusicTheme {
         ArtistStatsSection(
             stats = listOf(
-                ArtistStat(type = "play_duration", value = "28 hrs, 2 mins", text = "listened all time", image = null),
-                ArtistStat(type = "played", value = "9/67 tracks", text = "never played", image = null),
-                ArtistStat(type = "toptrack", value = "Toosie Slide", text = "top track (42 mins listened)", image = "toosie.webp")
+                StatItem(type = "play_duration", value = "28 hrs, 2 mins", text = "listened all time", image = null),
+                StatItem(type = "played", value = "9/67 tracks", text = "never played", image = null),
+                StatItem(type = "toptrack", value = "Toosie Slide", text = "top track (42 mins listened)", image = "toosie.webp")
             ),
             baseUrl = ""
         )

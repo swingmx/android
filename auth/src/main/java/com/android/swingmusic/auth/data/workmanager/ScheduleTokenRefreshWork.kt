@@ -36,3 +36,7 @@ fun scheduleTokenRefreshWork(context: Context) {
         )
     }
 }
+
+fun cancelTokenRefreshWork(context: Context) {
+    WorkManager.getInstance(context).cancelUniqueWork(TokenRefreshWorker.WORK_NAME)
+}

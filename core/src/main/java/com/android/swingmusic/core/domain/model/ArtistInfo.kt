@@ -4,10 +4,10 @@ data class ArtistInfo(
     val albumsAndAppearances: AlbumsAndAppearances,
     val artist: ArtistExpanded,
     val tracks: List<Track>,
-    val stats: List<ArtistStat> = emptyList()
+    val stats: List<StatItem> = emptyList()
 )
 
-data class ArtistStat(
+data class StatItem(
     val type: String,
     val value: String,
     val text: String,

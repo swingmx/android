@@ -5,10 +5,12 @@ import com.android.swingmusic.auth.data.dto.LogInResultDto
 import com.android.swingmusic.auth.data.dto.UserDto
 import com.android.swingmusic.auth.domain.model.CreateUserRequest
 import com.android.swingmusic.auth.domain.model.LogInRequest
+import com.android.swingmusic.auth.domain.model.UpdateProfileRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Query
 import retrofit2.http.Url
 
@@ -43,4 +45,17 @@ interface AuthApiService {
         @Url url: String,
         @Header("Authorization") bearerRefreshToken: String
     ): LogInResultDto
+
+    @PUT
+    suspend fun updateProfile(
+        @Url url: String,
+        @Header("Authorization") bearerAccessToken: String,
+        @Body updateProfileRequest: UpdateProfileRequest
+    ): UserDto
+
+    @GET
+    suspend fun getCurrentUser(
+        @Url url: String,
+        @Header("Authorization") bearerAccessToken: String
+    ): UserDto
 }
