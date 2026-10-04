@@ -42,6 +42,7 @@ import com.android.swingmusic.core.domain.model.AllArtists
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
+import com.android.swingmusic.core.domain.model.ArtistStat
 import com.android.swingmusic.core.domain.model.ArtistsSearchResult
 import com.android.swingmusic.core.domain.model.Dir
 import com.android.swingmusic.core.domain.model.DirList
@@ -332,7 +333,16 @@ object Map {
                 name = "",
                 trackCount = 0
             ),
-            tracks = tracks?.map { it.toTrack() } ?: emptyList()
+            tracks = tracks?.map { it.toTrack() } ?: emptyList(),
+            stats = stats.orEmpty().mapNotNull { stat ->
+                val value = stat.value?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                ArtistStat(
+                    type = stat.cssClass ?: "",
+                    value = value,
+                    text = stat.text ?: "",
+                    image = stat.image?.takeIf { it.isNotBlank() }
+                )
+            }
         )
     }
 
