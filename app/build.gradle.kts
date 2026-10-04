@@ -91,6 +91,7 @@ dependencies {
     implementation(project(":uicomponent"))
     // Feature Modules
     implementation(project(":feature:home"))
+    implementation(project(":feature:profile"))
     implementation(project(":feature:folder"))
     implementation(project(":feature:player"))
     implementation(project(":feature:artist"))

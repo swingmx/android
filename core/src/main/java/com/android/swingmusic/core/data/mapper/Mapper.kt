@@ -1,5 +1,8 @@
 package com.android.swingmusic.core.data.mapper
 
+import com.android.swingmusic.core.data.dto.ChartMetaDto
+import com.android.swingmusic.core.data.dto.ChartResponseDto
+import com.android.swingmusic.core.data.dto.StatItemDto
 import com.android.swingmusic.core.data.dto.AlbumDto
 import com.android.swingmusic.core.data.dto.AlbumInfoDto
 import com.android.swingmusic.core.data.dto.AlbumResultDto
@@ -32,6 +35,9 @@ import com.android.swingmusic.core.data.dto.TrackArtistDto
 import com.android.swingmusic.core.data.dto.TrackDto
 import com.android.swingmusic.core.data.dto.TrackResultDto
 import com.android.swingmusic.core.data.dto.TracksSearchResultDto
+import com.android.swingmusic.core.domain.model.Chart
+import com.android.swingmusic.core.domain.model.ChartEntry
+import com.android.swingmusic.core.domain.model.Trend
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.AlbumInfo
 import com.android.swingmusic.core.domain.model.AlbumWithInfo
@@ -42,7 +48,7 @@ import com.android.swingmusic.core.domain.model.AllArtists
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
-import com.android.swingmusic.core.domain.model.ArtistStat
+import com.android.swingmusic.core.domain.model.StatItem
 import com.android.swingmusic.core.domain.model.ArtistsSearchResult
 import com.android.swingmusic.core.domain.model.Dir
 import com.android.swingmusic.core.domain.model.DirList
@@ -334,15 +340,17 @@ object Map {
                 trackCount = 0
             ),
             tracks = tracks?.map { it.toTrack() } ?: emptyList(),
-            stats = stats.orEmpty().mapNotNull { stat ->
-                val value = stat.value?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-                ArtistStat(
-                    type = stat.cssClass ?: "",
-                    value = value,
-                    text = stat.text ?: "",
-                    image = stat.image?.takeIf { it.isNotBlank() }
-                )
-            }
+            stats = stats.orEmpty().mapNotNull { it.toStatItem() }
+        )
+    }
+
+    fun StatItemDto.toStatItem(): StatItem? {
+        val value = value?.takeIf { it.isNotBlank() } ?: return null
+        return StatItem(
+            type = cssClass ?: "",
+            value = value,
+            text = text ?: "",
+            image = image?.takeIf { it.isNotBlank() }
         )
     }
 
@@ -469,6 +477,43 @@ object Map {
                 items = items
             )
         }
+    }
+
+    fun ChartResponseDto.toTrackChart(): Chart<Track> =
+        toChart(tracks) { gson.fromJson(it, TrackDto::class.java).toTrack() }
+
+    fun ChartResponseDto.toArtistChart(): Chart<Artist> =
+        toChart(artists) { gson.fromJson(it, ArtistDto::class.java).toArtist() }
+
+    fun ChartResponseDto.toAlbumChart(): Chart<Album> =
+        toChart(albums) { gson.fromJson(it, AlbumDto::class.java).toAlbum() }
+
+    private fun <T> ChartResponseDto.toChart(
+        items: List<JsonElement>?,
+        parse: (JsonElement) -> T
+    ): Chart<T> {
+        val entries = items.orEmpty().mapNotNull { json ->
+            runCatching {
+                val meta = gson.fromJson(json, ChartMetaDto::class.java)
+                ChartEntry(
+                    item = parse(json),
+                    helpText = meta.helpText.orEmpty(),
+                    trend = meta.trend?.trend.toTrend(),
+                    isNew = meta.trend?.isNew == true
+                )
+            }.getOrNull()
+        }
+        return Chart(
+            entries = entries,
+            summary = scrobbles?.text?.replace(Regex("\\s+"), " ")?.trim().orEmpty(),
+            summaryTrend = scrobbles?.trend.toTrend()
+        )
+    }
+
+    private fun String?.toTrend(): Trend = when (this) {
+        "rising" -> Trend.RISING
+        "falling" -> Trend.FALLING
+        else -> Trend.STABLE
     }
 
     private fun HomeItemDto.toHomeItem(): HomeItem? {

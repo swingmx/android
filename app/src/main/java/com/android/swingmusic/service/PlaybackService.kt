@@ -45,8 +45,7 @@ class PlaybackService : MediaSessionService() {
         setMediaNotificationProvider(notificationProvider)
 
         serviceScope.launch {
-            val accessToken = authRepository.getAccessToken()
-                ?: "TAG: $this SERVICE -> TOKEN NOT FOUND"
+            val initialToken = authRepository.getAccessToken().orEmpty()
 
             val loadControlBuilder = DefaultLoadControl.Builder().apply {
                 setBufferDurationsMs(
@@ -57,7 +56,10 @@ class PlaybackService : MediaSessionService() {
                 ).setBackBuffer(30_000, false)
             }
 
-            val dataSourceFactory = CustomDataSourceFactory(this@PlaybackService, accessToken)
+            val dataSourceFactory = CustomDataSourceFactory(this@PlaybackService) {
+                // Read per request so refreshed or new-session tokens are used.
+                AuthTokenHolder.accessToken ?: initialToken
+            }
             val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
 
             val player = ExoPlayer.Builder(this@PlaybackService)

@@ -1,5 +1,10 @@
 package com.android.swingmusic.network.data.api.service
 
+import com.android.swingmusic.core.data.dto.TriggerScanRequestDto
+import com.android.swingmusic.core.data.dto.ChartResponseDto
+import com.android.swingmusic.core.data.dto.PairCodeDto
+import com.android.swingmusic.core.data.dto.ServerSettingsDto
+import com.android.swingmusic.core.data.dto.WeeklyStatsDto
 import com.android.swingmusic.core.data.dto.AlbumWithInfoDto
 import com.android.swingmusic.core.data.dto.AlbumsSearchResultDto
 import com.android.swingmusic.core.data.dto.AllAlbumsDto
@@ -213,4 +218,39 @@ interface NetworkApiService {
         @Query("sourcehash") sourceHash: String,
         @Query("og_sourcehash") ogSourceHash: String
     ): MixTracksDto
+
+    @GET
+    suspend fun getWeeklyStats(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): WeeklyStatsDto
+
+    @GET
+    suspend fun getPairCode(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): PairCodeDto
+
+    @GET
+    suspend fun getServerSettings(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): ServerSettingsDto
+
+    /** /logger/top-tracks, /logger/top-artists or /logger/top-albums */
+    @GET
+    suspend fun getChart(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("duration") duration: String,
+        @Query("limit") limit: Int,
+        @Query("order_by") orderBy: String
+    ): ChartResponseDto
+
+    @POST
+    suspend fun triggerScan(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Body body: TriggerScanRequestDto
+    )
 }

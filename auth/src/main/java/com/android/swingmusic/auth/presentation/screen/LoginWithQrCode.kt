@@ -57,6 +57,8 @@ import com.android.swingmusic.auth.presentation.util.AuthError
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.theme.onWarningContainer
+import com.android.swingmusic.uicomponent.presentation.theme.warningContainer
 import com.ramcosta.composedestinations.annotation.Destination
 import kotlinx.coroutines.launch
 import qrscanner.CameraLens
@@ -119,6 +121,12 @@ fun LoginWithQrCode(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                if (authUiState.sessionExpired) {
+                    SessionExpiredBanner(
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
+                    )
+                }
+
                 Icon(
                     modifier = Modifier
                         .padding(bottom = 24.dp)
@@ -280,4 +288,18 @@ fun LoginWithQrCode(
             }
         }
     }
+}
+
+@Composable
+private fun SessionExpiredBanner(modifier: Modifier = Modifier) {
+    Text(
+        text = "Your session expired. Scan a new pairing code or log in again.",
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(warningContainer)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        style = MaterialTheme.typography.bodyMedium,
+        color = onWarningContainer
+    )
 }

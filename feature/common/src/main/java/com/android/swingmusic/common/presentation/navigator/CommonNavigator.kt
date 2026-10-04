@@ -10,6 +10,24 @@ interface CommonNavigator {
 
     fun gotoProfile()
 
+    fun gotoStats()
+
+    fun gotoLibrary()
+
+    fun gotoPairDevice()
+
+    fun gotoFolders()
+
+    fun gotoSettings()
+
+    fun gotoAccountSettings()
+
+    fun gotoLyricsSettings()
+
+    fun gotoStorageSettings()
+
+    fun gotoAbout()
+
     fun gotoAlbumWithInfo(albumHash: String)
 
     fun navigateBack()

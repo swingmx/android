@@ -30,6 +30,12 @@ class AuthUtilsTest {
     }
 
     @Test
+    fun `normalizeUrl drops trailing slashes`() {
+        assertEquals("https://example.com", AuthUtils.normalizeUrl("https://example.com/"))
+        assertEquals("https://example.com:1970", AuthUtils.normalizeUrl("example.com:1970//"))
+    }
+
+    @Test
     fun `normalizeUrl prepends https when scheme is missing`() {
         assertEquals("https://example.com", AuthUtils.normalizeUrl("example.com"))
         assertEquals("https://sub.domain.com", AuthUtils.normalizeUrl("sub.domain.com"))

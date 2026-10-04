@@ -14,4 +14,7 @@ interface UserDao {
 
     @Query("SELECT * FROM logged_in_user LIMIT 1")
     suspend fun getLoggedInUser(): UserEntity?
+
+    @Query("DELETE FROM logged_in_user")
+    suspend fun clearLoggedInUser()
 }

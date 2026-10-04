@@ -91,6 +91,21 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
+    /** Stops playback and forgets the queue when the user's session ends. */
+    fun endSession() {
+        cancelQueueExpansion()
+        clearedQueueSnapshot = null
+        trackToLog = null
+        workingQueue.clear()
+        shuffledQueue.clear()
+
+        mediaController?.stop()
+        mediaController?.clearMediaItems()
+
+        _baseUrl.update { null }
+        _playerUiState.update { PlayerUiState(repeatMode = it.repeatMode) }
+    }
+
     fun getMediaController() = mediaController
     fun setMediaController(controller: MediaController) {
         if (mediaController == null) {
