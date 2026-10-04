@@ -6,7 +6,10 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,8 +19,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,7 +44,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,23 +51,35 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewDynamicColors
@@ -85,6 +100,8 @@ import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewM
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import kotlin.math.abs
+import kotlin.math.min
+import kotlinx.coroutines.isActive
 
 /**
  * Edge-to-edge lyrics overlay shown on top of the animated player sheet.
@@ -104,6 +121,14 @@ fun LyricsOverlay(
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
     val lyricsState by lyricsViewModel.state.collectAsState()
     val track = playerUiState.nowPlayingTrack
+    val positionMs = remember { mutableLongStateOf(0L) }
+    val durationMs = (track?.duration ?: 0) * 1000L
+
+    fun syncPosition() {
+        val controller = mediaControllerViewModel.getMediaController() ?: return
+        positionMs.longValue = controller.currentPosition
+        lyricsViewModel.onEvent(LyricsUiEvent.PositionChanged(positionMs.longValue))
+    }
 
     LaunchedEffect(visible, track?.trackHash) {
         if (visible) {
@@ -112,9 +137,15 @@ fun LyricsOverlay(
     }
 
     LaunchedEffect(visible, playerUiState.seekPosition, lyricsState.exists, lyricsState.synced) {
-        if (visible && lyricsState.exists && lyricsState.synced && track != null) {
-            val positionMs = (playerUiState.seekPosition * track.duration * 1000F).toLong()
-            lyricsViewModel.onEvent(LyricsUiEvent.PositionChanged(positionMs))
+        if (visible && lyricsState.exists && lyricsState.synced) syncPosition()
+    }
+
+    LaunchedEffect(visible, playerUiState.playbackState, lyricsState.exists, lyricsState.synced) {
+        if (!visible || !lyricsState.exists || !lyricsState.synced) return@LaunchedEffect
+        if (playerUiState.playbackState != PlaybackState.PLAYING) return@LaunchedEffect
+        while (isActive) {
+            withFrameMillis { }
+            syncPosition()
         }
     }
 
@@ -131,7 +162,8 @@ fun LyricsOverlay(
             state = lyricsState,
             loading = lyricsState.isLoading || playerUiState.isBuffering,
             playbackState = playerUiState.playbackState,
-            progress = playerUiState.seekPosition,
+            positionMs = { positionMs.longValue },
+            durationMs = durationMs,
             onDismiss = onDismiss,
             onTogglePlayback = {
                 mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnTogglePlayerState)
@@ -162,7 +194,8 @@ private fun LyricsOverlayContent(
     state: LyricsUiState,
     loading: Boolean,
     playbackState: PlaybackState,
-    progress: Float,
+    positionMs: () -> Long,
+    durationMs: Long,
     onDismiss: () -> Unit,
     onSeek: (Long) -> Unit,
     onUserScrolled: (Boolean) -> Unit,
@@ -195,20 +228,6 @@ private fun LyricsOverlayContent(
             onTogglePlayback = onTogglePlayback
         )
 
-        // Progress bar doubling as the divider: unfilled track mimics the divider
-        // color, filled portion shows how far into the track playback is.
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant,
-            gapSize = 0.dp,
-            drawStopIndicator = {},
-            strokeCap = StrokeCap.Square
-        )
-
         Box(
             modifier = Modifier
                 .weight(1F)
@@ -218,13 +237,14 @@ private fun LyricsOverlayContent(
                 padding = PaddingValues(0.dp),
                 track = track,
                 state = state,
+                positionMs = positionMs,
+                durationMs = durationMs,
                 onSeek = onSeek,
                 onUserScrolled = onUserScrolled,
                 onSearchOnline = onSearchOnline
             )
 
-            // Soft fade just below the divider so lyrics melt into the top edge
-            // instead of touching the divider line.
+            // Soft fade below the header so lyrics melt into the top edge.
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -365,6 +385,8 @@ private fun LyricsBody(
     padding: PaddingValues,
     track: Track?,
     state: LyricsUiState,
+    positionMs: () -> Long,
+    durationMs: Long,
     onSeek: (Long) -> Unit,
     onUserScrolled: (Boolean) -> Unit,
     onSearchOnline: () -> Unit
@@ -392,6 +414,8 @@ private fun LyricsBody(
 
             state.synced -> SyncedLyricsList(
                 state = state,
+                positionMs = positionMs,
+                durationMs = durationMs,
                 onSeek = onSeek,
                 onUserScrolled = onUserScrolled
             )
@@ -405,15 +429,22 @@ private fun LyricsBody(
 @Composable
 private fun SyncedLyricsList(
     state: LyricsUiState,
+    positionMs: () -> Long,
+    durationMs: Long,
     onSeek: (Long) -> Unit,
     onUserScrolled: (Boolean) -> Unit
 ) {
     val listState = rememberLazyListState()
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
+    val isDragged by listState.interactionSource.collectIsDraggedAsState()
+    var autoScrolling by remember { mutableStateOf(false) }
+    val manualScroll by remember {
+        derivedStateOf { isDragged || (listState.isScrollInProgress && !autoScrolling) }
+    }
 
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (listState.isScrollInProgress) onUserScrolled(true)
+    LaunchedEffect(manualScroll) {
+        if (manualScroll) onUserScrolled(true)
     }
 
     LaunchedEffect(state.currentLine, state.trackHash) {
@@ -431,7 +462,24 @@ private fun SyncedLyricsList(
             val target = state.currentLine.coerceAtLeast(0)
             val viewportHeight =
                 listState.layoutInfo.viewportEndOffset - listState.layoutInfo.viewportStartOffset
-            listState.animateScrollToItem(target, scrollOffset = -(viewportHeight / 3))
+            val anchor = viewportHeight / 3
+            val targetInfo = visible.firstOrNull { it.index == target }
+            autoScrolling = true
+            try {
+                if (targetInfo != null) {
+                    listState.animateScrollBy(
+                        value = (targetInfo.offset - anchor).toFloat(),
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioNoBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
+                    )
+                } else {
+                    listState.animateScrollToItem(target, scrollOffset = -anchor)
+                }
+            } finally {
+                autoScrolling = false
+            }
             onUserScrolled(false)
         }
     }
@@ -439,76 +487,30 @@ private fun SyncedLyricsList(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+        contentPadding = PaddingValues(vertical = 32.dp)
     ) {
         itemsIndexed(state.lines, key = { i, _ -> i }) { index, line ->
             val current = state.currentLine
-            val isActive = index == current
             val distance = if (current < 0) Int.MAX_VALUE else abs(index - current)
-            val isPast = current >= 0 && index < current
+            val nextTimeMs = state.lines.getOrNull(index + 1)?.time
+                ?: durationMs.takeIf { it > line.time }
+                ?: (line.time + 5_000L)
 
-            // Per-line scaling (active line larger than neighbours). Disabled for now —
-            // all lines render at a uniform size. Keep for a future "animated lyrics" setting.
-            /*
-            val targetScale = when {
-                isActive -> 1F
-                distance == 1 -> 0.72F
-                distance == 2 -> 0.62F
-                else -> 0.56F
-            }
-            val animatedScale by animateFloatAsState(
-                targetValue = targetScale,
-                animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
-                label = "lyricScale"
+            SyncedLyricLine(
+                line = line,
+                nextTimeMs = nextTimeMs,
+                isActive = index == current,
+                distance = distance,
+                blurEnabled = !manualScroll,
+                positionMs = positionMs,
+                onClick = { onSeek(line.time) },
+                onLongClick = {
+                    if (line.text.isNotBlank()) {
+                        clipboard.setText(AnnotatedString(line.text))
+                        Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+                    }
+                }
             )
-            */
-            val targetAlpha = when {
-                isActive -> 1F
-                isPast -> 0.35F
-                distance == 1 -> 0.75F
-                distance == 2 -> 0.55F
-                else -> 0.4F
-            }
-
-            val animatedColor by animateColorAsState(
-                targetValue = MaterialTheme.colorScheme.onSurface.copy(alpha = targetAlpha),
-                animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
-                label = "lyricColor"
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = { onSeek(line.time) },
-                        onLongClick = {
-                            if (line.text.isNotBlank()) {
-                                clipboard.setText(AnnotatedString(line.text.trim()))
-                                Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    )
-                    .padding(horizontal = 24.dp, vertical = 3.dp)
-            ) {
-                Text(
-                    text = line.text.ifBlank { "♪" },
-                    fontSize = 26.sp,
-                    lineHeight = 36.sp,
-                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.SemiBold,
-                    color = animatedColor,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        /*
-                        .graphicsLayer {
-                            scaleX = animatedScale
-                            scaleY = animatedScale
-                            transformOrigin = TransformOrigin(0F, 0.5F)
-                        }
-                        */
-                )
-            }
         }
 
         if (state.copyright.isNotBlank()) {
@@ -517,11 +519,144 @@ private fun SyncedLyricsList(
                     text = state.copyright,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5F),
-                    modifier = Modifier.padding(top = 24.dp)
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp)
                 )
             }
         }
         item { Spacer(Modifier.height(24.dp)) }
+    }
+}
+
+private val LyricTextStyle = TextStyle(
+    fontSize = 26.sp,
+    lineHeight = 30.sp,
+    fontWeight = FontWeight.Bold
+)
+
+private const val INACTIVE_LINE_ALPHA = 0.3F
+private const val UNSUNG_ACTIVE_ALPHA = 0.45F
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SyncedLyricLine(
+    line: LyricsLine,
+    nextTimeMs: Long,
+    isActive: Boolean,
+    distance: Int,
+    blurEnabled: Boolean,
+    positionMs: () -> Long,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val text = line.text.ifBlank { "• • •" }
+    val textLayout = remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    val baseColor by animateColorAsState(
+        targetValue = onSurface.copy(alpha = if (isActive) UNSUNG_ACTIVE_ALPHA else INACTIVE_LINE_ALPHA),
+        animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+        label = "lyricColor"
+    )
+    val highlightAlpha by animateFloatAsState(
+        targetValue = if (isActive) 1F else 0F,
+        animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+        label = "lyricHighlight"
+    )
+    val blurRadius by animateDpAsState(
+        targetValue = when {
+            !blurEnabled || isActive -> 0.dp
+            distance == 1 -> 1.5.dp
+            distance == 2 -> 2.5.dp
+            else -> 3.5.dp
+        },
+        animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+        label = "lyricBlur"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = 24.dp, vertical = 10.dp)
+    ) {
+        Text(
+            text = text,
+            style = LyricTextStyle,
+            color = baseColor,
+            onTextLayout = { textLayout.value = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .blur(blurRadius, BlurredEdgeTreatment.Unbounded)
+        )
+
+        if (highlightAlpha > 0F) {
+            Text(
+                text = text,
+                style = LyricTextStyle,
+                color = onSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = highlightAlpha
+                        compositingStrategy = CompositingStrategy.Offscreen
+                    }
+                    .drawWithContent {
+                        drawContent()
+                        val layout = textLayout.value ?: return@drawWithContent
+                        val progress = sweepProgress(line, nextTimeMs, positionMs())
+                        eraseUnsung(layout, progress, feather = 16.dp.toPx())
+                    }
+            )
+        }
+    }
+}
+
+/**
+ * Fraction of the line that has been sung. Paced by characters between this line and the
+ * next, but capped by text length so a line followed by a long instrumental break doesn't
+ * crawl. Blank (instrumental) lines fill across the whole gap.
+ */
+private fun sweepProgress(line: LyricsLine, nextTimeMs: Long, positionMs: Long): Float {
+    val window = nextTimeMs - line.time
+    if (window <= 0L) return 1F
+    val span = if (line.text.isBlank()) window else min(window, line.text.length * 80L + 1_000L)
+    return ((positionMs - line.time).toFloat() / span).coerceIn(0F, 1F)
+}
+
+/** Erases the not-yet-sung part of the highlight layer, wrapping row by row. */
+private fun DrawScope.eraseUnsung(layout: TextLayoutResult, progress: Float, feather: Float) {
+    val length = layout.layoutInput.text.length
+    if (length == 0 || progress >= 1F) return
+    if (progress <= 0F) {
+        drawRect(Color.Black, blendMode = BlendMode.DstOut)
+        return
+    }
+
+    val exact = progress * length
+    val charIndex = exact.toInt().coerceIn(0, length - 1)
+    val box = layout.getBoundingBox(charIndex)
+    val edgeX = box.left + box.width * (exact - charIndex)
+    val row = layout.getLineForOffset(charIndex)
+    val rowTop = layout.getLineTop(row)
+    val rowBottom = layout.getLineBottom(row)
+
+    drawRect(
+        brush = Brush.horizontalGradient(
+            colors = listOf(Color.Transparent, Color.Black),
+            startX = edgeX - feather / 2,
+            endX = edgeX + feather / 2
+        ),
+        topLeft = Offset(0F, rowTop),
+        size = Size(size.width, rowBottom - rowTop),
+        blendMode = BlendMode.DstOut
+    )
+    if (rowBottom < size.height) {
+        drawRect(
+            color = Color.Black,
+            topLeft = Offset(0F, rowBottom),
+            size = Size(size.width, size.height - rowBottom),
+            blendMode = BlendMode.DstOut
+        )
     }
 }
 
@@ -534,8 +669,7 @@ private fun UnsyncedLyricsList(
     val context = LocalContext.current
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
+        contentPadding = PaddingValues(vertical = 32.dp)
     ) {
         items(state.lines) { line ->
             Box(
@@ -545,20 +679,17 @@ private fun UnsyncedLyricsList(
                         onClick = { },
                         onLongClick = {
                             if (line.text.isNotBlank()) {
-                                clipboard.setText(AnnotatedString(line.text.trim()))
+                                clipboard.setText(AnnotatedString(line.text))
                                 Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
                             }
                         }
                     )
-                    .padding(horizontal = 24.dp, vertical = 3.dp)
+                    .padding(horizontal = 24.dp, vertical = 10.dp)
             ) {
                 Text(
                     text = line.text.ifBlank { "♪" },
-                    fontSize = 26.sp,
-                    lineHeight = 32.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = LyricTextStyle,
                     color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Start,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -670,7 +801,8 @@ fun LyricsOverlayPreview() {
                 state = state,
                 loading = false,
                 playbackState = PlaybackState.PLAYING,
-                progress = 0.35F,
+                positionMs = { 14_000L },
+                durationMs = 240_000L,
                 onDismiss = {},
                 onSeek = {},
                 onUserScrolled = {},

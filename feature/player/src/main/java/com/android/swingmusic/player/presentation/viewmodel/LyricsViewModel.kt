@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Lyrics
+import com.android.swingmusic.core.domain.model.LyricsLine
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.player.domain.repository.LyricsRepository
 import com.android.swingmusic.player.presentation.event.LyricsUiEvent
@@ -28,7 +29,6 @@ class LyricsViewModel @Inject constructor(
     private val _state = MutableStateFlow(LyricsUiState())
     val state: StateFlow<LyricsUiState> get() = _state
 
-    private var advanceJob: Job? = null
     private var fetchJob: Job? = null
 
     fun onEvent(event: LyricsUiEvent) {
@@ -43,7 +43,6 @@ class LyricsViewModel @Inject constructor(
     private fun loadLyrics(track: Track) {
         if (track.trackHash == _state.value.trackHash && _state.value.lines.isNotEmpty()) return
 
-        cancelTimers()
         _state.update {
             LyricsUiState(
                 isLoading = true,
@@ -161,35 +160,11 @@ class LyricsViewModel @Inject constructor(
 
         val newLine = calculateLineIndex(s.lines, positionMs)
         if (newLine != s.currentLine) {
-            advanceJob?.cancel()
             _state.update { it.copy(currentLine = newLine) }
         }
-
-        scheduleNextLine(positionMs)
     }
 
-    private fun scheduleNextLine(positionMs: Long) {
-        val s = _state.value
-        val nextIndex = s.currentLine + 1
-        if (nextIndex !in s.lines.indices) return
-        val nextTime = s.lines[nextIndex].time
-        val diff = nextTime - positionMs
-        if (diff !in 0..1200) return
-        if (advanceJob?.isActive == true) return
-
-        advanceJob = viewModelScope.launch {
-            val sleep = diff.coerceAtLeast(0)
-            delay(sleep)
-            val current = _state.value
-            if (current.trackHash != s.trackHash) return@launch
-            val next = current.currentLine + 1
-            if (next in current.lines.indices) {
-                _state.update { it.copy(currentLine = next) }
-            }
-        }
-    }
-
-    private fun calculateLineIndex(lines: List<com.android.swingmusic.core.domain.model.LyricsLine>, positionMs: Long): Int {
+    private fun calculateLineIndex(lines: List<LyricsLine>, positionMs: Long): Int {
         if (lines.isEmpty()) return -1
         var idx = -1
         for (i in lines.indices) {
@@ -198,13 +173,7 @@ class LyricsViewModel @Inject constructor(
         return idx
     }
 
-    private fun cancelTimers() {
-        advanceJob?.cancel()
-        advanceJob = null
-    }
-
     override fun onCleared() {
-        cancelTimers()
         fetchJob?.cancel()
         super.onCleared()
     }
