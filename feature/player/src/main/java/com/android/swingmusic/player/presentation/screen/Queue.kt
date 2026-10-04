@@ -4,6 +4,7 @@ package com.android.swingmusic.player.presentation.screen
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -291,7 +292,11 @@ private fun Queue(
                             .padding(vertical = 16.dp)
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14F))
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .27F),
+                                shape = RoundedCornerShape(12.dp)
+                            )
                             .clickable {
                                 onTogglePlayerState()
                             }

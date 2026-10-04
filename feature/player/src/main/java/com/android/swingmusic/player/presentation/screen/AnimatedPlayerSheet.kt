@@ -23,6 +23,7 @@ import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -1676,7 +1677,11 @@ private fun QueueSheetOverlay(
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .14f))
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .27f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
                     // Tapping the pinned now-playing closes the queue — the exact inverse of
                     // the Queue icon — leaving the player sheet expanded behind it. Play/pause
                     // is handled by the button on the right.
