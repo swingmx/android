@@ -9,5 +9,18 @@ data class ArtistInfoDto(
     @SerializedName("artist")
     val artistExpandedDto: ArtistExpandedDto?,
     @SerializedName("tracks")
-    val tracks: List<TrackDto>?
+    val tracks: List<TrackDto>?,
+    @SerializedName("stats")
+    val stats: List<ArtistStatDto>?
+)
+
+data class ArtistStatDto(
+    @SerializedName("cssclass")
+    val cssClass: String?,
+    @SerializedName("value")
+    val value: String?,
+    @SerializedName("text")
+    val text: String?,
+    @SerializedName("image")
+    val image: String?
 )

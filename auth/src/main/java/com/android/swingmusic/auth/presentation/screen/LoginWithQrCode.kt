@@ -102,7 +102,7 @@ fun LoginWithQrCode(
     LaunchedEffect(Unit) {
         authViewModel.authStateEvent.collect { state ->
             if (state == AuthState.AUTHENTICATED) {
-                authNavigator.gotoFolders()
+                authNavigator.gotoHome()
             }
         }
     }

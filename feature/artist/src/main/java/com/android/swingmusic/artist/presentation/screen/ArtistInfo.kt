@@ -4,11 +4,13 @@ import android.annotation.SuppressLint
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +25,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.Album
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,10 +63,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -71,6 +86,7 @@ import com.android.swingmusic.core.domain.model.AlbumsAndAppearances
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
+import com.android.swingmusic.core.domain.model.ArtistStat
 import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Genre
 import com.android.swingmusic.core.domain.model.Track
@@ -85,9 +101,10 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.ShuffleAndPlayButtons
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
-import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
+import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
 import com.android.swingmusic.uicomponent.presentation.util.Screen
 import com.android.swingmusic.uicomponent.presentation.util.formattedAlbumDuration
 import com.ramcosta.composedestinations.annotation.Destination
@@ -127,30 +144,7 @@ private fun ArtistInfo(
         }
     }
 
-    Scaffold(
-        topBar = {
-            /*Row(
-                modifier = Modifier
-                    .padding(top = 24.dp)
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                IconButton(
-                    modifier = Modifier
-                        .clip(CircleShape),
-                    onClick = {
-                        onClickBack()
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back Arrow"
-                    )
-                }
-            }*/
-        }
-    ) {
+    Scaffold {
         if (showTrackBottomSheet) {
             clickedTrack?.let { track ->
                 CustomTrackBottomSheet(
@@ -219,10 +213,7 @@ private fun ArtistInfo(
                 .background(MaterialTheme.colorScheme.surface)
         ) {
             item {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     AsyncImage(
                         modifier = Modifier
                             .fillParentMaxWidth()
@@ -230,10 +221,15 @@ private fun ArtistInfo(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data("${baseUrl}img/artist/${artistInfo.artist.image}")
                             .crossfade(true)
+                            .transformations(
+                                listOf(
+                                    BlurTransformation(
+                                        scale = 0.25f,
+                                        radius = 25
+                                    )
+                                )
+                            )
                             .build(),
-                        placeholder = painterResource(R.drawable.audio_fallback),
-                        fallback = painterResource(R.drawable.audio_fallback),
-                        error = painterResource(R.drawable.audio_fallback),
                         contentDescription = "Artist Image",
                         contentScale = ContentScale.Crop,
                     )
@@ -245,11 +241,11 @@ private fun ArtistInfo(
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .15F),
                                         MaterialTheme.colorScheme.surface.copy(alpha = .25F),
                                         MaterialTheme.colorScheme.surface.copy(alpha = .35F),
                                         MaterialTheme.colorScheme.surface.copy(alpha = .45F),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .6F),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = .65F),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = .8F),
                                         MaterialTheme.colorScheme.surface.copy(alpha = .9F),
                                         MaterialTheme.colorScheme.surface.copy(alpha = .95F),
                                         MaterialTheme.colorScheme.surface.copy(alpha = 1F)
@@ -259,76 +255,112 @@ private fun ArtistInfo(
                     )
 
                     Column(
-                        modifier = Modifier
-                            .fillParentMaxWidth()
-                            .padding(top = 250.dp, start = 8.dp, end = 8.dp),
+                        modifier = Modifier.fillParentMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            text = "Artist",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = artistInfo.artist.name,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         Row(
-                            modifier = Modifier.fillParentMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                            modifier = Modifier
+                                .padding(top = 24.dp)
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(
-                                text = artistInfo.artist.trackCount.artistTracksCountHelperText(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
-                            )
-
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .clip(CircleShape)
-                                    .size(4.dp)
-                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .5F))
-                            )
-
-                            Text(
-                                text = artistInfo.artist.albumCount.artistAlbumsCountHelperText(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
-                            )
-
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .clip(CircleShape)
-                                    .size(4.dp)
-                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .5F))
-                            )
-
-                            Text(
-                                text = artistInfo.artist.duration.formattedAlbumDuration(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
-                            )
+                            IconButton(
+                                modifier = Modifier.clip(CircleShape),
+                                onClick = { onClickBack() }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back Arrow"
+                                )
+                            }
                         }
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        AsyncImage(
+                            modifier = Modifier
+                                .padding(top = 10.dp)
+                                .size(220.dp)
+                                .shadow(elevation = 12.dp, shape = CircleShape)
+                                .clip(CircleShape)
+                                .border(
+                                    width = (.5).dp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
+                                    shape = CircleShape
+                                ),
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data("${baseUrl}img/artist/${artistInfo.artist.image}")
+                                .crossfade(true)
+                                .build(),
+                            placeholder = painterResource(R.drawable.artist_fallback),
+                            fallback = painterResource(R.drawable.artist_fallback),
+                            error = painterResource(R.drawable.artist_fallback),
+                            contentDescription = "Artist Image",
+                            contentScale = ContentScale.Crop,
+                        )
+
+                        Text(
+                            modifier = Modifier.padding(
+                                start = 12.dp,
+                                end = 12.dp,
+                                top = 16.dp,
+                                bottom = 2.dp
+                            ),
+                            text = artistInfo.artist.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            listOf(
+                                "Artist",
+                                artistInfo.artist.trackCount.artistTracksCountHelperText(),
+                                artistInfo.artist.albumCount.artistAlbumsCountHelperText()
+                            ).forEachIndexed { index, label ->
+                                if (index > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .size(4.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                                            )
+                                    )
+                                }
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            text = artistInfo.artist.duration.formattedAlbumDuration(),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         LazyRow(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 16.dp, end = 12.dp),
+                                .padding(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -351,31 +383,10 @@ private fun ArtistInfo(
                             }
 
                             item {
-                                IconButton(onClick = {
-                                    onShuffle()
-                                }) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.shuffle),
-                                        contentDescription = "Play Icon"
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                IconButton(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(32))
-                                        .background(MaterialTheme.colorScheme.primary),
-                                    onClick = {
-                                        onPlayAllTracks()
-                                    }
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.play_arrow_fill),
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        contentDescription = "Play Icon"
-                                    )
-                                }
+                                ShuffleAndPlayButtons(
+                                    onShuffle = { onShuffle() },
+                                    onPlay = { onPlayAllTracks() }
+                                )
                             }
                         }
                     }
@@ -827,10 +838,121 @@ private fun ArtistInfo(
                 }
             }
 
+            if (artistInfo.stats.isNotEmpty()) {
+                item {
+                    ArtistStatsSection(stats = artistInfo.stats, baseUrl = baseUrl)
+                }
+            }
+
             item {
                 Spacer(modifier = Modifier.height(200.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun ArtistStatsSection(stats: List<ArtistStat>, baseUrl: String) {
+    Column(modifier = Modifier.padding(top = 16.dp)) {
+        Text(
+            text = "Stats",
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            modifier = Modifier.padding(start = 20.dp, bottom = 12.dp)
+        )
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(stats) { stat ->
+                ArtistStatCard(stat = stat, baseUrl = baseUrl)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArtistStatCard(stat: ArtistStat, baseUrl: String) {
+    Column(
+        modifier = Modifier
+            .size(width = 150.dp, height = 130.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(14.dp)
+    ) {
+        if (stat.image != null) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data("${baseUrl}img/thumbnail/small/${stat.image}")
+                    .crossfade(true)
+                    .build(),
+                placeholder = painterResource(R.drawable.audio_fallback),
+                fallback = painterResource(R.drawable.audio_fallback),
+                error = painterResource(R.drawable.audio_fallback),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(6.dp))
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = stat.icon(),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.weight(1F))
+        BasicText(
+            text = stat.value,
+            style = TextStyle(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            ),
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = 13.sp, maxFontSize = 20.sp)
+        )
+        Text(
+            text = stat.text,
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+private fun ArtistStat.icon(): ImageVector = when (type) {
+    "play_duration" -> Icons.Rounded.Schedule
+    "played" -> Icons.Rounded.PlayCircle
+    "toptrack" -> Icons.Rounded.MusicNote
+    "topalbum" -> Icons.Rounded.Album
+    "completeness" -> Icons.Rounded.CheckCircle
+    else -> Icons.Rounded.BarChart
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0A0A0A)
+@Composable
+private fun ArtistStatsSectionPreview() {
+    SwingMusicTheme {
+        ArtistStatsSection(
+            stats = listOf(
+                ArtistStat(type = "play_duration", value = "28 hrs, 2 mins", text = "listened all time", image = null),
+                ArtistStat(type = "played", value = "9/67 tracks", text = "never played", image = null),
+                ArtistStat(type = "toptrack", value = "Toosie Slide", text = "top track (42 mins listened)", image = "toosie.webp")
+            ),
+            baseUrl = ""
+        )
     }
 }
 
@@ -853,6 +975,19 @@ fun ArtistInfoScreen(
         artistInfoState.value.similarArtistsResource.data else emptyList()
 
     var routeByGotoArtist by remember { mutableStateOf(false) }
+
+    // Shared by the header's back arrow and the system back gesture
+    fun navigateBack() {
+        if (routeByGotoArtist) {
+            commonNavigator.navigateBack()
+            return
+        }
+        if (artistInfoState.value.artistHashBackStack.size <= 1) {
+            routeByGotoArtist = false
+            commonNavigator.navigateBack()
+        }
+        artistInfoViewModel.onArtistInfoUiEvent(ArtistInfoUiEvent.OnNavigateBack)
+    }
 
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
     val refreshState = rememberPullToRefreshState()
@@ -959,13 +1094,7 @@ fun ArtistInfoScreen(
                             similarArtists = similarArtists ?: emptyList(),
                             playbackState = playerUiState.playbackState,
                             currentTrack = playerUiState.nowPlayingTrack,
-                            onClickBack = {
-                                /* if (artistInfoState.value.artistHashBackStack.size > 1) {
-                                     artistInfoViewModel.onArtistInfoUiEvent(ArtistInfoUiEvent.OnNavigateBack)
-                                 } else {
-                                     commonNavigator.navigateBack()
-                                 }*/
-                            },
+                            onClickBack = { navigateBack() },
                             onToggleArtistFavorite = { artistHash, isFavorite ->
                                 artistInfoViewModel.onArtistInfoUiEvent(
                                     ArtistInfoUiEvent.OnToggleArtistFavorite(
@@ -1125,15 +1254,7 @@ fun ArtistInfoScreen(
         }
     }
 
-    BackHandler(enabled = routeByGotoArtist.not()) {
-        val hashBackStack = artistInfoState.value.artistHashBackStack
-        if (hashBackStack.size <= 1) {
-            routeByGotoArtist = false
-            commonNavigator.navigateBack()
-        }
-
-        artistInfoViewModel.onArtistInfoUiEvent(ArtistInfoUiEvent.OnNavigateBack)
-    }
+    BackHandler(enabled = routeByGotoArtist.not()) { navigateBack() }
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)

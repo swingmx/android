@@ -94,6 +94,7 @@ import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.ShuffleAndPlayButtons
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
@@ -426,30 +427,10 @@ fun AlbumWithInfo(
                             }
 
                             item {
-                                IconButton(onClick = {
-                                    onShuffle()
-                                }) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.shuffle),
-                                        contentDescription = "Play Icon"
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(16.dp))
-                                IconButton(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(32))
-                                        .background(MaterialTheme.colorScheme.primary),
-                                    onClick = {
-                                        onPlay(sortedTracks)
-                                    }
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.play_arrow_fill),
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        contentDescription = "Play Icon"
-                                    )
-                                }
+                                ShuffleAndPlayButtons(
+                                    onShuffle = { onShuffle() },
+                                    onPlay = { onPlay(sortedTracks) }
+                                )
                             }
                         }
                     }

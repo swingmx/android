@@ -49,6 +49,7 @@ fun QueueSource.getSourceType(): String {
         is QueueSource.ARTIST -> "Artist"
         is QueueSource.FOLDER -> "Folder"
         is QueueSource.PLAYLIST -> "Playlist"
+        is QueueSource.MIX -> "Mix"
         is QueueSource.SEARCH -> "Search"
         QueueSource.FAVORITE -> "Favorite"
         QueueSource.UNKNOWN -> "Unknown"
@@ -62,6 +63,7 @@ fun QueueSource.getName(): String {
         is QueueSource.ARTIST -> this.name
         is QueueSource.FOLDER -> this.name
         is QueueSource.PLAYLIST -> this.name
+        is QueueSource.MIX -> this.name
         else -> ""
     }
 }
