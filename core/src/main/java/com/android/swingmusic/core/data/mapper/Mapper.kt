@@ -18,8 +18,12 @@ import com.android.swingmusic.core.data.dto.FolderDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.GenreDto
+import com.android.swingmusic.core.data.dto.HomeItemDto
+import com.android.swingmusic.core.data.dto.HomeSectionDto
 import com.android.swingmusic.core.data.dto.LyricsDto
 import com.android.swingmusic.core.data.dto.LyricsLineDto
+import com.android.swingmusic.core.data.dto.MixDto
+import com.android.swingmusic.core.data.dto.PlaylistDto
 import com.android.swingmusic.core.data.dto.PluginLyricsResultDto
 import com.android.swingmusic.core.data.dto.RootDirsDto
 import com.android.swingmusic.core.data.dto.TopResultItemDto
@@ -45,16 +49,25 @@ import com.android.swingmusic.core.domain.model.Folder
 import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.Genre
+import com.android.swingmusic.core.domain.model.HomeItem
+import com.android.swingmusic.core.domain.model.HomeSection
 import com.android.swingmusic.core.domain.model.Lyrics
 import com.android.swingmusic.core.domain.model.LyricsLine
+import com.android.swingmusic.core.domain.model.Mix
+import com.android.swingmusic.core.domain.model.MixImage
+import com.android.swingmusic.core.domain.model.Playlist
 import com.android.swingmusic.core.domain.model.RootDirs
 import com.android.swingmusic.core.domain.model.TopResultItem
 import com.android.swingmusic.core.domain.model.TopSearchResults
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.model.TracksSearchResult
+import com.google.gson.Gson
+import com.google.gson.JsonElement
 
 object Map {
+    private val gson = Gson()
+
     fun ArtistDto.toArtist(): Artist {
         return Artist(
             artistHash = artisthash ?: "",
@@ -432,5 +445,67 @@ object Map {
             albums = albumsDto?.map { it.toAlbum() } ?: emptyList(),
             artists = artistsDto?.map { it.toArtist() } ?: emptyList()
         )
+    }
+
+    fun List<kotlin.collections.Map<String, HomeSectionDto>>.toHomeSections(): List<HomeSection> {
+        return flatMap { it.entries }.mapNotNull { (key, section) ->
+            val items = section.items.orEmpty().mapNotNull { it.toHomeItem() }
+            if (items.isEmpty()) return@mapNotNull null
+            HomeSection(
+                key = key,
+                title = section.title?.takeIf { it.isNotBlank() } ?: key.split("_")
+                    .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } },
+                description = section.description ?: "",
+                items = items
+            )
+        }
+    }
+
+    private fun HomeItemDto.toHomeItem(): HomeItem? {
+        val json = item ?: return null
+        return runCatching {
+            when (type) {
+                "album" -> HomeItem.AlbumItem(gson.fromJson(json, AlbumDto::class.java).toAlbum())
+                "artist" -> HomeItem.ArtistItem(gson.fromJson(json, ArtistDto::class.java).toArtist())
+                "track" -> HomeItem.TrackItem(gson.fromJson(json, TrackDto::class.java).toTrack())
+                "playlist" -> HomeItem.PlaylistItem(gson.fromJson(json, PlaylistDto::class.java).toPlaylist())
+                "mix" -> HomeItem.MixItem(gson.fromJson(json, MixDto::class.java).toMix())
+                else -> null
+            }
+        }.getOrNull()
+    }
+
+    fun PlaylistDto.toPlaylist(): Playlist {
+        return Playlist(
+            id = id.requireId(),
+            name = name ?: "",
+            customImage = image?.takeIf { it.isNotBlank() && it != "None" && hasImage != false },
+            images = images.orEmpty().mapNotNull { it.image?.takeIf { img -> img.isNotBlank() } },
+            trackCount = trackCount ?: count ?: 0
+        )
+    }
+
+    fun MixDto.toMix(): Mix {
+        val sourceHash = sourceHash ?: ""
+        return Mix(
+            id = id.requireId(),
+            title = title?.takeIf { it.isNotBlank() } ?: "Mix",
+            description = description ?: "",
+            sourceHash = sourceHash,
+            ogSourceHash = extra?.ogSourceHash?.takeIf { it.isNotBlank() } ?: sourceHash,
+            type = extra?.type?.takeIf { it.isNotBlank() } ?: "track",
+            image = extra?.image?.image?.takeIf { it.isNotBlank() },
+            color = (extra?.image?.color ?: extra?.images?.firstOrNull()?.color)
+                ?.takeIf { it.isNotBlank() },
+            images = extra?.images.orEmpty().mapNotNull { img ->
+                img.image?.takeIf { it.isNotBlank() }?.let { MixImage(it, img.type == "artist") }
+            },
+            trackCount = trackCount ?: 0
+        )
+    }
+
+    private fun JsonElement?.requireId(): String {
+        require(this != null && isJsonPrimitive) { "Missing id" }
+        return asString
     }
 }

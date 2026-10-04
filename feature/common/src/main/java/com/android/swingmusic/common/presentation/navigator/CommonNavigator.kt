@@ -8,8 +8,7 @@ interface CommonNavigator {
 
     fun gotoHome()
 
-    // Todo: Remove this after adding home content
-    fun gotoFolders()
+    fun gotoProfile()
 
     fun gotoAlbumWithInfo(albumHash: String)
 

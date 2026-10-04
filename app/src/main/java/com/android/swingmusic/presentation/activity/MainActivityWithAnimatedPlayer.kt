@@ -63,6 +63,8 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUse
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
+import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
+import com.android.swingmusic.home.presentation.screen.destinations.ProfileScreenDestination
 import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.player.presentation.screen.AnimatedPlayerSheet
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
@@ -165,7 +167,7 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
             val showBottomNav = route != null && hideForRoutes.none { route.startsWith(it) }
 
             val bottomNavItems: List<BottomNavItem> = listOf(
-                // BottomNavItem.Home,
+                BottomNavItem.Home,
                 BottomNavItem.Folder,
                 BottomNavItem.Album,
                 // BottomNavItem.Playlist,
@@ -175,7 +177,10 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
 
             // Map of BottomNavItem to their route prefixes
             val bottomNavRoutePrefixes = mapOf(
-                // BottomNavItem.Home to listOf(HomeDestination.route),
+                BottomNavItem.Home to listOf(
+                    HomeScreenDestination.route,
+                    ProfileScreenDestination.route
+                ),
                 BottomNavItem.Folder to listOf(FoldersAndTracksScreenDestination.route),
                 BottomNavItem.Album to listOf(
                     AllAlbumScreenDestination.route,

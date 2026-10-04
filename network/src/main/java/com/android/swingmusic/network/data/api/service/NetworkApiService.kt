@@ -9,9 +9,12 @@ import com.android.swingmusic.core.data.dto.ArtistInfoDto
 import com.android.swingmusic.core.data.dto.ArtistsSearchResultDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
+import com.android.swingmusic.core.data.dto.HomeSectionDto
 import com.android.swingmusic.core.data.dto.LyricsCheckDto
 import com.android.swingmusic.core.data.dto.LyricsDto
 import com.android.swingmusic.core.data.dto.LyricsRequestDto
+import com.android.swingmusic.core.data.dto.MixTracksDto
+import com.android.swingmusic.core.data.dto.PlaylistTracksDto
 import com.android.swingmusic.core.data.dto.PluginLyricsRequestDto
 import com.android.swingmusic.core.data.dto.PluginLyricsResultDto
 import com.android.swingmusic.core.data.dto.TopSearchResultsDto
@@ -187,4 +190,27 @@ interface NetworkApiService {
         @Body request: PluginLyricsRequestDto,
         @Header("Authorization") bearerToken: String
     ): PluginLyricsResultDto
+
+    @GET
+    suspend fun getHome(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") limit: Int
+    ): List<Map<String, HomeSectionDto>>
+
+    @GET
+    suspend fun getPlaylistTracks(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("limit") limit: Int
+    ): PlaylistTracksDto
+
+    @GET
+    suspend fun getMixTracks(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("mixid") mixId: String,
+        @Query("sourcehash") sourceHash: String,
+        @Query("og_sourcehash") ogSourceHash: String
+    ): MixTracksDto
 }

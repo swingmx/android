@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
+import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
 import com.ramcosta.composedestinations.spec.DestinationSpec
 import com.android.swingmusic.uicomponent.R as UiComponent
@@ -14,6 +15,13 @@ sealed class BottomNavItem(
     @param:DrawableRes var animatedIcon: Int,
     var destination: DestinationSpec<*>
 ) {
+    data object Home : BottomNavItem(
+        title = "Home",
+        icon = UiComponent.drawable.ic_home,
+        animatedIcon = UiComponent.drawable.avd_home,
+        destination = HomeScreenDestination
+    )
+
     data object Folder : BottomNavItem(
         title = "Folders",
         icon = UiComponent.drawable.folder_filled,

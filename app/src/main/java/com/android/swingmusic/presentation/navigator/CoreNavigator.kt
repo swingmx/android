@@ -8,7 +8,8 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrC
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
-import com.android.swingmusic.home.presentation.destinations.HomeDestination
+import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
+import com.android.swingmusic.home.presentation.screen.destinations.ProfileScreenDestination
 import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
 import com.ramcosta.composedestinations.navigation.navigate
@@ -47,7 +48,7 @@ class CoreNavigator(
     }
 
     override fun gotoHome() {
-        val targetDestination = HomeDestination()
+        val targetDestination = HomeScreenDestination
 
         navController.navigate(targetDestination) {
             launchSingleTop = true
@@ -60,18 +61,9 @@ class CoreNavigator(
         }
     }
 
-    // Todo: Remove this after adding home content
-    override fun gotoFolders() {
-        val targetDestination = FoldersAndTracksScreenDestination()
-
-        navController.navigate(targetDestination) {
+    override fun gotoProfile() {
+        navController.navigate(ProfileScreenDestination) {
             launchSingleTop = true
-            restoreState = false
-
-            popUpTo(navController.graph.startDestinationId) {
-                inclusive = true
-                saveState = false
-            }
         }
     }
 
