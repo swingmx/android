@@ -101,6 +101,7 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.ShuffleAndPlayButtons
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
@@ -382,31 +383,10 @@ private fun ArtistInfo(
                             }
 
                             item {
-                                IconButton(onClick = {
-                                    onShuffle()
-                                }) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.shuffle),
-                                        contentDescription = "Play Icon"
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                IconButton(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(32))
-                                        .background(MaterialTheme.colorScheme.primary),
-                                    onClick = {
-                                        onPlayAllTracks()
-                                    }
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.play_arrow_fill),
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        contentDescription = "Play Icon"
-                                    )
-                                }
+                                ShuffleAndPlayButtons(
+                                    onShuffle = { onShuffle() },
+                                    onPlay = { onPlayAllTracks() }
+                                )
                             }
                         }
                     }
