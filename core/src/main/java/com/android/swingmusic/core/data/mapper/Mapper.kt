@@ -120,7 +120,7 @@ object Map {
     fun LyricsLineDto.toLyricsLine(): LyricsLine {
         return LyricsLine(
             time = (time ?: 0.0).toLong(),
-            text = text ?: ""
+            text = text?.trim() ?: ""
         )
     }
 
