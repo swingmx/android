@@ -43,7 +43,7 @@ object AuthModule {
         return OkHttpClient.Builder()
             .addInterceptor(interceptor)
             .addInterceptor(ChuckerInterceptor(context))
-            .authenticator(tokenAuthenticator)
+            .addInterceptor(tokenAuthenticator)
             .callTimeout(15, TimeUnit.SECONDS)
             .connectTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
