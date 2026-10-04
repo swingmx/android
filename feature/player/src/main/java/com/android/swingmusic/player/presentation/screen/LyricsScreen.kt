@@ -528,8 +528,8 @@ private fun SyncedLyricsList(
 }
 
 private val LyricTextStyle = TextStyle(
-    fontSize = 26.sp,
-    lineHeight = 30.sp,
+    fontSize = 32.sp,
+    lineHeight = 37.sp,
     fontWeight = FontWeight.Bold
 )
 
