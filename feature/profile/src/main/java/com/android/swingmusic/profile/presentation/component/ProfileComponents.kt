@@ -165,7 +165,7 @@ internal fun SettingsRow(
 @Composable
 internal fun SwitchRow(
     title: String,
-    subtitle: String,
+    subtitle: String? = null,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     enabled: Boolean = true,
@@ -173,7 +173,7 @@ internal fun SwitchRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 80.dp)
+            .heightIn(min = if (subtitle == null) 64.dp else 80.dp)
             .toggleable(
                 value = checked,
                 enabled = enabled,
@@ -186,11 +186,13 @@ internal fun SwitchRow(
     ) {
         Column(modifier = Modifier.weight(1F)) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            subtitle?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         Spacer(modifier = Modifier.width(16.dp))
         Switch(checked = checked, onCheckedChange = null, enabled = enabled)

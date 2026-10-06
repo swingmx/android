@@ -13,5 +13,7 @@ data class LyricsUiState(
     val pluginSearching: Boolean = false,
     val pluginError: String? = null,
     val userScrolled: Boolean = false,
-    val trackHash: String = ""
+    val trackHash: String = "",
+    /** Word-by-word sweep on the active line (a setting); off lights the whole line. */
+    val wordSweep: Boolean = true
 )
