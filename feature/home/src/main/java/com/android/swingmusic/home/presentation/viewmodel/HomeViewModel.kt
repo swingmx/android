@@ -2,6 +2,7 @@ package com.android.swingmusic.home.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.swingmusic.auth.data.avatar.AvatarStore
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.HomeItem
 import com.android.swingmusic.core.domain.model.Track
@@ -24,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 internal class HomeViewModel @Inject constructor(
     private val homeRepository: HomeRepository,
+    private val avatarStore: AvatarStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -38,6 +40,9 @@ internal class HomeViewModel @Inject constructor(
 
     init {
         getSections()
+        viewModelScope.launch {
+            avatarStore.avatar.collect { file -> _uiState.update { it.copy(avatarPath = file?.absolutePath) } }
+        }
     }
 
     fun onEvent(event: HomeUiEvent) {

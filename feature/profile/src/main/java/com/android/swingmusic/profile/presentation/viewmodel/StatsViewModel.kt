@@ -45,6 +45,7 @@ internal class StatsViewModel @Inject constructor(
         when (event) {
             StatsUiEvent.OnBackClicked -> _uiEffect.trySend(StatsUiEffect.NavigateBack)
             StatsUiEvent.OnRetry -> loadCharts()
+            StatsUiEvent.OnRefresh -> refresh()
             is StatsUiEvent.OnPeriodSelected -> {
                 if (event.period == _uiState.value.period) return
                 updateUiState { copy(period = event.period) }
@@ -74,7 +75,12 @@ internal class StatsViewModel @Inject constructor(
         val order = _uiState.value.order.apiValue
 
         updateUiState {
-            copy(tracks = ChartState.Loading, artists = ChartState.Loading, albums = ChartState.Loading)
+            copy(
+                isRefreshing = false,
+                tracks = ChartState.Loading,
+                artists = ChartState.Loading,
+                albums = ChartState.Loading
+            )
         }
         loadJob?.cancel()
         // One at a time: parallel requests slow the server down enough to time out.
@@ -87,6 +93,34 @@ internal class StatsViewModel @Inject constructor(
 
             val albums = profileRepository.getTopAlbums(period, order, CARD_LIMIT).toChartState()
             updateUiState { copy(albums = albums) }
+        }
+    }
+
+    /** Pull to refresh: bypasses the cache and keeps what's on screen if a chart fails. */
+    private fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        val period = _uiState.value.period.apiValue
+        val order = _uiState.value.order.apiValue
+
+        updateUiState { copy(isRefreshing = true) }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            var failed = false
+
+            val tracks = profileRepository.getTopTracks(period, order, TRACK_LIMIT, forceRefresh = true)
+            if (tracks is Resource.Success) updateUiState { copy(tracks = tracks.toChartState()) }
+            else failed = true
+
+            val artists = profileRepository.getTopArtists(period, order, CARD_LIMIT, forceRefresh = true)
+            if (artists is Resource.Success) updateUiState { copy(artists = artists.toChartState()) }
+            else failed = true
+
+            val albums = profileRepository.getTopAlbums(period, order, CARD_LIMIT, forceRefresh = true)
+            if (albums is Resource.Success) updateUiState { copy(albums = albums.toChartState()) }
+            else failed = true
+
+            updateUiState { copy(isRefreshing = false) }
+            if (failed) _uiEffect.trySend(StatsUiEffect.ShowSnackBar("Couldn't refresh all of your stats"))
         }
     }
 

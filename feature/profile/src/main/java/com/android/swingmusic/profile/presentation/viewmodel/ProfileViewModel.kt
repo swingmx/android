@@ -3,6 +3,7 @@ package com.android.swingmusic.profile.presentation.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.swingmusic.auth.data.avatar.AvatarStore
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.profile.domain.ProfileRepository
 import com.android.swingmusic.profile.presentation.event.ProfileUiEffect
@@ -22,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 internal class ProfileViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
+    private val avatarStore: AvatarStore,
     @ApplicationContext context: Context
 ) : ViewModel() {
 
@@ -32,6 +34,9 @@ internal class ProfileViewModel @Inject constructor(
     val uiEffect = _uiEffect.receiveAsFlow()
 
     init {
+        viewModelScope.launch {
+            avatarStore.avatar.collect { file -> updateUiState { copy(avatarPath = file?.absolutePath) } }
+        }
         loadUser()
         loadStats()
         loadServerVersion()
@@ -44,6 +49,30 @@ internal class ProfileViewModel @Inject constructor(
                 val url = _uiState.value.baseUrl.trimEnd('/')
                 if (url.isNotEmpty()) _uiEffect.trySend(ProfileUiEffect.CopyToClipboard(url))
             }
+
+            ProfileUiEvent.OnAvatarClicked -> {
+                // No photo yet: the only useful action is picking one.
+                if (_uiState.value.avatarPath == null) _uiEffect.trySend(ProfileUiEffect.OpenPhotoPicker)
+                else updateUiState { copy(showPhotoViewer = true) }
+            }
+
+            ProfileUiEvent.OnChangePhoto -> {
+                updateUiState { copy(showPhotoViewer = false) }
+                _uiEffect.trySend(ProfileUiEffect.OpenPhotoPicker)
+            }
+
+            ProfileUiEvent.OnRemovePhoto -> {
+                updateUiState { copy(showPhotoViewer = false) }
+                viewModelScope.launch {
+                    avatarStore.remove()
+                    _uiEffect.trySend(ProfileUiEffect.ShowPhotoRemoved)
+                }
+            }
+
+            ProfileUiEvent.OnPhotoViewerDismissed -> updateUiState { copy(showPhotoViewer = false) }
+            is ProfileUiEvent.OnPhotoPicked -> _uiEffect.trySend(ProfileUiEffect.NavigateToAvatarCrop(event.uri))
+            ProfileUiEvent.OnUndoRemovePhoto -> viewModelScope.launch { avatarStore.undoRemove() }
+            ProfileUiEvent.OnPhotoRemovalSettled -> viewModelScope.launch { avatarStore.discardRemoved() }
 
             ProfileUiEvent.OnRetryStats -> loadStats()
             ProfileUiEvent.OnStatsClicked -> _uiEffect.trySend(ProfileUiEffect.NavigateToStats)

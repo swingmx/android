@@ -7,4 +7,7 @@ internal sealed class ProfileUiEffect {
     data object NavigateToPairDevice : ProfileUiEffect()
     data object NavigateToSettings : ProfileUiEffect()
     data class CopyToClipboard(val text: String) : ProfileUiEffect()
+    data object OpenPhotoPicker : ProfileUiEffect()
+    data class NavigateToAvatarCrop(val imageUri: String) : ProfileUiEffect()
+    data object ShowPhotoRemoved : ProfileUiEffect()
 }

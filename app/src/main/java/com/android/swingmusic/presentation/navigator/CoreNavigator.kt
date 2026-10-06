@@ -11,6 +11,7 @@ import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAnd
 import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.LibraryScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.PairDeviceScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.AvatarCropScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.StatsScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.SettingsScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.AccountScreenDestination
@@ -83,6 +84,12 @@ class CoreNavigator(
 
     override fun gotoLibrary() {
         navController.navigate(LibraryScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoAvatarCrop(imageUri: String) {
+        navController.navigate(AvatarCropScreenDestination(imageUri)) {
             launchSingleTop = true
         }
     }

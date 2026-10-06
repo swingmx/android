@@ -9,6 +9,9 @@ import java.net.URI
 internal data class ProfileUiState(
     val baseUrl: String = "",
     val user: User? = null,
+    /** Local-only profile photo for this account. */
+    val avatarPath: String? = null,
+    val showPhotoViewer: Boolean = false,
 
     val isLoadingStats: Boolean = true,
     val errorLoadingStats: String? = null,
@@ -23,6 +26,12 @@ internal data class ProfileUiState(
 
 internal val User.isAdmin: Boolean
     get() = roles.any { it.equals("admin", ignoreCase = true) }
+
+/** For display only: "eric" → "Eric". Editing and login keep the stored username. */
+internal fun displayName(username: String): String = username.replaceFirstChar { it.uppercaseChar() }
+
+internal val User.displayName: String
+    get() = displayName(username)
 
 internal val User.initials: String
     get() {

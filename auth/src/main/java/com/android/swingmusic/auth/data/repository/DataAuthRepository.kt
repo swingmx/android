@@ -2,6 +2,7 @@ package com.android.swingmusic.auth.data.repository
 
 import android.content.Context
 import com.android.swingmusic.auth.data.api.service.AuthApiService
+import com.android.swingmusic.auth.data.avatar.AvatarStore
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
 import com.android.swingmusic.auth.data.datastore.AuthTokensDataStore
 import com.android.swingmusic.auth.data.mapper.toModel
@@ -50,7 +51,8 @@ class DataAuthRepository @Inject constructor(
     private val baseUrlDao: BaseUrlDao,
     private val userDao: UserDao,
     private val queueDao: QueueDao,
-    private val lastPlayedTrackDao: LastPlayedTrackDao
+    private val lastPlayedTrackDao: LastPlayedTrackDao,
+    private val avatarStore: AvatarStore
 ) : AuthRepository {
 
     private val sessionEndedChannel = Channel<SessionEndReason>(Channel.BUFFERED)
@@ -155,6 +157,7 @@ class DataAuthRepository @Inject constructor(
     private suspend fun storeLoggedInUser(user: User) {
         userDao.clearLoggedInUser()
         userDao.insertLoggedInUser(user.toEntity())
+        avatarStore.setOwner(getBaseUrl(), user.id)
     }
 
     override suspend fun fetchCurrentUser(): Resource<User> {
@@ -166,7 +169,10 @@ class DataAuthRepository @Inject constructor(
             storeLoggedInUser(user)
             Resource.Success(user)
         } catch (e: Exception) {
-            Resource.Error(data = getLoggedInUser(), message = "Couldn't load your profile")
+            val cached = getLoggedInUser()
+            // Offline: the cached user still decides whose photo to show.
+            cached?.let { avatarStore.setOwner(getBaseUrl(), it.id) }
+            Resource.Error(data = cached, message = "Couldn't load your profile")
         }
     }
 
@@ -230,6 +236,7 @@ class DataAuthRepository @Inject constructor(
                     lastPlayedTrackDao.clearLastPlayedTrack()
                 }
                 cancelTokenRefreshWork(context)
+                avatarStore.setOwner(null, null)
 
                 sessionEndedChannel.send(reason)
             }
