@@ -31,6 +31,12 @@ class LyricsViewModel @Inject constructor(
 
     private var fetchJob: Job? = null
 
+    init {
+        viewModelScope.launch {
+            settings.lyricsWordSweep.collect { enabled -> _state.update { it.copy(wordSweep = enabled) } }
+        }
+    }
+
     fun onEvent(event: LyricsUiEvent) {
         when (event) {
             is LyricsUiEvent.LoadLyrics -> loadLyrics(event.track)
@@ -46,7 +52,8 @@ class LyricsViewModel @Inject constructor(
         _state.update {
             LyricsUiState(
                 isLoading = true,
-                trackHash = track.trackHash
+                trackHash = track.trackHash,
+                wordSweep = it.wordSweep
             )
         }
 

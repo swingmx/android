@@ -502,6 +502,7 @@ private fun SyncedLyricsList(
                 isActive = index == current,
                 distance = distance,
                 blurEnabled = !manualScroll,
+                wordSweep = state.wordSweep,
                 positionMs = positionMs,
                 onClick = { onSeek(line.time) },
                 onLongClick = {
@@ -544,6 +545,7 @@ private fun SyncedLyricLine(
     isActive: Boolean,
     distance: Int,
     blurEnabled: Boolean,
+    wordSweep: Boolean,
     positionMs: () -> Long,
     onClick: () -> Unit,
     onLongClick: () -> Unit
@@ -602,6 +604,8 @@ private fun SyncedLyricLine(
                     }
                     .drawWithContent {
                         drawContent()
+                        // Without the sweep the whole active line stays lit.
+                        if (!wordSweep) return@drawWithContent
                         val layout = textLayout.value ?: return@drawWithContent
                         val progress = sweepProgress(line, nextTimeMs, positionMs())
                         eraseUnsung(layout, progress, feather = 16.dp.toPx())

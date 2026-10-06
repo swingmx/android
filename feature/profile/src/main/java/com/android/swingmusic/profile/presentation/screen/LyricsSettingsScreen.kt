@@ -1,5 +1,6 @@
 package com.android.swingmusic.profile.presentation.screen
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,8 +58,17 @@ private fun LyricsSettingsScreenContent(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SettingsGroup {
+                SwitchRow(
+                    title = "Word-by-word Sync",
+                    checked = uiState.wordSweep,
+                    onCheckedChange = { onEvent(LyricsSettingsUiEvent.OnWordSweepChange(it)) }
+                )
+            }
+
             SettingsGroup {
                 SwitchRow(
                     title = "Use lyrics plugin",

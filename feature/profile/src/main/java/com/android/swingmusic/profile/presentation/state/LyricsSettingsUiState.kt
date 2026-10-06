@@ -7,4 +7,5 @@ internal data class LyricsSettingsUiState(
     val usePlugin: Boolean = false,
     val autoDownload: Boolean = false,
     val preferSynced: Boolean = false,
+    val wordSweep: Boolean = true,
 )

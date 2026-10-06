@@ -23,9 +23,10 @@ internal class LyricsSettingsViewModel @Inject constructor(
     val uiState = combine(
         appSettingsRepository.useLyricsPlugin,
         appSettingsRepository.lyricsAutoDownload,
-        appSettingsRepository.lyricsOverrideUnsynced
-    ) { usePlugin, autoDownload, preferSynced ->
-        LyricsSettingsUiState(usePlugin, autoDownload, preferSynced)
+        appSettingsRepository.lyricsOverrideUnsynced,
+        appSettingsRepository.lyricsWordSweep
+    ) { usePlugin, autoDownload, preferSynced, wordSweep ->
+        LyricsSettingsUiState(usePlugin, autoDownload, preferSynced, wordSweep)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LyricsSettingsUiState())
 
     private val _uiEffect = Channel<LyricsSettingsUiEffect>(capacity = Channel.UNLIMITED)
@@ -44,6 +45,10 @@ internal class LyricsSettingsViewModel @Inject constructor(
 
             is LyricsSettingsUiEvent.OnPreferSyncedChange -> viewModelScope.launch {
                 appSettingsRepository.setLyricsOverrideUnsynced(event.enabled)
+            }
+
+            is LyricsSettingsUiEvent.OnWordSweepChange -> viewModelScope.launch {
+                appSettingsRepository.setLyricsWordSweep(event.enabled)
             }
         }
     }

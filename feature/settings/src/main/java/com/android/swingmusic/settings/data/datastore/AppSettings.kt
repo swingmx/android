@@ -34,6 +34,7 @@ class AppSettings @Inject constructor(
         private val USE_LYRICS_PLUGIN = booleanPreferencesKey("use_lyrics_plugin")
         private val LYRICS_AUTO_DOWNLOAD = booleanPreferencesKey("lyrics_auto_download")
         private val LYRICS_OVERRIDE_UNSYNCED = booleanPreferencesKey("lyrics_override_unsynced")
+        private val LYRICS_WORD_SWEEP = booleanPreferencesKey("lyrics_word_sweep")
     }
 
     // Album Flows
@@ -88,6 +89,9 @@ class AppSettings @Inject constructor(
     val getLyricsOverrideUnsynced: Flow<Boolean> = context.dataStore.data.map {
         it[LYRICS_OVERRIDE_UNSYNCED] ?: false
     }
+    val getLyricsWordSweep: Flow<Boolean> = context.dataStore.data.map {
+        it[LYRICS_WORD_SWEEP] ?: true
+    }
 
     suspend fun updateUseLyricsPlugin(value: Boolean) =
         context.dataStore.edit { it[USE_LYRICS_PLUGIN] = value }
@@ -97,4 +101,7 @@ class AppSettings @Inject constructor(
 
     suspend fun updateLyricsOverrideUnsynced(value: Boolean) =
         context.dataStore.edit { it[LYRICS_OVERRIDE_UNSYNCED] = value }
+
+    suspend fun updateLyricsWordSweep(value: Boolean) =
+        context.dataStore.edit { it[LYRICS_WORD_SWEEP] = value }
 }
