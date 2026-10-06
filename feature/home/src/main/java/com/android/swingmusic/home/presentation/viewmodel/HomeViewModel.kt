@@ -127,7 +127,11 @@ internal class HomeViewModel @Inject constructor(
 
             is HomeItem.MixItem -> playFetchedTracks(
                 itemKey = item.key,
-                source = QueueSource.MIX(id = item.mix.id, name = item.mix.title),
+                source = QueueSource.MIX(
+                    id = item.mix.id,
+                    name = item.mix.title,
+                    sourceHash = item.mix.sourceHash
+                ),
                 fetch = { homeRepository.getMixTracks(item.mix) }
             )
         }
