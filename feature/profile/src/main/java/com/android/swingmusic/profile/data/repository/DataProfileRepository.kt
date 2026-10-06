@@ -43,9 +43,15 @@ class DataProfileRepository @Inject constructor(
     private val statsCache = ConcurrentHashMap<String, Any>()
 
     @Suppress("UNCHECKED_CAST")
-    private suspend fun <T : Any> cached(key: String, fetch: suspend () -> Resource<T>): Resource<T> {
+    private suspend fun <T : Any> cached(
+        key: String,
+        forceRefresh: Boolean = false,
+        fetch: suspend () -> Resource<T>
+    ): Resource<T> {
         val scopedKey = "${getBaseUrl()}|${getCachedUser()?.id}|$key"
-        (statsCache[scopedKey] as? T)?.let { return Resource.Success(it) }
+        if (!forceRefresh) (statsCache[scopedKey] as? T)?.let { return Resource.Success(it) }
+
+        // A failed fetch leaves any cached result in place.
 
         val result = fetch()
         if (result is Resource.Success) result.data?.let { statsCache[scopedKey] = it }
@@ -109,22 +115,23 @@ class DataProfileRepository @Inject constructor(
         }
     }
 
-    override suspend fun getTopTracks(period: String, orderBy: String, limit: Int) =
-        fetchChart("tracks", period, orderBy, limit) { it.toTrackChart() }
+    override suspend fun getTopTracks(period: String, orderBy: String, limit: Int, forceRefresh: Boolean) =
+        fetchChart("tracks", period, orderBy, limit, forceRefresh) { it.toTrackChart() }
 
-    override suspend fun getTopArtists(period: String, orderBy: String, limit: Int) =
-        fetchChart("artists", period, orderBy, limit) { it.toArtistChart() }
+    override suspend fun getTopArtists(period: String, orderBy: String, limit: Int, forceRefresh: Boolean) =
+        fetchChart("artists", period, orderBy, limit, forceRefresh) { it.toArtistChart() }
 
-    override suspend fun getTopAlbums(period: String, orderBy: String, limit: Int) =
-        fetchChart("albums", period, orderBy, limit) { it.toAlbumChart() }
+    override suspend fun getTopAlbums(period: String, orderBy: String, limit: Int, forceRefresh: Boolean) =
+        fetchChart("albums", period, orderBy, limit, forceRefresh) { it.toAlbumChart() }
 
     private suspend fun <T> fetchChart(
         kind: String,
         period: String,
         orderBy: String,
         limit: Int,
+        forceRefresh: Boolean,
         map: (ChartResponseDto) -> Chart<T>
-    ): Resource<Chart<T>> = cached("chart:$kind:$period:$orderBy:$limit") {
+    ): Resource<Chart<T>> = cached("chart:$kind:$period:$orderBy:$limit", forceRefresh) {
         try {
             val response = networkApiService.getChart(
                 url = "${getBaseUrl()}logger/top-$kind",

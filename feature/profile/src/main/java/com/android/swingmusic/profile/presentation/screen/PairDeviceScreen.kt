@@ -48,6 +48,7 @@ import com.android.swingmusic.profile.presentation.component.ProfileTopBar
 import com.android.swingmusic.profile.presentation.event.PairDeviceUiEffect
 import com.android.swingmusic.profile.presentation.event.PairDeviceUiEvent
 import com.android.swingmusic.profile.presentation.state.PairDeviceUiState
+import com.android.swingmusic.profile.presentation.state.displayName
 import com.android.swingmusic.profile.presentation.state.qrPayload
 import com.android.swingmusic.profile.presentation.state.serverHost
 import com.android.swingmusic.profile.presentation.viewmodel.PairDeviceViewModel
@@ -105,7 +106,7 @@ private fun PairDeviceScreenContent(
                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("TAP TO SCAN") }
                     if (uiState.username.isNotEmpty()) {
                         append(". It signs in as ")
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(uiState.username) }
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(displayName(uiState.username)) }
                     }
                     append(".")
                 },

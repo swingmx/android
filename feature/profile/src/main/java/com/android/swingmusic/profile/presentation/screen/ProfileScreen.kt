@@ -2,6 +2,32 @@ package com.android.swingmusic.profile.presentation.screen
 
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.draw.shadow
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.AnimatedVisibility
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -73,6 +99,7 @@ import com.android.swingmusic.profile.presentation.component.rememberSkeletonAlp
 import com.android.swingmusic.profile.presentation.event.ProfileUiEffect
 import com.android.swingmusic.profile.presentation.event.ProfileUiEvent
 import com.android.swingmusic.profile.presentation.state.ProfileUiState
+import com.android.swingmusic.profile.presentation.state.displayName
 import com.android.swingmusic.profile.presentation.state.initials
 import com.android.swingmusic.profile.presentation.state.isAdmin
 import com.android.swingmusic.profile.presentation.state.serverHost
@@ -81,6 +108,7 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.ObserverAsEvent
 import com.ramcosta.composedestinations.annotation.Destination
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Destination
 @Composable
@@ -92,9 +120,27 @@ internal fun ProfileScreen(
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    // ACTION_GET_CONTENT: Android picks the UI and the sources (photo picker, Google Photos, Files…).
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { viewModel.onEvent(ProfileUiEvent.OnPhotoPicked(it.toString())) }
+    }
 
     ObserverAsEvent(viewModel.uiEffect) { effect ->
         when (effect) {
+            ProfileUiEffect.OpenPhotoPicker -> photoPicker.launch("image/*")
+            is ProfileUiEffect.NavigateToAvatarCrop -> navigator.gotoAvatarCrop(effect.imageUri)
+            ProfileUiEffect.ShowPhotoRemoved -> scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = "Profile photo removed",
+                    actionLabel = "Undo",
+                    duration = SnackbarDuration.Short
+                )
+                viewModel.onEvent(
+                    if (result == SnackbarResult.ActionPerformed) ProfileUiEvent.OnUndoRemovePhoto
+                    else ProfileUiEvent.OnPhotoRemovalSettled
+                )
+            }
+
             ProfileUiEffect.NavigateBack -> navigator.navigateBack()
             ProfileUiEffect.NavigateToStats -> navigator.gotoStats()
             ProfileUiEffect.NavigateToLibrary -> navigator.gotoLibrary()
@@ -141,7 +187,9 @@ private fun ProfileScreenContent(
 
             ProfileHeader(
                 user = uiState.user,
+                avatarPath = uiState.avatarPath,
                 serverHost = serverHost(uiState.baseUrl),
+                onAvatarClick = { onEvent(ProfileUiEvent.OnAvatarClicked) },
                 onCopyServer = { onEvent(ProfileUiEvent.OnCopyServerClicked) }
             )
 
@@ -204,6 +252,17 @@ private fun ProfileScreenContent(
         }
     }
 
+    if (uiState.showPhotoViewer) {
+        PhotoViewer(
+            username = uiState.user?.displayName.orEmpty(),
+            initials = uiState.user?.initials.orEmpty(),
+            avatarPath = uiState.avatarPath,
+            onChange = { onEvent(ProfileUiEvent.OnChangePhoto) },
+            onRemove = { onEvent(ProfileUiEvent.OnRemovePhoto) },
+            onDismiss = { onEvent(ProfileUiEvent.OnPhotoViewerDismissed) }
+        )
+    }
+
     if (uiState.showLogOutDialog) {
         LogOutDialog(
             isLoggingOut = uiState.isLoggingOut,
@@ -214,21 +273,22 @@ private fun ProfileScreenContent(
 }
 
 @Composable
-private fun ProfileHeader(user: User?, serverHost: String, onCopyServer: () -> Unit) {
+private fun ProfileHeader(
+    user: User?,
+    avatarPath: String?,
+    serverHost: String,
+    onAvatarClick: () -> Unit,
+    onCopyServer: () -> Unit
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
+        ProfileAvatar(
+            initials = user?.initials.orEmpty(),
+            avatarPath = avatarPath,
+            size = 72.dp,
             modifier = Modifier
-                .size(72.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = user?.initials.orEmpty(),
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
+                .clickable(onClickLabel = "Change profile photo", onClick = onAvatarClick)
+        )
 
         Spacer(modifier = Modifier.size(16.dp))
 
@@ -238,7 +298,7 @@ private fun ProfileHeader(user: User?, serverHost: String, onCopyServer: () -> U
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = user?.username.orEmpty(),
+                    text = user?.displayName.orEmpty(),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -267,6 +327,139 @@ private fun ProfileHeader(user: User?, serverHost: String, onCopyServer: () -> U
                     modifier = Modifier.weight(1F, fill = false)
                 )
                 Icon(Icons.Rounded.ContentCopy, null, tint = tint, modifier = Modifier.size(14.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileAvatar(
+    initials: String,
+    avatarPath: String?,
+    size: Dp,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+        contentAlignment = Alignment.Center
+    ) {
+        if (avatarPath != null) {
+            AsyncImage(
+                model = File(avatarPath),
+                contentDescription = "Profile photo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Text(text = initials, fontSize = (size.value * .36F).sp, fontWeight = FontWeight.Medium)
+        }
+    }
+}
+
+/**
+ * The photo enlarged in the centre over a dark scrim, with Change and Remove.
+ * A full-screen dialog, so the scrim also covers the nav bar and mini player.
+ */
+@Composable
+private fun PhotoViewer(
+    username: String,
+    initials: String,
+    avatarPath: String?,
+    onChange: () -> Unit,
+    onRemove: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val visible = remember { MutableTransitionState(false).apply { targetState = true } }
+    // What to run once the exit animation finishes: a dismiss, a change or a remove.
+    var afterExit by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    fun close(then: () -> Unit) {
+        if (afterExit != null) return
+        afterExit = then
+        visible.targetState = false
+    }
+
+    LaunchedEffect(visible.isIdle, visible.currentState) {
+        if (visible.isIdle && !visible.currentState) afterExit?.invoke()
+    }
+
+    Dialog(
+        onDismissRequest = { close(onDismiss) },
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            AnimatedVisibility(
+                visibleState = visible,
+                enter = fadeIn(tween(220)),
+                exit = fadeOut(tween(180))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = .86F))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { close(onDismiss) }
+                        )
+                )
+            }
+
+            AnimatedVisibility(
+                visibleState = visible,
+                modifier = Modifier.align(Alignment.Center),
+                enter = fadeIn(tween(220)) + scaleIn(tween(260, easing = FastOutSlowInEasing), initialScale = .6F),
+                exit = fadeOut(tween(160)) + scaleOut(tween(180), targetScale = .8F)
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ProfileAvatar(
+                        initials = initials,
+                        avatarPath = avatarPath,
+                        size = 264.dp,
+                        modifier = Modifier.shadow(24.dp, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(text = username, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Only on this device",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(
+                            onClick = { close(onChange) },
+                            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White.copy(alpha = .12F),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(Icons.Rounded.Image, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Change")
+                        }
+                        Button(
+                            onClick = { close(onRemove) },
+                            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error.copy(alpha = .14F),
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Remove")
+                        }
+                    }
+                }
             }
         }
     }

@@ -39,6 +39,11 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.rememberCoroutineScope
+import com.android.swingmusic.profile.presentation.component.ProfileSnackbarHost
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -101,10 +106,15 @@ internal fun StatsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     ObserverAsEvent(viewModel.uiEffect) { effect ->
         when (effect) {
             StatsUiEffect.NavigateBack -> navigator.navigateBack()
+            is StatsUiEffect.ShowSnackBar -> scope.launch {
+                snackbarHostState.showSnackbar(effect.message)
+            }
             is StatsUiEffect.PlayTracks -> mediaControllerViewModel.onQueueEvent(
                 QueueEvent.RecreateQueue(
                     source = QueueSource.UNKNOWN,
@@ -122,6 +132,7 @@ internal fun StatsScreen(
         uiState = uiState,
         playingTrackHash = playerUiState.nowPlayingTrack?.trackHash,
         playbackState = playerUiState.playbackState,
+        snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent
     )
 }
@@ -131,93 +142,101 @@ private fun StatsScreenContent(
     uiState: StatsUiState,
     onEvent: (StatsUiEvent) -> Unit,
     playingTrackHash: String? = null,
-    playbackState: PlaybackState = PlaybackState.PAUSED
+    playbackState: PlaybackState = PlaybackState.PAUSED,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { ProfileSnackbarHost(snackbarHostState) },
         topBar = { ProfileTopBar(title = "Listening Stats", onBack = { onEvent(StatsUiEvent.OnBackClicked) }) }
     ) { paddingValues ->
-        LazyColumn(
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { onEvent(StatsUiEvent.OnRefresh) },
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(top = 8.dp, bottom = 168.dp)
+                .fillMaxSize()
         ) {
-            item {
-                PeriodSelector(
-                    selected = uiState.period,
-                    onSelect = { onEvent(StatsUiEvent.OnPeriodSelected(it)) }
-                )
-            }
-
-            item {
-                SummaryRow(
-                    summary = uiState.tracks.chart?.summary.orEmpty(),
-                    order = uiState.order,
-                    onOrderSelected = { onEvent(StatsUiEvent.OnOrderSelected(it)) }
-                )
-            }
-
-            when {
-                uiState.allFailed -> item {
-                    StatsMessage(
-                        title = "Couldn't load your stats",
-                        body = (uiState.tracks as ChartState.Error).message,
-                        onRetry = { onEvent(StatsUiEvent.OnRetry) }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 168.dp)
+            ) {
+                item {
+                    PeriodSelector(
+                        selected = uiState.period,
+                        onSelect = { onEvent(StatsUiEvent.OnPeriodSelected(it)) }
                     )
                 }
 
-                uiState.isEmpty -> item {
-                    StatsMessage(
-                        title = "Nothing played ${uiState.period.emptyPhrase}",
-                        body = "Play some music and your top tracks, artists and albums show up here."
+                item {
+                    SummaryRow(
+                        summary = uiState.tracks.chart?.summary.orEmpty(),
+                        order = uiState.order,
+                        onOrderSelected = { onEvent(StatsUiEvent.OnOrderSelected(it)) }
                     )
                 }
 
-                else -> {
-                    chartSection("Top tracks", uiState.tracks, skeleton = { trackRowsSkeleton() }) { chart ->
-                        itemsIndexed(chart.entries, key = { i, e -> "track:$i:${e.item.trackHash}" }) { index, entry ->
-                            TopTrackRow(
-                                rank = index + 1,
-                                entry = entry,
-                                baseUrl = uiState.baseUrl,
-                                isPlaying = entry.item.trackHash == playingTrackHash,
-                                playbackState = playbackState,
-                                onClick = { onEvent(StatsUiEvent.OnTrackClicked(index)) }
-                            )
-                        }
+                when {
+                    uiState.allFailed -> item {
+                        StatsMessage(
+                            title = "Couldn't load your stats",
+                            body = (uiState.tracks as ChartState.Error).message,
+                            onRetry = { onEvent(StatsUiEvent.OnRetry) }
+                        )
                     }
 
-                    chartSection("Top artists", uiState.artists, skeleton = { cardRowSkeleton(CircleShape, 96.dp) }) { chart ->
-                        item {
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                items(chart.entries, key = { it.item.artistHash }) { entry ->
-                                    TopArtistCard(
-                                        entry = entry,
-                                        baseUrl = uiState.baseUrl,
-                                        onClick = { onEvent(StatsUiEvent.OnArtistClicked(entry.item.artistHash)) }
-                                    )
+                    uiState.isEmpty -> item {
+                        StatsMessage(
+                            title = "Nothing played ${uiState.period.emptyPhrase}",
+                            body = "Play some music and your top tracks, artists and albums show up here."
+                        )
+                    }
+
+                    else -> {
+                        chartSection("Top tracks", uiState.tracks, skeleton = { trackRowsSkeleton() }) { chart ->
+                            itemsIndexed(chart.entries, key = { i, e -> "track:$i:${e.item.trackHash}" }) { index, entry ->
+                                TopTrackRow(
+                                    rank = index + 1,
+                                    entry = entry,
+                                    baseUrl = uiState.baseUrl,
+                                    isPlaying = entry.item.trackHash == playingTrackHash,
+                                    playbackState = playbackState,
+                                    onClick = { onEvent(StatsUiEvent.OnTrackClicked(index)) }
+                                )
+                            }
+                        }
+
+                        chartSection("Top artists", uiState.artists, skeleton = { cardRowSkeleton(CircleShape, 96.dp) }) { chart ->
+                            item {
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    items(chart.entries, key = { it.item.artistHash }) { entry ->
+                                        TopArtistCard(
+                                            entry = entry,
+                                            baseUrl = uiState.baseUrl,
+                                            onClick = { onEvent(StatsUiEvent.OnArtistClicked(entry.item.artistHash)) }
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    chartSection("Top albums", uiState.albums, skeleton = { cardRowSkeleton(RoundedCornerShape(10.dp), 140.dp) }) { chart ->
-                        item {
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(chart.entries, key = { it.item.albumHash }) { entry ->
-                                    TopAlbumCard(
-                                        entry = entry,
-                                        baseUrl = uiState.baseUrl,
-                                        onClick = { onEvent(StatsUiEvent.OnAlbumClicked(entry.item.albumHash)) }
-                                    )
+                        chartSection("Top albums", uiState.albums, skeleton = { cardRowSkeleton(RoundedCornerShape(10.dp), 140.dp) }) { chart ->
+                            item {
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    items(chart.entries, key = { it.item.albumHash }) { entry ->
+                                        TopAlbumCard(
+                                            entry = entry,
+                                            baseUrl = uiState.baseUrl,
+                                            onClick = { onEvent(StatsUiEvent.OnAlbumClicked(entry.item.albumHash)) }
+                                        )
+                                    }
                                 }
                             }
                         }

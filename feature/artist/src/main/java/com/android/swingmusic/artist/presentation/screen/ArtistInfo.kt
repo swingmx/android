@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -28,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -97,6 +97,7 @@ import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
+import com.android.swingmusic.uicomponent.presentation.component.ScrimTopBar
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
@@ -136,6 +137,7 @@ private fun ArtistInfo(
     val scope = rememberCoroutineScope()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+    val listState = rememberLazyListState()
 
     LaunchedEffect(artistInfo.tracks) {
         clickedTrack?.let { track ->
@@ -207,646 +209,632 @@ private fun ArtistInfo(
             }
         }
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-        ) {
-            item {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    AsyncImage(
-                        modifier = Modifier
-                            .fillParentMaxWidth()
-                            .fillParentMaxHeight(.5F),
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data("${baseUrl}img/artist/${artistInfo.artist.image}")
-                            .crossfade(true)
-                            .transformations(
-                                listOf(
-                                    BlurTransformation(
-                                        scale = 0.25f,
-                                        radius = 25
-                                    )
-                                )
-                            )
-                            .build(),
-                        contentDescription = "Artist Image",
-                        contentScale = ContentScale.Crop,
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .fillParentMaxWidth()
-                            .fillParentMaxHeight(.5F)
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .25F),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .35F),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .45F),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .65F),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .8F),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .9F),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = .95F),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = 1F)
-                                    )
-                                )
-                            )
-                    )
-
-                    Column(
-                        modifier = Modifier.fillParentMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(top = 24.dp)
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            IconButton(
-                                modifier = Modifier.clip(CircleShape),
-                                onClick = { onClickBack() }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back Arrow"
-                                )
-                            }
-                        }
-
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
+                state = listState
+            ) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth()) {
                         AsyncImage(
                             modifier = Modifier
-                                .padding(top = 10.dp)
-                                .size(220.dp)
-                                .shadow(elevation = 12.dp, shape = CircleShape)
-                                .clip(CircleShape)
-                                .border(
-                                    width = (.5).dp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
-                                    shape = CircleShape
-                                ),
+                                .fillParentMaxWidth()
+                                .fillParentMaxHeight(.5F),
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data("${baseUrl}img/artist/${artistInfo.artist.image}")
                                 .crossfade(true)
+                                .transformations(
+                                    listOf(
+                                        BlurTransformation(
+                                            scale = 0.25f,
+                                            radius = 25
+                                        )
+                                    )
+                                )
                                 .build(),
-                            placeholder = painterResource(R.drawable.artist_fallback),
-                            fallback = painterResource(R.drawable.artist_fallback),
-                            error = painterResource(R.drawable.artist_fallback),
                             contentDescription = "Artist Image",
                             contentScale = ContentScale.Crop,
                         )
 
-                        Text(
-                            modifier = Modifier.padding(
-                                start = 12.dp,
-                                end = 12.dp,
-                                top = 16.dp,
-                                bottom = 2.dp
-                            ),
-                            text = artistInfo.artist.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                        Box(
+                            modifier = Modifier
+                                .fillParentMaxWidth()
+                                .fillParentMaxHeight(.5F)
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.surface.copy(alpha = .25F),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = .35F),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = .45F),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = .65F),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = .8F),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = .9F),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = .95F),
+                                            MaterialTheme.colorScheme.surface.copy(alpha = 1F)
+                                        )
+                                    )
+                                )
                         )
 
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                        Column(
+                            modifier = Modifier.fillParentMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            listOf(
-                                "Artist",
-                                artistInfo.artist.trackCount.artistTracksCountHelperText(),
-                                artistInfo.artist.albumCount.artistAlbumsCountHelperText()
-                            ).forEachIndexed { index, label ->
-                                if (index > 0) {
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(8.dp)
-                                            .size(4.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
-                                            )
+                            // Room for the back button, which lives in the overlay top bar
+                            Spacer(modifier = Modifier.height(96.dp))
+
+                            AsyncImage(
+                                modifier = Modifier
+                                    .padding(top = 10.dp)
+                                    .size(220.dp)
+                                    .shadow(elevation = 12.dp, shape = CircleShape)
+                                    .clip(CircleShape)
+                                    .border(
+                                        width = (.5).dp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .1F),
+                                        shape = CircleShape
+                                    ),
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data("${baseUrl}img/artist/${artistInfo.artist.image}")
+                                    .crossfade(true)
+                                    .build(),
+                                placeholder = painterResource(R.drawable.artist_fallback),
+                                fallback = painterResource(R.drawable.artist_fallback),
+                                error = painterResource(R.drawable.artist_fallback),
+                                contentDescription = "Artist Image",
+                                contentScale = ContentScale.Crop,
+                            )
+
+                            Text(
+                                modifier = Modifier
+                                    .padding(start = 12.dp, end = 12.dp, top = 16.dp, bottom = 2.dp),
+                                text = artistInfo.artist.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                listOf(
+                                    "Artist",
+                                    artistInfo.artist.trackCount.artistTracksCountHelperText(),
+                                    artistInfo.artist.albumCount.artistAlbumsCountHelperText()
+                                ).forEachIndexed { index, label ->
+                                    if (index > 0) {
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                                .size(4.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    MaterialTheme.colorScheme.onSurface.copy(alpha = .75F)
+                                                )
+                                        )
+                                    }
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                modifier = Modifier.padding(horizontal = 12.dp),
+                                text = artistInfo.artist.duration.formattedAlbumDuration(),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                item {
+                                    val icon = if (artistInfo.artist.isFavorite) R.drawable.fav_filled
+                                    else R.drawable.fav_not_filled
+                                    IconButton(
+                                        onClick = {
+                                            onToggleArtistFavorite(
+                                                artistInfo.artist.artistHash,
+                                                artistInfo.artist.isFavorite
+                                            )
+                                        }
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = icon),
+                                            contentDescription = "Favorite"
+                                        )
+                                    }
+                                }
+
+                                item {
+                                    ShuffleAndPlayButtons(
+                                        onShuffle = { onShuffle() },
+                                        onPlay = { onPlayAllTracks() }
+                                    )
+                                }
                             }
                         }
+                    }
+                }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            text = artistInfo.artist.duration.formattedAlbumDuration(),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75F),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        LazyRow(
+                if (artistInfo.tracks.isNotEmpty()) {
+                    item {
+                        Row(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp),
+                                .fillParentMaxWidth()
+                                .padding(top = 24.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            item {
-                                val icon = if (artistInfo.artist.isFavorite) R.drawable.fav_filled
-                                else R.drawable.fav_not_filled
-                                IconButton(
-                                    onClick = {
-                                        onToggleArtistFavorite(
-                                            artistInfo.artist.artistHash,
-                                            artistInfo.artist.isFavorite
-                                        )
-                                    }
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = icon),
-                                        contentDescription = "Favorite"
-                                    )
-                                }
-                            }
-
-                            item {
-                                ShuffleAndPlayButtons(
-                                    onShuffle = { onShuffle() },
-                                    onPlay = { onPlayAllTracks() }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (artistInfo.tracks.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillParentMaxWidth()
-                            .padding(top = 24.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Tracks",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-
-                        if (artistInfo.tracks.size > 4) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .clickable(
-                                        interactionSource = clickInteractionSource,
-                                        indication = null
-                                    ) {
-                                        onClickViewAll(artistInfo.artist.name, "Tracks", baseUrl)
-                                    }
-                            ) {
-                                Text(
-                                    text = "View All",
-                                    fontWeight = FontWeight.SemiBold,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            itemsIndexed(
-                items = artistInfo.tracks.take(4),
-                key = { index: Int, item: Track -> item.filepath + index }
-            ) { index, track ->
-                TrackItem(
-                    track = track,
-                    showMenuIcon = true,
-                    baseUrl = baseUrl,
-                    isCurrentTrack = track.trackHash == currentTrack?.trackHash,
-                    playbackState = playbackState,
-                    onClickTrackItem = {
-                        onClickArtistTrack(
-                            artistInfo.tracks,
-                            index
-                        )
-                    },
-                    onClickMoreVert = { trackClicked ->
-                        clickedTrack = trackClicked
-                        showTrackBottomSheet = true
-                    }
-                )
-            }
-
-            if (artistInfo.albumsAndAppearances.albums.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillParentMaxWidth()
-                            .padding(top = 24.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Albums",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-
-                        if (artistInfo.albumsAndAppearances.albums.size > 3) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .clickable(
-                                        interactionSource = clickInteractionSource,
-                                        indication = null
-                                    ) {
-                                        onClickViewAll(artistInfo.artist.name, "Albums", baseUrl)
-                                    }
-                            ) {
-                                Text(
-                                    text = "View All",
-                                    fontWeight = FontWeight.SemiBold,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                LazyRow(
-                    modifier = Modifier
-                        .fillParentMaxWidth()
-                        .padding(horizontal = 12.dp)
-                ) {
-                    items(
-                        items = artistInfo.albumsAndAppearances.albums
-                    ) { album ->
-                        Box(modifier = Modifier.width(170.dp)) {
-                            AlbumItem(
-                                modifier = Modifier.fillMaxWidth(),
-                                screen = Screen.ARTIST,
-                                albumArtistHash = artistInfo.artist.artistHash,
-                                album = album,
-                                baseUrl = baseUrl,
-                                onClick = {
-                                    onClickAlbum(it)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (artistInfo.albumsAndAppearances.singlesAndEps.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillParentMaxWidth()
-                            .padding(top = 12.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "EP & Singles",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-
-                        if (artistInfo.albumsAndAppearances.singlesAndEps.size > 3) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .clickable(
-                                        interactionSource = clickInteractionSource,
-                                        indication = null
-                                    ) {
-                                        onClickViewAll(
-                                            artistInfo.artist.name,
-                                            "Ep & Singles",
-                                            baseUrl
-                                        )
-                                    }
-                            ) {
-                                Text(
-                                    text = "View All",
-                                    fontWeight = FontWeight.SemiBold,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                LazyRow(
-                    modifier = Modifier
-                        .fillParentMaxWidth()
-                        .padding(horizontal = 12.dp)
-                ) {
-                    items(
-                        items = artistInfo.albumsAndAppearances.singlesAndEps
-                    ) { album ->
-                        Box(modifier = Modifier.width(170.dp)) {
-                            AlbumItem(
-                                modifier = Modifier.fillMaxWidth(),
-                                screen = Screen.ARTIST,
-                                albumArtistHash = artistInfo.artist.artistHash,
-                                album = album,
-                                baseUrl = baseUrl,
-                                onClick = {
-                                    onClickAlbum(it)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (artistInfo.albumsAndAppearances.compilations.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillParentMaxWidth()
-                            .padding(top = 12.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Compilations",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-
-                        if (artistInfo.albumsAndAppearances.compilations.size > 3) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .clickable(
-                                        interactionSource = clickInteractionSource,
-                                        indication = null
-                                    ) {
-                                        onClickViewAll(
-                                            artistInfo.artist.name,
-                                            "Compilations",
-                                            baseUrl
-                                        )
-                                    }
-                            ) {
-                                Text(
-                                    text = "View All",
-                                    fontWeight = FontWeight.SemiBold,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                LazyRow(
-                    modifier = Modifier
-                        .fillParentMaxWidth()
-                        .padding(horizontal = 12.dp)
-                ) {
-                    items(
-                        items = artistInfo.albumsAndAppearances.compilations
-                    ) { album ->
-                        Box(modifier = Modifier.width(170.dp)) {
-                            AlbumItem(
-                                modifier = Modifier.fillMaxWidth(),
-                                screen = Screen.ARTIST,
-                                albumArtistHash = artistInfo.artist.artistHash,
-                                album = album,
-                                baseUrl = baseUrl,
-                                onClick = {
-                                    onClickAlbum(it)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (artistInfo.albumsAndAppearances.appearances.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillParentMaxWidth()
-                            .padding(top = 12.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Appearances",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-                        if (artistInfo.albumsAndAppearances.appearances.size > 3) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .clickable(
-                                        interactionSource = clickInteractionSource,
-                                        indication = null
-                                    ) {
-                                        onClickViewAll(
-                                            artistInfo.artist.name,
-                                            "Appearances",
-                                            baseUrl
-                                        )
-                                    }
-                            ) {
-                                Text(
-                                    text = "View All",
-                                    fontWeight = FontWeight.SemiBold,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                LazyRow(
-                    modifier = Modifier
-                        .fillParentMaxWidth()
-                        .padding(horizontal = 12.dp)
-                ) {
-                    items(
-                        items = artistInfo.albumsAndAppearances.appearances
-                    ) { album ->
-                        Box(modifier = Modifier.width(170.dp)) {
-                            AlbumItem(
-                                modifier = Modifier.fillMaxWidth(),
-                                screen = Screen.ARTIST,
-                                albumArtistHash = artistInfo.artist.artistHash,
-                                showDate = false,
-                                album = album,
-                                baseUrl = baseUrl,
-                                onClick = {
-                                    onClickAlbum(it)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (similarArtists.isNotEmpty()) {
-                item {
-                    Spacer(
-                        modifier = Modifier.padding(top = 12.dp)
-                    )
-                }
-            }
-
-            item {
-                LazyRow(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.surface)
-                                .padding(end = 12.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    MaterialTheme.colorScheme.onSurface
-                                )
-                                .padding(
-                                    horizontal = 12.dp,
-                                    vertical = 8.dp
-                                )
-                        ) {
                             Text(
-                                text = when {
-                                    artistInfo.artist.genres.size > 1 -> "Genres"
-                                    artistInfo.artist.genres.size == 1 -> "Genre"
-                                    else -> "No Genres"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = "Tracks",
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.surface
+                                fontSize = 20.sp
                             )
-                        }
-                    }
 
-                    items(artistInfo.artist.genres) { genre ->
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 12.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    MaterialTheme.colorScheme.tertiary
-                                )
-                                .padding(
-                                    horizontal = 12.dp,
-                                    vertical = 8.dp
-                                )
-
-                        ) {
-                            Text(
-                                text = genre.name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onTertiary,
-                                fontWeight = FontWeight.SemiBold,
-                            )
+                            if (artistInfo.tracks.size > 4) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .clickable(
+                                            interactionSource = clickInteractionSource,
+                                            indication = null
+                                        ) {
+                                            onClickViewAll(artistInfo.artist.name, "Tracks", baseUrl)
+                                        }
+                                ) {
+                                    Text(
+                                        text = "View All",
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            if (similarArtists.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "More Like ${artistInfo.artist.name}",
-                        fontWeight = FontWeight.Bold,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = 20.sp,
-                        modifier = Modifier.padding(top = 16.dp, start = 20.dp)
+                itemsIndexed(
+                    items = artistInfo.tracks.take(4),
+                    key = { index: Int, item: Track -> item.filepath + index }
+                ) { index, track ->
+                    TrackItem(
+                        track = track,
+                        showMenuIcon = true,
+                        baseUrl = baseUrl,
+                        isCurrentTrack = track.trackHash == currentTrack?.trackHash,
+                        playbackState = playbackState,
+                        onClickTrackItem = {
+                            onClickArtistTrack(
+                                artistInfo.tracks,
+                                index
+                            )
+                        },
+                        onClickMoreVert = { trackClicked ->
+                            clickedTrack = trackClicked
+                            showTrackBottomSheet = true
+                        }
                     )
                 }
-            }
 
-            item {
-                LazyRow(
-                    modifier = Modifier
-                        .fillParentMaxWidth()
-                        .padding(horizontal = 12.dp)
-                ) {
-                    items(
-                        items = similarArtists
-                    ) { artist ->
-                        Box(modifier = Modifier.width(170.dp)) {
-                            ArtistItem(
-                                modifier = Modifier.fillMaxWidth(),
-                                artist = artist,
-                                baseUrl = baseUrl,
-                                onClick = { artistHash ->
-                                    onClickSimilarArtist(artistHash)
-                                }
+                if (artistInfo.albumsAndAppearances.albums.isNotEmpty()) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillParentMaxWidth()
+                                .padding(top = 24.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Albums",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
                             )
+
+                            if (artistInfo.albumsAndAppearances.albums.size > 3) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .clickable(
+                                            interactionSource = clickInteractionSource,
+                                            indication = null
+                                        ) {
+                                            onClickViewAll(artistInfo.artist.name, "Albums", baseUrl)
+                                        }
+                                ) {
+                                    Text(
+                                        text = "View All",
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            if (artistInfo.stats.isNotEmpty()) {
                 item {
-                    ArtistStatsSection(stats = artistInfo.stats, baseUrl = baseUrl)
+                    LazyRow(
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        items(
+                            items = artistInfo.albumsAndAppearances.albums
+                        ) { album ->
+                            Box(modifier = Modifier.width(170.dp)) {
+                                AlbumItem(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    screen = Screen.ARTIST,
+                                    albumArtistHash = artistInfo.artist.artistHash,
+                                    album = album,
+                                    baseUrl = baseUrl,
+                                    onClick = {
+                                        onClickAlbum(it)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (artistInfo.albumsAndAppearances.singlesAndEps.isNotEmpty()) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillParentMaxWidth()
+                                .padding(top = 12.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "EP & Singles",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+
+                            if (artistInfo.albumsAndAppearances.singlesAndEps.size > 3) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .clickable(
+                                            interactionSource = clickInteractionSource,
+                                            indication = null
+                                        ) {
+                                            onClickViewAll(
+                                                artistInfo.artist.name,
+                                                "Ep & Singles",
+                                                baseUrl
+                                            )
+                                        }
+                                ) {
+                                    Text(
+                                        text = "View All",
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    LazyRow(
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        items(
+                            items = artistInfo.albumsAndAppearances.singlesAndEps
+                        ) { album ->
+                            Box(modifier = Modifier.width(170.dp)) {
+                                AlbumItem(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    screen = Screen.ARTIST,
+                                    albumArtistHash = artistInfo.artist.artistHash,
+                                    album = album,
+                                    baseUrl = baseUrl,
+                                    onClick = {
+                                        onClickAlbum(it)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (artistInfo.albumsAndAppearances.compilations.isNotEmpty()) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillParentMaxWidth()
+                                .padding(top = 12.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Compilations",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+
+                            if (artistInfo.albumsAndAppearances.compilations.size > 3) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .clickable(
+                                            interactionSource = clickInteractionSource,
+                                            indication = null
+                                        ) {
+                                            onClickViewAll(
+                                                artistInfo.artist.name,
+                                                "Compilations",
+                                                baseUrl
+                                            )
+                                        }
+                                ) {
+                                    Text(
+                                        text = "View All",
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    LazyRow(
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        items(
+                            items = artistInfo.albumsAndAppearances.compilations
+                        ) { album ->
+                            Box(modifier = Modifier.width(170.dp)) {
+                                AlbumItem(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    screen = Screen.ARTIST,
+                                    albumArtistHash = artistInfo.artist.artistHash,
+                                    album = album,
+                                    baseUrl = baseUrl,
+                                    onClick = {
+                                        onClickAlbum(it)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (artistInfo.albumsAndAppearances.appearances.isNotEmpty()) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillParentMaxWidth()
+                                .padding(top = 12.dp, bottom = 4.dp, start = 20.dp, end = 20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Appearances",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+                            if (artistInfo.albumsAndAppearances.appearances.size > 3) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = .1F)
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .clickable(
+                                            interactionSource = clickInteractionSource,
+                                            indication = null
+                                        ) {
+                                            onClickViewAll(
+                                                artistInfo.artist.name,
+                                                "Appearances",
+                                                baseUrl
+                                            )
+                                        }
+                                ) {
+                                    Text(
+                                        text = "View All",
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    LazyRow(
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        items(
+                            items = artistInfo.albumsAndAppearances.appearances
+                        ) { album ->
+                            Box(modifier = Modifier.width(170.dp)) {
+                                AlbumItem(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    screen = Screen.ARTIST,
+                                    albumArtistHash = artistInfo.artist.artistHash,
+                                    showDate = false,
+                                    album = album,
+                                    baseUrl = baseUrl,
+                                    onClick = {
+                                        onClickAlbum(it)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (similarArtists.isNotEmpty()) {
+                    item {
+                        Spacer(
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                    }
+                }
+
+                item {
+                    LazyRow(
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .padding(end = 12.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        MaterialTheme.colorScheme.onSurface
+                                    )
+                                    .padding(
+                                        horizontal = 12.dp,
+                                        vertical = 8.dp
+                                    )
+                            ) {
+                                Text(
+                                    text = when {
+                                        artistInfo.artist.genres.size > 1 -> "Genres"
+                                        artistInfo.artist.genres.size == 1 -> "Genre"
+                                        else -> "No Genres"
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.surface
+                                )
+                            }
+                        }
+
+                        items(artistInfo.artist.genres) { genre ->
+                            Box(
+                                modifier = Modifier
+                                    .padding(end = 12.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        MaterialTheme.colorScheme.tertiary
+                                    )
+                                    .padding(
+                                        horizontal = 12.dp,
+                                        vertical = 8.dp
+                                    )
+
+                            ) {
+                                Text(
+                                    text = genre.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onTertiary,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (similarArtists.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "More Like ${artistInfo.artist.name}",
+                            fontWeight = FontWeight.Bold,
+                            overflow = TextOverflow.Ellipsis,
+                            fontSize = 20.sp,
+                            modifier = Modifier.padding(top = 16.dp, start = 20.dp)
+                        )
+                    }
+                }
+
+                item {
+                    LazyRow(
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        items(
+                            items = similarArtists
+                        ) { artist ->
+                            Box(modifier = Modifier.width(170.dp)) {
+                                ArtistItem(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    artist = artist,
+                                    baseUrl = baseUrl,
+                                    onClick = { artistHash ->
+                                        onClickSimilarArtist(artistHash)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (artistInfo.stats.isNotEmpty()) {
+                    item {
+                        ArtistStatsSection(stats = artistInfo.stats, baseUrl = baseUrl)
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(200.dp))
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(200.dp))
-            }
+            ScrimTopBar(listState = listState, onBack = onClickBack)
         }
     }
 }

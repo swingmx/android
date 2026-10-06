@@ -16,6 +16,8 @@ interface CommonNavigator {
 
     fun gotoPairDevice()
 
+    fun gotoAvatarCrop(imageUri: String)
+
     fun gotoFolders()
 
     fun gotoSettings()

@@ -30,6 +30,7 @@ internal data class StatsUiState(
     val baseUrl: String = "",
     val period: StatsPeriod = StatsPeriod.WEEK,
     val order: StatsOrder = StatsOrder.PLAY_TIME,
+    val isRefreshing: Boolean = false,
 
     val tracks: ChartState<Track> = ChartState.Loading,
     val artists: ChartState<Artist> = ChartState.Loading,

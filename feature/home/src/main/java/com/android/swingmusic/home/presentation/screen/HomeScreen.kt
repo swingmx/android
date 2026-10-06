@@ -72,6 +72,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.Artist
@@ -92,10 +94,12 @@ import com.android.swingmusic.home.presentation.state.key
 import com.android.swingmusic.home.presentation.viewmodel.HomeViewModel
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
+import com.android.swingmusic.uicomponent.presentation.component.topBarScrimBrush
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.ObserverAsEvent
 import com.ramcosta.composedestinations.annotation.Destination
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Destination
 @Composable
@@ -279,6 +283,7 @@ private fun HomeScreenContent(
             HomeTopBar(
                 titleHandover = { titleHandover },
                 scrimAlpha = { scrimAlpha },
+                avatarPath = uiState.avatarPath,
                 onProfileClick = { onEvent(HomeUiEvent.OnProfileClicked) }
             )
         }
@@ -290,6 +295,7 @@ private fun HomeScreenContent(
 private fun HomeTopBar(
     titleHandover: () -> Float,
     scrimAlpha: () -> Float,
+    avatarPath: String?,
     onProfileClick: () -> Unit,
 ) {
     val surface = MaterialTheme.colorScheme.surface
@@ -297,7 +303,7 @@ private fun HomeTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .drawBehind {
-                drawRect(brush = scrimBrush(surface), alpha = scrimAlpha())
+                drawRect(brush = topBarScrimBrush(surface), alpha = scrimAlpha())
             }
             .windowInsetsPadding(TopAppBarDefaults.windowInsets)
             .padding(bottom = HomeTopBarFade)
@@ -334,11 +340,20 @@ private fun HomeTopBar(
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.AccountCircle,
-                        contentDescription = "Profile",
-                        modifier = Modifier.size(26.dp)
-                    )
+                    if (avatarPath != null) {
+                        AsyncImage(
+                            model = File(avatarPath),
+                            contentDescription = "Profile",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.AccountCircle,
+                            contentDescription = "Profile",
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
                 }
             }
         }
@@ -347,19 +362,6 @@ private fun HomeTopBar(
 
 private val HomeTopBarHeight = 64.dp
 private val HomeTopBarFade = 68.dp
-
-/**
- * One continuous fade from opaque at the top of the screen to transparent below the bar.
- * Follows 1 - t², which leaves the top flat (no visible start) and keeps the title area dark.
- */
-private fun scrimBrush(color: Color): Brush {
-    val steps = 32
-    val stops = Array(steps + 1) { i ->
-        val t = i / steps.toFloat()
-        t to color.copy(alpha = 1F - t * t)
-    }
-    return Brush.verticalGradient(*stops)
-}
 
 private fun LazyListScope.homeSections(
     sections: List<HomeSection>,

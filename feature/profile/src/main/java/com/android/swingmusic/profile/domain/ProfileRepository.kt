@@ -21,11 +21,12 @@ interface ProfileRepository {
 
     suspend fun getPairCode(): Resource<String>
 
-    suspend fun getTopTracks(period: String, orderBy: String, limit: Int): Resource<Chart<Track>>
+    /** Results are cached for the app's lifetime; [forceRefresh] skips the cache but still updates it. */
+    suspend fun getTopTracks(period: String, orderBy: String, limit: Int, forceRefresh: Boolean = false): Resource<Chart<Track>>
 
-    suspend fun getTopArtists(period: String, orderBy: String, limit: Int): Resource<Chart<Artist>>
+    suspend fun getTopArtists(period: String, orderBy: String, limit: Int, forceRefresh: Boolean = false): Resource<Chart<Artist>>
 
-    suspend fun getTopAlbums(period: String, orderBy: String, limit: Int): Resource<Chart<Album>>
+    suspend fun getTopAlbums(period: String, orderBy: String, limit: Int, forceRefresh: Boolean = false): Resource<Chart<Album>>
 
     suspend fun triggerScan(fullScan: Boolean): Resource<Unit>
 

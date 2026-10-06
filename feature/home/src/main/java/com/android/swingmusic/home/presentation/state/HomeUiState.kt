@@ -7,6 +7,7 @@ import com.android.swingmusic.core.domain.model.HomeSection
 @Immutable
 internal data class HomeUiState(
     val baseUrl: String = "",
+    val avatarPath: String? = null,
     val isRefreshing: Boolean = false,
 
     val isLoadingSections: Boolean = true,
