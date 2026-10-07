@@ -53,6 +53,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -123,6 +125,14 @@ fun LyricsOverlay(
     val track = playerUiState.nowPlayingTrack
     val positionMs = remember { mutableLongStateOf(0L) }
     val durationMs = (track?.duration ?: 0) * 1000L
+
+    // Keep the screen awake while following lyrics; normal timeout returns when closed or paused.
+    val view = LocalView.current
+    val keepScreenOn = visible && playerUiState.playbackState == PlaybackState.PLAYING
+    DisposableEffect(keepScreenOn) {
+        view.keepScreenOn = keepScreenOn
+        onDispose { view.keepScreenOn = false }
+    }
 
     fun syncPosition() {
         val controller = mediaControllerViewModel.getMediaController() ?: return
@@ -746,7 +756,7 @@ private fun EmptyLyricsState(
     }
 }
 
-@PreviewDynamicColors
+
 @Preview(
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     device = Devices.PIXEL_5,
@@ -817,7 +827,7 @@ fun LyricsOverlayPreview() {
     }
 }
 
-@PreviewDynamicColors
+
 @Preview(
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     device = Devices.PIXEL_5,
