@@ -1,5 +1,9 @@
 package com.android.swingmusic.folder.presentation.screen
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
 import com.android.swingmusic.playlist.presentation.screen.AddToPlaylistSheet
@@ -195,15 +199,23 @@ private fun FoldersAndTracks(
             Scaffold(
                 modifier = Modifier.padding(it),
                 topBar = {
-                    Text(
-                        modifier = Modifier.padding(
-                            top = 16.dp,
-                            start = 16.dp,
-                            bottom = 8.dp
-                        ),
-                        text = "Folders",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
+                    // Same as system back: up a folder, or off the screen at the top
+                    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp, start = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { backDispatcher?.onBackPressed() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                        Text(
+                            text = "Folders",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    }
                 }
             ) { paddingValues ->
                 Surface(
@@ -564,12 +576,12 @@ private fun FoldersAndTracks(
 @Destination
 @Composable
 fun FoldersAndTracksScreen(
-    foldersViewModel: FoldersViewModel,
-    albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
     mediaControllerViewModel: MediaControllerViewModel,
     navigator: CommonNavigator,
     gotoFolderName: String? = null,
-    gotoFolderPath: String? = null
+    gotoFolderPath: String? = null,
+    foldersViewModel: FoldersViewModel = hiltViewModel(),
+    albumWithInfoViewModel: AlbumWithInfoViewModel = hiltViewModel(),
 ) {
     val currentFolder by remember { foldersViewModel.currentFolder }
 

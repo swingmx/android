@@ -46,8 +46,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
-import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.BottomSheetItemModel
@@ -74,8 +72,7 @@ fun ViewAllSearchResults(
     viewAllType: String,
     navigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
-    searchViewModel: SearchViewModel,
-    artistInfoViewModel: ArtistInfoViewModel
+    searchViewModel: SearchViewModel
 ) {
     val searchState by searchViewModel.searchState.collectAsState()
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
@@ -328,9 +325,6 @@ fun ViewAllSearchResults(
                             }
                         },
                         onChooseArtist = { hash ->
-                            artistInfoViewModel.onArtistInfoUiEvent(
-                                ArtistInfoUiEvent.OnLoadArtistInfo(hash)
-                            )
                             navigator.gotoArtistInfo(hash)
                         },
                         onToggleTrackFavorite = { trackHash, isFavorite ->

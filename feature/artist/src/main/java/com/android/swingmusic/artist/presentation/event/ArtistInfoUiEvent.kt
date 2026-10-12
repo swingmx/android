@@ -3,8 +3,6 @@ package com.android.swingmusic.artist.presentation.event
 interface ArtistInfoUiEvent {
 
     data class OnLoadArtistInfo(val artistHash: String) : ArtistInfoUiEvent
-    
-    data object OnNavigateBack : ArtistInfoUiEvent
 
     data class OnToggleArtistFavorite(
         val artistHash: String,

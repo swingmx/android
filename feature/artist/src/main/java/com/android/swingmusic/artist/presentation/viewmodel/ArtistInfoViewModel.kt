@@ -1,5 +1,6 @@
 package com.android.swingmusic.artist.presentation.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.artist.domain.repository.ArtistRepository
@@ -15,22 +16,28 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class ArtistInfoViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
-    private val pLayerRepository: PLayerRepository
+    private val pLayerRepository: PLayerRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val _artistInfoState: MutableStateFlow<ArtistInfoState> =
         MutableStateFlow(ArtistInfoState())
     val artistInfoState: StateFlow<ArtistInfoState> = _artistInfoState
 
+    init {
+        savedStateHandle.get<String>("artistHash")?.let { hash ->
+            getArtistInfo(hash)
+            getSimilarArtists(hash)
+        }
+    }
+
     private fun getArtistInfo(artistHash: String) {
         viewModelScope.launch {
-            val lastHash = _artistInfoState.value.artistHashBackStack.lastOrNull() ?: artistHash
-            artistRepository.getArtistInfo(lastHash).collectLatest { res ->
+            artistRepository.getArtistInfo(artistHash).collectLatest { res ->
                 _artistInfoState.value = _artistInfoState.value.copy(
                     infoResource = res
                 )
@@ -46,33 +53,12 @@ class ArtistInfoViewModel @Inject constructor(
 
     private fun getSimilarArtists(artistHash: String) {
         viewModelScope.launch {
-            val lastHash = _artistInfoState.value.artistHashBackStack.lastOrNull() ?: artistHash
-
-            artistRepository.getSimilarArtists(lastHash).collectLatest { res ->
+            artistRepository.getSimilarArtists(artistHash).collectLatest { res ->
                 _artistInfoState.value = _artistInfoState.value.copy(
                     similarArtistsResource = res
                 )
             }
         }
-    }
-
-    private fun updateCurrentArtistHash(hash: String) {
-        val currentState = _artistInfoState.value
-        val currentInfo = currentState.infoResource.data
-
-        currentInfo?.let { info ->
-            _artistInfoState.value = currentState.copy(
-                infoResource = Resource.Success(
-                    data = info.copy(
-                        artist = info.artist.copy(artistHash = hash),
-                        albumsAndAppearances = info.albumsAndAppearances,
-                        tracks = info.tracks
-                    )
-                )
-            )
-        }
-
-        Timber.e("UPDATED HASH BACKSTACK: ${_artistInfoState.value.artistHashBackStack}, NEW: $hash")
     }
 
     private fun toggleArtistFavorite(artistHash: String, isFavorite: Boolean) {
@@ -250,56 +236,15 @@ class ArtistInfoViewModel @Inject constructor(
         }
     }
 
-    private fun addArtistHashToBackStack(artistHash: String) {
-        val currentBackStack = _artistInfoState.value.artistHashBackStack
-        _artistInfoState.value = _artistInfoState.value.copy(
-            artistHashBackStack = if ((artistHash != currentBackStack.lastOrNull())) {
-                _artistInfoState.value.artistHashBackStack.plus(artistHash)
-            } else currentBackStack
-        )
-    }
-
-    private fun removeLastHashFromBackStack() {
-        _artistInfoState.value = _artistInfoState.value.copy(
-            artistHashBackStack = _artistInfoState.value.artistHashBackStack.dropLast(1)
-        )
-    }
-
-    private fun clearArtistHashBackStack() {
-        _artistInfoState.value = _artistInfoState.value.copy(
-            artistHashBackStack = emptyList()
-        )
-
-        Timber.e("CLEARED BACKSTACK: ${_artistInfoState.value.artistHashBackStack}")
-    }
-
     fun onArtistInfoUiEvent(event: ArtistInfoUiEvent) {
         when (event) {
             is ArtistInfoUiEvent.OnLoadArtistInfo -> {
-                addArtistHashToBackStack(event.artistHash)
-                updateCurrentArtistHash(event.artistHash)
-
                 getArtistInfo(event.artistHash)
                 getSimilarArtists(event.artistHash)
             }
 
             is ArtistInfoUiEvent.OnRefresh -> {
                 onArtistInfoUiEvent(ArtistInfoUiEvent.OnLoadArtistInfo(event.artistHash))
-            }
-
-            is ArtistInfoUiEvent.OnNavigateBack -> {
-                if (_artistInfoState.value.artistHashBackStack.size == 1) {
-                    clearArtistHashBackStack()
-                } else {
-                    removeLastHashFromBackStack()
-
-                    val hash = _artistInfoState.value.artistHashBackStack.lastOrNull()
-                    hash?.let {
-                        updateCurrentArtistHash(it)
-                        getArtistInfo(it)
-                        getSimilarArtists(it)
-                    }
-                }
             }
 
             is ArtistInfoUiEvent.OnToggleArtistFavorite -> {

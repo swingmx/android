@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
@@ -260,16 +261,16 @@ private fun ViewAllOnArtist(
 fun ViewAllScreenOnArtist(
     commonNavigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
-    artistInfoViewModel: ArtistInfoViewModel,
+    artistHash: String,
     viewAllType: String,
     artistName: String,
     baseUrl: String,
+    artistInfoViewModel: ArtistInfoViewModel = hiltViewModel(),
 ) {
     val artistInfoState = artistInfoViewModel.artistInfoState.collectAsState()
     val playerUiState = mediaControllerViewModel.playerUiState.collectAsState()
 
     val artistData = artistInfoState.value.infoResource.data
-    val artistHash = artistInfoState.value.infoResource.data?.artist?.artistHash ?: ""
     val tracks = if (viewAllType != "Tracks") null else artistData?.tracks
     val albumsToShow = when (viewAllType) {
         "Albums" -> artistData?.albumsAndAppearances?.albums
@@ -377,7 +378,6 @@ fun ViewAllScreenOnArtist(
                     }
                 },
                 onGotoArtist = { hash ->
-                    artistInfoViewModel.onArtistInfoUiEvent(ArtistInfoUiEvent.OnLoadArtistInfo(hash))
                     commonNavigator.gotoArtistInfo(hash)
                 },
                 onToggleTrackFavorite = { trackHash, isFavorite ->

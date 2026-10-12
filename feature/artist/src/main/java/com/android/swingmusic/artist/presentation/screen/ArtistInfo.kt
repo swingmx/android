@@ -3,7 +3,6 @@ package com.android.swingmusic.artist.presentation.screen
 import com.android.swingmusic.playlist.domain.toPlaylistTarget
 import android.annotation.SuppressLint
 import android.content.res.Configuration
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,6 +76,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
@@ -1018,32 +1018,15 @@ private fun ArtistStatsSectionPreview() {
 @Composable
 fun ArtistInfoScreen(
     mediaControllerViewModel: MediaControllerViewModel,
-    artistInfoViewModel: ArtistInfoViewModel,
     artistHash: String,
-    loadNewArtist: Boolean = false,
-    commonNavigator: CommonNavigator
+    commonNavigator: CommonNavigator,
+    artistInfoViewModel: ArtistInfoViewModel = hiltViewModel(),
 ) {
     val baseUrl = mediaControllerViewModel.baseUrl
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val artistInfoState = artistInfoViewModel.artistInfoState.collectAsState()
-    val currentArtistHash = artistInfoState.value.infoResource.data?.artist?.artistHash
     val similarArtists = if (artistInfoState.value.similarArtistsResource is Resource.Success)
         artistInfoState.value.similarArtistsResource.data else emptyList()
-
-    var routeByGotoArtist by remember { mutableStateOf(false) }
-
-    // Shared by the header's back arrow and the system back gesture
-    fun navigateBack() {
-        if (routeByGotoArtist) {
-            commonNavigator.navigateBack()
-            return
-        }
-        if (artistInfoState.value.artistHashBackStack.size <= 1) {
-            routeByGotoArtist = false
-            commonNavigator.navigateBack()
-        }
-        artistInfoViewModel.onArtistInfoUiEvent(ArtistInfoUiEvent.OnNavigateBack)
-    }
 
     var showOnRefreshIndicator by remember { mutableStateOf(false) }
     val refreshState = rememberPullToRefreshState()
@@ -1074,18 +1057,6 @@ fun ArtistInfoScreen(
             if (result == SnackbarResult.ActionPerformed) {
                 commonNavigator.gotoQueueScreen()
             }
-        }
-    }
-
-    LaunchedEffect(key1 = Unit) {
-        routeByGotoArtist = loadNewArtist
-
-        val lastHash = artistInfoState.value.artistHashBackStack.lastOrNull() ?: artistHash
-        val hashToLoad = if (routeByGotoArtist) artistHash else lastHash
-        if (hashToLoad != currentArtistHash) {
-            artistInfoViewModel.onArtistInfoUiEvent(
-                ArtistInfoUiEvent.OnLoadArtistInfo(hashToLoad)
-            )
         }
     }
 
@@ -1176,7 +1147,7 @@ fun ArtistInfoScreen(
                             similarArtists = similarArtists ?: emptyList(),
                             playbackState = playerUiState.playbackState,
                             currentTrack = playerUiState.nowPlayingTrack,
-                            onClickBack = { navigateBack() },
+                            onClickBack = { commonNavigator.navigateBack() },
                             onPlayNext = { queueArtistTracks(playNext = true) },
                             onAddToQueue = { queueArtistTracks(playNext = false) },
                             onSearchOn = { url -> uriHandler.openUri(url) },
@@ -1243,15 +1214,12 @@ fun ArtistInfoScreen(
                                     )
                                 )
                             },
-                            onClickSimilarArtist = {
-                                routeByGotoArtist = false
-
-                                artistInfoViewModel.onArtistInfoUiEvent(
-                                    ArtistInfoUiEvent.OnLoadArtistInfo(it)
-                                )
+                            onClickSimilarArtist = { hash ->
+                                commonNavigator.gotoArtistInfo(hash)
                             },
                             onClickViewAll = { artistName: String, viewAllType: String, baseUrl: String ->
                                 commonNavigator.gotoViewAllOnArtistScreen(
+                                    artistHash = artistHash,
                                     viewAllType = viewAllType,
                                     artistName = artistName,
                                     baseUrl = baseUrl
@@ -1322,11 +1290,7 @@ fun ArtistInfoScreen(
                                 }
                             },
                             onGotoArtist = { hash ->
-                                routeByGotoArtist = false
-
-                                artistInfoViewModel.onArtistInfoUiEvent(
-                                    ArtistInfoUiEvent.OnLoadArtistInfo(hash)
-                                )
+                                if (hash != artistHash) commonNavigator.gotoArtistInfo(hash)
                             },
                             onToggleTrackFavorite = { trackHash, isFavorite ->
                                 artistInfoViewModel.onArtistInfoUiEvent(
@@ -1342,7 +1306,6 @@ fun ArtistInfoScreen(
         }
     }
 
-    BackHandler(enabled = routeByGotoArtist.not()) { navigateBack() }
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
