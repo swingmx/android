@@ -12,13 +12,17 @@ interface CommonNavigator {
 
     fun gotoStats()
 
-    fun gotoLibrary()
+    fun gotoLibraryManagement()
 
     fun gotoPairDevice()
 
     fun gotoAvatarCrop(imageUri: String)
 
     fun gotoFolders()
+
+    fun gotoAllAlbums()
+
+    fun gotoAllArtists()
 
     fun gotoSettings()
 
@@ -38,7 +42,12 @@ interface CommonNavigator {
 
     fun gotoArtistInfo(artistHash: String)
 
-    fun gotoViewAllOnArtistScreen(viewAllType: String, artistName: String, baseUrl: String)
+    fun gotoViewAllOnArtistScreen(
+        artistHash: String,
+        viewAllType: String,
+        artistName: String,
+        baseUrl: String
+    )
 
     fun gotoViewAllSearchResultsScreen(viewAllType: String, searchParams: String)
 

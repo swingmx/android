@@ -2,14 +2,16 @@ package com.android.swingmusic.presentation.navigator
 
 import androidx.navigation.NavController
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
+import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
+import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenOnArtistDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
-import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.LibraryScreenDestination
+import com.android.swingmusic.presentation.navigator.destinations.TabsRootScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.LibraryManagementScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.PairDeviceScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.AvatarCropScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.StatsScreenDestination
@@ -54,10 +56,13 @@ class CoreNavigator(
                 saveState = false
             }
         }
+        // Drop each tab's saved history so the next session starts fresh
+        BottomNavItem.all.forEach { navController.clearBackStack(it.destination.route) }
     }
 
     override fun gotoHome() {
-        val targetDestination = HomeScreenDestination
+        // The tabs root opens Home, so every tab sits on the same base entry
+        val targetDestination = TabsRootScreenDestination
 
         navController.navigate(targetDestination) {
             launchSingleTop = true
@@ -82,8 +87,8 @@ class CoreNavigator(
         }
     }
 
-    override fun gotoLibrary() {
-        navController.navigate(LibraryScreenDestination) {
+    override fun gotoLibraryManagement() {
+        navController.navigate(LibraryManagementScreenDestination) {
             launchSingleTop = true
         }
     }
@@ -102,6 +107,18 @@ class CoreNavigator(
 
     override fun gotoFolders() {
         navController.navigate(FoldersAndTracksScreenDestination()) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoAllAlbums() {
+        navController.navigate(AllAlbumScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoAllArtists() {
+        navController.navigate(AllArtistsScreenDestination) {
             launchSingleTop = true
         }
     }
@@ -160,22 +177,18 @@ class CoreNavigator(
     }
 
     override fun gotoArtistInfo(artistHash: String) {
-        val targetDestination = ArtistInfoScreenDestination(
-            artistHash = artistHash,
-            loadNewArtist = true
-        )
-
-        navController.navigate(targetDestination) {
-            launchSingleTop = true
-        }
+        // A new entry per artist, so similar artists stack and back returns to the previous one
+        navController.navigate(ArtistInfoScreenDestination(artistHash = artistHash))
     }
 
     override fun gotoViewAllOnArtistScreen(
+        artistHash: String,
         viewAllType: String,
         artistName: String,
         baseUrl: String
     ) {
         val targetDestination = ViewAllScreenOnArtistDestination(
+            artistHash = artistHash,
             viewAllType = viewAllType,
             artistName = artistName,
             baseUrl = baseUrl

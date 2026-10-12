@@ -100,6 +100,7 @@ dependencies {
     // Common Feature
     implementation(project(":feature:common"))
     implementation(project(":feature:playlist"))
+    implementation(project(":feature:library"))
 
     // Core
     implementation(libs.androidx.activity.ktx)

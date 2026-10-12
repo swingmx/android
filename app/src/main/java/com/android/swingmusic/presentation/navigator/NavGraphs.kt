@@ -9,7 +9,10 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrC
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.LibraryScreenDestination
+import com.android.swingmusic.library.presentation.screen.destinations.FavouritesScreenDestination
+import com.android.swingmusic.library.presentation.screen.destinations.LibraryScreenDestination
+import com.android.swingmusic.presentation.navigator.destinations.TabsRootScreenDestination
+import com.android.swingmusic.profile.presentation.screen.destinations.LibraryManagementScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.PairDeviceScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.AvatarCropScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.StatsScreenDestination
@@ -32,7 +35,7 @@ object NavGraphs {
         override val route: String = "root"
 
         override val startRoute: Route =
-            if (isUserLoggedIn) HomeScreenDestination else LoginWithQrCodeDestination
+            if (isUserLoggedIn) TabsRootScreenDestination else LoginWithQrCodeDestination
 
         override val destinationsByRoute: Map<String, DestinationSpec<*>>
             get() {
@@ -42,13 +45,16 @@ object NavGraphs {
                 )
 
                 val pastAuthDestSpec = listOf(
-                    // shown on bottom nav
+                    // base entry under the tabs, then the tab roots
+                    TabsRootScreenDestination,
                     HomeScreenDestination,
-                    AllAlbumScreenDestination,
-                    AllArtistsScreenDestination,
+                    LibraryScreenDestination,
+                    FavouritesScreenDestination,
                     SearchScreenDestination,
 
                     // inner destinations
+                    AllAlbumScreenDestination,
+                    AllArtistsScreenDestination,
                     NowPlayingScreenDestination,
                     QueueScreenDestination,
                     AlbumWithInfoScreenDestination,
@@ -56,7 +62,7 @@ object NavGraphs {
                     ArtistInfoScreenDestination,
                     ViewAllSearchResultsDestination,
                     ProfileScreenDestination,
-                    LibraryScreenDestination,
+                    LibraryManagementScreenDestination,
                     PairDeviceScreenDestination,
                     AvatarCropScreenDestination,
                     StatsScreenDestination,
