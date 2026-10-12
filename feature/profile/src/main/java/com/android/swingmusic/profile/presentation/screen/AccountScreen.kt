@@ -27,7 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.profile.presentation.component.ProfileSnackbarHost
-import com.android.swingmusic.profile.presentation.component.ProfileTextField
+import com.android.swingmusic.uicomponent.presentation.component.FilledTextField
 import com.android.swingmusic.profile.presentation.component.ProfileTopBar
 import com.android.swingmusic.profile.presentation.event.AccountUiEffect
 import com.android.swingmusic.profile.presentation.event.AccountUiEvent
@@ -89,7 +89,7 @@ private fun AccountScreenContent(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionLabel("Username")
-                ProfileTextField(
+                FilledTextField(
                     value = uiState.username,
                     onValueChange = { onEvent(AccountUiEvent.OnUsernameChange(it)) },
                     placeholder = "Username",
@@ -106,14 +106,14 @@ private fun AccountScreenContent(
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionLabel("Change password")
-                ProfileTextField(
+                FilledTextField(
                     value = uiState.newPassword,
                     onValueChange = { onEvent(AccountUiEvent.OnNewPasswordChange(it)) },
                     placeholder = "New password",
                     isPassword = true,
                     imeAction = ImeAction.Next
                 )
-                ProfileTextField(
+                FilledTextField(
                     value = uiState.confirmPassword,
                     onValueChange = { onEvent(AccountUiEvent.OnConfirmPasswordChange(it)) },
                     placeholder = "Confirm password",
