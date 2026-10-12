@@ -46,10 +46,10 @@ import com.android.swingmusic.profile.presentation.component.ProfileTopBar
 import com.android.swingmusic.profile.presentation.component.SettingsGroup
 import com.android.swingmusic.profile.presentation.component.SettingsGroupDivider
 import com.android.swingmusic.profile.presentation.component.SettingsRow
-import com.android.swingmusic.profile.presentation.event.LibraryUiEffect
-import com.android.swingmusic.profile.presentation.event.LibraryUiEvent
-import com.android.swingmusic.profile.presentation.state.LibraryUiState
-import com.android.swingmusic.profile.presentation.viewmodel.LibraryViewModel
+import com.android.swingmusic.profile.presentation.event.LibraryManagementUiEffect
+import com.android.swingmusic.profile.presentation.event.LibraryManagementUiEvent
+import com.android.swingmusic.profile.presentation.state.LibraryManagementUiState
+import com.android.swingmusic.profile.presentation.viewmodel.LibraryManagementViewModel
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.ObserverAsEvent
 import com.ramcosta.composedestinations.annotation.Destination
@@ -57,9 +57,9 @@ import kotlinx.coroutines.launch
 
 @Destination
 @Composable
-internal fun LibraryScreen(
+internal fun LibraryManagementScreen(
     navigator: CommonNavigator,
-    viewModel: LibraryViewModel = hiltViewModel()
+    viewModel: LibraryManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -67,15 +67,15 @@ internal fun LibraryScreen(
 
     ObserverAsEvent(viewModel.uiEffect) { effect ->
         when (effect) {
-            LibraryUiEffect.NavigateBack -> navigator.navigateBack()
-            LibraryUiEffect.NavigateToFolders -> navigator.gotoFolders()
-            is LibraryUiEffect.ShowSnackBar -> scope.launch {
+            LibraryManagementUiEffect.NavigateBack -> navigator.navigateBack()
+            LibraryManagementUiEffect.NavigateToFolders -> navigator.gotoFolders()
+            is LibraryManagementUiEffect.ShowSnackBar -> scope.launch {
                 snackbarHostState.showSnackbar(effect.message)
             }
         }
     }
 
-    LibraryScreenContent(
+    LibraryManagementScreenContent(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent
@@ -83,16 +83,16 @@ internal fun LibraryScreen(
 }
 
 @Composable
-private fun LibraryScreenContent(
-    uiState: LibraryUiState,
-    onEvent: (LibraryUiEvent) -> Unit,
+private fun LibraryManagementScreenContent(
+    uiState: LibraryManagementUiState,
+    onEvent: (LibraryManagementUiEvent) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { ProfileSnackbarHost(snackbarHostState) },
-        topBar = { ProfileTopBar(title = "Library", onBack = { onEvent(LibraryUiEvent.OnBackClicked) }) }
+        topBar = { ProfileTopBar(title = "Library", onBack = { onEvent(LibraryManagementUiEvent.OnBackClicked) }) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -107,7 +107,7 @@ private fun LibraryScreenContent(
                     icon = Icons.Rounded.Folder,
                     title = "Folders",
                     subtitle = "Browse your music by folder",
-                    onClick = { onEvent(LibraryUiEvent.OnFoldersClicked) }
+                    onClick = { onEvent(LibraryManagementUiEvent.OnFoldersClicked) }
                 )
                 SettingsGroupDivider()
                 SettingsRow(
@@ -128,7 +128,7 @@ private fun LibraryScreenContent(
                             subtitle = "Picks up new and changed files",
                             filled = true,
                             enabled = !uiState.isStartingScan,
-                            onClick = { onEvent(LibraryUiEvent.OnQuickScanClicked) }
+                            onClick = { onEvent(LibraryManagementUiEvent.OnQuickScanClicked) }
                         )
                         SettingsGroupDivider(inset = false)
                         ScanRow(
@@ -136,13 +136,13 @@ private fun LibraryScreenContent(
                             subtitle = "Re-reads every file. Can take a while on big libraries",
                             filled = false,
                             enabled = !uiState.isStartingScan,
-                            onClick = { onEvent(LibraryUiEvent.OnFullScanClicked) }
+                            onClick = { onEvent(LibraryManagementUiEvent.OnFullScanClicked) }
                         )
                     }
                 }
 
                 AdminSection(title = "Root folders") {
-                    RootFolders(uiState = uiState, onRetry = { onEvent(LibraryUiEvent.OnRetryRootDirs) })
+                    RootFolders(uiState = uiState, onRetry = { onEvent(LibraryManagementUiEvent.OnRetryRootDirs) })
                     Text(
                         text = "Add or remove folders in the web app.",
                         modifier = Modifier.padding(start = 4.dp),
@@ -158,7 +158,7 @@ private fun LibraryScreenContent(
 
     if (uiState.showFullScanDialog) {
         AlertDialog(
-            onDismissRequest = { onEvent(LibraryUiEvent.OnFullScanDismissed) },
+            onDismissRequest = { onEvent(LibraryManagementUiEvent.OnFullScanDismissed) },
             title = { Text("Start a full scan?") },
             text = {
                 Text(
@@ -167,10 +167,10 @@ private fun LibraryScreenContent(
                 )
             },
             confirmButton = {
-                TextButton(onClick = { onEvent(LibraryUiEvent.OnFullScanConfirmed) }) { Text("Scan") }
+                TextButton(onClick = { onEvent(LibraryManagementUiEvent.OnFullScanConfirmed) }) { Text("Scan") }
             },
             dismissButton = {
-                TextButton(onClick = { onEvent(LibraryUiEvent.OnFullScanDismissed) }) { Text("Cancel") }
+                TextButton(onClick = { onEvent(LibraryManagementUiEvent.OnFullScanDismissed) }) { Text("Cancel") }
             }
         )
     }
@@ -232,7 +232,7 @@ private fun ScanRow(
 }
 
 @Composable
-private fun RootFolders(uiState: LibraryUiState, onRetry: () -> Unit) {
+private fun RootFolders(uiState: LibraryManagementUiState, onRetry: () -> Unit) {
     SettingsGroup {
         when {
             uiState.isLoadingRootDirs -> Row(
@@ -299,7 +299,7 @@ private fun RootFolders(uiState: LibraryUiState, onRetry: () -> Unit) {
 @Composable
 private fun LibraryScreenContentPreview() {
     SwingMusicTheme {
-        LibraryScreenContent(uiState = LibraryUiState(), onEvent = {})
+        LibraryManagementScreenContent(uiState = LibraryManagementUiState(), onEvent = {})
     }
 }
 
@@ -307,8 +307,8 @@ private fun LibraryScreenContentPreview() {
 @Composable
 private fun LibraryScreenAdminPreview() {
     SwingMusicTheme {
-        LibraryScreenContent(
-            uiState = LibraryUiState(
+        LibraryManagementScreenContent(
+            uiState = LibraryManagementUiState(
                 isAdmin = true,
                 rootDirs = listOf("/home/user/Music", "/mnt/media/Music")
             ),

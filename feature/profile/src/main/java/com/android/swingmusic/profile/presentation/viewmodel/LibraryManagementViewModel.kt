@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.profile.domain.ProfileRepository
-import com.android.swingmusic.profile.presentation.event.LibraryUiEffect
-import com.android.swingmusic.profile.presentation.event.LibraryUiEvent
-import com.android.swingmusic.profile.presentation.state.LibraryUiState
+import com.android.swingmusic.profile.presentation.event.LibraryManagementUiEffect
+import com.android.swingmusic.profile.presentation.event.LibraryManagementUiEvent
+import com.android.swingmusic.profile.presentation.state.LibraryManagementUiState
 import com.android.swingmusic.profile.presentation.state.isAdmin
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -18,14 +18,14 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-internal class LibraryViewModel @Inject constructor(
+internal class LibraryManagementViewModel @Inject constructor(
     private val profileRepository: ProfileRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(LibraryUiState())
+    private val _uiState = MutableStateFlow(LibraryManagementUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val _uiEffect = Channel<LibraryUiEffect>(capacity = Channel.UNLIMITED)
+    private val _uiEffect = Channel<LibraryManagementUiEffect>(capacity = Channel.UNLIMITED)
     val uiEffect = _uiEffect.receiveAsFlow()
 
     init {
@@ -36,19 +36,19 @@ internal class LibraryViewModel @Inject constructor(
         }
     }
 
-    fun onEvent(event: LibraryUiEvent) {
+    fun onEvent(event: LibraryManagementUiEvent) {
         when (event) {
-            LibraryUiEvent.OnBackClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateBack)
-            LibraryUiEvent.OnFoldersClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateToFolders)
-            LibraryUiEvent.OnQuickScanClicked -> triggerScan(fullScan = false)
-            LibraryUiEvent.OnFullScanClicked -> updateUiState { copy(showFullScanDialog = true) }
-            LibraryUiEvent.OnFullScanDismissed -> updateUiState { copy(showFullScanDialog = false) }
-            LibraryUiEvent.OnFullScanConfirmed -> {
+            LibraryManagementUiEvent.OnBackClicked -> _uiEffect.trySend(LibraryManagementUiEffect.NavigateBack)
+            LibraryManagementUiEvent.OnFoldersClicked -> _uiEffect.trySend(LibraryManagementUiEffect.NavigateToFolders)
+            LibraryManagementUiEvent.OnQuickScanClicked -> triggerScan(fullScan = false)
+            LibraryManagementUiEvent.OnFullScanClicked -> updateUiState { copy(showFullScanDialog = true) }
+            LibraryManagementUiEvent.OnFullScanDismissed -> updateUiState { copy(showFullScanDialog = false) }
+            LibraryManagementUiEvent.OnFullScanConfirmed -> {
                 updateUiState { copy(showFullScanDialog = false) }
                 triggerScan(fullScan = true)
             }
 
-            LibraryUiEvent.OnRetryRootDirs -> loadRootDirs()
+            LibraryManagementUiEvent.OnRetryRootDirs -> loadRootDirs()
         }
     }
 
@@ -78,11 +78,11 @@ internal class LibraryViewModel @Inject constructor(
                 else -> result.message ?: "Couldn't start the scan."
             }
             updateUiState { copy(isStartingScan = false) }
-            _uiEffect.trySend(LibraryUiEffect.ShowSnackBar(message))
+            _uiEffect.trySend(LibraryManagementUiEffect.ShowSnackBar(message))
         }
     }
 
-    private fun updateUiState(block: LibraryUiState.() -> LibraryUiState) {
+    private fun updateUiState(block: LibraryManagementUiState.() -> LibraryManagementUiState) {
         _uiState.update(block)
     }
 }

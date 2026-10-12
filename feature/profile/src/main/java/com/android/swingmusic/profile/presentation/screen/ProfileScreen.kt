@@ -143,7 +143,7 @@ internal fun ProfileScreen(
 
             ProfileUiEffect.NavigateBack -> navigator.navigateBack()
             ProfileUiEffect.NavigateToStats -> navigator.gotoStats()
-            ProfileUiEffect.NavigateToLibrary -> navigator.gotoLibrary()
+            ProfileUiEffect.NavigateToLibrary -> navigator.gotoLibraryManagement()
             ProfileUiEffect.NavigateToPairDevice -> navigator.gotoPairDevice()
             ProfileUiEffect.NavigateToSettings -> navigator.gotoSettings()
             is ProfileUiEffect.CopyToClipboard -> {

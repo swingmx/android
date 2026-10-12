@@ -3,7 +3,7 @@ package com.android.swingmusic.profile.presentation.state
 import androidx.compose.runtime.Immutable
 
 @Immutable
-internal data class LibraryUiState(
+internal data class LibraryManagementUiState(
     val isAdmin: Boolean = false,
 
     val isLoadingRootDirs: Boolean = false,
