@@ -3,6 +3,8 @@ package com.android.swingmusic.library.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.auth.data.avatar.AvatarStore
+import com.android.swingmusic.core.data.util.Resource
+import com.android.swingmusic.library.domain.LibraryRepository
 import com.android.swingmusic.library.presentation.event.LibraryUiEffect
 import com.android.swingmusic.library.presentation.event.LibraryUiEvent
 import com.android.swingmusic.library.presentation.state.LibraryUiState
@@ -18,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 internal class LibraryViewModel @Inject constructor(
     private val avatarStore: AvatarStore,
+    private val libraryRepository: LibraryRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
@@ -30,15 +33,43 @@ internal class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             avatarStore.avatar.collect { file -> updateUiState { copy(avatarPath = file?.absolutePath) } }
         }
+        viewModelScope.launch {
+            val url = libraryRepository.getBaseUrl()
+            updateUiState { copy(baseUrl = url) }
+        }
+        loadRecentlyAdded()
     }
 
     fun onEvent(event: LibraryUiEvent) {
         when (event) {
+            // Counts change as playlists are made elsewhere, so they refresh whenever Library shows
+            LibraryUiEvent.OnScreenResumed -> loadCounts()
             LibraryUiEvent.OnProfileClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateToProfile)
             LibraryUiEvent.OnPlaylistsClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateToPlaylists)
             LibraryUiEvent.OnAlbumsClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateToAlbums)
             LibraryUiEvent.OnArtistsClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateToArtists)
             LibraryUiEvent.OnFoldersClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateToFolders)
+            is LibraryUiEvent.OnAlbumClicked ->
+                _uiEffect.trySend(LibraryUiEffect.NavigateToAlbum(event.albumHash))
+        }
+    }
+
+    private fun loadCounts() {
+        viewModelScope.launch {
+            val counts = libraryRepository.getCounts()
+            updateUiState { copy(counts = counts) }
+        }
+    }
+
+    private fun loadRecentlyAdded() {
+        viewModelScope.launch {
+            val result = libraryRepository.getRecentlyAddedAlbums()
+            updateUiState {
+                copy(
+                    isLoadingRecentlyAdded = false,
+                    recentlyAdded = (result as? Resource.Success)?.data.orEmpty()
+                )
+            }
         }
     }
 

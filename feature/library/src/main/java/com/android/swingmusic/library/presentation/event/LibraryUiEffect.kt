@@ -6,4 +6,5 @@ internal sealed class LibraryUiEffect {
     data object NavigateToAlbums : LibraryUiEffect()
     data object NavigateToArtists : LibraryUiEffect()
     data object NavigateToFolders : LibraryUiEffect()
+    data class NavigateToAlbum(val albumHash: String) : LibraryUiEffect()
 }
