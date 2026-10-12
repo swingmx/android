@@ -99,6 +99,7 @@ dependencies {
     implementation(project(":feature:search"))
     // Common Feature
     implementation(project(":feature:common"))
+    implementation(project(":feature:playlist"))
 
     // Core
     implementation(libs.androidx.activity.ktx)
