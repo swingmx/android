@@ -1,5 +1,17 @@
 package com.android.swingmusic.library.presentation.component
 
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -88,6 +100,58 @@ internal fun LibraryRow(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun LibraryTopBar(title: String, onBack: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {
+    TopAppBar(
+        title = { Text(text = title, fontWeight = FontWeight.SemiBold) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(imageVector = Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+            }
+        },
+        actions = actions,
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+    )
+}
+
+/** Lifts snackbars above the mini player and nav bar, which overlay the bottom of every screen. */
+@Composable
+internal fun LibrarySnackbarHost(hostState: SnackbarHostState) {
+    SnackbarHost(hostState = hostState, modifier = Modifier.padding(bottom = 168.dp))
+}
+
+@Composable
+internal fun LibraryMessage(
+    title: String,
+    message: String?,
+    actionLabel: String?,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp, vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        message?.let {
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+        actionLabel?.let {
+            Spacer(modifier = Modifier.height(12.dp))
+            TextButton(onClick = onAction) { Text(text = it) }
         }
     }
 }
