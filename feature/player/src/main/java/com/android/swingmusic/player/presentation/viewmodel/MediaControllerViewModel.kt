@@ -365,8 +365,8 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
-    private fun addToPlayNextInQueue(playNextTrack: Track?, source: QueueSource) {
-        if (playNextTrack == null) return
+    private fun addToPlayNextInQueue(tracks: List<Track>, source: QueueSource) {
+        if (tracks.isEmpty()) return
 
         val targetQueue = if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
             shuffledQueue
@@ -379,7 +379,7 @@ class MediaControllerViewModel @Inject constructor(
                 mediaController?.addListener(playerListener)
             }
 
-            workingQueue = mutableListOf(playNextTrack)
+            workingQueue = tracks.toMutableList()
             shuffledQueue.clear()
 
             loadMediaItems(
@@ -393,17 +393,17 @@ class MediaControllerViewModel @Inject constructor(
             _playerUiState.value = _playerUiState.value.copy(
                 queue = workingQueue,
                 playingTrackIndex = 0,
-                nowPlayingTrack = playNextTrack,
+                nowPlayingTrack = tracks.first(),
                 shuffleMode = ShuffleMode.SHUFFLE_OFF,
                 source = source
             )
 
-            trackToLog = playNextTrack
+            trackToLog = tracks.first()
         } else {
             val currentPlayingIndex = mediaController?.currentMediaItemIndex ?: 0
             val insertIndex = currentPlayingIndex + 1
 
-            val newQueue = targetQueue.toMutableList().apply { add(insertIndex, playNextTrack) }
+            val newQueue = targetQueue.toMutableList().apply { addAll(insertIndex, tracks) }
             if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
                 shuffledQueue = newQueue
             } else {
@@ -428,8 +428,8 @@ class MediaControllerViewModel @Inject constructor(
         }
     }
 
-    private fun addToPlayingQueue(track: Track?, source: QueueSource) {
-        if (track == null) return
+    private fun addToPlayingQueue(tracks: List<Track>, source: QueueSource) {
+        if (tracks.isEmpty()) return
 
         val targetQueue = if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
             shuffledQueue
@@ -442,7 +442,7 @@ class MediaControllerViewModel @Inject constructor(
                 mediaController?.addListener(playerListener)
             }
 
-            workingQueue = mutableListOf(track)
+            workingQueue = tracks.toMutableList()
             shuffledQueue.clear()
 
             loadMediaItems(
@@ -457,14 +457,15 @@ class MediaControllerViewModel @Inject constructor(
             _playerUiState.value = _playerUiState.value.copy(
                 queue = workingQueue,
                 playingTrackIndex = 0,
-                nowPlayingTrack = track,
+                nowPlayingTrack = tracks.first(),
                 shuffleMode = ShuffleMode.SHUFFLE_OFF,
                 source = source
             )
 
-            trackToLog = track
+            trackToLog = tracks.first()
         } else {
-            val newQueue = targetQueue.toMutableList().apply { add(track) }
+            val firstNewIndex = targetQueue.size
+            val newQueue = targetQueue.toMutableList().apply { addAll(tracks) }
             if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
                 shuffledQueue = newQueue
             } else {
@@ -472,14 +473,11 @@ class MediaControllerViewModel @Inject constructor(
             }
             _playerUiState.value = _playerUiState.value.copy(queue = newQueue)
 
-            val newMediaItem = createMediaItem(
-                id = newQueue.lastIndex,
-                track = track
-            )
-
-            mediaController?.apply {
-                addMediaItem(newMediaItem)
+            val newMediaItems = tracks.mapIndexed { index, track ->
+                createMediaItem(id = firstNewIndex + index, track = track)
             }
+
+            mediaController?.addMediaItems(newMediaItems)
 
             updateQueueInDatabase(
                 queue = newQueue,
@@ -957,12 +955,12 @@ class MediaControllerViewModel @Inject constructor(
             }
 
             is QueueEvent.PlayNext -> {
-                addToPlayNextInQueue(event.track, event.source)
+                addToPlayNextInQueue(event.tracks, event.source)
                 activateHapticResponse()
             }
 
             is QueueEvent.AddToQueue -> {
-                addToPlayingQueue(event.track, event.source)
+                addToPlayingQueue(event.tracks, event.source)
                 activateHapticResponse()
             }
 
