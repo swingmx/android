@@ -1,5 +1,6 @@
 package com.android.swingmusic.album.presentation.screen
 
+import com.android.swingmusic.playlist.domain.toPlaylistTarget
 import android.annotation.SuppressLint
 import android.content.res.Configuration
 import androidx.compose.animation.core.LinearEasing
@@ -64,6 +65,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -88,12 +90,17 @@ import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
+import com.android.swingmusic.playlist.domain.PlaylistTarget
+import com.android.swingmusic.playlist.presentation.screen.AddToPlaylistSheet
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
+import com.android.swingmusic.uicomponent.presentation.component.FavoriteAndMoreActions
+import com.android.swingmusic.uicomponent.presentation.component.ItemOptionsSheet
+import com.android.swingmusic.uicomponent.presentation.component.OptionsItemType
 import com.android.swingmusic.uicomponent.presentation.component.ScrimTopBar
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
-import com.android.swingmusic.uicomponent.presentation.component.ShuffleAndPlayButtons
+import com.android.swingmusic.uicomponent.presentation.component.PlayAndShuffleButtons
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
@@ -114,7 +121,10 @@ fun AlbumWithInfo(
     albumTracksMap: Map<Int, List<Track>>,
     baseUrl: String,
     onClickBack: () -> Unit,
-    onClickMore: () -> Unit,
+    onPlayNext: () -> Unit,
+    onAddToQueue: () -> Unit,
+    onSearchOn: (url: String) -> Unit,
+    onPlaylistMessage: (message: String) -> Unit,
     onClickArtist: (artistHsh: String) -> Unit,
     onClickAlbumTrack: (index: Int, queue: List<Track>) -> Unit,
     onPlay: (queue: List<Track>) -> Unit,
@@ -134,6 +144,9 @@ fun AlbumWithInfo(
     val scope = rememberCoroutineScope()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+    var playlistTrack: Track? by remember { mutableStateOf(null) }
+    var showOptionsSheet by remember { mutableStateOf(false) }
+    var showAddToPlaylistSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(albumTracksMap) {
         albumTracksMap.forEach { entry ->
@@ -144,6 +157,61 @@ fun AlbumWithInfo(
     }
 
     Scaffold {
+        if (showOptionsSheet) {
+            val artistNames = albumInfo.albumArtists.joinToString(", ") { it.name }
+            ItemOptionsSheet(
+                type = OptionsItemType.ALBUM,
+                title = albumInfo.title,
+                subtitle = artistNames,
+                imageUrl = "${baseUrl}img/thumbnail/small/${albumInfo.image}",
+                searchTerm = "${albumInfo.title} - $artistNames",
+                onDismiss = { showOptionsSheet = false },
+                onPlayNext = onPlayNext,
+                onAddToQueue = onAddToQueue,
+                onSearchOn = onSearchOn,
+                onAddToPlaylist = { showAddToPlaylistSheet = true }
+            )
+        }
+
+        if (showAddToPlaylistSheet) {
+            AddToPlaylistSheet(
+                target = PlaylistTarget(
+                    type = PlaylistTarget.Type.ALBUM,
+                    hash = albumInfo.albumHash,
+                    suggestedName = albumInfo.title
+                ),
+                baseUrl = baseUrl,
+                onBack = { showOptionsSheet = true },
+                onDismiss = { showAddToPlaylistSheet = false },
+                onDone = onPlaylistMessage
+            )
+        }
+
+        playlistTrack?.let { track ->
+
+            AddToPlaylistSheet(
+
+                target = track.toPlaylistTarget(),
+
+                baseUrl = baseUrl,
+
+                onBack = {
+
+                    clickedTrack = track
+
+                    showTrackBottomSheet = true
+
+                },
+
+                onDismiss = { playlistTrack = null },
+
+                onDone = { message -> onPlaylistMessage(message) }
+
+            )
+
+        }
+
+
         if (showTrackBottomSheet) {
             clickedTrack?.let { track ->
                 CustomTrackBottomSheet(
@@ -175,16 +243,26 @@ fun AlbumWithInfo(
                             sheetAction = BottomSheetAction.PlayNext
                         ),
                         BottomSheetItemModel(
-                            label = "Add to playing queue",
+                            label = "Add to Queue",
                             painterId = R.drawable.add_to_queue,
                             track = track,
                             sheetAction = BottomSheetAction.AddToQueue
+                        ),
+                        BottomSheetItemModel(
+                            label = "Add to Playlist",
+                            painterId = R.drawable.playlist_add,
+                            track = track,
+                            sheetAction = BottomSheetAction.AddToPlaylist
                         )
                     ),
                     onHideBottomSheet = {
                         showTrackBottomSheet = it
                     },
                     onClickSheetItem = { sheetTrack, sheetAction ->
+                        if (sheetAction is BottomSheetAction.AddToPlaylist) {
+                            playlistTrack = sheetTrack
+                            return@CustomTrackBottomSheet
+                        }
                         onGetSheetAction(sheetTrack, sheetAction)
                     },
                     onChooseArtist = { hash ->
@@ -378,38 +456,13 @@ fun AlbumWithInfo(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            LazyRow(
+                            PlayAndShuffleButtons(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 20.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                item {
-                                    val icon = if (albumInfo.isFavorite) R.drawable.fav_filled
-                                    else R.drawable.fav_not_filled
-                                    IconButton(
-                                        onClick = {
-                                            onToggleAlbumFavorite(
-                                                albumInfo.isFavorite,
-                                                albumInfo.albumHash
-                                            )
-                                        }
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = icon),
-                                            contentDescription = "Favorite"
-                                        )
-                                    }
-                                }
-
-                                item {
-                                    ShuffleAndPlayButtons(
-                                        onShuffle = { onShuffle() },
-                                        onPlay = { onPlay(sortedTracks) }
-                                    )
-                                }
-                            }
+                                onShuffle = { onShuffle() },
+                                onPlay = { onPlay(sortedTracks) }
+                            )
                         }
                     }
                 }
@@ -583,7 +636,19 @@ fun AlbumWithInfo(
                 }
             }
 
-            ScrimTopBar(listState = listState, onBack = onClickBack)
+            ScrimTopBar(
+                listState = listState,
+                onBack = onClickBack,
+                actions = {
+                    FavoriteAndMoreActions(
+                        isFavorite = albumInfo.isFavorite,
+                        onToggleFavorite = {
+                            onToggleAlbumFavorite(albumInfo.isFavorite, albumInfo.albumHash)
+                        },
+                        onClickMore = { showOptionsSheet = true }
+                    )
+                }
+            )
         }
     }
 }
@@ -608,6 +673,25 @@ fun AlbumWithInfoScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
+
+    fun albumSource() = QueueSource.ALBUM(
+        albumHash = albumHash,
+        name = albumWithInfoState.infoResource.data?.albumInfo?.title ?: "Album"
+    )
+
+    fun showQueueSnackbar(message: String) {
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = "View Queue",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                navigator.gotoQueueScreen()
+            }
+        }
+    }
 
     LaunchedEffect(
         key1 = albumWithInfoState.albumHash,
@@ -709,8 +793,23 @@ fun AlbumWithInfoScreen(
                             albumTracksMap = albumWithInfoState.infoResource.data!!.groupedTracks,
                             baseUrl = baseUrl ?: "https://default",
                             onClickBack = { navigator.navigateBack() },
-                            onClickMore = {
-
+                            onPlayNext = {
+                                val tracks = albumWithInfoState.orderedTracks
+                                mediaControllerViewModel.onQueueEvent(
+                                    QueueEvent.PlayNext(tracks = tracks, source = albumSource())
+                                )
+                                showQueueSnackbar("${tracks.size.trackCountLabel()} added to play next")
+                            },
+                            onAddToQueue = {
+                                val tracks = albumWithInfoState.orderedTracks
+                                mediaControllerViewModel.onQueueEvent(
+                                    QueueEvent.AddToQueue(tracks = tracks, source = albumSource())
+                                )
+                                showQueueSnackbar("${tracks.size.trackCountLabel()} added to queue")
+                            },
+                            onSearchOn = { url -> uriHandler.openUri(url) },
+                            onPlaylistMessage = { message ->
+                                scope.launch { snackbarHostState.showSnackbar(message) }
                             },
                             onClickArtist = { artistHash ->
                                 navigator.gotoArtistInfo(artistHash)
@@ -814,7 +913,7 @@ fun AlbumWithInfoScreen(
 
                                         scope.launch {
                                             val result = snackbarHostState.showSnackbar(
-                                                message = "Track added to playing queue",
+                                                message = "Track added to queue",
                                                 actionLabel = "View Queue",
                                                 duration = SnackbarDuration.Short
                                             )
@@ -844,6 +943,8 @@ fun AlbumWithInfoScreen(
         }
     }
 }
+
+private fun Int.trackCountLabel(): String = if (this == 1) "1 track" else "$this tracks"
 
 private fun Int.formattedTrackCount(): String {
     return when {
@@ -1007,7 +1108,10 @@ fun AlbumWithInfoScreenPreview() {
             ),
             baseUrl = "",
             onClickBack = {},
-            onClickMore = {},
+            onPlayNext = {},
+            onAddToQueue = {},
+            onSearchOn = {},
+            onPlaylistMessage = {},
             onClickArtist = { artistHash -> },
             onClickAlbumTrack = { index, queue -> },
             onPlay = { queue -> },

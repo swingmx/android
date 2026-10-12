@@ -12,9 +12,13 @@ interface QueueEvent {
         val isPartialQueue: Boolean = false
     ) : QueueEvent
 
-    data class PlayNext(val track: Track, val source: QueueSource) : QueueEvent
+    data class PlayNext(val tracks: List<Track>, val source: QueueSource) : QueueEvent {
+        constructor(track: Track, source: QueueSource) : this(listOf(track), source)
+    }
 
-    data class AddToQueue(val track: Track, val source: QueueSource) : QueueEvent
+    data class AddToQueue(val tracks: List<Track>, val source: QueueSource) : QueueEvent {
+        constructor(track: Track, source: QueueSource) : this(listOf(track), source)
+    }
 
     data class SeekToQueueItem(val index: Int) : QueueEvent
 

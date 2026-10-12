@@ -21,9 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 
-/** Outlined "Shuffle" followed by filled "Play", as used on the album and artist screens. */
+/** Filled "Play" and outlined "Shuffle" sharing the width, as used on the album and artist screens. */
 @Composable
-fun ShuffleAndPlayButtons(
+fun PlayAndShuffleButtons(
     onShuffle: () -> Unit,
     onPlay: () -> Unit,
     modifier: Modifier = Modifier,
@@ -33,8 +33,18 @@ fun ShuffleAndPlayButtons(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Button(
+            onClick = onPlay,
+            modifier = Modifier.weight(1F),
+            contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+        ) {
+            ButtonIcon(R.drawable.play_arrow_fill)
+            Text(text = "Play")
+        }
+
         OutlinedButton(
             onClick = onShuffle,
+            modifier = Modifier.weight(1F),
             contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = .3F)),
             colors = ButtonDefaults.outlinedButtonColors(
@@ -43,14 +53,6 @@ fun ShuffleAndPlayButtons(
         ) {
             ButtonIcon(R.drawable.shuffle)
             Text(text = "Shuffle")
-        }
-
-        Button(
-            onClick = onPlay,
-            contentPadding = ButtonDefaults.ButtonWithIconContentPadding
-        ) {
-            ButtonIcon(R.drawable.play_arrow_fill)
-            Text(text = "Play")
         }
     }
 }
@@ -67,9 +69,9 @@ private fun ButtonIcon(icon: Int) {
 
 @Preview(showBackground = true, backgroundColor = 0xFF0A0A0A)
 @Composable
-private fun ShuffleAndPlayButtonsPreview() {
+private fun PlayAndShuffleButtonsPreview() {
     SwingMusicTheme {
-        ShuffleAndPlayButtons(
+        PlayAndShuffleButtons(
             onShuffle = {},
             onPlay = {}
         )

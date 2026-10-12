@@ -19,6 +19,7 @@ import com.android.swingmusic.core.data.dto.LyricsCheckDto
 import com.android.swingmusic.core.data.dto.LyricsDto
 import com.android.swingmusic.core.data.dto.LyricsRequestDto
 import com.android.swingmusic.core.data.dto.MixTracksDto
+import com.android.swingmusic.core.data.dto.AllPlaylistsDto
 import com.android.swingmusic.core.data.dto.PlaylistTracksDto
 import com.android.swingmusic.core.data.dto.PluginLyricsRequestDto
 import com.android.swingmusic.core.data.dto.PluginLyricsResultDto
@@ -26,7 +27,9 @@ import com.android.swingmusic.core.data.dto.TopSearchResultsDto
 import com.android.swingmusic.core.data.dto.TrackDto
 import com.android.swingmusic.core.data.dto.TracksSearchResultDto
 import com.android.swingmusic.core.data.dto.RootDirsDto
+import com.android.swingmusic.network.data.dto.AddToPlaylistRequestDto
 import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
+import com.android.swingmusic.network.data.dto.SaveAsPlaylistRequestDto
 import com.android.swingmusic.network.data.dto.LogTrackRequestDto
 import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
 import retrofit2.http.Body
@@ -209,6 +212,26 @@ interface NetworkApiService {
         @Header("Authorization") bearerToken: String,
         @Query("limit") limit: Int
     ): PlaylistTracksDto
+
+    @GET
+    suspend fun getAllPlaylists(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): AllPlaylistsDto
+
+    @POST
+    suspend fun addToPlaylist(
+        @Url url: String,
+        @Body request: AddToPlaylistRequestDto,
+        @Header("Authorization") bearerToken: String
+    ): Any
+
+    @POST
+    suspend fun saveAsPlaylist(
+        @Url url: String,
+        @Body request: SaveAsPlaylistRequestDto,
+        @Header("Authorization") bearerToken: String
+    ): Any
 
     @GET
     suspend fun getMixTracks(

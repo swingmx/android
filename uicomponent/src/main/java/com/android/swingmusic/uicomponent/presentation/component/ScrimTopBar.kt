@@ -2,6 +2,8 @@ package com.android.swingmusic.uicomponent.presentation.component
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,6 +27,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import com.android.swingmusic.uicomponent.R
 import androidx.compose.ui.unit.dp
 
 private val ScrimTopBarHeight = 64.dp
@@ -52,6 +57,7 @@ fun ScrimTopBar(
     listState: LazyListState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     val scrimFadeDistance = with(LocalDensity.current) { 24.dp.toPx() }
     val scrimAlpha by remember(listState) {
@@ -82,6 +88,30 @@ fun ScrimTopBar(
                     contentDescription = "Back"
                 )
             }
+            Spacer(modifier = Modifier.weight(1F))
+            actions()
+        }
+    }
+}
+
+/** Favourite and options buttons for the album and artist top bars. */
+@Composable
+fun FavoriteAndMoreActions(
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
+    onClickMore: () -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onToggleFavorite) {
+            Icon(
+                painter = painterResource(
+                    id = if (isFavorite) R.drawable.fav_filled else R.drawable.fav_not_filled
+                ),
+                contentDescription = if (isFavorite) "Remove from favourites" else "Add to favourites"
+            )
+        }
+        IconButton(onClick = onClickMore) {
+            Icon(imageVector = Icons.Rounded.MoreHoriz, contentDescription = "More options")
         }
     }
 }

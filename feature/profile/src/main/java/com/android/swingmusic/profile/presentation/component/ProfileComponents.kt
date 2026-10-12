@@ -6,20 +6,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import com.android.swingmusic.uicomponent.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -244,75 +232,6 @@ internal fun SkeletonBlock(
         modifier = modifier
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-    )
-}
-
-/** Matches the filled fields on the login screen. */
-@Composable
-internal fun ProfileTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-    isPassword: Boolean = false,
-    errorText: String? = null,
-    imeAction: ImeAction = ImeAction.Done,
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    val fieldColor = colorScheme.onPrimaryContainer.copy(alpha = .1F)
-    var isPasswordVisible by remember { mutableStateOf(false) }
-
-    TextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16),
-        singleLine = true,
-        isError = errorText != null,
-        placeholder = {
-            Text(
-                text = placeholder,
-                style = MaterialTheme.typography.bodyLarge,
-                color = colorScheme.onSurface.copy(alpha = .5F)
-            )
-        },
-        supportingText = errorText?.let { { Text(it) } },
-        visualTransformation = if (isPassword && !isPasswordVisible) {
-            PasswordVisualTransformation()
-        } else {
-            VisualTransformation.None
-        },
-        trailingIcon = if (isPassword) {
-            {
-                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                    Icon(
-                        painter = painterResource(
-                            if (isPasswordVisible) R.drawable.ic_password_visibility_off
-                            else R.drawable.ic_password_visibility
-                        ),
-                        tint = colorScheme.onSurface,
-                        contentDescription = if (isPasswordVisible) "Hide password" else "Show password"
-                    )
-                }
-            }
-        } else {
-            null
-        },
-        keyboardOptions = KeyboardOptions(
-            autoCorrect = false,
-            keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text,
-            imeAction = imeAction
-        ),
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            errorIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            focusedContainerColor = fieldColor,
-            unfocusedContainerColor = fieldColor,
-            errorContainerColor = fieldColor,
-            disabledContainerColor = fieldColor
-        )
     )
 }
 

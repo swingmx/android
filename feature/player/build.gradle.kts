@@ -44,6 +44,7 @@ dependencies {
     implementation(project(":database"))
     implementation(project(":network"))
     implementation(project(":uicomponent"))
+    implementation(project(":feature:playlist"))
     // Common
     implementation(project(":feature:common"))
     implementation(project(":feature:settings"))
