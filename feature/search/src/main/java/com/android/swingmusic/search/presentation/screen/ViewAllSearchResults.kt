@@ -1,5 +1,7 @@
 package com.android.swingmusic.search.presentation.screen
 
+import com.android.swingmusic.playlist.presentation.screen.AddToPlaylistSheet
+import com.android.swingmusic.playlist.domain.toPlaylistTarget
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,6 +95,7 @@ fun ViewAllSearchResults(
     val snackbarHostState = remember { SnackbarHostState() }
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+    var playlistTrack: Track? by remember { mutableStateOf(null) }
 
     LaunchedEffect(allTracks) {
         clickedTrack?.let { track ->
@@ -198,6 +201,19 @@ fun ViewAllSearchResults(
                 }
             }
         ) { pdValues ->
+            playlistTrack?.let { track ->
+                AddToPlaylistSheet(
+                    target = track.toPlaylistTarget(),
+                    baseUrl = baseUrl ?: "",
+                    onBack = {
+                        clickedTrack = track
+                        showTrackBottomSheet = true
+                    },
+                    onDismiss = { playlistTrack = null },
+                    onDone = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
+                )
+            }
+
             if (showTrackBottomSheet) {
                 clickedTrack?.let { track ->
                     CustomTrackBottomSheet(
@@ -236,16 +252,26 @@ fun ViewAllSearchResults(
                                 sheetAction = BottomSheetAction.PlayNext
                             ),
                             BottomSheetItemModel(
-                                label = "Add to playing queue",
+                                label = "Add to Queue",
                                 painterId = R.drawable.add_to_queue,
                                 track = track,
                                 sheetAction = BottomSheetAction.AddToQueue
+                            ),
+                            BottomSheetItemModel(
+                                label = "Add to Playlist",
+                                painterId = R.drawable.playlist_add,
+                                track = track,
+                                sheetAction = BottomSheetAction.AddToPlaylist
                             )
                         ),
                         onHideBottomSheet = {
                             showTrackBottomSheet = it
                         },
                         onClickSheetItem = { sheetTrack, sheetAction ->
+                            if (sheetAction is BottomSheetAction.AddToPlaylist) {
+                                playlistTrack = sheetTrack
+                                return@CustomTrackBottomSheet
+                            }
                             when (sheetAction) {
                                 is BottomSheetAction.GotoAlbum -> {
                                     navigator.gotoAlbumWithInfo(sheetTrack.albumHash)
@@ -288,7 +314,7 @@ fun ViewAllSearchResults(
 
                                     scope.launch {
                                         val result = snackbarHostState.showSnackbar(
-                                            message = "Track added to playing queue",
+                                            message = "Track added to queue",
                                             actionLabel = "View Queue",
                                             duration = SnackbarDuration.Short
                                         )

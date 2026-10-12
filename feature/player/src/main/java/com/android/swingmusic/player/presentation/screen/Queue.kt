@@ -2,6 +2,9 @@
 
 package com.android.swingmusic.player.presentation.screen
 
+import android.widget.Toast
+import com.android.swingmusic.playlist.presentation.screen.AddToPlaylistSheet
+import com.android.swingmusic.playlist.domain.toPlaylistTarget
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -99,6 +102,7 @@ private fun Queue(
     val scope = rememberCoroutineScope()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+    var playlistTrack: Track? by remember { mutableStateOf(null) }
 
     LaunchedEffect(queue) {
         clickedTrack?.let { track ->
@@ -115,6 +119,20 @@ private fun Queue(
     }
 
     Scaffold { outerPadding ->
+        val context = LocalContext.current
+        playlistTrack?.let { track ->
+            AddToPlaylistSheet(
+                target = track.toPlaylistTarget(),
+                baseUrl = baseUrl,
+                onBack = {
+                    clickedTrack = track
+                    showTrackBottomSheet = true
+                },
+                onDismiss = { playlistTrack = null },
+                onDone = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() }
+            )
+        }
+
         if (showTrackBottomSheet) {
             clickedTrack?.let { track ->
                 CustomTrackBottomSheet(
@@ -153,12 +171,22 @@ private fun Queue(
                             painterId = R.drawable.play_next,
                             track = track,
                             sheetAction = BottomSheetAction.PlayNext
+                        ),
+                        BottomSheetItemModel(
+                            label = "Add to Playlist",
+                            painterId = R.drawable.playlist_add,
+                            track = track,
+                            sheetAction = BottomSheetAction.AddToPlaylist
                         )
                     ),
                     onHideBottomSheet = {
                         showTrackBottomSheet = it
                     },
                     onClickSheetItem = { sheetTrack, sheetAction ->
+                        if (sheetAction is BottomSheetAction.AddToPlaylist) {
+                            playlistTrack = sheetTrack
+                            return@CustomTrackBottomSheet
+                        }
                         onGetSheetAction(sheetTrack, sheetAction)
                     },
                     onChooseArtist = { hash ->
