@@ -1,5 +1,9 @@
 package com.android.swingmusic.presentation.navigator
 
+import com.android.swingmusic.library.presentation.screen.destinations.FavouriteCardsScreenDestination
+import com.android.swingmusic.library.presentation.screen.destinations.FavouriteTracksScreenDestination
+import com.android.swingmusic.library.presentation.screen.destinations.PlaylistScreenDestination
+import com.android.swingmusic.library.presentation.screen.destinations.PlaylistsScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
 import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
@@ -55,6 +59,10 @@ object NavGraphs {
                     // inner destinations
                     AllAlbumScreenDestination,
                     AllArtistsScreenDestination,
+                    PlaylistsScreenDestination,
+                    PlaylistScreenDestination,
+                    FavouriteTracksScreenDestination,
+                    FavouriteCardsScreenDestination,
                     NowPlayingScreenDestination,
                     QueueScreenDestination,
                     AlbumWithInfoScreenDestination,

@@ -1,5 +1,10 @@
 package com.android.swingmusic.presentation.navigator
 
+import com.android.swingmusic.library.presentation.screen.destinations.FavouriteCardsScreenDestination
+import com.android.swingmusic.library.presentation.state.FavouriteCardsKind
+import com.android.swingmusic.library.presentation.screen.destinations.FavouriteTracksScreenDestination
+import com.android.swingmusic.library.presentation.screen.destinations.PlaylistScreenDestination
+import com.android.swingmusic.library.presentation.screen.destinations.PlaylistsScreenDestination
 import androidx.navigation.NavController
 import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
 import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
@@ -119,6 +124,36 @@ class CoreNavigator(
 
     override fun gotoAllArtists() {
         navController.navigate(AllArtistsScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoPlaylists() {
+        navController.navigate(PlaylistsScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoPlaylist(playlistId: String) {
+        navController.navigate(PlaylistScreenDestination(playlistId = playlistId)) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoFavouriteTracks() {
+        navController.navigate(FavouriteTracksScreenDestination) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoFavouriteAlbums() {
+        navController.navigate(FavouriteCardsScreenDestination(kind = FavouriteCardsKind.ALBUMS.name)) {
+            launchSingleTop = true
+        }
+    }
+
+    override fun gotoFavouriteArtists() {
+        navController.navigate(FavouriteCardsScreenDestination(kind = FavouriteCardsKind.ARTISTS.name)) {
             launchSingleTop = true
         }
     }

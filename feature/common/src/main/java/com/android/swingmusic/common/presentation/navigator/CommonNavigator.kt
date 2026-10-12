@@ -24,6 +24,16 @@ interface CommonNavigator {
 
     fun gotoAllArtists()
 
+    fun gotoPlaylists()
+
+    fun gotoPlaylist(playlistId: String)
+
+    fun gotoFavouriteTracks()
+
+    fun gotoFavouriteAlbums()
+
+    fun gotoFavouriteArtists()
+
     fun gotoSettings()
 
     fun gotoAccountSettings()
