@@ -17,3 +17,21 @@ data class SaveAsPlaylistRequestDto(
     @SerializedName("playlist_name")
     val playlistName: String
 )
+
+data class CreatePlaylistRequestDto(
+    @SerializedName("name")
+    val name: String
+)
+
+data class RemovePlaylistTracksRequestDto(
+    @SerializedName("tracks")
+    val tracks: List<PlaylistTrackRefDto>
+)
+
+/** A track by its hash and position in the whole playlist; the server checks both match. */
+data class PlaylistTrackRefDto(
+    @SerializedName("trackhash")
+    val trackHash: String,
+    @SerializedName("index")
+    val index: Int
+)

@@ -12,6 +12,10 @@ import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.ArtistDto
 import com.android.swingmusic.core.data.dto.ArtistInfoDto
 import com.android.swingmusic.core.data.dto.ArtistsSearchResultDto
+import com.android.swingmusic.core.data.dto.FavouriteAlbumsDto
+import com.android.swingmusic.core.data.dto.FavouriteArtistsDto
+import com.android.swingmusic.core.data.dto.FavouriteTracksDto
+import com.android.swingmusic.core.data.dto.FavouritesDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksDto
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.dto.HomeSectionDto
@@ -29,10 +33,18 @@ import com.android.swingmusic.core.data.dto.TracksSearchResultDto
 import com.android.swingmusic.core.data.dto.RootDirsDto
 import com.android.swingmusic.network.data.dto.AddToPlaylistRequestDto
 import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
+import com.android.swingmusic.network.data.dto.CreatePlaylistRequestDto
+import com.android.swingmusic.network.data.dto.RemovePlaylistTracksRequestDto
 import com.android.swingmusic.network.data.dto.SaveAsPlaylistRequestDto
 import com.android.swingmusic.network.data.dto.LogTrackRequestDto
 import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.Multipart
+import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -232,6 +244,91 @@ interface NetworkApiService {
         @Body request: SaveAsPlaylistRequestDto,
         @Header("Authorization") bearerToken: String
     ): Any
+
+    @GET
+    suspend fun getPlaylist(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("no_tracks") noTracks: Boolean = false,
+        @Query("start") start: Int = 0,
+        @Query("limit") limit: Int
+    ): PlaylistTracksDto
+
+    @POST
+    suspend fun createPlaylist(
+        @Url url: String,
+        @Body request: CreatePlaylistRequestDto,
+        @Header("Authorization") bearerToken: String
+    ): Any
+
+    @Multipart
+    @PUT
+    suspend fun updatePlaylist(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Part("name") name: RequestBody,
+        @Part("settings") settings: RequestBody,
+        @Part image: MultipartBody.Part?
+    ): Any
+
+    @POST
+    suspend fun pinUnpinPlaylist(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): Any
+
+    @DELETE
+    suspend fun removePlaylistImage(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): Any
+
+    @DELETE
+    suspend fun deletePlaylist(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): Any
+
+    @POST
+    suspend fun removePlaylistTracks(
+        @Url url: String,
+        @Body request: RemovePlaylistTracksRequestDto,
+        @Header("Authorization") bearerToken: String
+    ): Any
+
+    @GET
+    suspend fun getFavourites(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("track_limit") trackLimit: Int,
+        @Query("album_limit") albumLimit: Int,
+        @Query("artist_limit") artistLimit: Int
+    ): FavouritesDto
+
+    // Always pass start: the server defaults it to 6, not 0
+    @GET
+    suspend fun getFavouriteTracks(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("start") start: Int,
+        @Query("limit") limit: Int
+    ): FavouriteTracksDto
+
+    @GET
+    suspend fun getFavouriteAlbums(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("start") start: Int,
+        @Query("limit") limit: Int
+    ): FavouriteAlbumsDto
+
+    @GET
+    suspend fun getFavouriteArtists(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String,
+        @Query("start") start: Int,
+        @Query("limit") limit: Int
+    ): FavouriteArtistsDto
 
     @GET
     suspend fun getMixTracks(

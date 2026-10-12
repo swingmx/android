@@ -63,6 +63,7 @@ import com.android.swingmusic.core.domain.model.LyricsLine
 import com.android.swingmusic.core.domain.model.Mix
 import com.android.swingmusic.core.domain.model.MixImage
 import com.android.swingmusic.core.domain.model.Playlist
+import com.android.swingmusic.core.domain.model.PlaylistSettings
 import com.android.swingmusic.core.domain.model.RootDirs
 import com.android.swingmusic.core.domain.model.TopResultItem
 import com.android.swingmusic.core.domain.model.TopSearchResults
@@ -536,7 +537,15 @@ object Map {
             name = name ?: "",
             customImage = image?.takeIf { it.isNotBlank() && it != "None" && hasImage != false },
             images = images.orEmpty().mapNotNull { it.image?.takeIf { img -> img.isNotBlank() } },
-            trackCount = trackCount ?: count ?: 0
+            trackCount = trackCount ?: count ?: 0,
+            pinned = pinned ?: settings?.pinned ?: false,
+            duration = duration ?: 0,
+            settings = PlaylistSettings(
+                hasGif = settings?.hasGif ?: false,
+                bannerPos = settings?.bannerPos ?: 50,
+                squareImg = settings?.squareImg ?: false,
+                pinned = settings?.pinned ?: pinned ?: false
+            )
         )
     }
 
