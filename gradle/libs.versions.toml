@@ -112,6 +112,7 @@ okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-i
 # Coroutines
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 
 # Navigation (Compose Destinations)
 compose-destinations-core = { group = "io.github.raamcosta.compose-destinations", name = "core", version.ref = "composeDestinations" }

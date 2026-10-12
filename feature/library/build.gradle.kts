@@ -44,6 +44,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":network"))
     implementation(project(":feature:player"))
+    implementation(project(":feature:playlist"))
     implementation(project(":uicomponent"))
     // Common
     implementation(project(":feature:common"))
@@ -84,6 +85,10 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging.interceptor)
+
+    // Tests
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 kotlin {
