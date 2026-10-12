@@ -29,3 +29,8 @@ data class PlaylistTracksDto(
     @SerializedName("tracks")
     val tracks: List<TrackDto>?
 )
+
+data class AllPlaylistsDto(
+    @SerializedName("data")
+    val data: List<PlaylistDto>?
+)
