@@ -49,6 +49,7 @@ dependencies {
     implementation(project(":feature:settings"))
     // Common
     implementation(project(":feature:common"))
+    implementation(project(":feature:playlist"))
 
     // Core
     implementation(libs.androidx.core.ktx)
