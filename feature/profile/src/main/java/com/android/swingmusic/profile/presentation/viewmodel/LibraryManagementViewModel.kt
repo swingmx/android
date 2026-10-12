@@ -39,7 +39,6 @@ internal class LibraryManagementViewModel @Inject constructor(
     fun onEvent(event: LibraryManagementUiEvent) {
         when (event) {
             LibraryManagementUiEvent.OnBackClicked -> _uiEffect.trySend(LibraryManagementUiEffect.NavigateBack)
-            LibraryManagementUiEvent.OnFoldersClicked -> _uiEffect.trySend(LibraryManagementUiEffect.NavigateToFolders)
             LibraryManagementUiEvent.OnQuickScanClicked -> triggerScan(fullScan = false)
             LibraryManagementUiEvent.OnFullScanClicked -> updateUiState { copy(showFullScanDialog = true) }
             LibraryManagementUiEvent.OnFullScanDismissed -> updateUiState { copy(showFullScanDialog = false) }

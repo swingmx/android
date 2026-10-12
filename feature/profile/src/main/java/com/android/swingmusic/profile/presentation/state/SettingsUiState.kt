@@ -6,4 +6,5 @@ import androidx.compose.runtime.Immutable
 internal data class SettingsUiState(
     val appVersion: String = "",
     val imageCacheBytes: Long? = null,
+    val isAdmin: Boolean = false,
 )

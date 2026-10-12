@@ -1,5 +1,6 @@
 package com.android.swingmusic.profile.presentation.screen
 
+import com.android.swingmusic.profile.presentation.component.AdminSection
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,8 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -45,7 +44,6 @@ import com.android.swingmusic.profile.presentation.component.ProfileSnackbarHost
 import com.android.swingmusic.profile.presentation.component.ProfileTopBar
 import com.android.swingmusic.profile.presentation.component.SettingsGroup
 import com.android.swingmusic.profile.presentation.component.SettingsGroupDivider
-import com.android.swingmusic.profile.presentation.component.SettingsRow
 import com.android.swingmusic.profile.presentation.event.LibraryManagementUiEffect
 import com.android.swingmusic.profile.presentation.event.LibraryManagementUiEvent
 import com.android.swingmusic.profile.presentation.state.LibraryManagementUiState
@@ -68,7 +66,6 @@ internal fun LibraryManagementScreen(
     ObserverAsEvent(viewModel.uiEffect) { effect ->
         when (effect) {
             LibraryManagementUiEffect.NavigateBack -> navigator.navigateBack()
-            LibraryManagementUiEffect.NavigateToFolders -> navigator.gotoFolders()
             is LibraryManagementUiEffect.ShowSnackBar -> scope.launch {
                 snackbarHostState.showSnackbar(effect.message)
             }
@@ -92,7 +89,7 @@ private fun LibraryManagementScreenContent(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { ProfileSnackbarHost(snackbarHostState) },
-        topBar = { ProfileTopBar(title = "Library", onBack = { onEvent(LibraryManagementUiEvent.OnBackClicked) }) }
+        topBar = { ProfileTopBar(title = "Library Management", onBack = { onEvent(LibraryManagementUiEvent.OnBackClicked) }) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -102,24 +99,6 @@ private fun LibraryManagementScreenContent(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            SettingsGroup {
-                SettingsRow(
-                    icon = Icons.Rounded.Folder,
-                    title = "Folders",
-                    subtitle = "Browse your music by folder",
-                    onClick = { onEvent(LibraryManagementUiEvent.OnFoldersClicked) }
-                )
-                SettingsGroupDivider()
-                SettingsRow(
-                    icon = Icons.Rounded.Download,
-                    title = "Downloads",
-                    subtitle = "Coming soon",
-                    enabled = false,
-                    showChevron = false,
-                    onClick = {}
-                )
-            }
-
             if (uiState.isAdmin) {
                 AdminSection(title = "Scan") {
                     SettingsGroup {
@@ -176,24 +155,6 @@ private fun LibraryManagementScreenContent(
     }
 }
 
-@Composable
-private fun AdminSection(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
-            modifier = Modifier.padding(start = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            AdminChip()
-        }
-        content()
-    }
-}
 
 @Composable
 private fun ScanRow(

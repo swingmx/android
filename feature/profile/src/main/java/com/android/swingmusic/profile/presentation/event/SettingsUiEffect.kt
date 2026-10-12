@@ -6,4 +6,5 @@ internal sealed class SettingsUiEffect {
     data object NavigateToLyrics : SettingsUiEffect()
     data object NavigateToStorage : SettingsUiEffect()
     data object NavigateToAbout : SettingsUiEffect()
+    data object NavigateToLibraryManagement : SettingsUiEffect()
 }

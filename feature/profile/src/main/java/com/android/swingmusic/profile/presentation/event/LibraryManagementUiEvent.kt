@@ -2,7 +2,6 @@ package com.android.swingmusic.profile.presentation.event
 
 internal sealed interface LibraryManagementUiEvent {
     data object OnBackClicked : LibraryManagementUiEvent
-    data object OnFoldersClicked : LibraryManagementUiEvent
     data object OnQuickScanClicked : LibraryManagementUiEvent
     data object OnFullScanClicked : LibraryManagementUiEvent
     data object OnFullScanConfirmed : LibraryManagementUiEvent
