@@ -3,7 +3,6 @@ package com.android.swingmusic.library.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.auth.data.avatar.AvatarStore
-import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.library.domain.LibraryRepository
 import com.android.swingmusic.library.presentation.event.LibraryUiEffect
 import com.android.swingmusic.library.presentation.event.LibraryUiEvent
@@ -37,7 +36,6 @@ internal class LibraryViewModel @Inject constructor(
             val url = libraryRepository.getBaseUrl()
             updateUiState { copy(baseUrl = url) }
         }
-        loadRecentlyAdded()
     }
 
     fun onEvent(event: LibraryUiEvent) {
@@ -49,29 +47,16 @@ internal class LibraryViewModel @Inject constructor(
             LibraryUiEvent.OnAlbumsClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateToAlbums)
             LibraryUiEvent.OnArtistsClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateToArtists)
             LibraryUiEvent.OnFoldersClicked -> _uiEffect.trySend(LibraryUiEffect.NavigateToFolders)
-            is LibraryUiEvent.OnAlbumClicked ->
-                _uiEffect.trySend(LibraryUiEffect.NavigateToAlbum(event.albumHash))
         }
     }
 
     private fun loadCounts() {
         viewModelScope.launch {
             val counts = libraryRepository.getCounts()
-            updateUiState { copy(counts = counts) }
+            updateUiState { copy(isLoadingCounts = false, counts = counts) }
         }
     }
 
-    private fun loadRecentlyAdded() {
-        viewModelScope.launch {
-            val result = libraryRepository.getRecentlyAddedAlbums()
-            updateUiState {
-                copy(
-                    isLoadingRecentlyAdded = false,
-                    recentlyAdded = (result as? Resource.Success)?.data.orEmpty()
-                )
-            }
-        }
-    }
 
     private fun updateUiState(block: LibraryUiState.() -> LibraryUiState) {
         _uiState.update(block)

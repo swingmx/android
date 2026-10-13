@@ -37,7 +37,6 @@ fun playlist(id: String, pinned: Boolean = false) = Playlist(
 class FakeLibraryRepository : LibraryRepository {
     override suspend fun getBaseUrl() = "https://server/"
     override suspend fun getCounts() = LibraryCounts(playlists = 2, albums = 10, artists = 5)
-    override suspend fun getRecentlyAddedAlbums(): Resource<List<Album>> = Resource.Success(emptyList())
 }
 
 class FakeFavouritesRepository(

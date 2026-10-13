@@ -1,5 +1,13 @@
 package com.android.swingmusic.library.presentation.component
 
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.TopAppBarDefaults
@@ -66,6 +74,7 @@ internal fun LibraryRow(
     subtitle: String?,
     onClick: () -> Unit,
     enabled: Boolean = true,
+    isSubtitleLoading: Boolean = false,
 ) {
     Row(
         modifier = Modifier
@@ -85,12 +94,16 @@ internal fun LibraryRow(
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1F)) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            subtitle?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            if (isSubtitleLoading) {
+                SubtitleSkeleton()
+            } else {
+                subtitle?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
         if (enabled) {
@@ -154,4 +167,23 @@ internal fun LibraryMessage(
             TextButton(onClick = onAction) { Text(text = it) }
         }
     }
+}
+
+/** A pulsing bar the height of a bodySmall line, same pulse as the Home and Profile skeletons. */
+@Composable
+private fun SubtitleSkeleton() {
+    val alpha by rememberInfiniteTransition(label = "subtitleSkeleton").animateFloat(
+        initialValue = 0.5F,
+        targetValue = 1F,
+        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
+        label = "subtitleSkeletonAlpha"
+    )
+    Box(
+        modifier = Modifier
+            .padding(top = 4.dp, bottom = 2.dp)
+            .size(width = 72.dp, height = 10.dp)
+            .graphicsLayer { this.alpha = alpha }
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+    )
 }

@@ -7,5 +7,4 @@ internal sealed interface LibraryUiEvent {
     data object OnAlbumsClicked : LibraryUiEvent
     data object OnArtistsClicked : LibraryUiEvent
     data object OnFoldersClicked : LibraryUiEvent
-    data class OnAlbumClicked(val albumHash: String) : LibraryUiEvent
 }

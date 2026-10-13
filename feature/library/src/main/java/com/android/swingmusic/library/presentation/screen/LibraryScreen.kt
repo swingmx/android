@@ -1,18 +1,9 @@
 package com.android.swingmusic.library.presentation.screen
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import java.text.NumberFormat
-import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.library.domain.LibraryCounts
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.Lifecycle
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.material3.Text
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -74,7 +65,6 @@ private fun Library(
         when (effect) {
             LibraryUiEffect.NavigateToProfile -> navigator.gotoProfile()
             LibraryUiEffect.NavigateToPlaylists -> navigator.gotoPlaylists()
-            is LibraryUiEffect.NavigateToAlbum -> navigator.gotoAlbumWithInfo(effect.albumHash)
             LibraryUiEffect.NavigateToAlbums -> navigator.gotoAllAlbums()
             LibraryUiEffect.NavigateToArtists -> navigator.gotoAllArtists()
             LibraryUiEffect.NavigateToFolders -> navigator.gotoFolders()
@@ -112,6 +102,7 @@ private fun LibraryScreenContent(
                         icon = rememberVectorPainter(Icons.AutoMirrored.Rounded.QueueMusic),
                         title = "Playlists",
                         subtitle = uiState.counts.playlists?.let { countLabel(it, "playlist") },
+                        isSubtitleLoading = uiState.isLoadingCounts,
                         onClick = { onEvent(LibraryUiEvent.OnPlaylistsClicked) }
                     )
                     LibraryGroupDivider()
@@ -119,6 +110,7 @@ private fun LibraryScreenContent(
                         icon = painterResource(R.drawable.ic_album),
                         title = "Albums",
                         subtitle = uiState.counts.albums?.let { countLabel(it, "album") },
+                        isSubtitleLoading = uiState.isLoadingCounts,
                         onClick = { onEvent(LibraryUiEvent.OnAlbumsClicked) }
                     )
                     LibraryGroupDivider()
@@ -126,6 +118,7 @@ private fun LibraryScreenContent(
                         icon = painterResource(R.drawable.ic_artist),
                         title = "Artists",
                         subtitle = uiState.counts.artists?.let { countLabel(it, "artist") },
+                        isSubtitleLoading = uiState.isLoadingCounts,
                         onClick = { onEvent(LibraryUiEvent.OnArtistsClicked) }
                     )
                     LibraryGroupDivider()
@@ -138,35 +131,6 @@ private fun LibraryScreenContent(
                 }
             }
 
-            if (uiState.recentlyAdded.isNotEmpty()) {
-                item(key = "recentlyAddedTitle") {
-                    Text(
-                        text = "Recently added",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 28.dp, bottom = 12.dp)
-                    )
-                }
-                item(key = "recentlyAdded") {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(uiState.recentlyAdded, key = { it.albumHash }) { album ->
-                            // The card only sizes its image, so the row item gets a fixed width
-                            Box(modifier = Modifier.width(166.dp)) {
-                                AlbumItem(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    album = album,
-                                    showDate = false,
-                                    baseUrl = uiState.baseUrl,
-                                    onClick = { onEvent(LibraryUiEvent.OnAlbumClicked(it)) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         LargeTitleTopBar(
