@@ -240,6 +240,8 @@ private fun PlaylistCard(playlist: Playlist, baseUrl: String, onClick: () -> Uni
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
+            // Keeps the text clear of the rounded bottom corners
+            .padding(bottom = 8.dp)
     ) {
         PlaylistArtwork(
             playlist = playlist,
