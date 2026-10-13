@@ -125,6 +125,8 @@ fun AlbumWithInfo(
     onAddToQueue: () -> Unit,
     onSearchOn: (url: String) -> Unit,
     onPlaylistMessage: (message: String) -> Unit,
+    searchOnBrandColours: Boolean = false,
+    onToggleSearchOnBrandColours: () -> Unit = {},
     onClickArtist: (artistHsh: String) -> Unit,
     onClickAlbumTrack: (index: Int, queue: List<Track>) -> Unit,
     onPlay: (queue: List<Track>) -> Unit,
@@ -169,7 +171,9 @@ fun AlbumWithInfo(
                 onPlayNext = onPlayNext,
                 onAddToQueue = onAddToQueue,
                 onSearchOn = onSearchOn,
-                onAddToPlaylist = { showAddToPlaylistSheet = true }
+                onAddToPlaylist = { showAddToPlaylistSheet = true },
+                brandColours = searchOnBrandColours,
+                onToggleBrandColours = onToggleSearchOnBrandColours
             )
         }
 
@@ -674,6 +678,7 @@ fun AlbumWithInfoScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
+    val searchOnBrandColours by albumWithInfoViewModel.searchOnBrandColours.collectAsState()
 
     fun albumSource() = QueueSource.ALBUM(
         albumHash = albumHash,
@@ -808,6 +813,8 @@ fun AlbumWithInfoScreen(
                                 showQueueSnackbar("${tracks.size.trackCountLabel()} added to queue")
                             },
                             onSearchOn = { url -> uriHandler.openUri(url) },
+                            searchOnBrandColours = searchOnBrandColours,
+                            onToggleSearchOnBrandColours = albumWithInfoViewModel::toggleSearchOnBrandColours,
                             onPlaylistMessage = { message ->
                                 scope.launch { snackbarHostState.showSnackbar(message) }
                             },

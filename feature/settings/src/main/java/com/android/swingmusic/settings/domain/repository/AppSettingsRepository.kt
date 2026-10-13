@@ -28,8 +28,11 @@ interface AppSettingsRepository {
     /** Word-by-word colour sweep on the active line; off shows the whole line lit. */
     val lyricsWordSweep: Flow<Boolean>
 
+    val searchOnBrandColours: Flow<Boolean>
+
     suspend fun setUseLyricsPlugin(enabled: Boolean)
     suspend fun setLyricsAutoDownload(enabled: Boolean)
     suspend fun setLyricsOverrideUnsynced(enabled: Boolean)
     suspend fun setLyricsWordSweep(enabled: Boolean)
+    suspend fun setSearchOnBrandColours(enabled: Boolean)
 }

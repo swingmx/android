@@ -66,6 +66,8 @@ class AppSettingsDataRepository @Inject constructor(
     override val lyricsOverrideUnsynced: Flow<Boolean> = appSettings.getLyricsOverrideUnsynced
     override val lyricsWordSweep: Flow<Boolean> = appSettings.getLyricsWordSweep
 
+    override val searchOnBrandColours: Flow<Boolean> = appSettings.getSearchOnBrandColours
+
     override suspend fun setUseLyricsPlugin(enabled: Boolean) {
         appSettings.updateUseLyricsPlugin(enabled)
     }
@@ -80,5 +82,9 @@ class AppSettingsDataRepository @Inject constructor(
 
     override suspend fun setLyricsWordSweep(enabled: Boolean) {
         appSettings.updateLyricsWordSweep(enabled)
+    }
+
+    override suspend fun setSearchOnBrandColours(enabled: Boolean) {
+        appSettings.updateSearchOnBrandColours(enabled)
     }
 }

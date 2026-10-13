@@ -1,5 +1,17 @@
 package com.android.swingmusic.uicomponent.presentation.component
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.composed
+import androidx.compose.material3.ripple
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
 import android.net.Uri
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
@@ -55,34 +67,36 @@ private data class SearchOnService(
     val name: String,
     @DrawableRes val icon: Int,
     val tint: Color?,
+    /** One-colour version for the default monochrome look; null when [icon] already is one. */
+    @DrawableRes val monoIcon: Int?,
     val url: (term: String, type: String) -> String
 )
 
 // Same services and URLs as the web client's "Search on" menu.
 // Colour logos keep their own colours (Unspecified); single-colour marks are tinted, null follows the text.
 private val searchOnServices = listOf(
-    SearchOnService("Google", R.drawable.ic_brand_google, Color.Unspecified) { q, _ ->
+    SearchOnService("Google", R.drawable.ic_brand_google, Color.Unspecified, R.drawable.ic_brand_google_mono) { q, _ ->
         "https://www.google.com/search?q=$q"
     },
-    SearchOnService("YouTube", R.drawable.ic_brand_youtube, Color.Unspecified) { q, _ ->
+    SearchOnService("YouTube", R.drawable.ic_brand_youtube, Color.Unspecified, R.drawable.ic_brand_youtube_mono) { q, _ ->
         "https://www.youtube.com/results?search_query=$q"
     },
-    SearchOnService("Spotify", R.drawable.ic_brand_spotify, Color.Unspecified) { q, t ->
+    SearchOnService("Spotify", R.drawable.ic_brand_spotify, Color.Unspecified, R.drawable.ic_brand_spotify_mono) { q, t ->
         "https://open.spotify.com/search/$q/${t}s"
     },
-    SearchOnService("Tidal", R.drawable.ic_brand_tidal, null) { q, t ->
+    SearchOnService("Tidal", R.drawable.ic_brand_tidal, null, null) { q, t ->
         "https://listen.tidal.com/search/${t}s?q=$q"
     },
-    SearchOnService("Apple Music", R.drawable.ic_brand_applemusic, Color.Unspecified) { q, _ ->
+    SearchOnService("Apple Music", R.drawable.ic_brand_applemusic, Color.Unspecified, R.drawable.ic_brand_applemusic_mono) { q, _ ->
         "https://music.apple.com/search?term=$q"
     },
-    SearchOnService("Deezer", R.drawable.ic_brand_deezer, Color.Unspecified) { q, t ->
+    SearchOnService("Deezer", R.drawable.ic_brand_deezer, Color.Unspecified, R.drawable.ic_brand_deezer_mono) { q, t ->
         "https://www.deezer.com/search/$q/$t"
     },
-    SearchOnService("Wikipedia", R.drawable.ic_brand_wikipedia, null) { q, _ ->
+    SearchOnService("Wikipedia", R.drawable.ic_brand_wikipedia, null, null) { q, _ ->
         "https://en.wikipedia.org/wiki/Special:Search?search=$q"
     },
-    SearchOnService("Last.fm", R.drawable.ic_brand_lastdotfm, Color(0xFFD51007)) { q, t ->
+    SearchOnService("Last.fm", R.drawable.ic_brand_lastdotfm, Color(0xFFD51007), null) { q, t ->
         "https://www.last.fm/search/${t}s?q=$q"
     },
 )
@@ -101,6 +115,8 @@ fun ItemOptionsSheet(
     onAddToQueue: () -> Unit,
     onSearchOn: (url: String) -> Unit,
     onAddToPlaylist: (() -> Unit)? = null,
+    brandColours: Boolean = false,
+    onToggleBrandColours: () -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -164,11 +180,21 @@ fun ItemOptionsSheet(
         Spacer(modifier = Modifier.height(4.dp))
 
         if (showSearchOn) {
+            // Tap goes back; a 5 second hold switches between monochrome and brand colour logos
+            val haptics = LocalHapticFeedback.current
             OptionRow(
                 icon = rememberVectorPainter(Icons.AutoMirrored.Rounded.ArrowBack),
                 label = "Search On",
                 bold = true,
-                onClick = { showSearchOn = false }
+                onClick = { showSearchOn = false },
+                gestures = Modifier.tapOrHold(
+                    holdMillis = BRAND_COLOURS_HOLD_MILLIS,
+                    onTap = { showSearchOn = false },
+                    onHold = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onToggleBrandColours()
+                    }
+                )
             )
             val encodedTerm = Uri.encode(searchTerm)
             searchOnServices.forEachIndexed { index, service ->
@@ -178,10 +204,13 @@ fun ItemOptionsSheet(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = .06F)
                     )
                 }
+                val monochrome = !brandColours
                 OptionRow(
-                    icon = painterResource(service.icon),
-                    iconTint = service.tint ?: MaterialTheme.colorScheme.onSurface,
+                    icon = painterResource(if (monochrome) service.monoIcon ?: service.icon else service.icon),
+                    iconTint = if (monochrome) MaterialTheme.colorScheme.onSurface
+                    else service.tint ?: MaterialTheme.colorScheme.onSurface,
                     label = service.name,
+                    iconSize = 20.dp,
                     verticalPadding = 16.dp,
                     showOpenInNew = true,
                     onClick = { hideThen { onSearchOn(service.url(encodedTerm, type.searchPath)) } }
@@ -223,19 +252,24 @@ private fun OptionRow(
     label: String,
     onClick: () -> Unit,
     iconTint: Color = MaterialTheme.colorScheme.onSurface,
+    iconSize: Dp = 24.dp,
     verticalPadding: Dp = 12.dp,
     bold: Boolean = false,
     showChevron: Boolean = false,
     showOpenInNew: Boolean = false,
+    gestures: Modifier? = null,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .then(gestures ?: Modifier.clickable(onClick = onClick))
             .padding(horizontal = 12.dp, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(painter = icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
+        // A smaller icon keeps the same box, so labels stay aligned with the other rows
+        Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+            Icon(painter = icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(iconSize))
+        }
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = label,
@@ -259,3 +293,32 @@ private fun OptionRow(
         }
     }
 }
+
+private const val BRAND_COLOURS_HOLD_MILLIS = 5_000L
+
+/**
+ * A quick tap runs [onTap]; holding for [holdMillis] runs [onHold] instead. Releasing in between
+ * does nothing, so the hidden action only happens on purpose.
+ */
+private fun Modifier.tapOrHold(holdMillis: Long, onTap: () -> Unit, onHold: () -> Unit): Modifier =
+    composed {
+        val interactionSource = remember { MutableInteractionSource() }
+        indication(interactionSource, ripple())
+            .pointerInput(holdMillis) {
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    val press = PressInteraction.Press(down.position)
+                    interactionSource.tryEmit(press)
+                    val up = withTimeoutOrNull(holdMillis) { waitForUpOrCancellation() }
+                    interactionSource.tryEmit(PressInteraction.Release(press))
+                    when {
+                        up == null -> {
+                            onHold()
+                            waitForUpOrCancellation()
+                        }
+
+                        up.uptimeMillis - down.uptimeMillis < viewConfiguration.longPressTimeoutMillis -> onTap()
+                    }
+                }
+            }
+    }
