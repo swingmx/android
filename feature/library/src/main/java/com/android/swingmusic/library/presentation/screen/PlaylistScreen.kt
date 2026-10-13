@@ -87,8 +87,6 @@ import com.android.swingmusic.uicomponent.presentation.util.formattedAlbumDurati
 import com.ramcosta.composedestinations.annotation.Destination
 import kotlinx.coroutines.launch
 
-private const val PLAYLIST_EDITS_ENABLED = false
-
 @Destination
 @Composable
 fun PlaylistScreen(
@@ -458,22 +456,16 @@ private fun PlaylistOptionsSheet(
         }
         androidx.compose.material3.HorizontalDivider()
         Spacer(modifier = Modifier.height(4.dp))
-        // Rename, Change Image and Delete stay hidden until the server stops its playlist image
-        // cleanup from deleting every playlist's custom image (it runs after updates and deletes)
-        if (PLAYLIST_EDITS_ENABLED) {
-            OptionRow(Icons.Rounded.Edit, "Rename") { onEvent(PlaylistUiEvent.OnRenameClicked) }
-            OptionRow(Icons.Rounded.Image, "Change Image") { onEvent(PlaylistUiEvent.OnChangeImageClicked) }
-        }
+        OptionRow(Icons.Rounded.Edit, "Rename") { onEvent(PlaylistUiEvent.OnRenameClicked) }
+        OptionRow(Icons.Rounded.Image, "Change Image") { onEvent(PlaylistUiEvent.OnChangeImageClicked) }
         if (playlist.customImage != null) {
             OptionRow(Icons.Rounded.HideImage, "Remove Image") { onEvent(PlaylistUiEvent.OnRemoveImageClicked) }
         }
         OptionRow(Icons.Rounded.PushPin, if (playlist.pinned) "Unpin" else "Pin") {
             onEvent(PlaylistUiEvent.OnTogglePinClicked)
         }
-        if (PLAYLIST_EDITS_ENABLED) {
-            OptionRow(Icons.Rounded.Delete, "Delete", color = MaterialTheme.colorScheme.error) {
-                onEvent(PlaylistUiEvent.OnDeleteClicked)
-            }
+        OptionRow(Icons.Rounded.Delete, "Delete", color = MaterialTheme.colorScheme.error) {
+            onEvent(PlaylistUiEvent.OnDeleteClicked)
         }
         Spacer(modifier = Modifier.height(48.dp))
     }
