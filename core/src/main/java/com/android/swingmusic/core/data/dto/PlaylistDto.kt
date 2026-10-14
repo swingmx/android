@@ -17,7 +17,24 @@ data class PlaylistDto(
     @SerializedName("trackcount")
     val trackCount: Int?,
     @SerializedName("count")
-    val count: Int?
+    val count: Int?,
+    @SerializedName("pinned")
+    val pinned: Boolean? = null,
+    @SerializedName("duration")
+    val duration: Int? = null,
+    @SerializedName("settings")
+    val settings: PlaylistSettingsDto? = null
+)
+
+data class PlaylistSettingsDto(
+    @SerializedName("has_gif")
+    val hasGif: Boolean?,
+    @SerializedName("banner_pos")
+    val bannerPos: Int?,
+    @SerializedName("square_img")
+    val squareImg: Boolean?,
+    @SerializedName("pinned")
+    val pinned: Boolean?
 )
 
 data class PlaylistImageDto(
@@ -26,6 +43,8 @@ data class PlaylistImageDto(
 )
 
 data class PlaylistTracksDto(
+    @SerializedName("info")
+    val info: PlaylistDto? = null,
     @SerializedName("tracks")
     val tracks: List<TrackDto>?
 )

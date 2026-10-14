@@ -28,6 +28,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -52,11 +53,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
 import com.android.swingmusic.artist.presentation.event.ArtistUiEvent
 import com.android.swingmusic.artist.presentation.state.ArtistsUiState
 import com.android.swingmusic.artist.presentation.util.pagingArtists
-import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.artist.presentation.viewmodel.ArtistsViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.data.util.Resource
@@ -69,6 +68,7 @@ import com.android.swingmusic.uicomponent.R as UiComponents
 
 @Composable
 private fun AllArtists(
+    onBack: () -> Unit,
     pagingArtists: LazyPagingItems<Artist>,
     artistsUiState: ArtistsUiState,
     sortByPairs: List<Pair<SortBy, String>>,
@@ -110,13 +110,19 @@ private fun AllArtists(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 16.dp, end = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .padding(start = 4.dp, end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
                         Text(
                             text = "Artists",
-                            style = MaterialTheme.typography.headlineMedium
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.weight(1F)
                         )
                         IconButton(
                             onClick = {
@@ -313,7 +319,6 @@ private fun AllArtists(
 fun AllArtistsScreen(
     navigator: CommonNavigator,
     artistsViewModel: ArtistsViewModel = hiltViewModel(),
-    artistInfoViewModel: ArtistInfoViewModel
 ) {
     val pagingArtists =
         artistsViewModel.artistsUiState.value.pagingArtists.collectAsLazyPagingItems()
@@ -359,6 +364,7 @@ fun AllArtistsScreen(
         }
     ) {
         AllArtists(
+            onBack = { navigator.navigateBack() },
             pagingArtists = pagingArtists,
             artistsUiState = artistsUiState,
             sortByPairs = sortByPairs,
@@ -374,9 +380,6 @@ fun AllArtistsScreen(
                 artistsViewModel.onArtistUiEvent(ArtistUiEvent.OnRetry)
             },
             onNavigateToInfo = {
-                artistInfoViewModel.onArtistInfoUiEvent(
-                    ArtistInfoUiEvent.OnLoadArtistInfo(it)
-                )
                 navigator.gotoArtistInfo(it)
             }
         )

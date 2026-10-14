@@ -12,7 +12,6 @@ internal sealed interface ProfileUiEvent {
     data object OnPhotoRemovalSettled : ProfileUiEvent
     data object OnRetryStats : ProfileUiEvent
     data object OnStatsClicked : ProfileUiEvent
-    data object OnLibraryClicked : ProfileUiEvent
     data object OnPairDeviceClicked : ProfileUiEvent
     data object OnSettingsClicked : ProfileUiEvent
     data object OnLogOutClicked : ProfileUiEvent

@@ -6,5 +6,6 @@ internal sealed interface SettingsUiEvent {
     data object OnLyricsClicked : SettingsUiEvent
     data object OnStorageClicked : SettingsUiEvent
     data object OnAboutClicked : SettingsUiEvent
+    data object OnLibraryManagementClicked : SettingsUiEvent
     data object OnScreenResumed : SettingsUiEvent
 }

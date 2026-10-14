@@ -59,8 +59,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.android.swingmusic.artist.presentation.event.ArtistInfoUiEvent
-import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.Artist
@@ -523,8 +521,7 @@ private fun Search(
 fun SearchScreen(
     searchViewModel: SearchViewModel,
     mediaControllerViewModel: MediaControllerViewModel,
-    navigator: CommonNavigator,
-    artistInfoViewModel: ArtistInfoViewModel
+    navigator: CommonNavigator
 ) {
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
     val playerState by mediaControllerViewModel.playerUiState.collectAsState()
@@ -713,9 +710,6 @@ fun SearchScreen(
                             }
                         },
                         onChooseArtist = { hash ->
-                            artistInfoViewModel.onArtistInfoUiEvent(
-                                ArtistInfoUiEvent.OnLoadArtistInfo(hash)
-                            )
                             navigator.gotoArtistInfo(hash)
                         },
                         onToggleTrackFavorite = { trackHash, isFavorite ->

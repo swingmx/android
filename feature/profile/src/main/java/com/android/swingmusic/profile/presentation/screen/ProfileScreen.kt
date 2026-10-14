@@ -24,7 +24,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Image
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.ui.unit.Dp
@@ -50,7 +49,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.QrCode2
 import androidx.compose.material.icons.rounded.Settings
@@ -143,7 +141,6 @@ internal fun ProfileScreen(
 
             ProfileUiEffect.NavigateBack -> navigator.navigateBack()
             ProfileUiEffect.NavigateToStats -> navigator.gotoStats()
-            ProfileUiEffect.NavigateToLibrary -> navigator.gotoLibrary()
             ProfileUiEffect.NavigateToPairDevice -> navigator.gotoPairDevice()
             ProfileUiEffect.NavigateToSettings -> navigator.gotoSettings()
             is ProfileUiEffect.CopyToClipboard -> {
@@ -205,13 +202,6 @@ private fun ProfileScreenContent(
                     title = "Listening stats",
                     subtitle = "Top tracks, artists and albums",
                     onClick = { onEvent(ProfileUiEvent.OnStatsClicked) }
-                )
-                SettingsGroupDivider()
-                SettingsRow(
-                    icon = Icons.Rounded.Folder,
-                    title = "Library",
-                    subtitle = if (uiState.user?.isAdmin == true) "Folders, scan, root folders" else "Browse folders",
-                    onClick = { onEvent(ProfileUiEvent.OnLibraryClicked) }
                 )
                 SettingsGroupDivider()
                 SettingsRow(

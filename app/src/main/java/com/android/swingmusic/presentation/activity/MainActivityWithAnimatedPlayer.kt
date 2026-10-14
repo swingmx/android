@@ -10,7 +10,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -32,13 +31,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
@@ -54,32 +54,15 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.annotation.ExperimentalCoilApi
 import coil.imageLoader
-import com.android.swingmusic.album.presentation.screen.destinations.AlbumWithInfoScreenDestination
-import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.ArtistInfoScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.ViewAllScreenOnArtistDestination
-import com.android.swingmusic.artist.presentation.viewmodel.ArtistInfoViewModel
 import com.android.swingmusic.auth.data.workmanager.scheduleTokenRefreshWork
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrCodeDestination
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
-import com.android.swingmusic.folder.presentation.event.FolderUiEvent
-import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.LibraryScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.PairDeviceScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.StatsScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.SettingsScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.AccountScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.LyricsSettingsScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.StorageScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.AboutScreenDestination
-import com.android.swingmusic.profile.presentation.screen.destinations.ProfileScreenDestination
-import com.android.swingmusic.folder.presentation.viewmodel.FoldersViewModel
 import com.android.swingmusic.player.presentation.screen.AnimatedPlayerSheet
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.presentation.navigator.BottomNavItem
+import com.android.swingmusic.presentation.navigator.destinations.TabsRootScreenDestination
 import com.android.swingmusic.presentation.navigator.CoreNavigator
 import com.android.swingmusic.presentation.navigator.NavGraphs
 import com.android.swingmusic.presentation.navigator.scaleInEnterTransition
@@ -87,8 +70,6 @@ import com.android.swingmusic.presentation.navigator.scaleInPopEnterTransition
 import com.android.swingmusic.presentation.navigator.scaleOutExitTransition
 import com.android.swingmusic.presentation.navigator.scaleOutPopExitTransition
 import com.android.swingmusic.search.presentation.event.SearchUiEvent
-import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
-import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
 import com.android.swingmusic.search.presentation.viewmodel.SearchViewModel
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.service.SessionTokenManager
@@ -129,8 +110,6 @@ import kotlin.math.roundToInt
 class MainActivityWithAnimatedPlayer : ComponentActivity() {
     private val mediaControllerViewModel: MediaControllerViewModel by viewModels<MediaControllerViewModel>()
     private val authViewModel: AuthViewModel by viewModels<AuthViewModel>()
-    private val foldersViewModel: FoldersViewModel by viewModels<FoldersViewModel>()
-    private val artistInfoViewModel: ArtistInfoViewModel by viewModels<ArtistInfoViewModel>()
     private val searchViewModel: SearchViewModel by viewModels<SearchViewModel>()
 
     private lateinit var controllerFuture: ListenableFuture<MediaController>
@@ -188,43 +167,51 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
 
             val showBottomNav = route != null && hideForRoutes.none { route.startsWith(it) }
 
-            val bottomNavItems: List<BottomNavItem> = listOf(
-                BottomNavItem.Home,
-                BottomNavItem.Album,
-                // BottomNavItem.Playlist,
-                BottomNavItem.Artist,
-                BottomNavItem.Search,
-            )
+            val bottomNavItems = BottomNavItem.all
 
-            // Map of BottomNavItem to their route prefixes
-            val bottomNavRoutePrefixes = mapOf(
-                BottomNavItem.Home to listOf(
-                    HomeScreenDestination.route,
-                    ProfileScreenDestination.route,
-                    LibraryScreenDestination.route,
-                    PairDeviceScreenDestination.route,
-                    StatsScreenDestination.route,
-                    SettingsScreenDestination.route,
-                    AccountScreenDestination.route,
-                    LyricsSettingsScreenDestination.route,
-                    StorageScreenDestination.route,
-                    AboutScreenDestination.route,
-                    FoldersAndTracksScreenDestination.route
-                ),
-                BottomNavItem.Album to listOf(
-                    AllAlbumScreenDestination.route,
-                    AlbumWithInfoScreenDestination.route
-                ),
-                BottomNavItem.Artist to listOf(
-                    AllArtistsScreenDestination.route,
-                    ArtistInfoScreenDestination.route,
-                    ViewAllScreenOnArtistDestination.route
-                ),
-                BottomNavItem.Search to listOf(
-                    SearchScreenDestination.route,
-                    ViewAllSearchResultsDestination.route
-                )
-            )
+            // The tab whose history is showing. Kept as state rather than read from the route,
+            // since screens like an album page live in whichever tab opened them.
+            var currentTab by rememberSaveable { mutableStateOf(BottomNavItem.Home.title) }
+
+            fun selectTab(item: BottomNavItem) {
+                if (item.title == currentTab) {
+                    // Reselecting returns the tab to its first screen
+                    val popped = navController.popBackStack(item.destination.route, inclusive = false)
+                    if (!popped) navController.navigate(item.destination.route) { launchSingleTop = true }
+                    if (item == BottomNavItem.Search) {
+                        searchViewModel.onSearchUiEvent(SearchUiEvent.OnClearSearchStates)
+                    }
+                    return
+                }
+                currentTab = item.title
+                navController.navigate(item.destination.route) {
+                    popUpTo(TabsRootScreenDestination.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+
+            // The empty base entry shows on start, after logging in, or when back leaves a
+            // tab's first screen. Back from Home leaves the app; from any other tab it goes
+            // to Home with its history. Home is always restored, so no stale saved history
+            // is left behind to block the next save.
+            var hasOpenedTab by rememberSaveable { mutableStateOf(false) }
+            LaunchedEffect(route) {
+                if (route != TabsRootScreenDestination.route) {
+                    // A login screen starts a new session, so the next base entry opens Home
+                    if (route != null) hasOpenedTab = hideForRoutes.none { route.startsWith(it) }
+                    return@LaunchedEffect
+                }
+                if (hasOpenedTab && currentTab == BottomNavItem.Home.title) {
+                    finish()
+                    return@LaunchedEffect
+                }
+                currentTab = BottomNavItem.Home.title
+                navController.navigate(HomeScreenDestination.route) {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
 
             // Track sheet progress for nav bar animation
             var sheetProgress by remember { mutableFloatStateOf(0f) }
@@ -264,21 +251,19 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                                     horizontalArrangement = Arrangement.Center
                                 ) {
                                     bottomNavItems.forEach { item ->
-                                        val isSelected = navController.currentDestination?.route?.let { route ->
-                                            bottomNavRoutePrefixes[item]?.any { prefix ->
-                                                route.startsWith(prefix)
-                                            } == true
-                                        } == true
-
-                                        val animatedIcon = AnimatedImageVector.animatedVectorResource(item.animatedIcon)
+                                        val isSelected = item.title == currentTab
                                         val atEnd = animationStates[item] ?: false
 
                                         NavigationBarItem(
                                             icon = {
                                                 Icon(
-                                                    painter = rememberAnimatedVectorPainter(
-                                                        animatedImageVector = animatedIcon,
-                                                        atEnd = atEnd
+                                                    painter = item.animatedIcon?.let { id ->
+                                                        rememberAnimatedVectorPainter(
+                                                            animatedImageVector = AnimatedImageVector.animatedVectorResource(id),
+                                                            atEnd = atEnd
+                                                        )
+                                                    } ?: painterResource(
+                                                        if (isSelected) item.selectedIcon else item.icon
                                                     ),
                                                     contentDescription = item.title
                                                 )
@@ -287,37 +272,8 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                                             alwaysShowLabel = false,
                                             label = { Text(text = item.title) },
                                             onClick = {
-                                                // Trigger animation on click
                                                 animationStates[item] = !(animationStates[item] ?: false)
-
-                                                // Whatever you do, DON'T TOUCH this
-                                                if (navController.currentDestination?.route != item.destination.route) {
-                                                    navController.navigate(item.destination.route) {
-                                                        launchSingleTop = true
-                                                        restoreState = false
-
-                                                        popUpTo(navController.graph.startDestinationId) {
-                                                            saveState = false
-                                                            inclusive = false
-                                                        }
-                                                    }
-                                                }
-
-                                                // refresh folders starting from $home
-                                                if (item.destination.route == FoldersAndTracksScreenDestination.route) {
-                                                    foldersViewModel.onFolderUiEvent(
-                                                        FolderUiEvent.OnClickNavPath(
-                                                            folder = foldersViewModel.homeDir
-                                                        )
-                                                    )
-                                                }
-
-                                                // refresh Search screen
-                                                if (item.destination.route == SearchScreenDestination.route) {
-                                                    searchViewModel.onSearchUiEvent(
-                                                        SearchUiEvent.OnClearSearchStates
-                                                    )
-                                                }
+                                                selectTab(item)
                                             }
                                         )
                                     }
@@ -357,8 +313,6 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                                     navController = navController,
                                     authViewModel = authViewModel,
                                     mediaControllerViewModel = mediaControllerViewModel,
-                                    foldersViewModel = foldersViewModel,
-                                    artistInfoViewModel = artistInfoViewModel,
                                     searchViewModel = searchViewModel
                                 )
                             }
@@ -416,8 +370,6 @@ internal fun SwingMusicAppNavigationWithAnimatedPlayer(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     mediaControllerViewModel: MediaControllerViewModel,
-    foldersViewModel: FoldersViewModel,
-    artistInfoViewModel: ArtistInfoViewModel,
     searchViewModel: SearchViewModel
 ) {
     val navGraph = remember(isUserLoggedIn) { NavGraphs.root(isUserLoggedIn) }
@@ -452,9 +404,7 @@ internal fun SwingMusicAppNavigationWithAnimatedPlayer(
                 CoreNavigator(navController = navController)
             )
             dependency(authViewModel)
-            dependency(foldersViewModel)
             dependency(mediaControllerViewModel)
-            dependency(artistInfoViewModel)
             dependency(searchViewModel)
         }
     )

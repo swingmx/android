@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Storage
@@ -22,6 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
+import com.android.swingmusic.profile.presentation.component.AdminSection
 import com.android.swingmusic.profile.presentation.component.ProfileTopBar
 import com.android.swingmusic.profile.presentation.component.SettingsGroup
 import com.android.swingmusic.profile.presentation.component.SettingsGroupDivider
@@ -54,6 +56,7 @@ internal fun SettingsScreen(
             SettingsUiEffect.NavigateToLyrics -> navigator.gotoLyricsSettings()
             SettingsUiEffect.NavigateToStorage -> navigator.gotoStorageSettings()
             SettingsUiEffect.NavigateToAbout -> navigator.gotoAbout()
+            SettingsUiEffect.NavigateToLibraryManagement -> navigator.gotoLibraryManagement()
         }
     }
 
@@ -99,6 +102,19 @@ private fun SettingsScreenContent(
                         ?: "Image cache",
                     onClick = { onEvent(SettingsUiEvent.OnStorageClicked) }
                 )
+            }
+
+            if (uiState.isAdmin) {
+                AdminSection(title = "Server") {
+                    SettingsGroup {
+                        SettingsRow(
+                            icon = Icons.Rounded.Sync,
+                            title = "Library management",
+                            subtitle = "Scan, root folders",
+                            onClick = { onEvent(SettingsUiEvent.OnLibraryManagementClicked) }
+                        )
+                    }
+                }
             }
 
             SettingsGroup {

@@ -1,5 +1,8 @@
 package com.android.swingmusic.album.presentation.viewmodel
 
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
+import com.android.swingmusic.settings.domain.repository.AppSettingsRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.album.domain.AlbumRepository
@@ -19,8 +22,17 @@ import javax.inject.Inject
 @HiltViewModel
 class AlbumWithInfoViewModel @Inject constructor(
     private val albumRepository: AlbumRepository,
-    private val pLayerRepository: PLayerRepository
+    private val pLayerRepository: PLayerRepository,
+    private val appSettingsRepository: AppSettingsRepository,
 ) : ViewModel() {
+
+    /** Search On logos in brand colours instead of monochrome; switched by a hidden long press. */
+    val searchOnBrandColours: StateFlow<Boolean> = appSettingsRepository.searchOnBrandColours
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun toggleSearchOnBrandColours() {
+        viewModelScope.launch { appSettingsRepository.setSearchOnBrandColours(!searchOnBrandColours.value) }
+    }
 
     private val _albumWithInfoState: MutableStateFlow<AlbumWithInfoState> =
         MutableStateFlow(AlbumWithInfoState())

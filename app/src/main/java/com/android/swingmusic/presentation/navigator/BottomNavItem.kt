@@ -1,19 +1,23 @@
 package com.android.swingmusic.presentation.navigator
 
 import androidx.annotation.DrawableRes
-import com.android.swingmusic.album.presentation.screen.destinations.AllAlbumScreenDestination
-import com.android.swingmusic.artist.presentation.screen.destinations.AllArtistsScreenDestination
-import com.android.swingmusic.folder.presentation.screen.destinations.FoldersAndTracksScreenDestination
 import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
+import com.android.swingmusic.library.presentation.screen.destinations.FavouritesScreenDestination
+import com.android.swingmusic.library.presentation.screen.destinations.LibraryScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
 import com.ramcosta.composedestinations.spec.DestinationSpec
 import com.android.swingmusic.uicomponent.R as UiComponent
 
+/**
+ * A bottom bar tab. [animatedIcon] plays on each tap; tabs without one show [icon], or
+ * [selectedIcon] while selected.
+ */
 sealed class BottomNavItem(
-    var title: String,
-    @param:DrawableRes var icon: Int,
-    @param:DrawableRes var animatedIcon: Int,
-    var destination: DestinationSpec<*>
+    val title: String,
+    @param:DrawableRes val icon: Int,
+    @param:DrawableRes val animatedIcon: Int? = null,
+    @param:DrawableRes val selectedIcon: Int = icon,
+    val destination: DestinationSpec<*>
 ) {
     data object Home : BottomNavItem(
         title = "Home",
@@ -22,25 +26,17 @@ sealed class BottomNavItem(
         destination = HomeScreenDestination
     )
 
-    data object Folder : BottomNavItem(
-        title = "Folders",
-        icon = UiComponent.drawable.folder_filled,
-        animatedIcon = UiComponent.drawable.avd_folder,
-        destination = FoldersAndTracksScreenDestination
+    data object Library : BottomNavItem(
+        title = "Library",
+        icon = UiComponent.drawable.ic_library,
+        destination = LibraryScreenDestination
     )
 
-    data object Album : BottomNavItem(
-        title = "Albums",
-        icon = UiComponent.drawable.ic_album,
-        animatedIcon = UiComponent.drawable.avd_album,
-        destination = AllAlbumScreenDestination
-    )
-
-    data object Artist : BottomNavItem(
-        title = "Artists",
-        icon = UiComponent.drawable.ic_artist,
-        animatedIcon = UiComponent.drawable.avd_artist,
-        destination = AllArtistsScreenDestination
+    data object Favourites : BottomNavItem(
+        title = "Favourites",
+        icon = UiComponent.drawable.fav_not_filled,
+        selectedIcon = UiComponent.drawable.fav_filled,
+        destination = FavouritesScreenDestination
     )
 
     data object Search : BottomNavItem(
@@ -49,4 +45,8 @@ sealed class BottomNavItem(
         animatedIcon = UiComponent.drawable.avd_search,
         destination = SearchScreenDestination
     )
+
+    companion object {
+        val all: List<BottomNavItem> by lazy { listOf(Home, Library, Favourites, Search) }
+    }
 }

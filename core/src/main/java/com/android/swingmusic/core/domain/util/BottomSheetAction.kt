@@ -9,5 +9,6 @@ sealed class BottomSheetAction {
     data object PlayNext : BottomSheetAction()
     data object AddToQueue : BottomSheetAction()
     data object AddToPlaylist : BottomSheetAction()
+    data object RemoveFromPlaylist : BottomSheetAction()
     data class GotoFolder(val name: String, val path: String) : BottomSheetAction()
 }

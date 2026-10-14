@@ -35,6 +35,7 @@ class AppSettings @Inject constructor(
         private val LYRICS_AUTO_DOWNLOAD = booleanPreferencesKey("lyrics_auto_download")
         private val LYRICS_OVERRIDE_UNSYNCED = booleanPreferencesKey("lyrics_override_unsynced")
         private val LYRICS_WORD_SWEEP = booleanPreferencesKey("lyrics_word_sweep")
+        private val SEARCH_ON_BRAND_COLOURS = booleanPreferencesKey("search_on_brand_colours")
     }
 
     // Album Flows
@@ -104,4 +105,12 @@ class AppSettings @Inject constructor(
 
     suspend fun updateLyricsWordSweep(value: Boolean) =
         context.dataStore.edit { it[LYRICS_WORD_SWEEP] = value }
+
+    // Search On logos: monochrome unless turned on with the hidden long press
+    val getSearchOnBrandColours: Flow<Boolean> = context.dataStore.data.map {
+        it[SEARCH_ON_BRAND_COLOURS] ?: false
+    }
+
+    suspend fun updateSearchOnBrandColours(value: Boolean) =
+        context.dataStore.edit { it[SEARCH_ON_BRAND_COLOURS] = value }
 }

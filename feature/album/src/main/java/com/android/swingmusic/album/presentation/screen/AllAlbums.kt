@@ -28,6 +28,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -70,6 +71,7 @@ import com.android.swingmusic.uicomponent.R as UiComponents
 
 @Composable
 private fun AllAlbums(
+    onBack: () -> Unit,
     pagingAlbums: LazyPagingItems<Album>,
     allAlbumsUiState: AllAlbumsUiState,
     sortByPairs: List<Pair<SortBy, String>>,
@@ -110,13 +112,19 @@ private fun AllAlbums(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 16.dp, end = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .padding(start = 4.dp, end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
                         Text(
                             text = "Albums",
-                            style = MaterialTheme.typography.headlineMedium
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.weight(1F)
                         )
                         IconButton(
                             onClick = {
@@ -359,6 +367,7 @@ fun AllAlbumScreen(
         }
     ) {
         AllAlbums(
+            onBack = { albumNavigator.navigateBack() },
             pagingAlbums = pagingAlbums,
             allAlbumsUiState = albumsUiState,
             sortByPairs = sortAlbumsByPairs,

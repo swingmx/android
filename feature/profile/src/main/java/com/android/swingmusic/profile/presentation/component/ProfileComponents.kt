@@ -1,5 +1,7 @@
 package com.android.swingmusic.profile.presentation.component
 
+import com.android.swingmusic.profile.presentation.screen.AdminChip
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -249,4 +251,25 @@ internal fun SeeAllBadge(text: String, onClick: () -> Unit) {
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9F)
     )
+}
+
+
+/** Section label with the Admin chip, for admin-only groups. */
+@Composable
+internal fun AdminSection(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.padding(start = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            AdminChip()
+        }
+        content()
+    }
 }

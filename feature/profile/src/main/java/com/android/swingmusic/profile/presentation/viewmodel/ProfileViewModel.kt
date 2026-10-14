@@ -76,7 +76,6 @@ internal class ProfileViewModel @Inject constructor(
 
             ProfileUiEvent.OnRetryStats -> loadStats()
             ProfileUiEvent.OnStatsClicked -> _uiEffect.trySend(ProfileUiEffect.NavigateToStats)
-            ProfileUiEvent.OnLibraryClicked -> _uiEffect.trySend(ProfileUiEffect.NavigateToLibrary)
             ProfileUiEvent.OnPairDeviceClicked -> _uiEffect.trySend(ProfileUiEffect.NavigateToPairDevice)
             ProfileUiEvent.OnSettingsClicked -> _uiEffect.trySend(ProfileUiEffect.NavigateToSettings)
             ProfileUiEvent.OnLogOutClicked -> updateUiState { copy(showLogOutDialog = true) }

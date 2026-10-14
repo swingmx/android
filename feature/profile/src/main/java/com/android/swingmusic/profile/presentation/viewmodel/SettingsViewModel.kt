@@ -7,6 +7,7 @@ import com.android.swingmusic.profile.domain.ProfileRepository
 import com.android.swingmusic.profile.presentation.event.SettingsUiEffect
 import com.android.swingmusic.profile.presentation.event.SettingsUiEvent
 import com.android.swingmusic.profile.presentation.state.SettingsUiState
+import com.android.swingmusic.profile.presentation.state.isAdmin
 import com.android.swingmusic.profile.presentation.util.appVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -32,6 +33,10 @@ internal class SettingsViewModel @Inject constructor(
 
     init {
         loadCacheSize()
+        viewModelScope.launch {
+            val isAdmin = profileRepository.getCachedUser()?.isAdmin == true
+            _uiState.update { it.copy(isAdmin = isAdmin) }
+        }
     }
 
     fun onEvent(event: SettingsUiEvent) {
@@ -41,6 +46,8 @@ internal class SettingsViewModel @Inject constructor(
             SettingsUiEvent.OnLyricsClicked -> _uiEffect.trySend(SettingsUiEffect.NavigateToLyrics)
             SettingsUiEvent.OnStorageClicked -> _uiEffect.trySend(SettingsUiEffect.NavigateToStorage)
             SettingsUiEvent.OnAboutClicked -> _uiEffect.trySend(SettingsUiEffect.NavigateToAbout)
+            SettingsUiEvent.OnLibraryManagementClicked ->
+                _uiEffect.trySend(SettingsUiEffect.NavigateToLibraryManagement)
             SettingsUiEvent.OnScreenResumed -> loadCacheSize()
         }
     }
