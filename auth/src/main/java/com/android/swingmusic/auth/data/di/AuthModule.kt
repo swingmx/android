@@ -2,6 +2,7 @@ package com.android.swingmusic.auth.data.di
 
 
 import android.content.Context
+import com.android.swingmusic.auth.BuildConfig
 import com.android.swingmusic.auth.data.api.service.AuthApiService
 import com.android.swingmusic.auth.data.authenticator.TokenAuthenticator
 import com.android.swingmusic.auth.data.datastore.AuthTokensDataStore
@@ -39,10 +40,20 @@ object AuthModule {
         @ApplicationContext context: Context,
         tokenAuthenticator: TokenAuthenticator
     ): OkHttpClient {
-        val interceptor = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
-        return OkHttpClient.Builder()
-            .addInterceptor(interceptor)
-            .addInterceptor(ChuckerInterceptor(context))
+        val builder = OkHttpClient.Builder()
+
+        // Request logging is for debug builds only; Logcat hides the token, Chucker doesn't
+        if (BuildConfig.DEBUG) {
+            builder.addInterceptor(
+                HttpLoggingInterceptor()
+                    .setLevel(HttpLoggingInterceptor.Level.BODY)
+                    .apply { redactHeader("Authorization") }
+            )
+            // Chucker shows everything, token included, so requests can be inspected and replayed
+            builder.addInterceptor(ChuckerInterceptor(context))
+        }
+
+        return builder
             .addInterceptor(tokenAuthenticator)
             .callTimeout(15, TimeUnit.SECONDS)
             .connectTimeout(15, TimeUnit.SECONDS)
