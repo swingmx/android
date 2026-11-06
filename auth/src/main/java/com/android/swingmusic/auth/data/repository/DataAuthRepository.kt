@@ -92,6 +92,12 @@ class DataAuthRepository @Inject constructor(
         return AuthTokenHolder.accessToken
     }
 
+    override suspend fun requireBearerToken(): String {
+        val token = getAccessToken()
+        check(!token.isNullOrEmpty()) { "No access token" }
+        return "Bearer $token"
+    }
+
     override suspend fun getRefreshToken(): String? {
         AuthTokenHolder.refreshToken = authTokensDataStore.refreshToken.firstOrNull()
         return AuthTokenHolder.refreshToken
@@ -164,7 +170,7 @@ class DataAuthRepository @Inject constructor(
         return try {
             val user = authApiService.getCurrentUser(
                 url = "${getBaseUrl()}auth/user",
-                bearerAccessToken = "Bearer ${getAccessToken()}"
+                bearerAccessToken = requireBearerToken()
             ).toModel()
             storeLoggedInUser(user)
             Resource.Success(user)
@@ -180,7 +186,7 @@ class DataAuthRepository @Inject constructor(
         return try {
             val user = authApiService.updateProfile(
                 url = "${getBaseUrl()}auth/profile/update",
-                bearerAccessToken = "Bearer ${getAccessToken()}",
+                bearerAccessToken = requireBearerToken(),
                 updateProfileRequest = UpdateProfileRequest(username = username, password = password)
             ).toModel()
             storeLoggedInUser(user)
@@ -263,8 +269,7 @@ class DataAuthRepository @Inject constructor(
                 )
                 val result = authApiService.createUser(
                     url = "${baseUrl}auth/profile/create",
-                    bearerAccessToken = "Bearer " + (AuthTokenHolder.accessToken
-                        ?: getAccessToken()),
+                    bearerAccessToken = requireBearerToken(),
                     createUserRequest = request
                 ).toModel()
 

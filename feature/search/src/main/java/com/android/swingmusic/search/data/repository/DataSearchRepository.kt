@@ -1,7 +1,6 @@
 package com.android.swingmusic.search.data.repository
 
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toAlbumsSearchResult
 import com.android.swingmusic.core.data.mapper.Map.toArtistsSearchResult
@@ -27,7 +26,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun getTopSearchResults(searchParams: String): Flow<Resource<TopSearchResults>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -35,7 +33,7 @@ class DataSearchRepository @Inject constructor(
 
                 val topSearchResultsDto = networkApiService.getTopSearchResults(
                     url = "${baseUrl}search/top",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                     searchParams = searchParams
                 )
                 val topSearchResult = topSearchResultsDto.toTopSearchResults()
@@ -50,7 +48,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun getArtistTracks(artistHash: String): Flow<Resource<List<Track>>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -58,7 +55,7 @@ class DataSearchRepository @Inject constructor(
 
                 val tracksResultDto = networkApiService.getArtistTracks(
                     url = "${baseUrl}artist/$artistHash/tracks",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                 )
                 val tracksResult = tracksResultDto.map { it.toTrack() }
 
@@ -71,7 +68,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun getAlbumTracks(albumHash: String): Flow<Resource<List<Track>>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -79,7 +75,7 @@ class DataSearchRepository @Inject constructor(
 
                 val tracksResultDto = networkApiService.getAlbumTracks(
                     url = "${baseUrl}album/$albumHash/tracks",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                 )
                 val tracksResult = tracksResultDto.map { it.toTrack() }
 
@@ -92,7 +88,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun searchAllTracks(searchParams: String): Flow<Resource<TracksSearchResult>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -100,7 +95,7 @@ class DataSearchRepository @Inject constructor(
 
                 val tracksSearchResultDto = networkApiService.searchAllTracks(
                     url = "${baseUrl}search/",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                     searchParams = searchParams
                 )
                 val tracksSearchResult = tracksSearchResultDto.toTracksSearchResult()
@@ -115,7 +110,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun searchAllAlbums(searchParams: String): Flow<Resource<AlbumsSearchResult>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -123,7 +117,7 @@ class DataSearchRepository @Inject constructor(
 
                 val albumsSearchResultDto = networkApiService.searchAllAlbums(
                     url = "${baseUrl}search/",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                     searchParams = searchParams
                 )
                 val albumsSearchResult = albumsSearchResultDto.toAlbumsSearchResult()
@@ -138,7 +132,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun searchAllArtists(searchParams: String): Flow<Resource<ArtistsSearchResult>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -146,7 +139,7 @@ class DataSearchRepository @Inject constructor(
 
                 val artistsSearchResultDto = networkApiService.searchAllArtists(
                     url = "${baseUrl}search/",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                     searchParams = searchParams
                 )
                 val artistsSearchResult = artistsSearchResultDto.toArtistsSearchResult()

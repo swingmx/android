@@ -14,7 +14,7 @@ class ArtistsPagingSource(
     private val sortBy: String,
     private val sortOrder: Int,
     private val baseUrl: String,
-    private val accessToken: String
+    private val bearerToken: suspend () -> String
 ) : PagingSource<Int, Artist>() {
 
     override fun getRefreshKey(state: PagingState<Int, Artist>): Int? = state.anchorPosition
@@ -28,7 +28,7 @@ class ArtistsPagingSource(
 
             val allArtistsDto = api.getAllArtists(
                 url = baseUrl,
-                bearerToken = accessToken,
+                bearerToken = bearerToken(),
                 startIndex = startIndex,
                 sortBy = sortBy,
                 sortOrder = sortOrder

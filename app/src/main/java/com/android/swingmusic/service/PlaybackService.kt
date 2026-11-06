@@ -45,7 +45,7 @@ class PlaybackService : MediaSessionService() {
         setMediaNotificationProvider(notificationProvider)
 
         serviceScope.launch {
-            val initialToken = authRepository.getAccessToken().orEmpty()
+            authRepository.initializeBaseUrlAndAuthTokens()
 
             val loadControlBuilder = DefaultLoadControl.Builder().apply {
                 setBufferDurationsMs(
@@ -58,7 +58,7 @@ class PlaybackService : MediaSessionService() {
 
             val dataSourceFactory = CustomDataSourceFactory(this@PlaybackService) {
                 // Read per request so refreshed or new-session tokens are used.
-                AuthTokenHolder.accessToken ?: initialToken
+                AuthTokenHolder.accessToken
             }
             val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
 
@@ -107,10 +107,7 @@ class PlaybackService : MediaSessionService() {
             this.release()
             mediaSession = null
         }
-        // Clear Tokens when they're not needed anymore
         SessionTokenManager.sessionToken = null
-        AuthTokenHolder.accessToken = null
-        AuthTokenHolder.refreshToken = null
 
         serviceScope.cancel()
 

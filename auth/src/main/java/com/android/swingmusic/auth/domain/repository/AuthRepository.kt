@@ -21,6 +21,9 @@ interface AuthRepository {
 
     suspend fun getAccessToken(): String?
 
+    /** The Authorization header value; throws when there's no access token, so no request goes out without one. */
+    suspend fun requireBearerToken(): String
+
     suspend fun getRefreshToken(): String?
 
     suspend fun storeAuthTokens(

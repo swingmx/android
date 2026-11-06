@@ -1,7 +1,6 @@
 package com.android.swingmusic.player.data.repository
 
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.mapper.Map.toModel
@@ -73,7 +72,6 @@ class DataPLayerRepository @Inject constructor(
         source: String
     ) {
         try {
-            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
             val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
             val timeStamp = Timestamp.from(Instant.now()).toInstant().epochSecond
@@ -87,7 +85,7 @@ class DataPLayerRepository @Inject constructor(
             networkApiService.logLastPlayedTrackToServer(
                 logTrackRequest = logRequest,
                 url = "${baseUrl}logger/track/log",
-                bearerToken = "Bearer $accessToken"
+                bearerToken = authRepository.requireBearerToken()
             )
 
         } catch (e: HttpException) {
@@ -102,13 +100,12 @@ class DataPLayerRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
                 networkApiService.addFavorite(
                     url = "${baseUrl}favorites/add",
                     toggleFavoriteRequest = ToggleFavoriteRequest(hash = trackHash, type = "track"),
-                    bearerToken = "Bearer $accessToken"
+                    bearerToken = authRepository.requireBearerToken()
                 )
 
                 emit(Resource.Success(data = true)) // isFavorite = true
@@ -127,13 +124,12 @@ class DataPLayerRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
                 networkApiService.removeFavorite(
                     url = "${baseUrl}favorites/remove",
                     toggleFavoriteRequest = ToggleFavoriteRequest(hash = trackHash, type = "track"),
-                    bearerToken = "Bearer $accessToken"
+                    bearerToken = authRepository.requireBearerToken()
                 )
                 emit(Resource.Success(data = false)) // isFavorite = false
 
@@ -148,7 +144,6 @@ class DataPLayerRepository @Inject constructor(
 
     override suspend fun getTracksChunk(folderPath: String, start: Int, limit: Int): List<Track> {
         return try {
-            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
             val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
             val requestDto = FoldersAndTracksRequestDto(
@@ -161,7 +156,7 @@ class DataPLayerRepository @Inject constructor(
             val response = networkApiService.getFoldersAndTracks(
                 requestData = requestDto,
                 url = "${baseUrl}folder",
-                bearerToken = "Bearer $accessToken"
+                bearerToken = authRepository.requireBearerToken()
             )
 
             response.tracksDto?.map { it.toTrack() } ?: emptyList()

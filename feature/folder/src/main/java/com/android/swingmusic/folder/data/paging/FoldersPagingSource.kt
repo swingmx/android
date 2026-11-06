@@ -15,7 +15,7 @@ class FoldersPagingSource(
     private val api: NetworkApiService,
     private val folderPath: String,
     private val baseUrl: String,
-    private val accessToken: String
+    private val bearerToken: suspend () -> String
 ) : PagingSource<Int, FolderContentItem>() {
 
     override fun getRefreshKey(state: PagingState<Int, FolderContentItem>): Int? = state.anchorPosition
@@ -36,7 +36,7 @@ class FoldersPagingSource(
 
             val foldersAndTracksDto = api.getFoldersAndTracks(
                 url = baseUrl,
-                bearerToken = accessToken,
+                bearerToken = bearerToken(),
                 requestData = requestDto
             )
 
