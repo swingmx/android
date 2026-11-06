@@ -14,7 +14,7 @@ class AlbumsPagingSource(
     private val sortBy: String,
     private val sortOrder: Int,
     private val baseUrl: String,
-    private val accessToken: String
+    private val bearerToken: suspend () -> String
 ) : PagingSource<Int, Album>() {
 
     override fun getRefreshKey(state: PagingState<Int, Album>): Int? = state.anchorPosition
@@ -28,7 +28,7 @@ class AlbumsPagingSource(
 
             val allAlbumsDto = api.getAllAlbums(
                 url = baseUrl,
-                bearerToken = accessToken,
+                bearerToken = bearerToken(),
                 startIndex = startIndex,
                 sortBy = sortBy,
                 sortOrder = sortOrder

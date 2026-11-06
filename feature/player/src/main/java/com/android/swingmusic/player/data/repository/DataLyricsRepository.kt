@@ -1,7 +1,6 @@
 package com.android.swingmusic.player.data.repository
 
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.dto.LyricsRequestDto
 import com.android.swingmusic.core.data.dto.PluginLyricsRequestDto
@@ -22,11 +21,6 @@ class DataLyricsRepository @Inject constructor(
     private val authRepository: AuthRepository
 ) : LyricsRepository {
 
-    private suspend fun authHeader(): String {
-        val token = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-        return "Bearer ${token ?: "TOKEN NOT FOUND"}"
-    }
-
     private suspend fun baseUrl(): String {
         return BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl() ?: ""
     }
@@ -38,7 +32,7 @@ class DataLyricsRepository @Inject constructor(
                 val dto = networkApiService.getLyrics(
                     url = "${baseUrl()}lyrics",
                     request = LyricsRequestDto(filepath = filepath, trackhash = trackHash),
-                    bearerToken = authHeader()
+                    bearerToken = authRepository.requireBearerToken()
                 )
                 emit(Resource.Success(dto.toLyrics()))
             } catch (e: IOException) {
@@ -56,7 +50,7 @@ class DataLyricsRepository @Inject constructor(
             val dto = networkApiService.checkLyricsExist(
                 url = "${baseUrl()}lyrics/check",
                 request = LyricsRequestDto(filepath = filepath, trackhash = trackHash),
-                bearerToken = authHeader()
+                bearerToken = authRepository.requireBearerToken()
             )
             dto.exists ?: false
         } catch (e: Exception) {
@@ -82,7 +76,7 @@ class DataLyricsRepository @Inject constructor(
                     filepath = filepath,
                     album = album
                 ),
-                bearerToken = authHeader()
+                bearerToken = authRepository.requireBearerToken()
             )
             val pluginError = dto.error
             if (!pluginError.isNullOrEmpty()) {

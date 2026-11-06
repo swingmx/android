@@ -15,7 +15,6 @@ import com.android.swingmusic.core.data.mapper.Map.toTrack
 import android.net.Uri
 import android.content.Context
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toPlaylist
 import com.android.swingmusic.core.data.util.Resource
@@ -41,7 +40,7 @@ class DataPlaylistRepository @Inject constructor(
     override suspend fun getAllPlaylists(): Resource<List<Playlist>> = request("Couldn't load playlists") {
         networkApiService.getAllPlaylists(
             url = "${baseUrl()}playlists",
-            bearerToken = bearerToken()
+            bearerToken = authRepository.requireBearerToken()
         ).data.orEmpty().map { it.toPlaylist() }
     }
 
@@ -50,7 +49,7 @@ class DataPlaylistRepository @Inject constructor(
             networkApiService.addToPlaylist(
                 url = "${baseUrl()}playlists/$playlistId/add",
                 request = AddToPlaylistRequestDto(itemType = item.type.value, itemHash = item.hash),
-                bearerToken = bearerToken()
+                bearerToken = authRepository.requireBearerToken()
             )
             Unit
         }
@@ -67,7 +66,7 @@ class DataPlaylistRepository @Inject constructor(
                     itemHash = item.hash,
                     playlistName = name
                 ),
-                bearerToken = bearerToken()
+                bearerToken = authRepository.requireBearerToken()
             )
             Unit
         }
@@ -76,7 +75,7 @@ class DataPlaylistRepository @Inject constructor(
         request("Couldn't load playlist") {
             val dto = networkApiService.getPlaylist(
                 url = "${baseUrl()}playlists/$playlistId",
-                bearerToken = bearerToken(),
+                bearerToken = authRepository.requireBearerToken(),
                 start = start,
                 limit = limit
             )
@@ -93,7 +92,7 @@ class DataPlaylistRepository @Inject constructor(
         networkApiService.createPlaylist(
             url = "${baseUrl()}playlists/new",
             request = CreatePlaylistRequestDto(name = name),
-            bearerToken = bearerToken()
+            bearerToken = authRepository.requireBearerToken()
         )
         Unit
     }
@@ -118,19 +117,19 @@ class DataPlaylistRepository @Inject constructor(
 
     override suspend fun removePlaylistImage(playlistId: String): Resource<Unit> =
         request("Couldn't remove the image") {
-            networkApiService.removePlaylistImage("${baseUrl()}playlists/$playlistId/remove-img", bearerToken())
+            networkApiService.removePlaylistImage("${baseUrl()}playlists/$playlistId/remove-img", authRepository.requireBearerToken())
             Unit
         }
 
     override suspend fun togglePin(playlistId: String): Resource<Unit> =
         request("Couldn't update the playlist") {
-            networkApiService.pinUnpinPlaylist("${baseUrl()}playlists/$playlistId/pin_unpin", bearerToken())
+            networkApiService.pinUnpinPlaylist("${baseUrl()}playlists/$playlistId/pin_unpin", authRepository.requireBearerToken())
             Unit
         }
 
     override suspend fun deletePlaylist(playlistId: String): Resource<Unit> =
         request("Couldn't delete playlist") {
-            networkApiService.deletePlaylist("${baseUrl()}playlists/$playlistId/delete", bearerToken())
+            networkApiService.deletePlaylist("${baseUrl()}playlists/$playlistId/delete", authRepository.requireBearerToken())
             Unit
         }
 
@@ -139,7 +138,7 @@ class DataPlaylistRepository @Inject constructor(
             networkApiService.removePlaylistTracks(
                 url = "${baseUrl()}playlists/$playlistId/remove-tracks",
                 request = RemovePlaylistTracksRequestDto(listOf(PlaylistTrackRefDto(trackHash, index))),
-                bearerToken = bearerToken()
+                bearerToken = authRepository.requireBearerToken()
             )
             Unit
         }
@@ -155,7 +154,7 @@ class DataPlaylistRepository @Inject constructor(
         val text = "text/plain".toMediaType()
         networkApiService.updatePlaylist(
             url = "${baseUrl()}playlists/${playlist.id}/update",
-            bearerToken = bearerToken(),
+            bearerToken = authRepository.requireBearerToken(),
             name = name.toRequestBody(text),
             settings = settings.toRequestBody(text),
             // The server requires an image part; an empty one, as the web client sends, keeps the current image
@@ -169,8 +168,6 @@ class DataPlaylistRepository @Inject constructor(
 
     private suspend fun baseUrl() = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl() ?: ""
 
-    private suspend fun bearerToken() =
-        "Bearer ${AuthTokenHolder.accessToken ?: authRepository.getAccessToken()}"
 
     private suspend fun <T> request(
         errorMessage: String,
