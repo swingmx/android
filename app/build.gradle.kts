@@ -15,6 +15,21 @@ val keystoreProperties = Properties().apply {
     if (propsFile.exists()) propsFile.inputStream().use { load(it) }
 }
 
+// Local builds take their version from the latest release tag (v2.0.0 -> 2.0.0).
+// CI passes -PversionName explicitly; both derive versionCode the same way.
+val appVersionName: String = project.findProperty("versionName")?.toString()
+    ?: providers.exec {
+        commandLine("git", "describe", "--tags", "--abbrev=0", "--match", "v*")
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim().removePrefix("v").ifEmpty { "0.0.0" }
+
+val appVersionCode: Int = project.findProperty("versionCode")?.toString()?.toInt()
+    ?: appVersionName.split(".")
+        .map { part -> part.takeWhile(Char::isDigit).toIntOrNull() ?: 0 }
+        .plus(listOf(0, 0, 0))
+        .take(3)
+        .let { (major, minor, patch) -> major * 10000 + minor * 100 + patch }
+
 android {
     namespace = "com.android.swingmusic"
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -23,8 +38,8 @@ android {
         applicationId = "com.android.swingmusic"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = project.findProperty("versionCode")?.toString()?.toInt() ?: 2
-        versionName = project.findProperty("versionName")?.toString() ?: "1.0.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
