@@ -324,17 +324,21 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
     }
 
     private fun initializeMediaController() {
+        val connecting = this::controllerFuture.isInitialized && !controllerFuture.isDone
         if (
-            mediaControllerViewModel.getMediaController() == null ||
-            (this::controllerFuture.isInitialized).not()
+            !connecting && (
+                mediaControllerViewModel.getMediaController() == null ||
+                    (this::controllerFuture.isInitialized).not()
+                )
         ) {
             val sessionToken = SessionTokenManager.sessionToken
             if (sessionToken != null) {
                 // Use the existing session token to build the MediaController
-                controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
-                controllerFuture.addListener(
+                val future = MediaController.Builder(this, sessionToken).buildAsync()
+                controllerFuture = future
+                future.addListener(
                     {
-                        val mediaController = controllerFuture.get()
+                        val mediaController = future.get()
                         mediaControllerViewModel.reconnectMediaController(mediaController)
                     }, MoreExecutors.directExecutor()
                 )
@@ -343,10 +347,11 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                 val newSessionToken =
                     SessionToken(this, ComponentName(this, PlaybackService::class.java))
 
-                controllerFuture = MediaController.Builder(this, newSessionToken).buildAsync()
-                controllerFuture.addListener(
+                val future = MediaController.Builder(this, newSessionToken).buildAsync()
+                controllerFuture = future
+                future.addListener(
                     {
-                        val mediaController = controllerFuture.get()
+                        val mediaController = future.get()
                         mediaControllerViewModel.setMediaController(mediaController)
                     }, MoreExecutors.directExecutor()
                 )
