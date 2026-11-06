@@ -1,5 +1,6 @@
 package com.android.swingmusic.library.presentation.screen
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -165,6 +166,7 @@ private fun PlaylistPage(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun PlaylistScreenContent(
     uiState: PlaylistUiState,
