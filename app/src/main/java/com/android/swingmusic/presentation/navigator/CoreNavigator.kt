@@ -26,7 +26,6 @@ import com.android.swingmusic.profile.presentation.screen.destinations.LyricsSet
 import com.android.swingmusic.profile.presentation.screen.destinations.StorageScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.AboutScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.ProfileScreenDestination
-import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
 import com.ramcosta.composedestinations.navigation.navigate
 
@@ -202,14 +201,6 @@ class CoreNavigator(
     }
 
     /**----------------------------------- Player Navigator -------------------------------------*/
-    override fun gotoQueueScreen() {
-        val targetDestination = QueueScreenDestination
-
-        navController.navigate(targetDestination) {
-            launchSingleTop = true
-        }
-
-    }
 
     override fun gotoArtistInfo(artistHash: String) {
         // A new entry per artist, so similar artists stack and back returns to the previous one

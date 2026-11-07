@@ -45,7 +45,6 @@ dependencies {
     implementation(project(":network"))
     implementation(project(":uicomponent"))
     implementation(project(":feature:player"))
-    implementation(project(":feature:artist"))
     implementation(project(":feature:settings"))
     // Common
     implementation(project(":feature:common"))

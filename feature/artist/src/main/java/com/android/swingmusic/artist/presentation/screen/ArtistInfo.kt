@@ -1015,14 +1015,10 @@ fun ArtistInfoScreen(
         )
         val count = if (tracks.size == 1) "1 track" else "${tracks.size} tracks"
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
+            snackbarHostState.showSnackbar(
                 message = if (playNext) "$count added to play next" else "$count added to queue",
-                actionLabel = "View Queue",
                 duration = SnackbarDuration.Short
             )
-            if (result == SnackbarResult.ActionPerformed) {
-                commonNavigator.gotoQueueScreen()
-            }
         }
     }
 
@@ -1219,14 +1215,10 @@ fun ArtistInfoScreen(
                                         )
 
                                         scope.launch {
-                                            val result = snackbarHostState.showSnackbar(
+                                            snackbarHostState.showSnackbar(
                                                 message = "Track added to play next",
-                                                actionLabel = "View Queue",
                                                 duration = SnackbarDuration.Short
                                             )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                commonNavigator.gotoQueueScreen()
-                                            }
                                         }
                                     }
 
@@ -1243,14 +1235,10 @@ fun ArtistInfoScreen(
                                         )
 
                                         scope.launch {
-                                            val result = snackbarHostState.showSnackbar(
+                                            snackbarHostState.showSnackbar(
                                                 message = "Track added to queue",
-                                                actionLabel = "View Queue",
                                                 duration = SnackbarDuration.Short
                                             )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                commonNavigator.gotoQueueScreen()
-                                            }
                                         }
                                     }
 

@@ -654,14 +654,10 @@ fun AlbumWithInfoScreen(
 
     fun showQueueSnackbar(message: String) {
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
+            snackbarHostState.showSnackbar(
                 message = message,
-                actionLabel = "View Queue",
                 duration = SnackbarDuration.Short
             )
-            if (result == SnackbarResult.ActionPerformed) {
-                navigator.gotoQueueScreen()
-            }
         }
     }
 
@@ -862,14 +858,10 @@ fun AlbumWithInfoScreen(
                                         )
 
                                         scope.launch {
-                                            val result = snackbarHostState.showSnackbar(
+                                            snackbarHostState.showSnackbar(
                                                 message = "Track added to play next",
-                                                actionLabel = "View Queue",
                                                 duration = SnackbarDuration.Short
                                             )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                navigator.gotoQueueScreen()
-                                            }
                                         }
                                     }
 
@@ -886,14 +878,10 @@ fun AlbumWithInfoScreen(
                                         )
 
                                         scope.launch {
-                                            val result = snackbarHostState.showSnackbar(
+                                            snackbarHostState.showSnackbar(
                                                 message = "Track added to queue",
-                                                actionLabel = "View Queue",
                                                 duration = SnackbarDuration.Short
                                             )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                navigator.gotoQueueScreen()
-                                            }
                                         }
                                     }
 
