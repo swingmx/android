@@ -118,7 +118,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
-import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
@@ -131,6 +130,8 @@ import com.android.swingmusic.player.presentation.util.calculateCurrentOffsetFor
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.trackMenuItems
+import com.android.swingmusic.uicomponent.presentation.component.TrackMenuOption
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
@@ -1489,44 +1490,7 @@ private fun QueueSheetOverlay(
                 clickedTrack = track,
                 isFavorite = track.isFavorite,
                 baseUrl = baseUrl,
-                bottomSheetItems = listOf(
-                    BottomSheetItemModel(
-                        label = "Go to Artist",
-                        enabled = true,
-                        painterId = R.drawable.ic_artist,
-                        track = track,
-                        sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
-                    ),
-                    BottomSheetItemModel(
-                        label = "Go to Album",
-                        painterId = R.drawable.ic_album,
-                        track = track,
-                        sheetAction = BottomSheetAction.GotoAlbum
-                    ),
-                    BottomSheetItemModel(
-                        label = "Go to Folder",
-                        enabled = true,
-                        painterId = R.drawable.folder_outlined_open,
-                        track = track,
-                        sheetAction = BottomSheetAction.GotoFolder(
-                            name = track.folder.getFolderName(),
-                            path = track.folder
-                        )
-                    ),
-                    BottomSheetItemModel(
-                        label = "Play Next",
-                        enabled = true,
-                        painterId = R.drawable.play_next,
-                        track = track,
-                        sheetAction = BottomSheetAction.PlayNext
-                    ),
-                    BottomSheetItemModel(
-                        label = "Add to Playlist",
-                        painterId = R.drawable.playlist_add,
-                        track = track,
-                        sheetAction = BottomSheetAction.AddToPlaylist
-                    )
-                ),
+                bottomSheetItems = trackMenuItems(track, hide = setOf(TrackMenuOption.AddToQueue)),
                 onHideBottomSheet = { showTrackBottomSheet = it },
                 onClickSheetItem = { sheetTrack, sheetAction ->
                     if (sheetAction is BottomSheetAction.AddToPlaylist) {

@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.sp
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.Artist
-import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.TopResultItem
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
@@ -79,6 +78,7 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.trackMenuItems
 import com.android.swingmusic.uicomponent.presentation.component.TopSearchResultItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -605,47 +605,7 @@ fun SearchScreen(
                         clickedTrack = track,
                         baseUrl = baseUrl ?: "",
                         currentArtisthash = null,
-                        bottomSheetItems = listOf(
-                            BottomSheetItemModel(
-                                label = "Go to Artist",
-                                painterId = R.drawable.ic_artist,
-                                track = track,
-                                sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
-                            ),
-                            BottomSheetItemModel(
-                                label = "Go to Album",
-                                painterId = R.drawable.ic_album,
-                                track = track,
-                                sheetAction = BottomSheetAction.GotoAlbum
-                            ),
-                            BottomSheetItemModel(
-                                label = "Go to Folder",
-                                painterId = R.drawable.folder_outlined_open,
-                                track = track,
-                                sheetAction = BottomSheetAction.GotoFolder(
-                                    name = track.folder.getFolderName(),
-                                    path = track.folder
-                                )
-                            ),
-                            BottomSheetItemModel(
-                                label = "Play Next",
-                                painterId = R.drawable.play_next,
-                                track = track,
-                                sheetAction = BottomSheetAction.PlayNext
-                            ),
-                            BottomSheetItemModel(
-                                label = "Add to Queue",
-                                painterId = R.drawable.add_to_queue,
-                                track = track,
-                                sheetAction = BottomSheetAction.AddToQueue
-                            ),
-                            BottomSheetItemModel(
-                                label = "Add to Playlist",
-                                painterId = R.drawable.playlist_add,
-                                track = track,
-                                sheetAction = BottomSheetAction.AddToPlaylist
-                            )
-                        ),
+                        bottomSheetItems = trackMenuItems(track),
                         onHideBottomSheet = {
                             showTrackBottomSheet = it
                         },
