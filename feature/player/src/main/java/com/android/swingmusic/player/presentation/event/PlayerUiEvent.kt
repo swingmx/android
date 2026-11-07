@@ -1,6 +1,6 @@
 package com.android.swingmusic.player.presentation.event
 
-interface PlayerUiEvent {
+sealed interface PlayerUiEvent {
 
     data class OnSeekPlayBack(val value: Float) : PlayerUiEvent
 
