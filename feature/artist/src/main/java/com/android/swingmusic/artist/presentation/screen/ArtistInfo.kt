@@ -108,6 +108,7 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.ListeningStatsSection
 import com.android.swingmusic.uicomponent.presentation.component.trackMenuItems
 import com.android.swingmusic.uicomponent.presentation.component.PlayAndShuffleButtons
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
@@ -841,9 +842,22 @@ private fun ArtistInfo(
                     }
                 }
 
-                if (artistInfo.stats.isNotEmpty()) {
+                artistInfo.listening?.let { listening ->
                     item {
-                        ArtistStatsSection(stats = artistInfo.stats, baseUrl = baseUrl)
+                        ListeningStatsSection(
+                            listening = listening,
+                            baseUrl = baseUrl,
+                            onAlbumClick = onClickAlbum
+                        )
+                    }
+                }
+
+                // Time listened, top track and top album already show in the listening block
+                val extraStats = if (artistInfo.listening == null) artistInfo.stats
+                else artistInfo.stats.filterNot { it.type in listOf("play_duration", "toptrack", "topalbum") }
+                if (extraStats.isNotEmpty()) {
+                    item {
+                        ArtistStatsSection(stats = extraStats, baseUrl = baseUrl)
                     }
                 }
 

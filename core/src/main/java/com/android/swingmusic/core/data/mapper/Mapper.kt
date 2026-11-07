@@ -14,6 +14,7 @@ import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.ArtistDto
 import com.android.swingmusic.core.data.dto.ArtistExpandedDto
 import com.android.swingmusic.core.data.dto.ArtistInfoDto
+import com.android.swingmusic.core.data.dto.ListeningDto
 import com.android.swingmusic.core.data.dto.ArtistsSearchResultDto
 import com.android.swingmusic.core.data.dto.DirDto
 import com.android.swingmusic.core.data.dto.DirListDto
@@ -48,6 +49,10 @@ import com.android.swingmusic.core.domain.model.AllArtists
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
+import com.android.swingmusic.core.domain.model.Listening
+import com.android.swingmusic.core.domain.model.ListeningRank
+import com.android.swingmusic.core.domain.model.ListeningTopAlbum
+import com.android.swingmusic.core.domain.model.ListeningTopTrack
 import com.android.swingmusic.core.domain.model.StatItem
 import com.android.swingmusic.core.domain.model.ArtistsSearchResult
 import com.android.swingmusic.core.domain.model.Dir
@@ -341,9 +346,28 @@ object Map {
                 trackCount = 0
             ),
             tracks = tracks?.map { it.toTrack() } ?: emptyList(),
-            stats = stats.orEmpty().mapNotNull { it.toStatItem() }
+            stats = stats.orEmpty().mapNotNull { it.toStatItem() },
+            listening = listening?.toListening()
         )
     }
+
+    fun ListeningDto.toListening(): Listening = Listening(
+        playDuration = playDuration ?: 0,
+        playCount = playCount ?: 0,
+        lastPlayedAgo = lastPlayedAgo?.takeIf { it.isNotBlank() },
+        rank = rank?.let { r ->
+            val position = r.position ?: return@let null
+            ListeningRank(position = position, total = r.total ?: 0, of = r.of ?: "artists")
+        },
+        topAlbum = topAlbum?.let { a ->
+            val hash = a.albumHash ?: return@let null
+            ListeningTopAlbum(hash, a.title ?: "", a.image ?: "", a.artist, a.playDuration ?: 0)
+        },
+        topTrack = topTrack?.let { t ->
+            val hash = t.trackHash ?: return@let null
+            ListeningTopTrack(hash, t.title ?: "", t.image ?: "", t.playDuration ?: 0)
+        }
+    )
 
     fun StatItemDto.toStatItem(): StatItem? {
         val value = value?.takeIf { it.isNotBlank() } ?: return null
