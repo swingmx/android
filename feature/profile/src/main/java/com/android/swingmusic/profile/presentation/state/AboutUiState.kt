@@ -6,4 +6,5 @@ import androidx.compose.runtime.Immutable
 internal data class AboutUiState(
     val appVersion: String = "",
     val serverVersion: String? = null,
+    val showWhatsNew: Boolean = false,
 )
