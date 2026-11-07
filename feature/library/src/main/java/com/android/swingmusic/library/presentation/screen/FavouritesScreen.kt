@@ -13,7 +13,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import com.android.swingmusic.common.presentation.navigator.TabReselect
+import kotlinx.coroutines.flow.filter
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
@@ -68,17 +72,23 @@ private const val FAVOURITES_TITLE = "Favourites"
 fun FavouritesScreen(
     navigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
+    tabReselect: TabReselect,
 ) {
-    Favourites(navigator = navigator, mediaControllerViewModel = mediaControllerViewModel)
+    Favourites(navigator = navigator, mediaControllerViewModel = mediaControllerViewModel, tabReselect = tabReselect)
 }
 
 @Composable
 private fun Favourites(
     navigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
+    tabReselect: TabReselect,
     viewModel: FavouritesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+    LaunchedEffect(tabReselect) {
+        tabReselect.events.filter { it == TabReselect.Tab.FAVOURITES }.collect { listState.animateScrollToItem(0) }
+    }
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -115,6 +125,7 @@ private fun Favourites(
 
     FavouritesScreenContent(
         uiState = uiState,
+        listState = listState,
         nowPlayingTrackHash = playerUiState.nowPlayingTrack?.trackHash,
         playbackState = playerUiState.playbackState,
         onEvent = viewModel::onEvent,
@@ -176,8 +187,8 @@ private fun FavouritesScreenContent(
     onEvent: (FavouritesUiEvent) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     trackMenu: @Composable (track: Track, onDismiss: () -> Unit) -> Unit = { _, _ -> },
+    listState: LazyListState = rememberLazyListState(),
 ) {
-    val listState = rememberLazyListState()
     val titleState = rememberLargeTitleState(listState)
     var menuTrack by remember { mutableStateOf<Track?>(null) }
     val favourites = uiState.favourites

@@ -69,7 +69,7 @@ import com.android.swingmusic.presentation.navigator.scaleInEnterTransition
 import com.android.swingmusic.presentation.navigator.scaleInPopEnterTransition
 import com.android.swingmusic.presentation.navigator.scaleOutExitTransition
 import com.android.swingmusic.presentation.navigator.scaleOutPopExitTransition
-import com.android.swingmusic.search.presentation.event.SearchUiEvent
+import com.android.swingmusic.common.presentation.navigator.TabReselect
 import com.android.swingmusic.search.presentation.viewmodel.SearchViewModel
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.service.SessionTokenManager
@@ -176,13 +176,22 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
             // since screens like an album page live in whichever tab opened them.
             var currentTab by rememberSaveable { mutableStateOf(BottomNavItem.Home.title) }
 
+            val tabReselect = remember { TabReselect() }
             fun selectTab(item: BottomNavItem) {
                 if (item.title == currentTab) {
-                    // Reselecting returns the tab to its first screen
+                    // Reselecting returns the tab to its first screen; a second tap on that
+                    // screen scrolls it to the top (Search focuses its field instead).
                     val popped = navController.popBackStack(item.destination.route, inclusive = false)
-                    if (!popped) navController.navigate(item.destination.route) { launchSingleTop = true }
-                    if (item == BottomNavItem.Search) {
-                        searchViewModel.onSearchUiEvent(SearchUiEvent.OnClearSearchStates)
+                    if (!popped) {
+                        navController.navigate(item.destination.route) { launchSingleTop = true }
+                        tabReselect.reselect(
+                            when (item) {
+                                BottomNavItem.Home -> TabReselect.Tab.HOME
+                                BottomNavItem.Library -> TabReselect.Tab.LIBRARY
+                                BottomNavItem.Favourites -> TabReselect.Tab.FAVOURITES
+                                BottomNavItem.Search -> TabReselect.Tab.SEARCH
+                            }
+                        )
                     }
                     return
                 }
@@ -316,7 +325,8 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                                     navController = navController,
                                     authViewModel = authViewModel,
                                     mediaControllerViewModel = mediaControllerViewModel,
-                                    searchViewModel = searchViewModel
+                                    searchViewModel = searchViewModel,
+                                    tabReselect = tabReselect
                                 )
                             }
                         }
@@ -378,7 +388,8 @@ internal fun SwingMusicAppNavigationWithAnimatedPlayer(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     mediaControllerViewModel: MediaControllerViewModel,
-    searchViewModel: SearchViewModel
+    searchViewModel: SearchViewModel,
+    tabReselect: TabReselect
 ) {
     val navGraph = remember(isUserLoggedIn) { NavGraphs.root(isUserLoggedIn) }
 
@@ -414,6 +425,7 @@ internal fun SwingMusicAppNavigationWithAnimatedPlayer(
             dependency(authViewModel)
             dependency(mediaControllerViewModel)
             dependency(searchViewModel)
+            dependency(tabReselect)
         }
     )
 }
