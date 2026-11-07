@@ -6,6 +6,8 @@ import com.android.swingmusic.core.domain.util.QueueSource
 internal sealed class HomeUiEffect {
     data class NavigateToAlbum(val albumHash: String) : HomeUiEffect()
     data class NavigateToArtist(val artistHash: String) : HomeUiEffect()
+    data class NavigateToPlaylist(val playlistId: String) : HomeUiEffect()
+    data class NavigateToFolder(val name: String, val path: String) : HomeUiEffect()
     data class PlayTracks(val tracks: List<Track>, val source: QueueSource) : HomeUiEffect()
     data class ShowSnackBar(val message: String) : HomeUiEffect()
     data object NavigateToProfile : HomeUiEffect()

@@ -13,4 +13,5 @@ sealed interface HomeItem {
     data class TrackItem(val track: Track) : HomeItem
     data class PlaylistItem(val playlist: Playlist) : HomeItem
     data class MixItem(val mix: Mix) : HomeItem
+    data class FolderItem(val folder: Folder) : HomeItem
 }
