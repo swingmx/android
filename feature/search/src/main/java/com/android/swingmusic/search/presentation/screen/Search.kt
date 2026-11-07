@@ -23,7 +23,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.android.swingmusic.common.presentation.navigator.TabReselect
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -112,8 +119,9 @@ private fun Search(
     onClickArtist: (hash: String) -> Unit,
     onClickViewAll: (itemType: String) -> Unit,
     onClickMoreVert: (track: Track) -> Unit,
+    lazyColumnState: LazyListState = rememberLazyListState(),
+    searchFieldFocus: FocusRequester = remember { FocusRequester() },
 ) {
-    val lazyColumnState = rememberLazyListState()
     val clickInteractionSource = remember { MutableInteractionSource() }
 
     Scaffold {
@@ -146,7 +154,8 @@ private fun Search(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(16.dp)
+                                .focusRequester(searchFieldFocus),
                             placeholder = { Text("search swing music") },
                             singleLine = true,
                             maxLines = 1,
@@ -521,9 +530,22 @@ private fun Search(
 fun SearchScreen(
     searchViewModel: SearchViewModel,
     mediaControllerViewModel: MediaControllerViewModel,
-    navigator: CommonNavigator
+    navigator: CommonNavigator,
+    tabReselect: TabReselect,
 ) {
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
+    val listState = rememberLazyListState()
+    val searchFieldFocus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(tabReselect) {
+        tabReselect.events.filter { it == TabReselect.Tab.SEARCH }.collect {
+            // The field is hidden while the list scrolls down, so bring it back first
+            listState.animateScrollToItem(0)
+            delay(100)
+            runCatching { searchFieldFocus.requestFocus() }
+            keyboard?.show()
+        }
+    }
     val playerState by mediaControllerViewModel.playerUiState.collectAsState()
 
     val searchUiState by searchViewModel.searchState.collectAsState()
@@ -685,6 +707,8 @@ fun SearchScreen(
             }
 
             Search(
+                lazyColumnState = listState,
+                searchFieldFocus = searchFieldFocus,
                 isLoading = searchUiState.isLoadingTopResult,
                 isError = searchUiState.isError,
                 hasSearched = searchUiState.hasSearched,
