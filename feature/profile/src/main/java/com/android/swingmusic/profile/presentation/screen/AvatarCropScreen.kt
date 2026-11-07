@@ -194,8 +194,9 @@ private class CropFrame(val bitmap: Bitmap, private val marginPx: Float) {
 
     fun transform(pan: Offset, zoom: Float) {
         scale = (scale * zoom).coerceIn(1F, MAX_ZOOM)
-        val maxX = (bitmap.width * totalScale - diameter) / 2F
-        val maxY = (bitmap.height * totalScale - diameter) / 2F
+        // Float rounding can leave a side that exactly fills the circle a hair negative.
+        val maxX = ((bitmap.width * totalScale - diameter) / 2F).coerceAtLeast(0F)
+        val maxY = ((bitmap.height * totalScale - diameter) / 2F).coerceAtLeast(0F)
         val moved = offset + pan
         offset = Offset(moved.x.coerceIn(-maxX, maxX), moved.y.coerceIn(-maxY, maxY))
     }
