@@ -26,6 +26,7 @@ import timber.log.Timber
 import java.sql.Timestamp
 import java.time.Instant
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataPLayerRepository @Inject constructor(
     private val queueDao: QueueDao,
@@ -90,6 +91,8 @@ class DataPLayerRepository @Inject constructor(
                 bearerToken = "Bearer $accessToken"
             )
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: HttpException) {
             Timber.e("NETWORK ERROR LOGGING TRACK TO SERVER")
         } catch (e: Exception) {
@@ -113,6 +116,8 @@ class DataPLayerRepository @Inject constructor(
 
                 emit(Resource.Success(data = true)) // isFavorite = true
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO ADD TRACK TO FAVORITE"))
 
@@ -137,6 +142,8 @@ class DataPLayerRepository @Inject constructor(
                 )
                 emit(Resource.Success(data = false)) // isFavorite = false
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO REMOVE TRACK FROM FAVORITE"))
 
@@ -166,6 +173,8 @@ class DataPLayerRepository @Inject constructor(
 
             response.tracksDto?.map { it.toTrack() } ?: emptyList()
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: HttpException) {
             Timber.e("Network error fetching tracks chunk: $e")
             emptyList()

@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataAlbumRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
@@ -41,6 +42,8 @@ class DataAlbumRepository @Inject constructor(
                         ).toAllAlbums().total
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error loading albums"))
             }
@@ -81,6 +84,8 @@ class DataAlbumRepository @Inject constructor(
 
                 emit(Resource.Success(data = albumWithInfo))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error loading album details"))
             }
@@ -103,6 +108,8 @@ class DataAlbumRepository @Inject constructor(
 
                 emit(Resource.Success(data = true)) // isFavorite = true
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO ADD ALBUM TO FAVORITE"))
 
@@ -128,6 +135,8 @@ class DataAlbumRepository @Inject constructor(
 
                 emit(Resource.Success(data = false)) // isFavorite = false
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO REMOVE ALBUM FROM FAVORITE"))
 

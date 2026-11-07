@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataFolderRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
@@ -50,6 +51,8 @@ class DataFolderRepository @Inject constructor(
 
                 emit(Resource.Success(data = foldersAndTracksDto.toModel()))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: IOException) {
                 emit(
                     Resource.Error(
@@ -128,6 +131,8 @@ class DataFolderRepository @Inject constructor(
                 val folders = foldersAndTracksDto.foldersDto?.map { it.toFolder() } ?: emptyList()
                 emit(Resource.Success(data = folders))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: IOException) {
                 emit(
                     Resource.Error(
@@ -161,6 +166,8 @@ class DataFolderRepository @Inject constructor(
 
                 emit(Resource.Success(data = rootDirsDto.toRootDirs()))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: IOException) {
                 emit(
                     Resource.Error(
