@@ -190,7 +190,7 @@ class MediaControllerViewModel @Inject constructor(
                     }
 
                     currentMediaItemId?.let {
-                        val index = it.toInt()
+                        val index = mediaController?.currentMediaItemIndex ?: it.toInt()
                         if (index in workingQueue.indices) {
                             _playerUiState.value = _playerUiState.value.copy(
                                 queue = workingQueue,
@@ -959,6 +959,13 @@ class MediaControllerViewModel @Inject constructor(
                 activateHapticResponse()
             }
 
+            is QueueEvent.MoveQueueItem -> moveQueueItem(event.from, event.to)
+
+            is QueueEvent.RemoveQueueItem -> {
+                removeQueueItem(event.index)
+                softHaptic()
+            }
+
             is QueueEvent.AddToQueue -> {
                 addToPlayingQueue(event.tracks, event.source)
                 activateHapticResponse()
@@ -1105,7 +1112,10 @@ class MediaControllerViewModel @Inject constructor(
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             mediaItem?.let {
                 try {
-                    val trackIndex = it.mediaId.toInt() // "id" == index
+                    // The timeline and the queue lists share an order, so the controller's
+                    // index is the queue index (media ids were assigned by position and can be
+                    // stale after a move or remove).
+                    val trackIndex = mediaController?.currentMediaItemIndex ?: it.mediaId.toInt()
                     val currentQueue = if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
                         shuffledQueue
                     } else {
@@ -1151,6 +1161,41 @@ class MediaControllerViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun activeQueue(): MutableList<Track> =
+        if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) shuffledQueue else workingQueue
+
+    private fun moveQueueItem(from: Int, to: Int) {
+        val queue = activeQueue()
+        if (from == to || from !in queue.indices || to !in queue.indices) return
+        queue.add(to, queue.removeAt(from))
+        mediaController?.moveMediaItem(from, to)
+        syncQueueState()
+    }
+
+    private fun removeQueueItem(index: Int) {
+        val queue = activeQueue()
+        if (index !in queue.indices) return
+        val removed = queue.removeAt(index)
+        if (queue !== workingQueue) workingQueue.remove(removed)
+        mediaController?.removeMediaItem(index)
+        syncQueueState()
+    }
+
+    /** Publishes the active queue as a new list and saves it, after a move or remove. */
+    private fun syncQueueState() {
+        val queue = activeQueue()
+        val playingIndex = (mediaController?.currentMediaItemIndex ?: 0)
+            .coerceIn(0, (queue.size - 1).coerceAtLeast(0))
+        _playerUiState.update { state ->
+            state.copy(
+                queue = queue.toList(),
+                playingTrackIndex = playingIndex,
+                nowPlayingTrack = queue.getOrNull(playingIndex) ?: state.nowPlayingTrack
+            )
+        }
+        updateQueueInDatabase(queue = workingQueue, playingTrackIndex = playingIndex)
     }
 
     private fun addTracksToCurrentQueue(newTracks: List<Track>) {

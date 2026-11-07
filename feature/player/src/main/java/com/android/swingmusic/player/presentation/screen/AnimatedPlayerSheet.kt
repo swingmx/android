@@ -61,7 +61,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.platform.LocalHapticFeedback
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -417,6 +422,12 @@ fun AnimatedPlayerSheet(
                     queueSheetOffset.snapTo(queueInitialOffset)
                     bottomSheetState.bottomSheetState.partialExpand()
                 }
+            },
+            onMoveQueueItem = { from, to ->
+                mediaControllerViewModel.onQueueEvent(QueueEvent.MoveQueueItem(from, to))
+            },
+            onRemoveQueueItem = { index ->
+                mediaControllerViewModel.onQueueEvent(QueueEvent.RemoveQueueItem(index))
             }
         )
     }
@@ -1357,7 +1368,9 @@ private fun QueueSheetOverlay(
     onGotoFolder: (name: String, path: String) -> Unit,
     onPlayNext: (track: Track) -> Unit,
     onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
-    onCloseSheets: () -> Unit
+    onCloseSheets: () -> Unit,
+    onMoveQueueItem: (from: Int, to: Int) -> Unit,
+    onRemoveQueueItem: (index: Int) -> Unit,
 ) {
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
@@ -1369,6 +1382,7 @@ private fun QueueSheetOverlay(
     val sheetState = rememberModalBottomSheetState()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+    var clickedIndex: Int? by remember { mutableStateOf(null) }
     var playlistTrack: Track? by remember { mutableStateOf(null) }
 
     // Update clicked track when queue changes
@@ -1490,7 +1504,11 @@ private fun QueueSheetOverlay(
                 clickedTrack = track,
                 isFavorite = track.isFavorite,
                 baseUrl = baseUrl,
-                bottomSheetItems = trackMenuItems(track, hide = setOf(TrackMenuOption.AddToQueue)),
+                bottomSheetItems = trackMenuItems(
+                    track,
+                    hide = setOf(TrackMenuOption.AddToQueue),
+                    removeFromQueue = true
+                ),
                 onHideBottomSheet = { showTrackBottomSheet = it },
                 onClickSheetItem = { sheetTrack, sheetAction ->
                     if (sheetAction is BottomSheetAction.AddToPlaylist) {
@@ -1509,6 +1527,7 @@ private fun QueueSheetOverlay(
                         }
 
                         is BottomSheetAction.PlayNext -> onPlayNext(sheetTrack)
+                        is BottomSheetAction.RemoveFromQueue -> clickedIndex?.let(onRemoveQueueItem)
                         else -> {}
                     }
                 },
@@ -1746,7 +1765,20 @@ private fun QueueSheetOverlay(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Queue items
+            // Queue items: drag the handle to reorder, long press for the menu
+            val haptics = LocalHapticFeedback.current
+            // Stable per-entry keys (a track can be queued more than once)
+            val queueKeys = remember(queue) {
+                val seen = HashMap<String, Int>()
+                queue.map { track ->
+                    val n = seen.getOrDefault(track.trackHash, 0)
+                    seen[track.trackHash] = n + 1
+                    "${track.trackHash}:$n"
+                }
+            }
+            val reorderableState = rememberReorderableLazyListState(lazyColumnState) { from, to ->
+                onMoveQueueItem(from.index, to.index)
+            }
             LazyColumn(
                 state = lazyColumnState,
                 modifier = Modifier
@@ -1757,20 +1789,38 @@ private fun QueueSheetOverlay(
             ) {
                 itemsIndexed(
                     items = queue,
-                    key = { index, track -> "$index:${track.filepath}" }
+                    key = { index, _ -> queueKeys.getOrElse(index) { index.toString() } }
                 ) { index, track ->
-                    TrackItem(
-                        track = track,
-                        playbackState = playbackState,
-                        isCurrentTrack = index == playingTrackIndex,
-                        baseUrl = baseUrl,
-                        showMenuIcon = true,
-                        onClickTrackItem = { onClickQueueItem(index) },
-                        onClickMoreVert = {
-                            clickedTrack = it
-                            showTrackBottomSheet = true
-                        }
-                    )
+                    ReorderableItem(reorderableState, key = queueKeys.getOrElse(index) { index.toString() }) {
+                        TrackItem(
+                            track = track,
+                            playbackState = playbackState,
+                            isCurrentTrack = index == playingTrackIndex,
+                            baseUrl = baseUrl,
+                            showMenuIcon = true,
+                            onClickTrackItem = { onClickQueueItem(index) },
+                            onClickMoreVert = {},
+                            onLongClickTrackItem = {
+                                clickedTrack = track
+                                clickedIndex = index
+                                showTrackBottomSheet = true
+                            },
+                            trailingContent = {
+                                Icon(
+                                    imageVector = Icons.Rounded.DragHandle,
+                                    contentDescription = "Reorder",
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .padding(12.dp)
+                                        .draggableHandle(
+                                            onDragStarted = {
+                                                haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                            }
+                                        )
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
