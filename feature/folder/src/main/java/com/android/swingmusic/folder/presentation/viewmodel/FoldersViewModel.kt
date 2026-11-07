@@ -16,7 +16,7 @@ import com.android.swingmusic.folder.presentation.event.FolderUiEvent
 import com.android.swingmusic.folder.presentation.model.FolderContentItem
 import com.android.swingmusic.folder.presentation.state.FoldersAndTracksState
 import com.android.swingmusic.folder.presentation.state.FoldersContentPagingState
-import com.android.swingmusic.player.domain.repository.PLayerRepository
+import com.android.swingmusic.player.domain.repository.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -28,7 +28,7 @@ import javax.inject.Inject
 @HiltViewModel
 class FoldersViewModel @Inject constructor(
     private val folderRepository: FolderRepository,
-    private val pLayerRepository: PLayerRepository,
+    private val playerRepository: PlayerRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
     val homeDir: Folder = Folder(
@@ -301,9 +301,9 @@ class FoldersViewModel @Inject constructor(
             updatedTrackFavorites.update { it + (trackHash to newFavoriteStatus) }
 
             val request = if (isFavorite) {
-                pLayerRepository.removeTrackFromFavorite(trackHash)
+                playerRepository.removeTrackFromFavorite(trackHash)
             } else {
-                pLayerRepository.addTrackToFavorite(trackHash)
+                playerRepository.addTrackToFavorite(trackHash)
             }
 
             request.collectLatest { result ->

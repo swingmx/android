@@ -15,7 +15,7 @@ import com.android.swingmusic.core.domain.model.TopSearchResults
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TracksSearchResult
 import com.android.swingmusic.network.data.api.service.NetworkApiService
-import com.android.swingmusic.search.domain.reposotory.SearchRepository
+import com.android.swingmusic.search.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject

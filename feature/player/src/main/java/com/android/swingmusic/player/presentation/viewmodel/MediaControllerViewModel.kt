@@ -18,7 +18,7 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
-import com.android.swingmusic.player.domain.repository.PLayerRepository
+import com.android.swingmusic.player.domain.repository.PlayerRepository
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickLyricsIcon
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickMore
@@ -54,7 +54,7 @@ import androidx.core.net.toUri
 
 @HiltViewModel
 class MediaControllerViewModel @Inject constructor(
-    private val pLayerRepository: PLayerRepository,
+    private val playerRepository: PlayerRepository,
     private val authRepository: AuthRepository,
     private val vibrator: Vibrator
 ) : ViewModel() {
@@ -157,8 +157,8 @@ class MediaControllerViewModel @Inject constructor(
         viewModelScope.launch {
             refreshBaseUrl()
 
-            val savedQueue = pLayerRepository.getSavedQueue()
-            val lastPlayedTrack = pLayerRepository.getLastPlayedTrack()
+            val savedQueue = playerRepository.getSavedQueue()
+            val lastPlayedTrack = playerRepository.getLastPlayedTrack()
 
             val lastPlayedTrackIndex = lastPlayedTrack?.indexInQueue ?: -1
             val lastPlayPositionMs = lastPlayedTrack?.lastPlayPositionMs ?: 0L
@@ -206,7 +206,7 @@ class MediaControllerViewModel @Inject constructor(
                         }
 
                         if (index != lastPlayedTrackIndex) {
-                            Timber.e("ON SESSION RECONNECTION: INDEX != LAST PLAYED  TRACK INDEX")
+                            Timber.d("Reconnected on a different track than the saved one")
                             savePlayingTrackToDatabase(
                                 track = workingQueue[index],
                                 source = lastPlayedQueueSource,
@@ -282,7 +282,7 @@ class MediaControllerViewModel @Inject constructor(
         viewModelScope.launch {
             if (queue.isEmpty()) return@launch
             try {
-                pLayerRepository.insertQueue(queue)
+                playerRepository.insertQueue(queue)
                 if (playingTrackIndex in queue.indices) {
                     savePlayingTrackToDatabase(
                         track = queue[playingTrackIndex],
@@ -292,7 +292,7 @@ class MediaControllerViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Timber.e("ERROR SAVING NEW QUEUE!")
+                Timber.tag("PLAYER").e(e, "Couldn't save the queue")
             }
         }
     }
@@ -545,7 +545,7 @@ class MediaControllerViewModel @Inject constructor(
                 }
 
                 if (durationPlayedSec >= 5) {
-                    pLayerRepository.logLastPlayedTrackToServer(
+                    playerRepository.logLastPlayedTrackToServer(
                         track,
                         durationPlayedSec.toInt(),
                         sourcePath
@@ -574,7 +574,7 @@ class MediaControllerViewModel @Inject constructor(
 
                     viewModelScope.launch {
                         if (indexInQueue in workingQueue.indices) {
-                            pLayerRepository.updateLastPlayedTrack(
+                            playerRepository.updateLastPlayedTrack(
                                 trackHash = track.trackHash,
                                 indexInQueue = indexInQueue,
                                 source = source,
@@ -585,7 +585,7 @@ class MediaControllerViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Timber.e("ERROR SAVING TRACK PROGRESS CAUSED BY $e")
+            Timber.tag("PLAYER").e(e, "Couldn't save the track progress")
         }
     }
 
@@ -621,9 +621,9 @@ class MediaControllerViewModel @Inject constructor(
             }.toMutableList()
 
             val request = if (isFavorite) {
-                pLayerRepository.removeTrackFromFavorite(trackHash)
+                playerRepository.removeTrackFromFavorite(trackHash)
             } else {
-                pLayerRepository.addTrackToFavorite(trackHash)
+                playerRepository.addTrackToFavorite(trackHash)
             }
 
             request.collectLatest {
@@ -990,7 +990,7 @@ class MediaControllerViewModel @Inject constructor(
                 }
 
                 viewModelScope.launch {
-                    pLayerRepository.clearQueue()
+                    playerRepository.clearQueue()
 
                     workingQueue.clear()
                     shuffledQueue.clear()
@@ -1157,7 +1157,7 @@ class MediaControllerViewModel @Inject constructor(
                     durationPlayedSec = 0L
                     trackToLog = playingTrack
                 } catch (e: Exception) {
-                    Timber.e("ERROR ON TRANSITION -> $e")
+                    Timber.tag("PLAYER").e(e, "Media item transition failed")
                 }
             }
         }
@@ -1243,7 +1243,7 @@ class MediaControllerViewModel @Inject constructor(
                 val chunkSize = 50
                 
                 while (true) {
-                    val newTracks = pLayerRepository.getTracksChunk(
+                    val newTracks = playerRepository.getTracksChunk(
                         folderPath = folderSource.path,
                         start = start,
                         limit = chunkSize

@@ -13,7 +13,7 @@ import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumsAndAppearances
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
-import com.android.swingmusic.player.domain.repository.PLayerRepository
+import com.android.swingmusic.player.domain.repository.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ArtistInfoViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
-    private val pLayerRepository: PLayerRepository,
+    private val playerRepository: PlayerRepository,
     private val appSettingsRepository: AppSettingsRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -195,9 +195,9 @@ class ArtistInfoViewModel @Inject constructor(
             )
 
             val request = if (isFavorite) {
-                pLayerRepository.removeTrackFromFavorite(trackHash)
+                playerRepository.removeTrackFromFavorite(trackHash)
             } else {
-                pLayerRepository.addTrackToFavorite(trackHash)
+                playerRepository.addTrackToFavorite(trackHash)
             }
 
             request.collectLatest {
