@@ -87,8 +87,10 @@ import android.os.Build
 import androidx.activity.enableEdgeToEdge
 import com.android.swingmusic.BuildConfig
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 /**
@@ -120,7 +122,8 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
         lifecycleScope.launch {
             authViewModel.isUserLoggedIn.collectLatest {
                 if (it == true) {
-                    scheduleTokenRefreshWork(applicationContext)
+                    // WorkManager opens its database on first use; keep that off the main thread.
+                    withContext(Dispatchers.IO) { scheduleTokenRefreshWork(applicationContext) }
                     mediaControllerViewModel.refreshBaseUrl()
                     initializeMediaController()
                 }
