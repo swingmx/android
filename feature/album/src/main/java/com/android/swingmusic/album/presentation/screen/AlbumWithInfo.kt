@@ -91,6 +91,8 @@ import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.playlist.domain.PlaylistTarget
 import com.android.swingmusic.playlist.presentation.screen.AddToPlaylistSheet
+import com.android.swingmusic.playlist.presentation.screen.AddToCollectionSheet
+import com.android.swingmusic.playlist.domain.CollectionTarget
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.presentation.component.FavoriteAndMoreActions
@@ -150,6 +152,7 @@ fun AlbumWithInfo(
     var playlistTrack: Track? by remember { mutableStateOf(null) }
     var showOptionsSheet by remember { mutableStateOf(false) }
     var showAddToPlaylistSheet by remember { mutableStateOf(false) }
+    var showAddToCollectionSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(albumTracksMap) {
         albumTracksMap.forEach { entry ->
@@ -173,8 +176,22 @@ fun AlbumWithInfo(
                 onAddToQueue = onAddToQueue,
                 onSearchOn = onSearchOn,
                 onAddToPlaylist = { showAddToPlaylistSheet = true },
+                onAddToCollection = { showAddToCollectionSheet = true },
                 brandColours = searchOnBrandColours,
                 onToggleBrandColours = onToggleSearchOnBrandColours
+            )
+        }
+
+        if (showAddToCollectionSheet) {
+            AddToCollectionSheet(
+                target = CollectionTarget(
+                    type = CollectionTarget.Type.ALBUM,
+                    hash = albumInfo.albumHash,
+                    suggestedName = albumInfo.title
+                ),
+                onBack = { showOptionsSheet = true },
+                onDismiss = { showAddToCollectionSheet = false },
+                onDone = onPlaylistMessage
             )
         }
 

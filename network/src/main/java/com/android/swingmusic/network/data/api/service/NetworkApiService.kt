@@ -33,6 +33,10 @@ import com.android.swingmusic.core.data.dto.TracksSearchResultDto
 import com.android.swingmusic.core.data.dto.RootDirsDto
 import com.android.swingmusic.network.data.dto.AddToPlaylistRequestDto
 import com.android.swingmusic.network.data.dto.AlbumHashRequestDto
+import com.android.swingmusic.network.data.dto.CollectionDto
+import com.android.swingmusic.network.data.dto.CollectionItemDto
+import com.android.swingmusic.network.data.dto.CollectionItemRequestDto
+import com.android.swingmusic.network.data.dto.CreateCollectionRequestDto
 import com.android.swingmusic.network.data.dto.CreatePlaylistRequestDto
 import com.android.swingmusic.network.data.dto.RemovePlaylistTracksRequestDto
 import com.android.swingmusic.network.data.dto.SaveAsPlaylistRequestDto
@@ -258,6 +262,26 @@ interface NetworkApiService {
     suspend fun createPlaylist(
         @Url url: String,
         @Body request: CreatePlaylistRequestDto,
+        @Header("Authorization") bearerToken: String
+    ): Any
+
+    @GET
+    suspend fun getCollections(
+        @Url url: String,
+        @Header("Authorization") bearerToken: String
+    ): List<CollectionDto>
+
+    @POST
+    suspend fun createCollection(
+        @Url url: String,
+        @Body request: CreateCollectionRequestDto,
+        @Header("Authorization") bearerToken: String
+    ): Any
+
+    @POST
+    suspend fun addCollectionItem(
+        @Url url: String,
+        @Body request: CollectionItemRequestDto,
         @Header("Authorization") bearerToken: String
     ): Any
 
