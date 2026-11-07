@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -49,6 +50,13 @@ internal fun AboutScreen(
     }
 
     AboutScreenContent(uiState = uiState, onEvent = viewModel::onEvent)
+
+    if (uiState.showWhatsNew) {
+        ChangelogHost(
+            openRequested = true,
+            onClosed = { viewModel.onEvent(AboutUiEvent.OnWhatsNewClosed) }
+        )
+    }
 }
 
 @Composable
@@ -79,6 +87,13 @@ private fun AboutScreenContent(
             }
 
             SettingsGroup {
+                SettingsRow(
+                    icon = Icons.Rounded.NewReleases,
+                    title = "What's New",
+                    subtitle = "Changes in this and earlier versions",
+                    onClick = { onEvent(AboutUiEvent.OnWhatsNewClicked) }
+                )
+                SettingsGroupDivider()
                 SettingsRow(
                     icon = Icons.Rounded.BugReport,
                     title = "Report a problem",

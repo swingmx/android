@@ -116,6 +116,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.junit)
+    testImplementation(libs.gson)
 
     // Hilt DI
     implementation(libs.hilt.android)
