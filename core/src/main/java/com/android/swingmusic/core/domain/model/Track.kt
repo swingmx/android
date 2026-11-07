@@ -16,4 +16,5 @@ data class Track(
     val trackHash: String,
     val disc: Int,
     val trackNumber: Int,
+    val blurhash: String = ""
 )

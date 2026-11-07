@@ -64,6 +64,7 @@ import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.Artwork
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import kotlin.math.abs
@@ -110,20 +111,23 @@ internal fun HomeCard(
     ) {
         Box(modifier = Modifier.size(HomeCardWidth)) {
             when (item) {
-                is HomeItem.ArtistItem -> Artwork(
+                is HomeItem.ArtistItem -> CardArtwork(
                     url = "${baseUrl}img/artist/medium/${item.artist.image}",
+                    blurhash = item.artist.blurhash,
                     shape = CircleShape,
                     fallback = R.drawable.artist_fallback
                 )
 
-                is HomeItem.AlbumItem -> Artwork(
+                is HomeItem.AlbumItem -> CardArtwork(
                     url = "${baseUrl}img/thumbnail/medium/${item.album.image}",
+                    blurhash = item.album.blurhash,
                     shape = ArtworkShape
                 )
 
                 is HomeItem.TrackItem -> {
-                    Artwork(
+                    CardArtwork(
                         url = "${baseUrl}img/thumbnail/medium/${item.track.image}",
+                        blurhash = item.track.blurhash,
                         shape = ArtworkShape
                     )
                     if (nowPlayingState != null) {
@@ -206,23 +210,18 @@ private fun HomeItem.captions(): Pair<String, String> = when (this) {
 }
 
 @Composable
-private fun Artwork(
+private fun CardArtwork(
     url: String,
     shape: Shape,
     modifier: Modifier = Modifier,
+    blurhash: String? = null,
     size: Dp = HomeCardWidth,
     fallback: Int = R.drawable.audio_fallback,
 ) {
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(url)
-            .crossfade(true)
-            .build(),
-        placeholder = painterResource(fallback),
-        fallback = painterResource(fallback),
-        error = painterResource(fallback),
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
+    Artwork(
+        url = url,
+        blurhash = blurhash,
+        fallback = fallback,
         modifier = modifier
             .size(size)
             .clip(shape)
@@ -285,12 +284,12 @@ private fun NowPlayingBadge(playbackState: PlaybackState, modifier: Modifier = M
 private fun PlaylistArtwork(playlist: Playlist, baseUrl: String) {
     val customImage = playlist.customImage
     when {
-        customImage != null -> Artwork(
+        customImage != null -> CardArtwork(
             url = "${baseUrl}img/playlist/$customImage",
             shape = ArtworkShape
         )
 
-        playlist.images.isEmpty() -> Artwork(url = "", shape = ArtworkShape)
+        playlist.images.isEmpty() -> CardArtwork(url = "", shape = ArtworkShape)
 
         else -> {
             val cell = (HomeCardWidth - 1.dp) / 2
@@ -304,7 +303,7 @@ private fun PlaylistArtwork(playlist: Playlist, baseUrl: String) {
                 tiles.chunked(2).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
                         row.forEach { image ->
-                            Artwork(
+                            CardArtwork(
                                 url = "${baseUrl}img/thumbnail/small/$image",
                                 shape = RoundedCornerShape(0.dp),
                                 size = cell
@@ -322,7 +321,7 @@ private fun MixArtwork(mix: Mix, baseUrl: String) {
     // The server draws its own label and fade onto mix covers, so show those as they are
     val cover = mix.image
     if (cover != null) {
-        Artwork(url = "${baseUrl}img/mix/medium/$cover", shape = ArtworkShape)
+        CardArtwork(url = "${baseUrl}img/mix/medium/$cover", shape = ArtworkShape)
         return
     }
 
