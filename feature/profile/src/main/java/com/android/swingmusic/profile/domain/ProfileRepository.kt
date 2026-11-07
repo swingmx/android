@@ -7,11 +7,16 @@ import com.android.swingmusic.core.domain.model.Chart
 import com.android.swingmusic.core.domain.model.StatItem
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.database.domain.model.User
+import java.io.File
 
 interface ProfileRepository {
     suspend fun getBaseUrl(): String
 
     suspend fun getCachedUser(): User?
+
+    suspend fun uploadAvatar(file: File): Resource<Unit>
+
+    suspend fun removeAvatar(): Resource<Unit>
 
     suspend fun fetchUser(): Resource<User>
 

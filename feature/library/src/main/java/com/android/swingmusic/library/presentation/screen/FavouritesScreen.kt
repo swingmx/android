@@ -318,7 +318,8 @@ private fun FavouritesScreenContent(
         LargeTitleTopBar(
             title = FAVOURITES_TITLE,
             state = titleState,
-            avatarPath = uiState.avatarPath,
+            avatarModel = uiState.avatarModel,
+            avatarInitials = uiState.avatarInitials,
             onProfileClick = { onEvent(FavouritesUiEvent.OnProfileClicked) }
         )
 

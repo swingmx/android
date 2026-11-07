@@ -9,4 +9,5 @@ internal sealed class ProfileUiEffect {
     data object OpenPhotoPicker : ProfileUiEffect()
     data class NavigateToAvatarCrop(val imageUri: String) : ProfileUiEffect()
     data object ShowPhotoRemoved : ProfileUiEffect()
+    data class ShowMessage(val message: String) : ProfileUiEffect()
 }

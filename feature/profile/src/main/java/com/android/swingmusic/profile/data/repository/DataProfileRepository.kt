@@ -26,6 +26,7 @@ import retrofit2.HttpException
 import timber.log.Timber
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import java.io.File
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoilApi::class)
@@ -68,6 +69,10 @@ class DataProfileRepository @Inject constructor(
     }
 
     override suspend fun getCachedUser(): User? = authRepository.getLoggedInUser()
+
+    override suspend fun uploadAvatar(file: File): Resource<Unit> = authRepository.uploadAvatar(file)
+
+    override suspend fun removeAvatar(): Resource<Unit> = authRepository.removeAvatar()
 
     override suspend fun fetchUser(): Resource<User> = authRepository.fetchCurrentUser()
 

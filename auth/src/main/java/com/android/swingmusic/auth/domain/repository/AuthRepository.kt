@@ -7,6 +7,7 @@ import com.android.swingmusic.auth.domain.model.TokenRefreshResult
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.database.domain.model.User
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 interface AuthRepository {
 
@@ -37,6 +38,12 @@ interface AuthRepository {
 
     /** Fetches the user from the server and caches it locally. */
     suspend fun fetchCurrentUser(): Resource<User>
+
+    /** Uploads a profile photo to the server and refreshes the cached user. */
+    suspend fun uploadAvatar(file: File): Resource<Unit>
+
+    /** Removes the profile photo on the server and refreshes the cached user. */
+    suspend fun removeAvatar(): Resource<Unit>
 
     /** Pass only what changes; returns the updated user, already cached. */
     suspend fun updateProfile(username: String? = null, password: String? = null): Resource<User>

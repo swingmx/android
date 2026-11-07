@@ -136,7 +136,8 @@ private fun LibraryScreenContent(
         LargeTitleTopBar(
             title = LIBRARY_TITLE,
             state = titleState,
-            avatarPath = uiState.avatarPath,
+            avatarModel = uiState.avatarModel,
+            avatarInitials = uiState.avatarInitials,
             onProfileClick = { onEvent(LibraryUiEvent.OnProfileClicked) }
         )
     }

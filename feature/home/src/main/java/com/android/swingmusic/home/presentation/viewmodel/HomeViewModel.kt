@@ -41,7 +41,9 @@ internal class HomeViewModel @Inject constructor(
     init {
         getSections()
         viewModelScope.launch {
-            avatarStore.avatar.collect { file -> _uiState.update { it.copy(avatarPath = file?.absolutePath) } }
+            avatarStore.avatar.collect { avatar ->
+                _uiState.update { it.copy(avatarModel = avatar.model, avatarInitials = avatar.initials) }
+            }
         }
     }
 
