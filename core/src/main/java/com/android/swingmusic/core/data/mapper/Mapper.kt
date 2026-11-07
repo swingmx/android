@@ -83,6 +83,7 @@ object Map {
             colors = colors ?: emptyList(),
             createdDate = createdDate ?: 0.0,
             helpText = helpText ?: "",
+            blurhash = blurhash ?: "",
             image = image ?: ""
         )
     }
@@ -115,6 +116,7 @@ object Map {
             duration = duration ?: 0,
             filepath = filepath ?: "",
             folder = folder ?: "",
+            blurhash = blurhash ?: "",
             image = image ?: "",
             isFavorite = isFavorite ?: false,
             title = title ?: "",
@@ -215,6 +217,7 @@ object Map {
             createdDate = createdDate ?: 0.0,
             date = date ?: 0,
             helpText = helpText ?: "",
+            blurhash = blurhash ?: "",
             image = image ?: "",
             title = title ?: "",
             versions = versions ?: emptyList()
@@ -365,6 +368,7 @@ object Map {
             createdDate = System.currentTimeMillis().toDouble(),
             date = date ?: 0,
             helpText = "",
+            blurhash = blurhash ?: "",
             image = image ?: "",
             title = title ?: "Untitled",
             versions = versions?.filterIsInstance<String>() ?: emptyList()
@@ -403,6 +407,7 @@ object Map {
             duration = duration ?: 0,
             filepath = filepath ?: "",
             folder = folder ?: "",
+            blurhash = blurhash ?: "",
             image = image ?: "",
             isFavorite = isFavorite ?: false,
             title = title ?: "Untitled",

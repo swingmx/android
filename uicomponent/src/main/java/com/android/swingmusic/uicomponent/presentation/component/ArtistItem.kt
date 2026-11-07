@@ -44,17 +44,13 @@ fun ArtistItem(
             end = 8.dp
         )
     ) {
-        AsyncImage(
+        Artwork(
             modifier = modifier
                 .clip(CircleShape)
                 .clickable { onClick(artist.artistHash) },
-            model = ImageRequest.Builder(LocalContext.current)
-                .data("${baseUrl}img/artist/medium/${artist.image}")
-                .crossfade(true)
-                .build(),
-            placeholder = painterResource(R.drawable.artist_fallback),
-            fallback = painterResource(R.drawable.artist_fallback),
-            error = painterResource(R.drawable.artist_fallback),
+            url = "${baseUrl}img/artist/medium/${artist.image}",
+            blurhash = artist.blurhash,
+            fallback = R.drawable.artist_fallback,
             contentDescription = "Artist Image",
             contentScale = ContentScale.FillWidth,
         )

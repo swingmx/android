@@ -31,5 +31,7 @@ data class TrackDto(
     @SerializedName("disc")
     val disc: Int?,
     @SerializedName("track")
-    val trackNumber: Int?
+    val trackNumber: Int?,
+    @SerializedName("blurhash")
+    val blurhash: String?
 )
