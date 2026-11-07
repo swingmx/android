@@ -3,6 +3,7 @@ package com.android.swingmusic.library.domain
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.Artist
+import com.android.swingmusic.core.domain.model.RecentFavourite
 import com.android.swingmusic.core.domain.model.Track
 
 data class FavouritesSummary(
@@ -12,6 +13,7 @@ data class FavouritesSummary(
     val trackCount: Int,
     val albumCount: Int,
     val artistCount: Int,
+    val recents: List<RecentFavourite> = emptyList(),
 )
 
 /** One page of a favourites list. [total] is only known for the first page. */
