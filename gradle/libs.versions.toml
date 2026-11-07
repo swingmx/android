@@ -44,6 +44,7 @@ media3 = "1.4.1"
 
 # Image Loading
 coil = "2.6.0"
+reorderable = "2.4.3"
 
 # Logging
 timber = "5.0.1"
@@ -125,6 +126,7 @@ androidx-media3-session = { group = "androidx.media3", name = "media3-session", 
 
 # Image Loading
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.ref = "reorderable" }
 
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }

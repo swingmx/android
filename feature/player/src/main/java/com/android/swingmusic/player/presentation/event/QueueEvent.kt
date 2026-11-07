@@ -21,6 +21,8 @@ interface QueueEvent {
     }
 
     data class SeekToQueueItem(val index: Int) : QueueEvent
+    data class MoveQueueItem(val from: Int, val to: Int) : QueueEvent
+    data class RemoveQueueItem(val index: Int) : QueueEvent
 
     object ClearQueue : QueueEvent
 }

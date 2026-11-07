@@ -3,7 +3,8 @@ package com.android.swingmusic.uicomponent.presentation.component
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.formatDuration
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackItem(
     track: Track,
@@ -57,7 +59,10 @@ fun TrackItem(
     playbackState: PlaybackState = PlaybackState.PAUSED,
     onClickTrackItem: () -> Unit,
     onClickMoreVert: (Track) -> Unit,
-    baseUrl: String
+    baseUrl: String,
+    onLongClickTrackItem: (() -> Unit)? = null,
+    /** Replaces the ⋯ button, e.g. a drag handle in the queue. */
+    trailingContent: (@Composable () -> Unit)? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
 
@@ -75,10 +80,11 @@ fun TrackItem(
                         MaterialTheme.colorScheme.onSurface.copy(alpha = .14F) else
                         Color.Unspecified
                 )
-                .clickable(
+                .combinedClickable(
                     interactionSource = interaction,
                     indication = null,
-                    onClick = { onClickTrackItem() }
+                    onClick = { onClickTrackItem() },
+                    onLongClick = onLongClickTrackItem
                 )
                 .padding(
                     start = if(isAlbumTrack) 2.dp else 8.dp,
@@ -215,7 +221,9 @@ fun TrackItem(
                 modifier = Modifier.size(48.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (showMenuIcon) {
+                if (trailingContent != null) {
+                    trailingContent()
+                } else if (showMenuIcon) {
                     IconButton(onClick = { onClickMoreVert(track) }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
