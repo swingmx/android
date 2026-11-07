@@ -113,6 +113,8 @@ internal fun HomeScreen(
         when (effect) {
             is HomeUiEffect.NavigateToAlbum -> navigator.gotoAlbumWithInfo(effect.albumHash)
             is HomeUiEffect.NavigateToArtist -> navigator.gotoArtistInfo(effect.artistHash)
+            is HomeUiEffect.NavigateToPlaylist -> navigator.gotoPlaylist(effect.playlistId)
+            is HomeUiEffect.NavigateToFolder -> navigator.gotoSourceFolder(effect.name, effect.path)
             is HomeUiEffect.PlayTracks -> mediaControllerViewModel.onQueueEvent(
                 QueueEvent.RecreateQueue(
                     source = effect.source,
@@ -197,7 +199,8 @@ private fun HomeScreenContent(
                         loadingItemKey = uiState.loadingItemKey,
                         nowPlayingTrackHash = nowPlayingTrackHash,
                         playbackState = playbackState,
-                        onItemClick = { onEvent(HomeUiEvent.OnItemClicked(it)) }
+                        onItemClick = { onEvent(HomeUiEvent.OnItemClicked(it)) },
+                        onPlayTrack = { onEvent(HomeUiEvent.OnPlayTrackClicked(it)) }
                     )
 
                     uiState.errorLoadingSections != null -> item {
@@ -239,6 +242,7 @@ private fun LazyListScope.homeSections(
     nowPlayingTrackHash: String?,
     playbackState: PlaybackState,
     onItemClick: (HomeItem) -> Unit,
+    onPlayTrack: (Track) -> Unit,
 ) {
     items(sections) { section ->
         Column(modifier = Modifier.padding(top = 16.dp, bottom = 12.dp)) {
@@ -270,6 +274,7 @@ private fun LazyListScope.homeSections(
                         baseUrl = baseUrl,
                         isLoading = loadingItemKey == item.key,
                         onClick = { onItemClick(item) },
+                        onPlayTrack = { (item as? HomeItem.TrackItem)?.let { onPlayTrack(it.track) } },
                         nowPlayingState = playbackState.takeIf {
                             item is HomeItem.TrackItem &&
                                     item.track.trackHash == nowPlayingTrackHash
