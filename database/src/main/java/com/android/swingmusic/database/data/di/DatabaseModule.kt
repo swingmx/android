@@ -27,7 +27,10 @@ object DatabaseModule {
             context.applicationContext,
             AppDatabase::class.java,
             "app_database"
-        ).addMigrations(MIGRATION_1_2).build()
+        ).addMigrations(MIGRATION_1_2)
+            // Every table here is a cache, so an older build can start over instead of crashing
+            .fallbackToDestructiveMigrationOnDowngrade()
+            .build()
     }
 
     @Provides
