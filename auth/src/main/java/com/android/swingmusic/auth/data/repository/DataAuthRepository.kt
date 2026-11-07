@@ -39,7 +39,11 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.HttpException
+import java.io.File
 import timber.log.Timber
 import java.io.IOException
 import javax.inject.Inject
@@ -157,8 +161,69 @@ class DataAuthRepository @Inject constructor(
     private suspend fun storeLoggedInUser(user: User) {
         userDao.clearLoggedInUser()
         userDao.insertLoggedInUser(user.toEntity())
-        avatarStore.setOwner(getBaseUrl(), user.id)
+        setAvatarOwner(user)
     }
+
+    private suspend fun setAvatarOwner(user: User) {
+        val baseUrl = getBaseUrl()
+        avatarStore.setOwner(
+            baseUrl = baseUrl,
+            userId = user.id,
+            serverImageUrl = user.image.takeIf { it.isNotBlank() }?.let { "${baseUrl}img/user/$it" },
+            initials = user.initials()
+        )
+    }
+
+    private fun User.initials(): String {
+        val fromNames = listOf(firstname, lastname)
+            .mapNotNull { it.trim().firstOrNull()?.uppercaseChar() }
+            .joinToString("")
+        return fromNames.ifEmpty { username.trim().take(1).uppercase() }
+    }
+
+    override suspend fun uploadAvatar(file: File): Resource<Unit> {
+        return try {
+            val part = MultipartBody.Part.createFormData(
+                "image", file.name, file.asRequestBody("image/jpeg".toMediaType())
+            )
+            val user = authApiService.updateUserImage(
+                url = "${getBaseUrl()}auth/profile/image",
+                bearerAccessToken = "Bearer ${getAccessToken()}",
+                image = part
+            ).toModel()
+            storeLoggedInUser(user)
+            Resource.Success(Unit)
+        } catch (e: HttpException) {
+            Resource.Error(message = e.serverMessage() ?: "Couldn't upload your photo.")
+        } catch (e: IOException) {
+            Resource.Error(message = "Check your connection to the server.")
+        } catch (e: Exception) {
+            Timber.tag("AUTH").e(e)
+            Resource.Error(message = "Couldn't upload your photo.")
+        }
+    }
+
+    override suspend fun removeAvatar(): Resource<Unit> {
+        return try {
+            val user = authApiService.removeUserImage(
+                url = "${getBaseUrl()}auth/profile/image",
+                bearerAccessToken = "Bearer ${getAccessToken()}"
+            ).toModel()
+            storeLoggedInUser(user)
+            Resource.Success(Unit)
+        } catch (e: HttpException) {
+            Resource.Error(message = e.serverMessage() ?: "Couldn't remove your photo.")
+        } catch (e: IOException) {
+            Resource.Error(message = "Check your connection to the server.")
+        } catch (e: Exception) {
+            Timber.tag("AUTH").e(e)
+            Resource.Error(message = "Couldn't remove your photo.")
+        }
+    }
+
+    private fun HttpException.serverMessage(): String? = runCatching {
+        JSONObject(response()?.errorBody()?.string().orEmpty()).optString("msg")
+    }.getOrNull()?.takeIf { it.isNotBlank() }
 
     override suspend fun fetchCurrentUser(): Resource<User> {
         return try {
@@ -171,7 +236,7 @@ class DataAuthRepository @Inject constructor(
         } catch (e: Exception) {
             val cached = getLoggedInUser()
             // Offline: the cached user still decides whose photo to show.
-            cached?.let { avatarStore.setOwner(getBaseUrl(), it.id) }
+            cached?.let { setAvatarOwner(it) }
             Resource.Error(data = cached, message = "Couldn't load your profile")
         }
     }

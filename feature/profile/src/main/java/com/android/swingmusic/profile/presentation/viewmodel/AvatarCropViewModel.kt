@@ -20,12 +20,15 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.android.swingmusic.core.data.util.Resource
+import com.android.swingmusic.profile.domain.ProfileRepository
 import javax.inject.Inject
 
 @HiltViewModel
 internal class AvatarCropViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val avatarStore: AvatarStore,
+    private val profileRepository: ProfileRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -74,6 +77,18 @@ internal class AvatarCropViewModel @Inject constructor(
         viewModelScope.launch {
             val avatar = withContext(Dispatchers.Default) { AvatarImages.crop(bitmap, event.cropRect) }
             if (avatarStore.save(avatar)) {
+                // The local copy shows right away; the server copy is the one that lasts
+                val file = avatarStore.localFile()
+                val upload = if (file != null) profileRepository.uploadAvatar(file) else null
+                if (upload is Resource.Success) {
+                    avatarStore.clearLocal()
+                } else {
+                    _uiEffect.trySend(
+                        AvatarCropUiEffect.ShowMessage(
+                            "Photo saved on this device only. ${upload?.message ?: "Couldn't upload it."}"
+                        )
+                    )
+                }
                 _uiEffect.trySend(AvatarCropUiEffect.NavigateBack)
             } else {
                 _uiState.update { it.copy(isSaving = false, error = "Couldn't save your photo.") }

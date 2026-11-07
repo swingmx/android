@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import java.io.File
 
 private val LargeTitleBarHeight = 64.dp
 private val LargeTitleBarFade = 68.dp
@@ -132,8 +131,9 @@ fun LargeTitle(text: String, state: LargeTitleState, modifier: Modifier = Modifi
 fun LargeTitleTopBar(
     title: String,
     state: LargeTitleState,
-    avatarPath: String?,
+    avatarModel: String?,
     onProfileClick: () -> Unit,
+    avatarInitials: String = "",
 ) {
     val surface = MaterialTheme.colorScheme.surface
     Column(
@@ -177,12 +177,18 @@ fun LargeTitleTopBar(
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (avatarPath != null) {
+                    if (avatarModel != null) {
                         AsyncImage(
-                            model = File(avatarPath),
+                            model = avatarModel,
                             contentDescription = "Profile",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
+                        )
+                    } else if (avatarInitials.isNotBlank()) {
+                        Text(
+                            text = avatarInitials,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     } else {
                         Icon(

@@ -35,7 +35,7 @@ internal class ProfileViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            avatarStore.avatar.collect { file -> updateUiState { copy(avatarPath = file?.absolutePath) } }
+            avatarStore.avatar.collect { avatar -> updateUiState { copy(avatarModel = avatar.model) } }
         }
         loadUser()
         loadStats()
@@ -52,7 +52,7 @@ internal class ProfileViewModel @Inject constructor(
 
             ProfileUiEvent.OnAvatarClicked -> {
                 // No photo yet: the only useful action is picking one.
-                if (_uiState.value.avatarPath == null) _uiEffect.trySend(ProfileUiEffect.OpenPhotoPicker)
+                if (_uiState.value.avatarModel == null) _uiEffect.trySend(ProfileUiEffect.OpenPhotoPicker)
                 else updateUiState { copy(showPhotoViewer = true) }
             }
 
@@ -72,7 +72,18 @@ internal class ProfileViewModel @Inject constructor(
             ProfileUiEvent.OnPhotoViewerDismissed -> updateUiState { copy(showPhotoViewer = false) }
             is ProfileUiEvent.OnPhotoPicked -> _uiEffect.trySend(ProfileUiEffect.NavigateToAvatarCrop(event.uri))
             ProfileUiEvent.OnUndoRemovePhoto -> viewModelScope.launch { avatarStore.undoRemove() }
-            ProfileUiEvent.OnPhotoRemovalSettled -> viewModelScope.launch { avatarStore.discardRemoved() }
+            ProfileUiEvent.OnPhotoRemovalSettled -> viewModelScope.launch {
+                // The undo window has passed: now make the removal real on the server too
+                val removeOnServer = avatarStore.hasHiddenServerImage()
+                avatarStore.discardRemoved()
+                if (removeOnServer) {
+                    val result = profileRepository.removeAvatar()
+                    if (result !is Resource.Success) {
+                        avatarStore.unhideServerImage()
+                        _uiEffect.trySend(ProfileUiEffect.ShowMessage(result.message ?: "Couldn't remove your photo."))
+                    }
+                }
+            }
 
             ProfileUiEvent.OnRetryStats -> loadStats()
             ProfileUiEvent.OnStatsClicked -> _uiEffect.trySend(ProfileUiEffect.NavigateToStats)

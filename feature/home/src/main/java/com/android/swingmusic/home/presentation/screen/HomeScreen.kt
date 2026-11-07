@@ -225,7 +225,8 @@ private fun HomeScreenContent(
             LargeTitleTopBar(
                 title = HOME_TITLE,
                 state = titleState,
-                avatarPath = uiState.avatarPath,
+                avatarModel = uiState.avatarModel,
+            avatarInitials = uiState.avatarInitials,
                 onProfileClick = { onEvent(HomeUiEvent.OnProfileClicked) }
             )
         }

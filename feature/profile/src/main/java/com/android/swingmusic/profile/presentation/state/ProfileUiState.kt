@@ -10,7 +10,7 @@ internal data class ProfileUiState(
     val baseUrl: String = "",
     val user: User? = null,
     /** Local-only profile photo for this account. */
-    val avatarPath: String? = null,
+    val avatarModel: String? = null,
     val showPhotoViewer: Boolean = false,
 
     val isLoadingStats: Boolean = true,
