@@ -10,7 +10,10 @@ data class FavouritesDto(
     @SerializedName("artists")
     val artists: List<ArtistDto>?,
     @SerializedName("count")
-    val count: FavouriteCountDto?
+    val count: FavouriteCountDto?,
+    /** Newest favourites first; each entry has the same `{type, item}` shape as a Home item, plus `item.time`. */
+    @SerializedName("recents")
+    val recents: List<HomeItemDto>?
 )
 
 data class FavouriteCountDto(

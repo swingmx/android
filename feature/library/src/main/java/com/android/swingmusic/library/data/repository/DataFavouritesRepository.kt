@@ -5,6 +5,7 @@ import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toAlbum
 import com.android.swingmusic.core.data.mapper.Map.toArtist
+import com.android.swingmusic.core.data.mapper.Map.toRecentFavourite
 import com.android.swingmusic.core.data.mapper.Map.toTrack
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Album
@@ -46,7 +47,8 @@ class DataFavouritesRepository @Inject constructor(
             artists = artists,
             trackCount = dto.count?.tracks ?: tracks.size,
             albumCount = dto.count?.albums ?: albums.size,
-            artistCount = dto.count?.artists ?: artists.size
+            artistCount = dto.count?.artists ?: artists.size,
+            recents = dto.recents.orEmpty().mapNotNull { it.toRecentFavourite() }
         )
     }
 

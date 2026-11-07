@@ -57,6 +57,7 @@ import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.Genre
 import com.android.swingmusic.core.domain.model.HomeItem
+import com.android.swingmusic.core.domain.model.RecentFavourite
 import com.android.swingmusic.core.domain.model.HomeSection
 import com.android.swingmusic.core.domain.model.Lyrics
 import com.android.swingmusic.core.domain.model.LyricsLine
@@ -517,7 +518,7 @@ object Map {
         else -> Trend.STABLE
     }
 
-    private fun HomeItemDto.toHomeItem(): HomeItem? {
+    fun HomeItemDto.toHomeItem(): HomeItem? {
         val json = item ?: return null
         return runCatching {
             when (type) {
@@ -529,6 +530,12 @@ object Map {
                 else -> null
             }
         }.getOrNull()
+    }
+
+    fun HomeItemDto.toRecentFavourite(): RecentFavourite? {
+        val homeItem = toHomeItem() ?: return null
+        val time = runCatching { item?.asJsonObject?.get("time")?.asString }.getOrNull().orEmpty()
+        return RecentFavourite(item = homeItem, time = time)
     }
 
     fun PlaylistDto.toPlaylist(): Playlist {
