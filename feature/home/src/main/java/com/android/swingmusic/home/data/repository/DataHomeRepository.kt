@@ -15,6 +15,7 @@ import retrofit2.HttpException
 import timber.log.Timber
 import java.io.IOException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataHomeRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
@@ -38,6 +39,8 @@ class DataHomeRepository @Inject constructor(
                 limit = HOME_ITEMS_PER_SECTION
             ).toHomeSections()
             Resource.Success(sections)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IOException) {
             Resource.Error(message = "Check your connection to the server and try again.")
         } catch (e: HttpException) {
@@ -78,6 +81,8 @@ class DataHomeRepository @Inject constructor(
             val tracks = fetch()
             if (tracks.isEmpty()) Resource.Error(message = "This $what has no tracks to play.")
             else Resource.Success(tracks)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IOException) {
             Resource.Error(message = "Couldn't reach the server to play this $what.")
         } catch (e: Exception) {
