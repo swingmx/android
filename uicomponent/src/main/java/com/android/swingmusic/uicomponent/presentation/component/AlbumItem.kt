@@ -84,17 +84,12 @@ fun AlbumItem(
                 end = 8.dp
             )
     ) {
-        AsyncImage(
+        Artwork(
             modifier = modifier
                 .clip(RoundedCornerShape(10))
                 .clickable { onClick(album.albumHash) },
-            model = ImageRequest.Builder(LocalContext.current)
-                .data("${baseUrl}img/thumbnail/medium/${album.image}")
-                .crossfade(true)
-                .build(),
-            placeholder = painterResource(R.drawable.audio_fallback),
-            fallback = painterResource(R.drawable.audio_fallback),
-            error = painterResource(R.drawable.audio_fallback),
+            url = "${baseUrl}img/thumbnail/medium/${album.image}",
+            blurhash = album.blurhash,
             contentDescription = "Artist Image",
             contentScale = ContentScale.FillWidth,
         )

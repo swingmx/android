@@ -136,6 +136,7 @@ import com.android.swingmusic.player.presentation.util.calculateCurrentOffsetFor
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.util.rememberBlurhashPainter
 import com.android.swingmusic.uicomponent.presentation.component.trackMenuItems
 import com.android.swingmusic.uicomponent.presentation.component.TrackMenuOption
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
@@ -872,7 +873,8 @@ private fun AnimatedSheetContent(
                                     .size(coil.size.Size.ORIGINAL)
                                     .crossfade(true)
                                     .build(),
-                                placeholder = painterResource(R.drawable.audio_fallback),
+                                placeholder = rememberBlurhashPainter((queue.getOrNull(page) ?: track).blurhash)
+                                    ?: painterResource(R.drawable.audio_fallback),
                                 fallback = painterResource(R.drawable.audio_fallback),
                                 error = painterResource(R.drawable.audio_fallback),
                                 contentDescription = "Track Image",

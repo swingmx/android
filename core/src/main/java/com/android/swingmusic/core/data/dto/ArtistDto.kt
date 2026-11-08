@@ -15,5 +15,7 @@ data class ArtistDto(
     @SerializedName("image")
     val image: String?,
     @SerializedName("name")
-    val name: String?
+    val name: String?,
+    @SerializedName("blurhash")
+    val blurhash: String?
 )

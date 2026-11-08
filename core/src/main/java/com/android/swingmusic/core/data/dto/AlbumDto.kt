@@ -21,5 +21,7 @@ data class AlbumDto(
     @SerializedName("title")
     val title: String?,
     @SerializedName("versions")
-    val versions: List<String>?
+    val versions: List<String>?,
+    @SerializedName("blurhash")
+    val blurhash: String?
 )

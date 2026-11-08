@@ -31,5 +31,7 @@ data class TrackResultDto(
     @SerializedName("trackhash")
     val trackHash: String?,
     @SerializedName("weakhash")
-    val weakHash: String?
+    val weakHash: String?,
+    @SerializedName("blurhash")
+    val blurhash: String?
 )

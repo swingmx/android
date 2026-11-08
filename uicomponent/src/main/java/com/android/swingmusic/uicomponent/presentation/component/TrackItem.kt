@@ -151,16 +151,11 @@ fun TrackItem(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    AsyncImage(
+                    Artwork(
                         modifier = Modifier.fillMaxSize(),
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data("${baseUrl}img/thumbnail/small/${track.image}")
-                            .build(),
-                        placeholder = painterResource(R.drawable.audio_fallback),
-                        fallback = painterResource(R.drawable.audio_fallback),
-                        error = painterResource(R.drawable.audio_fallback),
-                        contentDescription = "Track Image",
-                        contentScale = ContentScale.Crop
+                        url = "${baseUrl}img/thumbnail/small/${track.image}",
+                        blurhash = track.blurhash,
+                        contentDescription = "Track Image"
                     )
 
                     if (isCurrentTrack) {
