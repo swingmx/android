@@ -36,6 +36,7 @@ class AppSettings @Inject constructor(
         private val LYRICS_OVERRIDE_UNSYNCED = booleanPreferencesKey("lyrics_override_unsynced")
         private val LYRICS_WORD_SWEEP = booleanPreferencesKey("lyrics_word_sweep")
         private val SEARCH_ON_BRAND_COLOURS = booleanPreferencesKey("search_on_brand_colours")
+        private val REPEAT_MODE = stringPreferencesKey("repeat_mode")
     }
 
     // Album Flows
@@ -105,6 +106,12 @@ class AppSettings @Inject constructor(
 
     suspend fun updateLyricsWordSweep(value: Boolean) =
         context.dataStore.edit { it[LYRICS_WORD_SWEEP] = value }
+
+    /** The player's repeat mode, by [com.android.swingmusic.core.domain.util.RepeatMode] name. */
+    val getRepeatMode: Flow<String?> = context.dataStore.data.map { it[REPEAT_MODE] }
+
+    suspend fun updateRepeatMode(value: String) =
+        context.dataStore.edit { it[REPEAT_MODE] = value }
 
     // Search On logos: monochrome unless turned on with the hidden long press
     val getSearchOnBrandColours: Flow<Boolean> = context.dataStore.data.map {
