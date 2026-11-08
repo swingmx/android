@@ -1,8 +1,10 @@
 package com.android.swingmusic.profile.data.di
 
 import android.content.Context
+import com.android.swingmusic.profile.data.repository.DataChangelogRepository
 import com.android.swingmusic.profile.data.repository.DataProfileRepository
 import com.android.swingmusic.profile.domain.AppVersionProvider
+import com.android.swingmusic.profile.domain.ChangelogRepository
 import com.android.swingmusic.profile.presentation.util.appVersion
 import com.android.swingmusic.profile.domain.ProfileRepository
 import dagger.Binds
@@ -19,6 +21,10 @@ abstract class ProfileRepositoryModule {
     @Binds
     @Singleton
     abstract fun bindDataProfileRepository(repository: DataProfileRepository): ProfileRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindChangelogRepository(repository: DataChangelogRepository): ChangelogRepository
 
     companion object {
         @Provides

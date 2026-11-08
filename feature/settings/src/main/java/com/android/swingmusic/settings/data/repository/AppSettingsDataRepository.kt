@@ -96,4 +96,10 @@ class AppSettingsDataRepository @Inject constructor(
     override suspend fun setSearchOnBrandColours(enabled: Boolean) {
         appSettings.updateSearchOnBrandColours(enabled)
     }
+
+    override val lastSeenChangelogVersionCode: Flow<Int> = appSettings.getLastSeenChangelogVersionCode
+
+    override suspend fun setLastSeenChangelogVersionCode(versionCode: Int) {
+        appSettings.updateLastSeenChangelogVersionCode(versionCode)
+    }
 }

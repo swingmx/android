@@ -42,6 +42,8 @@ internal class AboutViewModel @Inject constructor(
             AboutUiEvent.OnBackClicked -> _uiEffect.trySend(AboutUiEffect.NavigateBack)
             AboutUiEvent.OnReportProblemClicked -> _uiEffect.trySend(AboutUiEffect.OpenUrl(issueUrl()))
             AboutUiEvent.OnSourceCodeClicked -> _uiEffect.trySend(AboutUiEffect.OpenUrl(REPO_URL))
+            AboutUiEvent.OnWhatsNewClicked -> _uiState.update { it.copy(showWhatsNew = true) }
+            AboutUiEvent.OnWhatsNewClosed -> _uiState.update { it.copy(showWhatsNew = false) }
         }
     }
 

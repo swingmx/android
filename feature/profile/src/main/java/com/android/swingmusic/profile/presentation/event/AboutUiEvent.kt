@@ -4,4 +4,6 @@ internal sealed interface AboutUiEvent {
     data object OnBackClicked : AboutUiEvent
     data object OnReportProblemClicked : AboutUiEvent
     data object OnSourceCodeClicked : AboutUiEvent
+    data object OnWhatsNewClicked : AboutUiEvent
+    data object OnWhatsNewClosed : AboutUiEvent
 }

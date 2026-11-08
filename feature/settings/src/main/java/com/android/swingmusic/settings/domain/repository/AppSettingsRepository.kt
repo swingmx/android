@@ -39,4 +39,8 @@ interface AppSettingsRepository {
     val repeatMode: Flow<RepeatMode>
     suspend fun setRepeatMode(mode: RepeatMode)
     suspend fun setSearchOnBrandColours(enabled: Boolean)
+
+    /** Survives log out: a returning user shouldn't see the same release notes twice. */
+    val lastSeenChangelogVersionCode: Flow<Int>
+    suspend fun setLastSeenChangelogVersionCode(versionCode: Int)
 }

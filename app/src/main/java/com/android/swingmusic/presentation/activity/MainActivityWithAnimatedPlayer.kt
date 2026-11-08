@@ -59,6 +59,7 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrC
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
+import com.android.swingmusic.profile.presentation.screen.ChangelogHost
 import com.android.swingmusic.player.presentation.screen.AnimatedPlayerSheet
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.presentation.navigator.BottomNavItem
@@ -325,6 +326,9 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                                     tabReselect = tabReselect
                                 )
                             }
+
+                            // Release notes wait for a confirmed session and never cover the login screens.
+                            if (value && showBottomNav) ChangelogHost()
                         }
                     }
                 }

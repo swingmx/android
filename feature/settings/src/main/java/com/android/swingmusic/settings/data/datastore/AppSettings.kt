@@ -37,6 +37,7 @@ class AppSettings @Inject constructor(
         private val LYRICS_WORD_SWEEP = booleanPreferencesKey("lyrics_word_sweep")
         private val SEARCH_ON_BRAND_COLOURS = booleanPreferencesKey("search_on_brand_colours")
         private val REPEAT_MODE = stringPreferencesKey("repeat_mode")
+        private val LAST_SEEN_CHANGELOG_VERSION_CODE = intPreferencesKey("last_seen_changelog_version_code")
     }
 
     // Album Flows
@@ -120,4 +121,12 @@ class AppSettings @Inject constructor(
 
     suspend fun updateSearchOnBrandColours(value: Boolean) =
         context.dataStore.edit { it[SEARCH_ON_BRAND_COLOURS] = value }
+
+    // What's New: the newest version code whose changelog the user has dismissed
+    val getLastSeenChangelogVersionCode: Flow<Int> = context.dataStore.data.map {
+        it[LAST_SEEN_CHANGELOG_VERSION_CODE] ?: 0
+    }
+
+    suspend fun updateLastSeenChangelogVersionCode(versionCode: Int) =
+        context.dataStore.edit { it[LAST_SEEN_CHANGELOG_VERSION_CODE] = versionCode }
 }
