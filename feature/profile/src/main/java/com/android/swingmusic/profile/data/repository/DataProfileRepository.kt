@@ -4,7 +4,6 @@ import android.content.Context
 import coil.annotation.ExperimentalCoilApi
 import coil.imageLoader
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.dto.ChartResponseDto
 import com.android.swingmusic.core.data.dto.TriggerScanRequestDto
@@ -64,11 +63,6 @@ class DataProfileRepository @Inject constructor(
         return BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl() ?: ""
     }
 
-    private suspend fun authHeader(): String {
-        val token = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-        return "Bearer ${token ?: "TOKEN NOT FOUND"}"
-    }
-
     override suspend fun getCachedUser(): User? = authRepository.getLoggedInUser()
 
     override suspend fun uploadAvatar(file: File): Resource<Unit> = authRepository.uploadAvatar(file)
@@ -81,7 +75,7 @@ class DataProfileRepository @Inject constructor(
         try {
             val stats = networkApiService.getWeeklyStats(
                 url = "${getBaseUrl()}logger/stats",
-                bearerToken = authHeader()
+                bearerToken = authRepository.requireBearerToken()
             ).stats.orEmpty().mapNotNull { it.toStatItem() }
             Resource.Success(stats)
         } catch (e: CancellationException) {
@@ -100,7 +94,7 @@ class DataProfileRepository @Inject constructor(
         return try {
             networkApiService.getServerSettings(
                 url = "${getBaseUrl()}notsettings",
-                bearerToken = authHeader()
+                bearerToken = authRepository.requireBearerToken()
             ).version?.takeIf { it.isNotBlank() }
         } catch (e: CancellationException) {
             throw e
@@ -113,7 +107,7 @@ class DataProfileRepository @Inject constructor(
         return try {
             val code = networkApiService.getPairCode(
                 url = "${getBaseUrl()}auth/getpaircode",
-                bearerToken = authHeader()
+                bearerToken = authRepository.requireBearerToken()
             ).code
             if (code.isNullOrBlank()) Resource.Error(message = "The server didn't return a code.")
             else Resource.Success(code)
@@ -147,7 +141,7 @@ class DataProfileRepository @Inject constructor(
         try {
             val response = networkApiService.getChart(
                 url = "${getBaseUrl()}logger/top-$kind",
-                bearerToken = authHeader(),
+                bearerToken = authRepository.requireBearerToken(),
                 duration = period,
                 limit = limit,
                 orderBy = orderBy
@@ -169,7 +163,7 @@ class DataProfileRepository @Inject constructor(
         return try {
             networkApiService.triggerScan(
                 url = "${getBaseUrl()}notsettings/trigger-scan",
-                bearerToken = authHeader(),
+                bearerToken = authRepository.requireBearerToken(),
                 body = TriggerScanRequestDto(fullScan = fullScan)
             )
             Resource.Success(Unit)
@@ -187,7 +181,7 @@ class DataProfileRepository @Inject constructor(
         return try {
             val dirs = networkApiService.getRootDirectories(
                 url = "${getBaseUrl()}notsettings/get-root-dirs",
-                bearerToken = authHeader()
+                bearerToken = authRepository.requireBearerToken()
             ).toRootDirs().rootDirs
             Resource.Success(dirs)
         } catch (e: CancellationException) {

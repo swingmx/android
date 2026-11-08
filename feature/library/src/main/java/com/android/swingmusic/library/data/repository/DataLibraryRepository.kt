@@ -1,7 +1,6 @@
 package com.android.swingmusic.library.data.repository
 
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.library.domain.LibraryCounts
 import com.android.swingmusic.library.domain.LibraryRepository
@@ -21,7 +20,8 @@ class DataLibraryRepository @Inject constructor(
 
     override suspend fun getCounts(): LibraryCounts = coroutineScope {
         val baseUrl = getBaseUrl()
-        val token = bearerToken()
+        val token = runCatching { authRepository.requireBearerToken() }.getOrNull()
+            ?: return@coroutineScope LibraryCounts(playlists = null, albums = null, artists = null)
         val playlists = async {
             countOrNull { networkApiService.getAllPlaylists("${baseUrl}playlists", token).data?.size }
         }
@@ -33,10 +33,6 @@ class DataLibraryRepository @Inject constructor(
         }
         LibraryCounts(playlists = playlists.await(), albums = albums.await(), artists = artists.await())
     }
-
-
-    private suspend fun bearerToken() =
-        "Bearer ${AuthTokenHolder.accessToken ?: authRepository.getAccessToken()}"
 
     private suspend fun countOrNull(block: suspend () -> Int?): Int? = try {
         block()

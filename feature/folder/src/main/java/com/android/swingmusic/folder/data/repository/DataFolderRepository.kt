@@ -4,7 +4,6 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.mapper.Map.toFolder
@@ -39,14 +38,13 @@ class DataFolderRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
                 val foldersAndTracksDto =
                     networkApiService.getFoldersAndTracks(
                         requestData = requestData.toFoldersAndTracksRequestDto(),
                         url = "${baseUrl}folder",
-                        bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                        bearerToken = authRepository.requireBearerToken()
                     )
 
                 emit(Resource.Success(data = foldersAndTracksDto.toModel()))
@@ -72,7 +70,6 @@ class DataFolderRepository @Inject constructor(
     }
 
     override suspend fun getPagingTracks(folderPath: String): Flow<PagingData<Track>> {
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
         /*return Pager(
@@ -82,7 +79,7 @@ class DataFolderRepository @Inject constructor(
                     api = networkApiService,
                     folderPath = folderPath,
                     baseUrl = "${baseUrl}folder",
-                    accessToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                    bearerToken = authRepository::requireBearerToken
                 )
             }
         ).flow*/
@@ -91,7 +88,6 @@ class DataFolderRepository @Inject constructor(
     }
 
     override suspend fun getPagingContent(folderPath: String): Flow<PagingData<FolderContentItem>> {
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
         return Pager(
@@ -101,7 +97,7 @@ class DataFolderRepository @Inject constructor(
                     api = networkApiService,
                     folderPath = folderPath,
                     baseUrl = "${baseUrl}folder",
-                    accessToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                    bearerToken = authRepository::requireBearerToken
                 )
             }
         ).flow
@@ -112,7 +108,6 @@ class DataFolderRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
                 val requestDto = FoldersAndTracksRequestDto(
@@ -125,7 +120,7 @@ class DataFolderRepository @Inject constructor(
                 val foldersAndTracksDto = networkApiService.getFoldersAndTracks(
                     requestData = requestDto,
                     url = "${baseUrl}folder",
-                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                    bearerToken = authRepository.requireBearerToken()
                 )
 
                 val folders = foldersAndTracksDto.foldersDto?.map { it.toFolder() } ?: emptyList()
@@ -156,12 +151,11 @@ class DataFolderRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
                 val rootDirsDto = networkApiService.getRootDirectories(
                     url = "${baseUrl}notsettings/get-root-dirs",
-                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                    bearerToken = authRepository.requireBearerToken()
                 )
 
                 emit(Resource.Success(data = rootDirsDto.toRootDirs()))
