@@ -110,10 +110,7 @@ private fun FavouriteTracks(
                 onGotoFolder = { name, path -> navigator.gotoSourceFolder(name, path) },
                 onQueue = { queued, playNext ->
                     queueFavourite(mediaControllerViewModel, queued, playNext)
-                    showMessage(
-                        if (playNext) "Track added to play next" else "Track added to queue",
-                        "View Queue"
-                    ) { navigator.gotoQueueScreen() }
+                    showMessage(if (playNext) "Track added to play next" else "Track added to queue")
                 },
                 onMessage = { showMessage(it) }
             )

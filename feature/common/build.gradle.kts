@@ -53,5 +53,5 @@ kotlin {
 
 ksp {
     arg("compose-destinations.mode", "destinations")
-    arg("compose-destinations.moduleName", "feature:folder")
+    arg("compose-destinations.moduleName", "feature:common")
 }

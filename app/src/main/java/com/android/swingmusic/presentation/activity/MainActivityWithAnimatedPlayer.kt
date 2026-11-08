@@ -65,10 +65,6 @@ import com.android.swingmusic.presentation.navigator.BottomNavItem
 import com.android.swingmusic.presentation.navigator.destinations.TabsRootScreenDestination
 import com.android.swingmusic.presentation.navigator.CoreNavigator
 import com.android.swingmusic.presentation.navigator.NavGraphs
-import com.android.swingmusic.presentation.navigator.scaleInEnterTransition
-import com.android.swingmusic.presentation.navigator.scaleInPopEnterTransition
-import com.android.swingmusic.presentation.navigator.scaleOutExitTransition
-import com.android.swingmusic.presentation.navigator.scaleOutPopExitTransition
 import com.android.swingmusic.common.presentation.navigator.TabReselect
 import com.android.swingmusic.search.presentation.viewmodel.SearchViewModel
 import com.android.swingmusic.service.PlaybackService
@@ -78,7 +74,6 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
@@ -395,23 +390,7 @@ internal fun SwingMusicAppNavigationWithAnimatedPlayer(
 
     val animatedNavHostEngine = rememberAnimatedNavHostEngine(
         navHostContentAlignment = Alignment.TopCenter,
-        rootDefaultAnimations = RootNavGraphDefaultAnimations.ACCOMPANIST_FADING,
-        defaultAnimationsForNestedNavGraph = mapOf(
-            NavGraphs.root(isUserLoggedIn) to NestedNavGraphDefaultAnimations(
-                enterTransition = {
-                    scaleInEnterTransition()
-                },
-                exitTransition = {
-                    scaleOutExitTransition()
-                },
-                popEnterTransition = {
-                    scaleInPopEnterTransition()
-                },
-                popExitTransition = {
-                    scaleOutPopExitTransition()
-                }
-            )
-        )
+        rootDefaultAnimations = RootNavGraphDefaultAnimations.ACCOMPANIST_FADING
     )
 
     DestinationsNavHost(

@@ -26,8 +26,6 @@ import com.android.swingmusic.profile.presentation.screen.destinations.LyricsSet
 import com.android.swingmusic.profile.presentation.screen.destinations.StorageScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.AboutScreenDestination
 import com.android.swingmusic.profile.presentation.screen.destinations.ProfileScreenDestination
-import com.android.swingmusic.player.presentation.screen.destinations.NowPlayingScreenDestination
-import com.android.swingmusic.player.presentation.screen.destinations.QueueScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.SearchScreenDestination
 import com.android.swingmusic.search.presentation.screen.destinations.ViewAllSearchResultsDestination
 import com.ramcosta.composedestinations.spec.DestinationSpec
@@ -63,8 +61,6 @@ object NavGraphs {
                     PlaylistScreenDestination,
                     FavouriteTracksScreenDestination,
                     FavouriteCardsScreenDestination,
-                    NowPlayingScreenDestination,
-                    QueueScreenDestination,
                     AlbumWithInfoScreenDestination,
                     ViewAllScreenOnArtistDestination,
                     ArtistInfoScreenDestination,

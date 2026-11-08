@@ -18,7 +18,7 @@ import com.android.swingmusic.network.data.api.service.NetworkApiService
 import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
 import com.android.swingmusic.network.data.mapper.toDto
 import com.android.swingmusic.network.domain.model.LogTrackRequest
-import com.android.swingmusic.player.domain.repository.PLayerRepository
+import com.android.swingmusic.player.domain.repository.PlayerRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
@@ -27,12 +27,12 @@ import java.sql.Timestamp
 import java.time.Instant
 import javax.inject.Inject
 
-class DataPLayerRepository @Inject constructor(
+class DataPlayerRepository @Inject constructor(
     private val queueDao: QueueDao,
     private val lastPlayedTrackDao: LastPlayedTrackDao,
     private val networkApiService: NetworkApiService,
     private val authRepository: AuthRepository
-) : PLayerRepository {
+) : PlayerRepository {
 
     override suspend fun insertQueue(track: List<Track>) {
         val trackEntities = track.map { it.toEntity() }
@@ -91,9 +91,9 @@ class DataPLayerRepository @Inject constructor(
             )
 
         } catch (e: HttpException) {
-            Timber.e("NETWORK ERROR LOGGING TRACK TO SERVER")
+            Timber.tag("PLAYER").w(e, "Couldn't log the play to the server")
         } catch (e: Exception) {
-            Timber.e("ERROR LOGGING TRACK TO SERVER: CAUSED BY -> ${e.message}")
+            Timber.tag("PLAYER").e(e, "Couldn't log the play to the server")
         }
     }
 
@@ -167,10 +167,10 @@ class DataPLayerRepository @Inject constructor(
             response.tracksDto?.map { it.toTrack() } ?: emptyList()
 
         } catch (e: HttpException) {
-            Timber.e("Network error fetching tracks chunk: $e")
+            Timber.tag("PLAYER").w(e, "Couldn't fetch the next tracks")
             emptyList()
         } catch (e: Exception) {
-            Timber.e("Error fetching tracks chunk: $e")
+            Timber.tag("PLAYER").e(e, "Couldn't fetch the next tracks")
             emptyList()
         }
     }
