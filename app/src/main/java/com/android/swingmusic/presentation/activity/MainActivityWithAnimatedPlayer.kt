@@ -67,6 +67,7 @@ import com.android.swingmusic.presentation.navigator.destinations.TabsRootScreen
 import com.android.swingmusic.presentation.navigator.CoreNavigator
 import com.android.swingmusic.presentation.navigator.NavGraphs
 import com.android.swingmusic.common.presentation.navigator.TabReselect
+import com.android.swingmusic.search.presentation.event.SearchUiEvent
 import com.android.swingmusic.search.presentation.viewmodel.SearchViewModel
 import com.android.swingmusic.service.PlaybackService
 import com.android.swingmusic.service.SessionTokenManager
