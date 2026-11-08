@@ -15,3 +15,7 @@ sealed interface HomeItem {
     data class MixItem(val mix: Mix) : HomeItem
     data class FolderItem(val folder: Folder) : HomeItem
 }
+
+/** A recently favourited item and when it was favourited, e.g. "2 days ago". */
+data class RecentFavourite(val item: HomeItem, val time: String)
+
