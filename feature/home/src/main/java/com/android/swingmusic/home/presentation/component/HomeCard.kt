@@ -81,6 +81,7 @@ internal fun HomeCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     nowPlayingState: PlaybackState? = null,
+    onPlayTrack: () -> Unit = {},
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -132,12 +133,13 @@ internal fun HomeCard(
                             modifier = Modifier.align(Alignment.BottomEnd)
                         )
                     } else {
-                        PlayBadge(modifier = Modifier.align(Alignment.BottomEnd))
+                        PlayBadge(onClick = onPlayTrack, modifier = Modifier.align(Alignment.BottomEnd))
                     }
                 }
 
                 is HomeItem.PlaylistItem -> PlaylistArtwork(item.playlist, baseUrl)
                 is HomeItem.MixItem -> MixArtwork(item.mix, baseUrl)
+                is HomeItem.FolderItem -> FolderArtwork()
             }
 
             if (isLoading) {
@@ -203,6 +205,8 @@ private fun HomeItem.captions(): Pair<String, String> = when (this) {
             if (playlist.trackCount == 1) "1 song" else "${playlist.trackCount} songs"
 
     is HomeItem.MixItem -> mix.title to mix.description.ifBlank { mix.title }
+    is HomeItem.FolderItem -> folder.name to
+            if (folder.trackCount == 1) "Folder · 1 song" else "Folder · ${folder.trackCount} songs"
 }
 
 @Composable
@@ -230,13 +234,32 @@ private fun Artwork(
 }
 
 @Composable
-private fun PlayBadge(modifier: Modifier = Modifier) {
+private fun FolderArtwork() {
+    Box(
+        modifier = Modifier
+            .size(HomeCardWidth)
+            .clip(ArtworkShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.folder_filled),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(56.dp)
+        )
+    }
+}
+
+@Composable
+private fun PlayBadge(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .padding(8.dp)
             .size(28.dp)
             .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.6F)),
+            .background(Color.Black.copy(alpha = 0.6F))
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(

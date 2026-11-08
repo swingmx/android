@@ -25,4 +25,5 @@ internal val HomeItem.key: String
         is HomeItem.TrackItem -> "track:${track.trackHash}"
         is HomeItem.PlaylistItem -> "playlist:${playlist.id}"
         is HomeItem.MixItem -> "mix:${mix.id}"
+        is HomeItem.FolderItem -> "folder:${folder.path}"
     }

@@ -526,6 +526,13 @@ object Map {
                 "track" -> HomeItem.TrackItem(gson.fromJson(json, TrackDto::class.java).toTrack())
                 "playlist" -> HomeItem.PlaylistItem(gson.fromJson(json, PlaylistDto::class.java).toPlaylist())
                 "mix" -> HomeItem.MixItem(gson.fromJson(json, MixDto::class.java).toMix())
+                // Recently played folders come with a path and a track count but no name.
+                "folder" -> gson.fromJson(json, FolderDto::class.java).toFolder().let { folder ->
+                    HomeItem.FolderItem(
+                        if (folder.name.isNotBlank()) folder
+                        else folder.copy(name = folder.path.trimEnd('/').substringAfterLast('/'))
+                    )
+                }
                 else -> null
             }
         }.getOrNull()
