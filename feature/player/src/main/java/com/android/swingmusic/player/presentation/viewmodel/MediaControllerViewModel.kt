@@ -1101,6 +1101,26 @@ class MediaControllerViewModel @Inject constructor(
             }
         }
 
+        // A loop (repeat one, or a one-track queue on repeat all) keeps the same media item,
+        // so MediaController never reports a transition; log each completed loop here instead.
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int
+        ) {
+            if (reason != Player.DISCONTINUITY_REASON_AUTO_TRANSITION) return
+            if (oldPosition.mediaItemIndex != newPosition.mediaItemIndex) return
+
+            if (trackToLog != null && durationPlayedSec >= 5L) {
+                logRecentlyPlayedTrackToServer(
+                    track = trackToLog,
+                    durationPlayedSec = durationPlayedSec,
+                    logReason = "LOOP"
+                )
+            }
+            durationPlayedSec = 0L
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             _playerUiState.value = _playerUiState.value.copy(
                 playbackState = PlaybackState.ERROR,
