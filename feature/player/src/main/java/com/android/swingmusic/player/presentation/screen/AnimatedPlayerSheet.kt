@@ -62,6 +62,7 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -321,6 +322,8 @@ fun AnimatedPlayerSheet(
                         mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(page))
                     },
                     onClickArtist = { navigator.gotoArtistInfo(it) },
+                    onGotoAlbum = { navigator.gotoAlbumWithInfo(it) },
+                    onGotoFolder = { name, path -> navigator.gotoSourceFolder(name, path) },
                     onToggleRepeatMode = {
                         mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnToggleRepeatMode)
                     },
@@ -465,6 +468,8 @@ private fun AnimatedSheetContent(
     queueProgress: Float,
     onPageSelect: (Int) -> Unit,
     onClickArtist: (String) -> Unit,
+    onGotoAlbum: (albumHash: String) -> Unit,
+    onGotoFolder: (name: String, path: String) -> Unit,
     onToggleRepeatMode: () -> Unit,
     onClickPrev: () -> Unit,
     onTogglePlayerState: () -> Unit,
@@ -477,6 +482,62 @@ private fun AnimatedSheetContent(
     onClickLyricsIcon: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
+    var showTrackMenu by remember { mutableStateOf(false) }
+    var showAddToPlaylist by remember { mutableStateOf(false) }
+    val trackMenuSheetState = rememberModalBottomSheetState()
+    val collapseSheet: () -> Unit = {
+        coroutineScope.launch { bottomSheetState.bottomSheetState.partialExpand() }
+    }
+
+    if (showTrackMenu) {
+        CustomTrackBottomSheet(
+            scope = coroutineScope,
+            sheetState = trackMenuSheetState,
+            clickedTrack = track,
+            isFavorite = track.isFavorite,
+            baseUrl = baseUrl,
+            bottomSheetItems = trackMenuItems(
+                track,
+                hide = setOf(TrackMenuOption.PlayNext, TrackMenuOption.AddToQueue)
+            ),
+            onHideBottomSheet = { showTrackMenu = it },
+            onClickSheetItem = { _, action ->
+                when (action) {
+                    is BottomSheetAction.AddToPlaylist -> showAddToPlaylist = true
+                    is BottomSheetAction.GotoAlbum -> {
+                        onGotoAlbum(track.albumHash)
+                        collapseSheet()
+                    }
+
+                    is BottomSheetAction.GotoFolder -> {
+                        onGotoFolder(action.name, action.path)
+                        collapseSheet()
+                    }
+
+                    else -> Unit
+                }
+            },
+            onChooseArtist = { hash ->
+                onClickArtist(hash)
+                collapseSheet()
+            },
+            onToggleTrackFavorite = { trackHash, isFavorite -> onToggleFavorite(isFavorite, trackHash) }
+        )
+    }
+
+    if (showAddToPlaylist) {
+        val context = LocalContext.current
+        AddToPlaylistSheet(
+            target = track.toPlaylistTarget(),
+            baseUrl = baseUrl,
+            onBack = {
+                showAddToPlaylist = false
+                showTrackMenu = true
+            },
+            onDismiss = { showAddToPlaylist = false },
+            onDone = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() }
+        )
+    }
     val configuration = LocalConfiguration.current
     // Whatever AS says about this, don't be tempted to change it... ref: Eric
     val screenWidthDp = configuration.screenWidthDp.dp
@@ -786,6 +847,15 @@ private fun AnimatedSheetContent(
                                     .heightIn(max = imageSize)
                                     .aspectRatio(1f)
                                     .clip(RoundedCornerShape(imageCornerRadius))
+                                    .then(
+                                        if (effectiveProgress > 0.5f) Modifier.clickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() }
+                                        ) {
+                                            onGotoAlbum(track.albumHash)
+                                            collapseSheet()
+                                        } else Modifier
+                                    )
                                     .graphicsLayer {
                                         val scale = androidx.compose.ui.util.lerp(
                                             1f,
@@ -973,6 +1043,7 @@ private fun AnimatedSheetContent(
                                     }
                                 }
 
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(
                                     modifier = Modifier
                                         .scale(heartScale)
@@ -997,6 +1068,14 @@ private fun AnimatedSheetContent(
                                             contentDescription = "Favorite"
                                         )
                                     }
+                                }
+
+                                IconButton(onClick = { showTrackMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = "More"
+                                    )
+                                }
                                 }
                             }
 
