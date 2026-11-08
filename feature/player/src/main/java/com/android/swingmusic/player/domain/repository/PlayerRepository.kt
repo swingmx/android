@@ -6,7 +6,7 @@ import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.database.domain.model.LastPlayedTrack
 import kotlinx.coroutines.flow.Flow
 
-interface PLayerRepository {
+interface PlayerRepository {
 
     suspend fun insertQueue(track: List<Track>)
 

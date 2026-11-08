@@ -1,17 +1,15 @@
 package com.android.swingmusic.profile.presentation.viewmodel
 
-import android.content.Context
 import android.net.Uri
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.swingmusic.profile.domain.AppVersionProvider
 import com.android.swingmusic.profile.domain.ProfileRepository
 import com.android.swingmusic.profile.presentation.event.AboutUiEffect
 import com.android.swingmusic.profile.presentation.event.AboutUiEvent
 import com.android.swingmusic.profile.presentation.state.AboutUiState
-import com.android.swingmusic.profile.presentation.util.appVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,10 +21,10 @@ import javax.inject.Inject
 @HiltViewModel
 internal class AboutViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
-    @ApplicationContext context: Context
+    appVersion: AppVersionProvider
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AboutUiState(appVersion = context.appVersion()))
+    private val _uiState = MutableStateFlow(AboutUiState(appVersion = appVersion.get()))
     val uiState = _uiState.asStateFlow()
 
     private val _uiEffect = Channel<AboutUiEffect>(capacity = Channel.UNLIMITED)
@@ -44,6 +42,8 @@ internal class AboutViewModel @Inject constructor(
             AboutUiEvent.OnBackClicked -> _uiEffect.trySend(AboutUiEffect.NavigateBack)
             AboutUiEvent.OnReportProblemClicked -> _uiEffect.trySend(AboutUiEffect.OpenUrl(issueUrl()))
             AboutUiEvent.OnSourceCodeClicked -> _uiEffect.trySend(AboutUiEffect.OpenUrl(REPO_URL))
+            AboutUiEvent.OnWhatsNewClicked -> _uiState.update { it.copy(showWhatsNew = true) }
+            AboutUiEvent.OnWhatsNewClosed -> _uiState.update { it.copy(showWhatsNew = false) }
         }
     }
 

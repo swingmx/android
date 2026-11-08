@@ -1,5 +1,6 @@
 package com.android.swingmusic.settings.domain.repository
 
+import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.SortBy
 import com.android.swingmusic.core.domain.util.SortOrder
 import kotlinx.coroutines.flow.Flow
@@ -34,5 +35,12 @@ interface AppSettingsRepository {
     suspend fun setLyricsAutoDownload(enabled: Boolean)
     suspend fun setLyricsOverrideUnsynced(enabled: Boolean)
     suspend fun setLyricsWordSweep(enabled: Boolean)
+
+    val repeatMode: Flow<RepeatMode>
+    suspend fun setRepeatMode(mode: RepeatMode)
     suspend fun setSearchOnBrandColours(enabled: Boolean)
+
+    /** Survives log out: a returning user shouldn't see the same release notes twice. */
+    val lastSeenChangelogVersionCode: Flow<Int>
+    suspend fun setLastSeenChangelogVersionCode(versionCode: Int)
 }

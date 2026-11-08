@@ -88,6 +88,7 @@ dependencies {
 
     // Coil Image Loader
     implementation(libs.coil.compose)
+    implementation(libs.reorderable)
 
     // Pagination
     implementation(libs.androidx.paging.compose)

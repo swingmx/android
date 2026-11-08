@@ -18,7 +18,7 @@ import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.core.domain.util.RepeatMode
 import com.android.swingmusic.core.domain.util.ShuffleMode
-import com.android.swingmusic.player.domain.repository.PLayerRepository
+import com.android.swingmusic.player.domain.repository.PlayerRepository
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickLyricsIcon
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent.OnClickMore
@@ -47,6 +47,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.yield
 import timber.log.Timber
+import com.android.swingmusic.settings.domain.repository.AppSettingsRepository
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import kotlin.math.roundToInt
 import androidx.core.net.toUri
@@ -54,9 +56,10 @@ import androidx.core.net.toUri
 
 @HiltViewModel
 class MediaControllerViewModel @Inject constructor(
-    private val pLayerRepository: PLayerRepository,
+    private val playerRepository: PlayerRepository,
     private val authRepository: AuthRepository,
-    private val vibrator: Vibrator
+    private val vibrator: Vibrator,
+    private val settings: AppSettingsRepository,
 ) : ViewModel() {
     private val _baseUrl: MutableStateFlow<String?> = MutableStateFlow(null)
     val baseUrl: StateFlow<String?> get() = _baseUrl
@@ -82,6 +85,11 @@ class MediaControllerViewModel @Inject constructor(
     val playerUiState: StateFlow<PlayerUiState> get() = _playerUiState
 
     init {
+        viewModelScope.launch {
+            val saved = settings.repeatMode.first()
+            _playerUiState.update { it.copy(repeatMode = saved) }
+            mediaController?.repeatMode = saved.toPlayerRepeatMode()
+        }
         refreshBaseUrl()
     }
 
@@ -157,8 +165,8 @@ class MediaControllerViewModel @Inject constructor(
         viewModelScope.launch {
             refreshBaseUrl()
 
-            val savedQueue = pLayerRepository.getSavedQueue()
-            val lastPlayedTrack = pLayerRepository.getLastPlayedTrack()
+            val savedQueue = playerRepository.getSavedQueue()
+            val lastPlayedTrack = playerRepository.getLastPlayedTrack()
 
             val lastPlayedTrackIndex = lastPlayedTrack?.indexInQueue ?: -1
             val lastPlayPositionMs = lastPlayedTrack?.lastPlayPositionMs ?: 0L
@@ -190,10 +198,10 @@ class MediaControllerViewModel @Inject constructor(
                     }
 
                     currentMediaItemId?.let {
-                        val index = it.toInt()
+                        val index = mediaController?.currentMediaItemIndex ?: it.toInt()
                         if (index in workingQueue.indices) {
                             _playerUiState.value = _playerUiState.value.copy(
-                                queue = workingQueue,
+                                queue = workingQueue.toList(),
                                 nowPlayingTrack = workingQueue[index], // id == "index"
                                 playingTrackIndex = index,
                                 seekPosition =
@@ -206,7 +214,7 @@ class MediaControllerViewModel @Inject constructor(
                         }
 
                         if (index != lastPlayedTrackIndex) {
-                            Timber.e("ON SESSION RECONNECTION: INDEX != LAST PLAYED  TRACK INDEX")
+                            Timber.d("Reconnected on a different track than the saved one")
                             savePlayingTrackToDatabase(
                                 track = workingQueue[index],
                                 source = lastPlayedQueueSource,
@@ -239,7 +247,7 @@ class MediaControllerViewModel @Inject constructor(
                         val playbackDuration = seekTo * trackDuration
 
                         _playerUiState.value = _playerUiState.value.copy(
-                            queue = workingQueue,
+                            queue = workingQueue.toList(),
                             nowPlayingTrack = workingQueue[lastPlayedTrackIndex],
                             playingTrackIndex = lastPlayedTrackIndex,
                             seekPosition = seekTo,
@@ -251,7 +259,7 @@ class MediaControllerViewModel @Inject constructor(
 
                     } else { // track index is out of range but queue is not empty
                         _playerUiState.value = _playerUiState.value.copy(
-                            queue = workingQueue,
+                            queue = workingQueue.toList(),
                             nowPlayingTrack = workingQueue[0],
                             playingTrackIndex = 0
                         )
@@ -282,7 +290,7 @@ class MediaControllerViewModel @Inject constructor(
         viewModelScope.launch {
             if (queue.isEmpty()) return@launch
             try {
-                pLayerRepository.insertQueue(queue)
+                playerRepository.insertQueue(queue)
                 if (playingTrackIndex in queue.indices) {
                     savePlayingTrackToDatabase(
                         track = queue[playingTrackIndex],
@@ -292,7 +300,7 @@ class MediaControllerViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Timber.e("ERROR SAVING NEW QUEUE!")
+                Timber.tag("PLAYER").e(e, "Couldn't save the queue")
             }
         }
     }
@@ -391,7 +399,7 @@ class MediaControllerViewModel @Inject constructor(
             mediaController?.prepare()
 
             _playerUiState.value = _playerUiState.value.copy(
-                queue = workingQueue,
+                queue = workingQueue.toList(),
                 playingTrackIndex = 0,
                 nowPlayingTrack = tracks.first(),
                 shuffleMode = ShuffleMode.SHUFFLE_OFF,
@@ -455,7 +463,7 @@ class MediaControllerViewModel @Inject constructor(
             mediaController?.prepare()
 
             _playerUiState.value = _playerUiState.value.copy(
-                queue = workingQueue,
+                queue = workingQueue.toList(),
                 playingTrackIndex = 0,
                 nowPlayingTrack = tracks.first(),
                 shuffleMode = ShuffleMode.SHUFFLE_OFF,
@@ -545,7 +553,7 @@ class MediaControllerViewModel @Inject constructor(
                 }
 
                 if (durationPlayedSec >= 5) {
-                    pLayerRepository.logLastPlayedTrackToServer(
+                    playerRepository.logLastPlayedTrackToServer(
                         track,
                         durationPlayedSec.toInt(),
                         sourcePath
@@ -574,7 +582,7 @@ class MediaControllerViewModel @Inject constructor(
 
                     viewModelScope.launch {
                         if (indexInQueue in workingQueue.indices) {
-                            pLayerRepository.updateLastPlayedTrack(
+                            playerRepository.updateLastPlayedTrack(
                                 trackHash = track.trackHash,
                                 indexInQueue = indexInQueue,
                                 source = source,
@@ -585,7 +593,7 @@ class MediaControllerViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Timber.e("ERROR SAVING TRACK PROGRESS CAUSED BY $e")
+            Timber.tag("PLAYER").e(e, "Couldn't save the track progress")
         }
     }
 
@@ -621,9 +629,9 @@ class MediaControllerViewModel @Inject constructor(
             }.toMutableList()
 
             val request = if (isFavorite) {
-                pLayerRepository.removeTrackFromFavorite(trackHash)
+                playerRepository.removeTrackFromFavorite(trackHash)
             } else {
-                pLayerRepository.addTrackToFavorite(trackHash)
+                playerRepository.addTrackToFavorite(trackHash)
             }
 
             request.collectLatest {
@@ -784,49 +792,34 @@ class MediaControllerViewModel @Inject constructor(
                 is OnClickLyricsIcon -> {}
 
                 is OnToggleRepeatMode -> {
-                    val repeatMode = _playerUiState.value.repeatMode
-
-                    _playerUiState.value = _playerUiState.value.copy(
-                        repeatMode = when (repeatMode) {
-                            RepeatMode.REPEAT_OFF -> {
-                                controller.repeatMode = Player.REPEAT_MODE_ALL
-                                RepeatMode.REPEAT_ALL
-                            }
-
-                            RepeatMode.REPEAT_ALL -> {
-                                controller.repeatMode = Player.REPEAT_MODE_ONE
-                                RepeatMode.REPEAT_ONE
-                            }
-
-                            RepeatMode.REPEAT_ONE -> {
-                                controller.repeatMode = Player.REPEAT_MODE_OFF
-                                RepeatMode.REPEAT_OFF
-                            }
-                        }
-                    )
+                    val next = when (_playerUiState.value.repeatMode) {
+                        RepeatMode.REPEAT_OFF -> RepeatMode.REPEAT_ALL
+                        RepeatMode.REPEAT_ALL -> RepeatMode.REPEAT_ONE
+                        RepeatMode.REPEAT_ONE -> RepeatMode.REPEAT_OFF
+                    }
+                    controller.repeatMode = next.toPlayerRepeatMode()
+                    _playerUiState.value = _playerUiState.value.copy(repeatMode = next)
+                    viewModelScope.launch { settings.setRepeatMode(next) }
                 }
 
                 is PlayerUiEvent.OnToggleShuffleMode -> {
-                    logRecentlyPlayedTrackToServer(
-                        track = trackToLog,
-                        durationPlayedSec = durationPlayedSec,
-                        logReason = "SHUFFLE ON [${_playerUiState.value.shuffleMode != ShuffleMode.SHUFFLE_ON}]"
-                    )
-
                     viewModelScope.launch {
                         val shuffleMode = _playerUiState.value.shuffleMode
                         val newShuffleMode = if (shuffleMode == ShuffleMode.SHUFFLE_ON)
                             ShuffleMode.SHUFFLE_OFF else ShuffleMode.SHUFFLE_ON
 
-                        // Handle shuffle mode manually (not directly via MediaController)
-                        // Save 0th track immediately even in error state
-                        if (newShuffleMode == ShuffleMode.SHUFFLE_ON || event.toggleShuffle.not()) {
+                        if (event.toggleShuffle && workingQueue.isNotEmpty()) {
+                            // Toggling while something plays: reorder around the playing track
+                            reorderQueueInPlace(shuffle = newShuffleMode == ShuffleMode.SHUFFLE_ON)
+                        } else if (newShuffleMode == ShuffleMode.SHUFFLE_ON || event.toggleShuffle.not()) {
+                            // A new queue started with Shuffle: play it from a random track. The
+                            // transition that follows logs the previous play, so don't log it here.
                             shuffledQueue = workingQueue.shuffled().toMutableList()
 
                             _playerUiState.value = _playerUiState.value.copy(
                                 shuffleMode = ShuffleMode.SHUFFLE_ON,
                                 nowPlayingTrack = shuffledQueue[0],
-                                queue = shuffledQueue
+                                queue = shuffledQueue.toList()
                             )
                             loadMediaItems(
                                 tracks = shuffledQueue,
@@ -846,7 +839,7 @@ class MediaControllerViewModel @Inject constructor(
                             _playerUiState.value = _playerUiState.value.copy(
                                 shuffleMode = ShuffleMode.SHUFFLE_OFF,
                                 nowPlayingTrack = workingQueue[0],
-                                queue = workingQueue
+                                queue = workingQueue.toList()
                             )
                             loadMediaItems(
                                 tracks = workingQueue,
@@ -959,6 +952,13 @@ class MediaControllerViewModel @Inject constructor(
                 activateHapticResponse()
             }
 
+            is QueueEvent.MoveQueueItem -> moveQueueItem(event.from, event.to)
+
+            is QueueEvent.RemoveQueueItem -> {
+                removeQueueItem(event.index)
+                softHaptic()
+            }
+
             is QueueEvent.AddToQueue -> {
                 addToPlayingQueue(event.tracks, event.source)
                 activateHapticResponse()
@@ -982,8 +982,17 @@ class MediaControllerViewModel @Inject constructor(
                     null
                 }
 
+                if (trackToLog != null && durationPlayedSec >= 5L) {
+                    logRecentlyPlayedTrackToServer(
+                        track = trackToLog,
+                        durationPlayedSec = durationPlayedSec,
+                        logReason = "CLEAR"
+                    )
+                }
+                durationPlayedSec = 0L
+
                 viewModelScope.launch {
-                    pLayerRepository.clearQueue()
+                    playerRepository.clearQueue()
 
                     workingQueue.clear()
                     shuffledQueue.clear()
@@ -1073,13 +1082,11 @@ class MediaControllerViewModel @Inject constructor(
                     )
 
                     if (trackToLog != null && durationPlayedSec >= 5L) {
-                        if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_OFF) {
-                            logRecentlyPlayedTrackToServer(
-                                track = trackToLog,
-                                durationPlayedSec = durationPlayedSec,
-                                logReason = "END"
-                            )
-                        }
+                        logRecentlyPlayedTrackToServer(
+                            track = trackToLog,
+                            durationPlayedSec = durationPlayedSec,
+                            logReason = "END"
+                        )
 
                         savePlayingTrackToDatabase(
                             track = _playerUiState.value.nowPlayingTrack,
@@ -1105,7 +1112,10 @@ class MediaControllerViewModel @Inject constructor(
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             mediaItem?.let {
                 try {
-                    val trackIndex = it.mediaId.toInt() // "id" == index
+                    // The timeline and the queue lists share an order, so the controller's
+                    // index is the queue index (media ids were assigned by position and can be
+                    // stale after a move or remove).
+                    val trackIndex = mediaController?.currentMediaItemIndex ?: it.mediaId.toInt()
                     val currentQueue = if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) {
                         shuffledQueue
                     } else {
@@ -1147,10 +1157,92 @@ class MediaControllerViewModel @Inject constructor(
                     durationPlayedSec = 0L
                     trackToLog = playingTrack
                 } catch (e: Exception) {
-                    Timber.e("ERROR ON TRANSITION -> $e")
+                    Timber.tag("PLAYER").e(e, "Media item transition failed")
                 }
             }
         }
+    }
+
+    private fun RepeatMode.toPlayerRepeatMode(): Int = when (this) {
+        RepeatMode.REPEAT_OFF -> Player.REPEAT_MODE_OFF
+        RepeatMode.REPEAT_ONE -> Player.REPEAT_MODE_ONE
+        RepeatMode.REPEAT_ALL -> Player.REPEAT_MODE_ALL
+    }
+
+    /**
+     * Turns shuffle on or off without interrupting the playing track: the timeline is rebuilt
+     * around the current item (move it first, replace the rest, move it back into place).
+     */
+    private fun reorderQueueInPlace(shuffle: Boolean) {
+        val controller = mediaController ?: return
+        val current = activeQueue()
+        if (current.isEmpty() || controller.mediaItemCount == 0) return
+        val currentIndex = controller.currentMediaItemIndex.coerceIn(0, current.lastIndex)
+        val currentTrack = current[currentIndex]
+
+        val newOrder: List<Track>
+        val targetIndex: Int
+        if (shuffle) {
+            val rest = current.toMutableList().also { it.removeAt(currentIndex) }.shuffled()
+            newOrder = listOf(currentTrack) + rest
+            targetIndex = 0
+            shuffledQueue = newOrder.toMutableList()
+        } else {
+            newOrder = workingQueue.toList()
+            targetIndex = workingQueue.indexOfFirst { it === currentTrack }.takeIf { it >= 0 }
+                ?: workingQueue.indexOfFirst { it.trackHash == currentTrack.trackHash }.coerceAtLeast(0)
+        }
+
+        val others = newOrder.filterIndexed { index, _ -> index != targetIndex }
+        controller.moveMediaItem(currentIndex, 0)
+        if (controller.mediaItemCount > 1) controller.removeMediaItems(1, controller.mediaItemCount)
+        controller.addMediaItems(others.mapIndexed { index, track -> createMediaItem(id = index + 1, track = track) })
+        if (targetIndex != 0) controller.moveMediaItem(0, targetIndex)
+
+        _playerUiState.update { state ->
+            state.copy(
+                shuffleMode = if (shuffle) ShuffleMode.SHUFFLE_ON else ShuffleMode.SHUFFLE_OFF,
+                queue = newOrder,
+                playingTrackIndex = targetIndex,
+                nowPlayingTrack = currentTrack
+            )
+        }
+        updateQueueInDatabase(queue = workingQueue, playingTrackIndex = targetIndex)
+    }
+
+    private fun activeQueue(): MutableList<Track> =
+        if (_playerUiState.value.shuffleMode == ShuffleMode.SHUFFLE_ON) shuffledQueue else workingQueue
+
+    private fun moveQueueItem(from: Int, to: Int) {
+        val queue = activeQueue()
+        if (from == to || from !in queue.indices || to !in queue.indices) return
+        queue.add(to, queue.removeAt(from))
+        mediaController?.moveMediaItem(from, to)
+        syncQueueState()
+    }
+
+    private fun removeQueueItem(index: Int) {
+        val queue = activeQueue()
+        if (index !in queue.indices) return
+        val removed = queue.removeAt(index)
+        if (queue !== workingQueue) workingQueue.remove(removed)
+        mediaController?.removeMediaItem(index)
+        syncQueueState()
+    }
+
+    /** Publishes the active queue as a new list and saves it, after a move or remove. */
+    private fun syncQueueState() {
+        val queue = activeQueue()
+        val playingIndex = (mediaController?.currentMediaItemIndex ?: 0)
+            .coerceIn(0, (queue.size - 1).coerceAtLeast(0))
+        _playerUiState.update { state ->
+            state.copy(
+                queue = queue.toList(),
+                playingTrackIndex = playingIndex,
+                nowPlayingTrack = queue.getOrNull(playingIndex) ?: state.nowPlayingTrack
+            )
+        }
+        updateQueueInDatabase(queue = workingQueue, playingTrackIndex = playingIndex)
     }
 
     private fun addTracksToCurrentQueue(newTracks: List<Track>) {
@@ -1172,7 +1264,7 @@ class MediaControllerViewModel @Inject constructor(
 
         _playerUiState.update { state ->
             state.copy(
-                queue = if (state.shuffleMode == ShuffleMode.SHUFFLE_ON) shuffledQueue else workingQueue
+                queue = (if (state.shuffleMode == ShuffleMode.SHUFFLE_ON) shuffledQueue else workingQueue).toList()
             )
         }
 
@@ -1183,7 +1275,7 @@ class MediaControllerViewModel @Inject constructor(
         mediaController?.addMediaItems(mediaItems)
         
         updateQueueInDatabase(
-            queue = workingQueue,
+            queue = workingQueue.toList(),
             playingTrackIndex = _playerUiState.value.playingTrackIndex
         )
     }
@@ -1198,7 +1290,7 @@ class MediaControllerViewModel @Inject constructor(
                 val chunkSize = 50
                 
                 while (true) {
-                    val newTracks = pLayerRepository.getTracksChunk(
+                    val newTracks = playerRepository.getTracksChunk(
                         folderPath = folderSource.path,
                         start = start,
                         limit = chunkSize

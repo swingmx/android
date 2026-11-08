@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataArtistRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
@@ -40,6 +41,8 @@ class DataArtistRepository @Inject constructor(
                         ).toAllArtists().total
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error loading artists"))
             }
@@ -79,6 +82,8 @@ class DataArtistRepository @Inject constructor(
                         ).toArtistInfo()
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error loading artist info"))
             }
@@ -101,6 +106,8 @@ class DataArtistRepository @Inject constructor(
                         ).map { it.toArtist() }
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error loading similar artists"))
             }
@@ -122,6 +129,8 @@ class DataArtistRepository @Inject constructor(
 
                 emit(Resource.Success(data = true)) // isFavorite = true
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO ADD ARTIST TO FAVORITE"))
 
@@ -146,6 +155,8 @@ class DataArtistRepository @Inject constructor(
 
                 emit(Resource.Success(data = false)) // isFavorite = false
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO REMOVE ALBUM FROM FAVORITE"))
 

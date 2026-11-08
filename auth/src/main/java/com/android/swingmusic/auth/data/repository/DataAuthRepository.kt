@@ -39,10 +39,15 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.HttpException
+import java.io.File
 import timber.log.Timber
 import java.io.IOException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataAuthRepository @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -130,6 +135,8 @@ class DataAuthRepository @Inject constructor(
                 storeAuthTokens(result.accessToken, result.refreshToken, result.maxAge)
                 TokenRefreshResult.Refreshed(result.accessToken)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: HttpException) {
             if (e.code() == 401 || e.code() == 422) TokenRefreshResult.Rejected
             else TokenRefreshResult.Failed
@@ -147,6 +154,8 @@ class DataAuthRepository @Inject constructor(
                 val result = authApiService.getAllUsers("$baseUrl/auth/users").toModel()
                 emit(Resource.Success(data = result))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "Connection Failed!"))
             } catch (e: Exception) {
@@ -163,8 +172,69 @@ class DataAuthRepository @Inject constructor(
     private suspend fun storeLoggedInUser(user: User) {
         userDao.clearLoggedInUser()
         userDao.insertLoggedInUser(user.toEntity())
-        avatarStore.setOwner(getBaseUrl(), user.id)
+        setAvatarOwner(user)
     }
+
+    private suspend fun setAvatarOwner(user: User) {
+        val baseUrl = getBaseUrl()
+        avatarStore.setOwner(
+            baseUrl = baseUrl,
+            userId = user.id,
+            serverImageUrl = user.image.takeIf { it.isNotBlank() }?.let { "${baseUrl}img/user/$it" },
+            initials = user.initials()
+        )
+    }
+
+    private fun User.initials(): String {
+        val fromNames = listOf(firstname, lastname)
+            .mapNotNull { it.trim().firstOrNull()?.uppercaseChar() }
+            .joinToString("")
+        return fromNames.ifEmpty { username.trim().take(1).uppercase() }
+    }
+
+    override suspend fun uploadAvatar(file: File): Resource<Unit> {
+        return try {
+            val part = MultipartBody.Part.createFormData(
+                "image", file.name, file.asRequestBody("image/jpeg".toMediaType())
+            )
+            val user = authApiService.updateUserImage(
+                url = "${getBaseUrl()}auth/profile/image",
+                bearerAccessToken = "Bearer ${getAccessToken()}",
+                image = part
+            ).toModel()
+            storeLoggedInUser(user)
+            Resource.Success(Unit)
+        } catch (e: HttpException) {
+            Resource.Error(message = e.serverMessage() ?: "Couldn't upload your photo.")
+        } catch (e: IOException) {
+            Resource.Error(message = "Check your connection to the server.")
+        } catch (e: Exception) {
+            Timber.tag("AUTH").e(e)
+            Resource.Error(message = "Couldn't upload your photo.")
+        }
+    }
+
+    override suspend fun removeAvatar(): Resource<Unit> {
+        return try {
+            val user = authApiService.removeUserImage(
+                url = "${getBaseUrl()}auth/profile/image",
+                bearerAccessToken = "Bearer ${getAccessToken()}"
+            ).toModel()
+            storeLoggedInUser(user)
+            Resource.Success(Unit)
+        } catch (e: HttpException) {
+            Resource.Error(message = e.serverMessage() ?: "Couldn't remove your photo.")
+        } catch (e: IOException) {
+            Resource.Error(message = "Check your connection to the server.")
+        } catch (e: Exception) {
+            Timber.tag("AUTH").e(e)
+            Resource.Error(message = "Couldn't remove your photo.")
+        }
+    }
+
+    private fun HttpException.serverMessage(): String? = runCatching {
+        JSONObject(response()?.errorBody()?.string().orEmpty()).optString("msg")
+    }.getOrNull()?.takeIf { it.isNotBlank() }
 
     override suspend fun fetchCurrentUser(): Resource<User> {
         return try {
@@ -174,10 +244,12 @@ class DataAuthRepository @Inject constructor(
             ).toModel()
             storeLoggedInUser(user)
             Resource.Success(user)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             val cached = getLoggedInUser()
             // Offline: the cached user still decides whose photo to show.
-            cached?.let { avatarStore.setOwner(getBaseUrl(), it.id) }
+            cached?.let { setAvatarOwner(it) }
             Resource.Error(data = cached, message = "Couldn't load your profile")
         }
     }
@@ -191,6 +263,8 @@ class DataAuthRepository @Inject constructor(
             ).toModel()
             storeLoggedInUser(user)
             Resource.Success(user)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: HttpException) {
             val serverMessage = runCatching {
                 JSONObject(e.response()?.errorBody()?.string().orEmpty()).optString("msg")
@@ -275,6 +349,8 @@ class DataAuthRepository @Inject constructor(
 
                 emit(Resource.Success(data = result))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Failed to create user"))
             }
@@ -298,6 +374,8 @@ class DataAuthRepository @Inject constructor(
 
                 emit(Resource.Success(result))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 val msg = when (e.code()) {
                     401 -> "INCORRECT PASSWORD!"
@@ -334,6 +412,8 @@ class DataAuthRepository @Inject constructor(
 
                 emit(Resource.Success(data = result))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
 
                 emit(Resource.Error(message = "PAIRING FAILED"))

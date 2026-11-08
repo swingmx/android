@@ -23,7 +23,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.android.swingmusic.common.presentation.navigator.TabReselect
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -62,7 +69,6 @@ import androidx.compose.ui.unit.sp
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
 import com.android.swingmusic.core.domain.model.Album
 import com.android.swingmusic.core.domain.model.Artist
-import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.TopResultItem
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
@@ -79,6 +85,7 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.trackMenuItems
 import com.android.swingmusic.uicomponent.presentation.component.TopSearchResultItem
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -112,8 +119,9 @@ private fun Search(
     onClickArtist: (hash: String) -> Unit,
     onClickViewAll: (itemType: String) -> Unit,
     onClickMoreVert: (track: Track) -> Unit,
+    lazyColumnState: LazyListState = rememberLazyListState(),
+    searchFieldFocus: FocusRequester = remember { FocusRequester() },
 ) {
-    val lazyColumnState = rememberLazyListState()
     val clickInteractionSource = remember { MutableInteractionSource() }
 
     Scaffold {
@@ -146,7 +154,8 @@ private fun Search(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(16.dp)
+                                .focusRequester(searchFieldFocus),
                             placeholder = { Text("search swing music") },
                             singleLine = true,
                             maxLines = 1,
@@ -521,9 +530,22 @@ private fun Search(
 fun SearchScreen(
     searchViewModel: SearchViewModel,
     mediaControllerViewModel: MediaControllerViewModel,
-    navigator: CommonNavigator
+    navigator: CommonNavigator,
+    tabReselect: TabReselect,
 ) {
     val baseUrl by mediaControllerViewModel.baseUrl.collectAsState()
+    val listState = rememberLazyListState()
+    val searchFieldFocus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(tabReselect) {
+        tabReselect.events.filter { it == TabReselect.Tab.SEARCH }.collect {
+            // The field is hidden while the list scrolls down, so bring it back first
+            listState.animateScrollToItem(0)
+            delay(100)
+            runCatching { searchFieldFocus.requestFocus() }
+            keyboard?.show()
+        }
+    }
     val playerState by mediaControllerViewModel.playerUiState.collectAsState()
 
     val searchUiState by searchViewModel.searchState.collectAsState()
@@ -605,47 +627,7 @@ fun SearchScreen(
                         clickedTrack = track,
                         baseUrl = baseUrl ?: "",
                         currentArtisthash = null,
-                        bottomSheetItems = listOf(
-                            BottomSheetItemModel(
-                                label = "Go to Artist",
-                                painterId = R.drawable.ic_artist,
-                                track = track,
-                                sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
-                            ),
-                            BottomSheetItemModel(
-                                label = "Go to Album",
-                                painterId = R.drawable.ic_album,
-                                track = track,
-                                sheetAction = BottomSheetAction.GotoAlbum
-                            ),
-                            BottomSheetItemModel(
-                                label = "Go to Folder",
-                                painterId = R.drawable.folder_outlined_open,
-                                track = track,
-                                sheetAction = BottomSheetAction.GotoFolder(
-                                    name = track.folder.getFolderName(),
-                                    path = track.folder
-                                )
-                            ),
-                            BottomSheetItemModel(
-                                label = "Play Next",
-                                painterId = R.drawable.play_next,
-                                track = track,
-                                sheetAction = BottomSheetAction.PlayNext
-                            ),
-                            BottomSheetItemModel(
-                                label = "Add to Queue",
-                                painterId = R.drawable.add_to_queue,
-                                track = track,
-                                sheetAction = BottomSheetAction.AddToQueue
-                            ),
-                            BottomSheetItemModel(
-                                label = "Add to Playlist",
-                                painterId = R.drawable.playlist_add,
-                                track = track,
-                                sheetAction = BottomSheetAction.AddToPlaylist
-                            )
-                        ),
+                        bottomSheetItems = trackMenuItems(track),
                         onHideBottomSheet = {
                             showTrackBottomSheet = it
                         },
@@ -675,14 +657,10 @@ fun SearchScreen(
                                     )
 
                                     scope.launch {
-                                        val result = snackbarHostState.showSnackbar(
+                                        snackbarHostState.showSnackbar(
                                             message = "Track added to play next",
-                                            actionLabel = "View Queue",
                                             duration = SnackbarDuration.Short
                                         )
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            navigator.gotoQueueScreen()
-                                        }
                                     }
                                 }
 
@@ -695,14 +673,10 @@ fun SearchScreen(
                                     )
 
                                     scope.launch {
-                                        val result = snackbarHostState.showSnackbar(
+                                        snackbarHostState.showSnackbar(
                                             message = "Track added to queue",
-                                            actionLabel = "View Queue",
                                             duration = SnackbarDuration.Short
                                         )
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            navigator.gotoQueueScreen()
-                                        }
                                     }
                                 }
 
@@ -725,6 +699,8 @@ fun SearchScreen(
             }
 
             Search(
+                lazyColumnState = listState,
+                searchFieldFocus = searchFieldFocus,
                 isLoading = searchUiState.isLoadingTopResult,
                 isError = searchUiState.isError,
                 hasSearched = searchUiState.hasSearched,

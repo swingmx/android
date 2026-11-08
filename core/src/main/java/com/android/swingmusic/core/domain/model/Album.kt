@@ -9,5 +9,6 @@ data class Album(
     val helpText: String,
     val image: String,
     val title: String,
-    val versions: List<String>
+    val versions: List<String>,
+    val blurhash: String = ""
 )

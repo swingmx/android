@@ -22,7 +22,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import com.android.swingmusic.common.presentation.navigator.TabReselect
+import kotlinx.coroutines.flow.filter
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -93,10 +96,15 @@ import kotlinx.coroutines.launch
 internal fun HomeScreen(
     navigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
+    tabReselect: TabReselect,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState()
+    LaunchedEffect(tabReselect) {
+        tabReselect.events.filter { it == TabReselect.Tab.HOME }.collect { listState.animateScrollToItem(0) }
+    }
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -113,6 +121,8 @@ internal fun HomeScreen(
         when (effect) {
             is HomeUiEffect.NavigateToAlbum -> navigator.gotoAlbumWithInfo(effect.albumHash)
             is HomeUiEffect.NavigateToArtist -> navigator.gotoArtistInfo(effect.artistHash)
+            is HomeUiEffect.NavigateToPlaylist -> navigator.gotoPlaylist(effect.playlistId)
+            is HomeUiEffect.NavigateToFolder -> navigator.gotoSourceFolder(effect.name, effect.path)
             is HomeUiEffect.PlayTracks -> mediaControllerViewModel.onQueueEvent(
                 QueueEvent.RecreateQueue(
                     source = effect.source,
@@ -136,6 +146,7 @@ internal fun HomeScreen(
         onEvent = viewModel::onEvent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
+        listState = listState,
     )
 }
 
@@ -148,8 +159,8 @@ private fun HomeScreenContent(
     onEvent: (HomeUiEvent) -> Unit,
     snackbarHost: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState(),
 ) {
-    val listState = rememberLazyListState()
 
     val titleState = rememberLargeTitleState(listState)
     val topBarHeight = largeTitleTopBarHeight()
@@ -197,7 +208,8 @@ private fun HomeScreenContent(
                         loadingItemKey = uiState.loadingItemKey,
                         nowPlayingTrackHash = nowPlayingTrackHash,
                         playbackState = playbackState,
-                        onItemClick = { onEvent(HomeUiEvent.OnItemClicked(it)) }
+                        onItemClick = { onEvent(HomeUiEvent.OnItemClicked(it)) },
+                        onPlayTrack = { onEvent(HomeUiEvent.OnPlayTrackClicked(it)) }
                     )
 
                     uiState.errorLoadingSections != null -> item {
@@ -225,7 +237,8 @@ private fun HomeScreenContent(
             LargeTitleTopBar(
                 title = HOME_TITLE,
                 state = titleState,
-                avatarPath = uiState.avatarPath,
+                avatarModel = uiState.avatarModel,
+            avatarInitials = uiState.avatarInitials,
                 onProfileClick = { onEvent(HomeUiEvent.OnProfileClicked) }
             )
         }
@@ -239,6 +252,7 @@ private fun LazyListScope.homeSections(
     nowPlayingTrackHash: String?,
     playbackState: PlaybackState,
     onItemClick: (HomeItem) -> Unit,
+    onPlayTrack: (Track) -> Unit,
 ) {
     items(sections) { section ->
         Column(modifier = Modifier.padding(top = 16.dp, bottom = 12.dp)) {
@@ -270,6 +284,7 @@ private fun LazyListScope.homeSections(
                         baseUrl = baseUrl,
                         isLoading = loadingItemKey == item.key,
                         onClick = { onItemClick(item) },
+                        onPlayTrack = { (item as? HomeItem.TrackItem)?.let { onPlayTrack(it.track) } },
                         nowPlayingState = playbackState.takeIf {
                             item is HomeItem.TrackItem &&
                                     item.track.trackHash == nowPlayingTrackHash

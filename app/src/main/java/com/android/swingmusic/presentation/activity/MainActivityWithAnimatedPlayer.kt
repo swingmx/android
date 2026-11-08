@@ -59,16 +59,14 @@ import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithQrC
 import com.android.swingmusic.auth.presentation.screen.destinations.LoginWithUsernameScreenDestination
 import com.android.swingmusic.auth.presentation.viewmodel.AuthViewModel
 import com.android.swingmusic.home.presentation.screen.destinations.HomeScreenDestination
+import com.android.swingmusic.profile.presentation.screen.ChangelogHost
 import com.android.swingmusic.player.presentation.screen.AnimatedPlayerSheet
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.presentation.navigator.BottomNavItem
 import com.android.swingmusic.presentation.navigator.destinations.TabsRootScreenDestination
 import com.android.swingmusic.presentation.navigator.CoreNavigator
 import com.android.swingmusic.presentation.navigator.NavGraphs
-import com.android.swingmusic.presentation.navigator.scaleInEnterTransition
-import com.android.swingmusic.presentation.navigator.scaleInPopEnterTransition
-import com.android.swingmusic.presentation.navigator.scaleOutExitTransition
-import com.android.swingmusic.presentation.navigator.scaleOutPopExitTransition
+import com.android.swingmusic.common.presentation.navigator.TabReselect
 import com.android.swingmusic.search.presentation.event.SearchUiEvent
 import com.android.swingmusic.search.presentation.viewmodel.SearchViewModel
 import com.android.swingmusic.service.PlaybackService
@@ -78,7 +76,6 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
@@ -87,8 +84,10 @@ import android.os.Build
 import androidx.activity.enableEdgeToEdge
 import com.android.swingmusic.BuildConfig
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 /**
@@ -120,7 +119,8 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
         lifecycleScope.launch {
             authViewModel.isUserLoggedIn.collectLatest {
                 if (it == true) {
-                    scheduleTokenRefreshWork(applicationContext)
+                    // WorkManager opens its database on first use; keep that off the main thread.
+                    withContext(Dispatchers.IO) { scheduleTokenRefreshWork(applicationContext) }
                     mediaControllerViewModel.refreshBaseUrl()
                     initializeMediaController()
                 }
@@ -149,6 +149,7 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
             LaunchedEffect(Unit) {
                 authViewModel.sessionEnded.collect { reason ->
                     mediaControllerViewModel.endSession()
+                    searchViewModel.onSearchUiEvent(SearchUiEvent.OnClearSearchStates)
                     imageLoader.memoryCache?.clear()
                     imageLoader.diskCache?.clear()
                     authViewModel.onSessionEnded(reason)
@@ -173,13 +174,22 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
             // since screens like an album page live in whichever tab opened them.
             var currentTab by rememberSaveable { mutableStateOf(BottomNavItem.Home.title) }
 
+            val tabReselect = remember { TabReselect() }
             fun selectTab(item: BottomNavItem) {
                 if (item.title == currentTab) {
-                    // Reselecting returns the tab to its first screen
+                    // Reselecting returns the tab to its first screen; a second tap on that
+                    // screen scrolls it to the top (Search focuses its field instead).
                     val popped = navController.popBackStack(item.destination.route, inclusive = false)
-                    if (!popped) navController.navigate(item.destination.route) { launchSingleTop = true }
-                    if (item == BottomNavItem.Search) {
-                        searchViewModel.onSearchUiEvent(SearchUiEvent.OnClearSearchStates)
+                    if (!popped) {
+                        navController.navigate(item.destination.route) { launchSingleTop = true }
+                        tabReselect.reselect(
+                            when (item) {
+                                BottomNavItem.Home -> TabReselect.Tab.HOME
+                                BottomNavItem.Library -> TabReselect.Tab.LIBRARY
+                                BottomNavItem.Favourites -> TabReselect.Tab.FAVOURITES
+                                BottomNavItem.Search -> TabReselect.Tab.SEARCH
+                            }
+                        )
                     }
                     return
                 }
@@ -313,9 +323,13 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
                                     navController = navController,
                                     authViewModel = authViewModel,
                                     mediaControllerViewModel = mediaControllerViewModel,
-                                    searchViewModel = searchViewModel
+                                    searchViewModel = searchViewModel,
+                                    tabReselect = tabReselect
                                 )
                             }
+
+                            // Release notes wait for a confirmed session and never cover the login screens.
+                            if (value && showBottomNav) ChangelogHost()
                         }
                     }
                 }
@@ -375,29 +389,14 @@ internal fun SwingMusicAppNavigationWithAnimatedPlayer(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     mediaControllerViewModel: MediaControllerViewModel,
-    searchViewModel: SearchViewModel
+    searchViewModel: SearchViewModel,
+    tabReselect: TabReselect
 ) {
     val navGraph = remember(isUserLoggedIn) { NavGraphs.root(isUserLoggedIn) }
 
     val animatedNavHostEngine = rememberAnimatedNavHostEngine(
         navHostContentAlignment = Alignment.TopCenter,
-        rootDefaultAnimations = RootNavGraphDefaultAnimations.ACCOMPANIST_FADING,
-        defaultAnimationsForNestedNavGraph = mapOf(
-            NavGraphs.root(isUserLoggedIn) to NestedNavGraphDefaultAnimations(
-                enterTransition = {
-                    scaleInEnterTransition()
-                },
-                exitTransition = {
-                    scaleOutExitTransition()
-                },
-                popEnterTransition = {
-                    scaleInPopEnterTransition()
-                },
-                popExitTransition = {
-                    scaleOutPopExitTransition()
-                }
-            )
-        )
+        rootDefaultAnimations = RootNavGraphDefaultAnimations.ACCOMPANIST_FADING
     )
 
     DestinationsNavHost(
@@ -411,6 +410,7 @@ internal fun SwingMusicAppNavigationWithAnimatedPlayer(
             dependency(authViewModel)
             dependency(mediaControllerViewModel)
             dependency(searchViewModel)
+            dependency(tabReselect)
         }
     )
 }

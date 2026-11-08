@@ -20,7 +20,7 @@ import com.android.swingmusic.database.data.entity.UserEntity
         BaseUrlEntity::class,
         UserEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

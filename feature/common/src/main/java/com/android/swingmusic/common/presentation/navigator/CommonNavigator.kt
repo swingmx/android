@@ -48,8 +48,6 @@ interface CommonNavigator {
 
     fun navigateBack()
 
-    fun gotoQueueScreen()
-
     fun gotoArtistInfo(artistHash: String)
 
     fun gotoViewAllOnArtistScreen(

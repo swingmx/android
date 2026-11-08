@@ -1,0 +1,137 @@
+{
+  "releases": [
+    {
+      "versionName": "2.1.0",
+      "versionCode": 20100,
+      "date": "2026-11-15",
+      "channel": "stable",
+      "changes": [
+        {
+          "type": "new",
+          "text": "Your listening stats on every artist page: rank, time played, top album and top track",
+          "highlight": true,
+          "link": { "label": "Details", "url": "https://github.com/swingmx/android/issues/159" }
+        },
+        {
+          "type": "new",
+          "text": "Drag the queue to reorder it; long-press a track for its menu",
+          "highlight": true,
+          "link": { "label": "Details", "url": "https://github.com/swingmx/android/issues/163" }
+        },
+        {
+          "type": "new",
+          "text": "Blurry artwork placeholders while images load",
+          "highlight": true
+        },
+        {
+          "type": "new",
+          "text": "Add albums and artists to your collections",
+          "link": { "label": "Details", "url": "https://github.com/swingmx/android/issues/162" }
+        },
+        {
+          "type": "new",
+          "text": "Context menu on the now playing screen; tap the artwork to open the album"
+        },
+        {
+          "type": "new",
+          "text": "Favourites shows your recently favourited items and a tracks · albums · artists summary"
+        },
+        {
+          "type": "new",
+          "text": "Your profile photo is synced with the server and shown on every tab"
+        },
+        {
+          "type": "new",
+          "text": "What's New: release notes after every update, also under Settings › About"
+        },
+        {
+          "type": "tweak",
+          "text": "Recently played cards open the item's page; the play badge starts playback"
+        },
+        {
+          "type": "tweak",
+          "text": "Re-tapping a bottom tab scrolls to the top; re-tapping Search focuses the input"
+        },
+        {
+          "type": "tweak",
+          "text": "Track menus share one order everywhere: Play Next, Add to Queue, Add to Playlist, Go to…"
+        },
+        {
+          "type": "tweak",
+          "text": "Repeat mode is remembered across restarts"
+        },
+        {
+          "type": "fixed",
+          "text": "Shuffle keeps the current track playing instead of restarting it"
+        },
+        {
+          "type": "fixed",
+          "text": "Play counts are logged when the queue is cleared or ends"
+        },
+        {
+          "type": "fixed",
+          "text": "No more freeze on launch while the token refresh job is scheduled"
+        }
+      ]
+    },
+    {
+      "versionName": "2.0.0",
+      "versionCode": 20000,
+      "date": "2026-11-06",
+      "channel": "stable",
+      "changes": [
+        {
+          "type": "new",
+          "text": "Lyrics overlay in the player with karaoke-style word sync",
+          "highlight": true,
+          "link": { "label": "Details", "url": "https://github.com/swingmx/android/pull/129" }
+        },
+        {
+          "type": "new",
+          "text": "Profile, Settings and your listening stats",
+          "highlight": true,
+          "link": { "label": "Details", "url": "https://github.com/swingmx/android/pull/132" }
+        },
+        {
+          "type": "new",
+          "text": "Library and Favourites tabs",
+          "highlight": true
+        },
+        { "type": "new", "text": "Home: mixes, recently played and more" },
+        { "type": "new", "text": "Album and artist actions: Add to Playlist and Search On" },
+        { "type": "new", "text": "Player gestures, haptics and animations" },
+        { "type": "new", "text": "Black neutral theme" },
+        { "type": "tweak", "text": "Folders remember their scroll position" },
+        { "type": "fixed", "text": "Freeze after login" },
+        { "type": "fixed", "text": "Queue not refreshing after Play Next / Add to Queue" },
+        { "type": "fixed", "text": "Folders error after a fresh login" }
+      ]
+    },
+    {
+      "versionName": "1.0.1",
+      "versionCode": 10001,
+      "date": "2025-12-13",
+      "channel": "stable",
+      "changes": [
+        {
+          "type": "new",
+          "text": "Albums and artists remember your grid size, sort category and order",
+          "highlight": true,
+          "link": { "label": "Details", "url": "https://github.com/swingmx/android/pull/96" }
+        },
+        { "type": "fixed", "text": "Tokens are renewed automatically" }
+      ]
+    },
+    {
+      "versionName": "1.0.0",
+      "versionCode": 10000,
+      "date": "2025-08-17",
+      "channel": "stable",
+      "changes": [
+        { "type": "new", "text": "Playback, queue, Play Next and Add to Queue", "highlight": true },
+        { "type": "new", "text": "Search tracks, albums and artists" },
+        { "type": "new", "text": "Album, artist and folder browsing" }
+      ]
+    }
+  ]
+}

@@ -6,7 +6,11 @@ import com.android.swingmusic.auth.data.dto.UserDto
 import com.android.swingmusic.auth.domain.model.CreateUserRequest
 import com.android.swingmusic.auth.domain.model.LogInRequest
 import com.android.swingmusic.auth.domain.model.UpdateProfileRequest
+import okhttp3.MultipartBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.Multipart
+import retrofit2.http.Part
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -55,6 +59,20 @@ interface AuthApiService {
 
     @GET
     suspend fun getCurrentUser(
+        @Url url: String,
+        @Header("Authorization") bearerAccessToken: String
+    ): UserDto
+
+    @Multipart
+    @PUT
+    suspend fun updateUserImage(
+        @Url url: String,
+        @Header("Authorization") bearerAccessToken: String,
+        @Part image: MultipartBody.Part
+    ): UserDto
+
+    @DELETE
+    suspend fun removeUserImage(
         @Url url: String,
         @Header("Authorization") bearerAccessToken: String
     ): UserDto

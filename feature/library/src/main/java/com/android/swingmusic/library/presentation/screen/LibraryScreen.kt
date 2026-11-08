@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import com.android.swingmusic.common.presentation.navigator.TabReselect
+import kotlinx.coroutines.flow.filter
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material3.MaterialTheme
@@ -46,16 +50,22 @@ private const val LIBRARY_TITLE = "Library"
 @Composable
 fun LibraryScreen(
     navigator: CommonNavigator,
+    tabReselect: TabReselect,
 ) {
-    Library(navigator = navigator)
+    Library(navigator = navigator, tabReselect = tabReselect)
 }
 
 @Composable
 private fun Library(
     navigator: CommonNavigator,
+    tabReselect: TabReselect,
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+    LaunchedEffect(tabReselect) {
+        tabReselect.events.filter { it == TabReselect.Tab.LIBRARY }.collect { listState.animateScrollToItem(0) }
+    }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.onEvent(LibraryUiEvent.OnScreenResumed)
@@ -71,15 +81,15 @@ private fun Library(
         }
     }
 
-    LibraryScreenContent(uiState = uiState, onEvent = viewModel::onEvent)
+    LibraryScreenContent(uiState = uiState, onEvent = viewModel::onEvent, listState = listState)
 }
 
 @Composable
 private fun LibraryScreenContent(
     uiState: LibraryUiState,
     onEvent: (LibraryUiEvent) -> Unit,
+    listState: LazyListState = rememberLazyListState(),
 ) {
-    val listState = rememberLazyListState()
     val titleState = rememberLargeTitleState(listState)
 
     Box(
@@ -136,7 +146,8 @@ private fun LibraryScreenContent(
         LargeTitleTopBar(
             title = LIBRARY_TITLE,
             state = titleState,
-            avatarPath = uiState.avatarPath,
+            avatarModel = uiState.avatarModel,
+            avatarInitials = uiState.avatarInitials,
             onProfileClick = { onEvent(LibraryUiEvent.OnProfileClicked) }
         )
     }

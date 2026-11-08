@@ -64,6 +64,7 @@ import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
 import com.android.swingmusic.core.domain.util.PlaybackState
 import com.android.swingmusic.uicomponent.R
+import com.android.swingmusic.uicomponent.presentation.component.Artwork
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import kotlin.math.abs
@@ -81,6 +82,7 @@ internal fun HomeCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     nowPlayingState: PlaybackState? = null,
+    onPlayTrack: () -> Unit = {},
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -110,20 +112,23 @@ internal fun HomeCard(
     ) {
         Box(modifier = Modifier.size(HomeCardWidth)) {
             when (item) {
-                is HomeItem.ArtistItem -> Artwork(
+                is HomeItem.ArtistItem -> CardArtwork(
                     url = "${baseUrl}img/artist/medium/${item.artist.image}",
+                    blurhash = item.artist.blurhash,
                     shape = CircleShape,
                     fallback = R.drawable.artist_fallback
                 )
 
-                is HomeItem.AlbumItem -> Artwork(
+                is HomeItem.AlbumItem -> CardArtwork(
                     url = "${baseUrl}img/thumbnail/medium/${item.album.image}",
+                    blurhash = item.album.blurhash,
                     shape = ArtworkShape
                 )
 
                 is HomeItem.TrackItem -> {
-                    Artwork(
+                    CardArtwork(
                         url = "${baseUrl}img/thumbnail/medium/${item.track.image}",
+                        blurhash = item.track.blurhash,
                         shape = ArtworkShape
                     )
                     if (nowPlayingState != null) {
@@ -132,12 +137,13 @@ internal fun HomeCard(
                             modifier = Modifier.align(Alignment.BottomEnd)
                         )
                     } else {
-                        PlayBadge(modifier = Modifier.align(Alignment.BottomEnd))
+                        PlayBadge(onClick = onPlayTrack, modifier = Modifier.align(Alignment.BottomEnd))
                     }
                 }
 
                 is HomeItem.PlaylistItem -> PlaylistArtwork(item.playlist, baseUrl)
                 is HomeItem.MixItem -> MixArtwork(item.mix, baseUrl)
+                is HomeItem.FolderItem -> FolderArtwork()
             }
 
             if (isLoading) {
@@ -203,26 +209,23 @@ private fun HomeItem.captions(): Pair<String, String> = when (this) {
             if (playlist.trackCount == 1) "1 song" else "${playlist.trackCount} songs"
 
     is HomeItem.MixItem -> mix.title to mix.description.ifBlank { mix.title }
+    is HomeItem.FolderItem -> folder.name to
+            if (folder.trackCount == 1) "Folder · 1 song" else "Folder · ${folder.trackCount} songs"
 }
 
 @Composable
-private fun Artwork(
+private fun CardArtwork(
     url: String,
     shape: Shape,
     modifier: Modifier = Modifier,
+    blurhash: String? = null,
     size: Dp = HomeCardWidth,
     fallback: Int = R.drawable.audio_fallback,
 ) {
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(url)
-            .crossfade(true)
-            .build(),
-        placeholder = painterResource(fallback),
-        fallback = painterResource(fallback),
-        error = painterResource(fallback),
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
+    Artwork(
+        url = url,
+        blurhash = blurhash,
+        fallback = fallback,
         modifier = modifier
             .size(size)
             .clip(shape)
@@ -230,13 +233,32 @@ private fun Artwork(
 }
 
 @Composable
-private fun PlayBadge(modifier: Modifier = Modifier) {
+private fun FolderArtwork() {
+    Box(
+        modifier = Modifier
+            .size(HomeCardWidth)
+            .clip(ArtworkShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.folder_filled),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(56.dp)
+        )
+    }
+}
+
+@Composable
+private fun PlayBadge(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .padding(8.dp)
             .size(28.dp)
             .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.6F)),
+            .background(Color.Black.copy(alpha = 0.6F))
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -285,12 +307,12 @@ private fun NowPlayingBadge(playbackState: PlaybackState, modifier: Modifier = M
 private fun PlaylistArtwork(playlist: Playlist, baseUrl: String) {
     val customImage = playlist.customImage
     when {
-        customImage != null -> Artwork(
+        customImage != null -> CardArtwork(
             url = "${baseUrl}img/playlist/$customImage",
             shape = ArtworkShape
         )
 
-        playlist.images.isEmpty() -> Artwork(url = "", shape = ArtworkShape)
+        playlist.images.isEmpty() -> CardArtwork(url = "", shape = ArtworkShape)
 
         else -> {
             val cell = (HomeCardWidth - 1.dp) / 2
@@ -304,7 +326,7 @@ private fun PlaylistArtwork(playlist: Playlist, baseUrl: String) {
                 tiles.chunked(2).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
                         row.forEach { image ->
-                            Artwork(
+                            CardArtwork(
                                 url = "${baseUrl}img/thumbnail/small/$image",
                                 shape = RoundedCornerShape(0.dp),
                                 size = cell
@@ -322,7 +344,7 @@ private fun MixArtwork(mix: Mix, baseUrl: String) {
     // The server draws its own label and fade onto mix covers, so show those as they are
     val cover = mix.image
     if (cover != null) {
-        Artwork(url = "${baseUrl}img/mix/medium/$cover", shape = ArtworkShape)
+        CardArtwork(url = "${baseUrl}img/mix/medium/$cover", shape = ArtworkShape)
         return
     }
 

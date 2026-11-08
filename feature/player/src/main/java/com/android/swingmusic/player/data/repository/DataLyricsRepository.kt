@@ -15,6 +15,7 @@ import retrofit2.HttpException
 import timber.log.Timber
 import java.io.IOException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataLyricsRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
@@ -35,6 +36,8 @@ class DataLyricsRepository @Inject constructor(
                     bearerToken = authRepository.requireBearerToken()
                 )
                 emit(Resource.Success(dto.toLyrics()))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: IOException) {
                 emit(Resource.Error<Lyrics>(message = "Unable to fetch lyrics\nCheck your connection and try again!"))
             } catch (e: HttpException) {
@@ -53,6 +56,8 @@ class DataLyricsRepository @Inject constructor(
                 bearerToken = authRepository.requireBearerToken()
             )
             dto.exists ?: false
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             false
         }
@@ -89,6 +94,8 @@ class DataLyricsRepository @Inject constructor(
                     emit(Resource.Success(lyrics.copy(exists = true)))
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IOException) {
             emit(Resource.Error<Lyrics>(message = "Unable to search lyrics\nCheck your connection and try again!"))
         } catch (e: HttpException) {

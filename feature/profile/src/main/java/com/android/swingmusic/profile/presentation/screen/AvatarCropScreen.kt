@@ -2,6 +2,7 @@ package com.android.swingmusic.profile.presentation.screen
 
 import android.graphics.Bitmap
 import android.graphics.Rect
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -49,6 +50,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -89,9 +91,11 @@ internal fun AvatarCropScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
     ObserverAsEvent(viewModel.uiEffect) { effect ->
         when (effect) {
             AvatarCropUiEffect.NavigateBack -> navigator.navigateBack()
+            is AvatarCropUiEffect.ShowMessage -> Toast.makeText(context, effect.message, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -194,8 +198,9 @@ private class CropFrame(val bitmap: Bitmap, private val marginPx: Float) {
 
     fun transform(pan: Offset, zoom: Float) {
         scale = (scale * zoom).coerceIn(1F, MAX_ZOOM)
-        val maxX = (bitmap.width * totalScale - diameter) / 2F
-        val maxY = (bitmap.height * totalScale - diameter) / 2F
+        // Float rounding can leave a side that exactly fills the circle a hair negative.
+        val maxX = ((bitmap.width * totalScale - diameter) / 2F).coerceAtLeast(0F)
+        val maxY = ((bitmap.height * totalScale - diameter) / 2F).coerceAtLeast(0F)
         val moved = offset + pan
         offset = Offset(moved.x.coerceIn(-maxX, maxX), moved.y.coerceIn(-maxY, maxY))
     }

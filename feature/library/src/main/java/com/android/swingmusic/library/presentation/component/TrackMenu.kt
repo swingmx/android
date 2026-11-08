@@ -8,13 +8,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.playlist.domain.toPlaylistTarget
 import com.android.swingmusic.playlist.presentation.screen.AddToPlaylistSheet
-import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.trackMenuItems
 
 /**
  * The track menu for Library screens, with Add to Playlist built in. [onRemoveFromPlaylist]
@@ -47,22 +46,7 @@ internal fun TrackMenu(
             clickedTrack = track,
             isFavorite = isFavourite,
             baseUrl = baseUrl,
-            bottomSheetItems = buildList {
-                add(item("Go to Artist", R.drawable.ic_artist, track, BottomSheetAction.OpenArtistsDialog(track.trackArtists)))
-                add(item("Go to Album", R.drawable.ic_album, track, BottomSheetAction.GotoAlbum))
-                add(
-                    item(
-                        "Go to Folder", R.drawable.folder_outlined_open, track,
-                        BottomSheetAction.GotoFolder(name = track.folder.trimEnd('/').substringAfterLast('/'), path = track.folder)
-                    )
-                )
-                add(item("Play Next", R.drawable.play_next, track, BottomSheetAction.PlayNext))
-                add(item("Add to Queue", R.drawable.add_to_queue, track, BottomSheetAction.AddToQueue))
-                add(item("Add to Playlist", R.drawable.playlist_add, track, BottomSheetAction.AddToPlaylist))
-                if (onRemoveFromPlaylist != null) {
-                    add(item("Remove from Playlist", R.drawable.playlist_remove, track, BottomSheetAction.RemoveFromPlaylist))
-                }
-            },
+            bottomSheetItems = trackMenuItems(track, removeFromPlaylist = onRemoveFromPlaylist != null),
             onHideBottomSheet = { visible ->
                 if (!visible) {
                     showMenu = false
@@ -102,5 +86,3 @@ internal fun TrackMenu(
     }
 }
 
-private fun item(label: String, icon: Int, track: Track, action: BottomSheetAction) =
-    BottomSheetItemModel(label = label, painterId = icon, track = track, sheetAction = action)

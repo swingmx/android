@@ -7,7 +7,8 @@ import com.android.swingmusic.core.domain.model.HomeSection
 @Immutable
 internal data class HomeUiState(
     val baseUrl: String = "",
-    val avatarPath: String? = null,
+    val avatarModel: String? = null,
+    val avatarInitials: String = "",
     val isRefreshing: Boolean = false,
 
     val isLoadingSections: Boolean = true,
@@ -24,4 +25,5 @@ internal val HomeItem.key: String
         is HomeItem.TrackItem -> "track:${track.trackHash}"
         is HomeItem.PlaylistItem -> "playlist:${playlist.id}"
         is HomeItem.MixItem -> "mix:${mix.id}"
+        is HomeItem.FolderItem -> "folder:${folder.path}"
     }

@@ -14,6 +14,7 @@ import com.android.swingmusic.core.data.dto.AllArtistsDto
 import com.android.swingmusic.core.data.dto.ArtistDto
 import com.android.swingmusic.core.data.dto.ArtistExpandedDto
 import com.android.swingmusic.core.data.dto.ArtistInfoDto
+import com.android.swingmusic.core.data.dto.ListeningDto
 import com.android.swingmusic.core.data.dto.ArtistsSearchResultDto
 import com.android.swingmusic.core.data.dto.DirDto
 import com.android.swingmusic.core.data.dto.DirListDto
@@ -48,6 +49,10 @@ import com.android.swingmusic.core.domain.model.AllArtists
 import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
+import com.android.swingmusic.core.domain.model.Listening
+import com.android.swingmusic.core.domain.model.ListeningRank
+import com.android.swingmusic.core.domain.model.ListeningTopAlbum
+import com.android.swingmusic.core.domain.model.ListeningTopTrack
 import com.android.swingmusic.core.domain.model.StatItem
 import com.android.swingmusic.core.domain.model.ArtistsSearchResult
 import com.android.swingmusic.core.domain.model.Dir
@@ -57,6 +62,7 @@ import com.android.swingmusic.core.domain.model.FoldersAndTracks
 import com.android.swingmusic.core.domain.model.FoldersAndTracksRequest
 import com.android.swingmusic.core.domain.model.Genre
 import com.android.swingmusic.core.domain.model.HomeItem
+import com.android.swingmusic.core.domain.model.RecentFavourite
 import com.android.swingmusic.core.domain.model.HomeSection
 import com.android.swingmusic.core.domain.model.Lyrics
 import com.android.swingmusic.core.domain.model.LyricsLine
@@ -83,6 +89,7 @@ object Map {
             colors = colors ?: emptyList(),
             createdDate = createdDate ?: 0.0,
             helpText = helpText ?: "",
+            blurhash = blurhash ?: "",
             image = image ?: ""
         )
     }
@@ -115,6 +122,7 @@ object Map {
             duration = duration ?: 0,
             filepath = filepath ?: "",
             folder = folder ?: "",
+            blurhash = blurhash ?: "",
             image = image ?: "",
             isFavorite = isFavorite ?: false,
             title = title ?: "",
@@ -215,6 +223,7 @@ object Map {
             createdDate = createdDate ?: 0.0,
             date = date ?: 0,
             helpText = helpText ?: "",
+            blurhash = blurhash ?: "",
             image = image ?: "",
             title = title ?: "",
             versions = versions ?: emptyList()
@@ -341,9 +350,28 @@ object Map {
                 trackCount = 0
             ),
             tracks = tracks?.map { it.toTrack() } ?: emptyList(),
-            stats = stats.orEmpty().mapNotNull { it.toStatItem() }
+            stats = stats.orEmpty().mapNotNull { it.toStatItem() },
+            listening = listening?.toListening()
         )
     }
+
+    fun ListeningDto.toListening(): Listening = Listening(
+        playDuration = playDuration ?: 0,
+        playCount = playCount ?: 0,
+        lastPlayedAgo = lastPlayedAgo?.takeIf { it.isNotBlank() },
+        rank = rank?.let { r ->
+            val position = r.position ?: return@let null
+            ListeningRank(position = position, total = r.total ?: 0, of = r.of ?: "artists")
+        },
+        topAlbum = topAlbum?.let { a ->
+            val hash = a.albumHash ?: return@let null
+            ListeningTopAlbum(hash, a.title ?: "", a.image ?: "", a.artist, a.playDuration ?: 0)
+        },
+        topTrack = topTrack?.let { t ->
+            val hash = t.trackHash ?: return@let null
+            ListeningTopTrack(hash, t.title ?: "", t.image ?: "", t.playDuration ?: 0)
+        }
+    )
 
     fun StatItemDto.toStatItem(): StatItem? {
         val value = value?.takeIf { it.isNotBlank() } ?: return null
@@ -365,6 +393,7 @@ object Map {
             createdDate = System.currentTimeMillis().toDouble(),
             date = date ?: 0,
             helpText = "",
+            blurhash = blurhash ?: "",
             image = image ?: "",
             title = title ?: "Untitled",
             versions = versions?.filterIsInstance<String>() ?: emptyList()
@@ -403,6 +432,7 @@ object Map {
             duration = duration ?: 0,
             filepath = filepath ?: "",
             folder = folder ?: "",
+            blurhash = blurhash ?: "",
             image = image ?: "",
             isFavorite = isFavorite ?: false,
             title = title ?: "Untitled",
@@ -517,7 +547,7 @@ object Map {
         else -> Trend.STABLE
     }
 
-    private fun HomeItemDto.toHomeItem(): HomeItem? {
+    fun HomeItemDto.toHomeItem(): HomeItem? {
         val json = item ?: return null
         return runCatching {
             when (type) {
@@ -526,9 +556,22 @@ object Map {
                 "track" -> HomeItem.TrackItem(gson.fromJson(json, TrackDto::class.java).toTrack())
                 "playlist" -> HomeItem.PlaylistItem(gson.fromJson(json, PlaylistDto::class.java).toPlaylist())
                 "mix" -> HomeItem.MixItem(gson.fromJson(json, MixDto::class.java).toMix())
+                // Recently played folders come with a path and a track count but no name.
+                "folder" -> gson.fromJson(json, FolderDto::class.java).toFolder().let { folder ->
+                    HomeItem.FolderItem(
+                        if (folder.name.isNotBlank()) folder
+                        else folder.copy(name = folder.path.trimEnd('/').substringAfterLast('/'))
+                    )
+                }
                 else -> null
             }
         }.getOrNull()
+    }
+
+    fun HomeItemDto.toRecentFavourite(): RecentFavourite? {
+        val homeItem = toHomeItem() ?: return null
+        val time = runCatching { item?.asJsonObject?.get("time")?.asString }.getOrNull().orEmpty()
+        return RecentFavourite(item = homeItem, time = time)
     }
 
     fun PlaylistDto.toPlaylist(): Playlist {

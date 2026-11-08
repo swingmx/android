@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.TopSearchResults
-import com.android.swingmusic.player.domain.repository.PLayerRepository
-import com.android.swingmusic.search.domain.reposotory.SearchRepository
+import com.android.swingmusic.player.domain.repository.PlayerRepository
+import com.android.swingmusic.search.domain.repository.SearchRepository
 import com.android.swingmusic.search.presentation.event.SearchUiEvent
 import com.android.swingmusic.search.presentation.state.SearchState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,7 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
-    private val pLayerRepository: PLayerRepository
+    private val playerRepository: PlayerRepository
 ) : ViewModel() {
 
     private val _searchState = MutableStateFlow(SearchState())
@@ -234,9 +234,9 @@ class SearchViewModel @Inject constructor(
             }
 
             val request = if (isFavorite) {
-                pLayerRepository.removeTrackFromFavorite(trackHash)
+                playerRepository.removeTrackFromFavorite(trackHash)
             } else {
-                pLayerRepository.addTrackToFavorite(trackHash)
+                playerRepository.addTrackToFavorite(trackHash)
             }
 
             request.collectLatest { result ->

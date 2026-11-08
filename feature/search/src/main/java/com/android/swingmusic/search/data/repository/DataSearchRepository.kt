@@ -14,10 +14,11 @@ import com.android.swingmusic.core.domain.model.TopSearchResults
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TracksSearchResult
 import com.android.swingmusic.network.data.api.service.NetworkApiService
-import com.android.swingmusic.search.domain.reposotory.SearchRepository
+import com.android.swingmusic.search.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataSearchRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
@@ -40,6 +41,8 @@ class DataSearchRepository @Inject constructor(
 
                 emit(Resource.Success(data = topSearchResult))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Top Result"))
             }
@@ -60,6 +63,8 @@ class DataSearchRepository @Inject constructor(
                 val tracksResult = tracksResultDto.map { it.toTrack() }
 
                 emit(Resource.Success(data = tracksResult))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Artist Tracks"))
             }
@@ -80,6 +85,8 @@ class DataSearchRepository @Inject constructor(
                 val tracksResult = tracksResultDto.map { it.toTrack() }
 
                 emit(Resource.Success(data = tracksResult))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Album Tracks"))
             }
@@ -102,6 +109,8 @@ class DataSearchRepository @Inject constructor(
 
                 emit(Resource.Success(data = tracksSearchResult))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Tracks"))
             }
@@ -124,6 +133,8 @@ class DataSearchRepository @Inject constructor(
 
                 emit(Resource.Success(data = albumsSearchResult))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Albums"))
             }
@@ -146,6 +157,8 @@ class DataSearchRepository @Inject constructor(
 
                 emit(Resource.Success(data = artistsSearchResult))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Artists"))
             }

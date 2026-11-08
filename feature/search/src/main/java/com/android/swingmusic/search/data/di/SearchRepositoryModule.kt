@@ -1,7 +1,7 @@
 package com.android.swingmusic.search.data.di
 
 import com.android.swingmusic.search.data.repository.DataSearchRepository
-import com.android.swingmusic.search.domain.reposotory.SearchRepository
+import com.android.swingmusic.search.domain.repository.SearchRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

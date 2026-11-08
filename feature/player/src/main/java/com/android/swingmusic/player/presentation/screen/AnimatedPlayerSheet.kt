@@ -61,7 +61,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.platform.LocalHapticFeedback
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -118,7 +124,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.swingmusic.common.presentation.navigator.CommonNavigator
-import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.BottomSheetAction
 import com.android.swingmusic.core.domain.util.PlaybackState
@@ -131,6 +136,9 @@ import com.android.swingmusic.player.presentation.util.calculateCurrentOffsetFor
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.util.rememberBlurhashPainter
+import com.android.swingmusic.uicomponent.presentation.component.trackMenuItems
+import com.android.swingmusic.uicomponent.presentation.component.TrackMenuOption
 import com.android.swingmusic.uicomponent.presentation.component.SoundSignalBars
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.util.BlurTransformation
@@ -315,6 +323,8 @@ fun AnimatedPlayerSheet(
                         mediaControllerViewModel.onQueueEvent(QueueEvent.SeekToQueueItem(page))
                     },
                     onClickArtist = { navigator.gotoArtistInfo(it) },
+                    onGotoAlbum = { navigator.gotoAlbumWithInfo(it) },
+                    onGotoFolder = { name, path -> navigator.gotoSourceFolder(name, path) },
                     onToggleRepeatMode = {
                         mediaControllerViewModel.onPlayerUiEvent(PlayerUiEvent.OnToggleRepeatMode)
                     },
@@ -416,6 +426,12 @@ fun AnimatedPlayerSheet(
                     queueSheetOffset.snapTo(queueInitialOffset)
                     bottomSheetState.bottomSheetState.partialExpand()
                 }
+            },
+            onMoveQueueItem = { from, to ->
+                mediaControllerViewModel.onQueueEvent(QueueEvent.MoveQueueItem(from, to))
+            },
+            onRemoveQueueItem = { index ->
+                mediaControllerViewModel.onQueueEvent(QueueEvent.RemoveQueueItem(index))
             }
         )
     }
@@ -453,6 +469,8 @@ private fun AnimatedSheetContent(
     queueProgress: Float,
     onPageSelect: (Int) -> Unit,
     onClickArtist: (String) -> Unit,
+    onGotoAlbum: (albumHash: String) -> Unit,
+    onGotoFolder: (name: String, path: String) -> Unit,
     onToggleRepeatMode: () -> Unit,
     onClickPrev: () -> Unit,
     onTogglePlayerState: () -> Unit,
@@ -465,6 +483,62 @@ private fun AnimatedSheetContent(
     onClickLyricsIcon: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
+    var showTrackMenu by remember { mutableStateOf(false) }
+    var showAddToPlaylist by remember { mutableStateOf(false) }
+    val trackMenuSheetState = rememberModalBottomSheetState()
+    val collapseSheet: () -> Unit = {
+        coroutineScope.launch { bottomSheetState.bottomSheetState.partialExpand() }
+    }
+
+    if (showTrackMenu) {
+        CustomTrackBottomSheet(
+            scope = coroutineScope,
+            sheetState = trackMenuSheetState,
+            clickedTrack = track,
+            isFavorite = track.isFavorite,
+            baseUrl = baseUrl,
+            bottomSheetItems = trackMenuItems(
+                track,
+                hide = setOf(TrackMenuOption.PlayNext, TrackMenuOption.AddToQueue)
+            ),
+            onHideBottomSheet = { showTrackMenu = it },
+            onClickSheetItem = { _, action ->
+                when (action) {
+                    is BottomSheetAction.AddToPlaylist -> showAddToPlaylist = true
+                    is BottomSheetAction.GotoAlbum -> {
+                        onGotoAlbum(track.albumHash)
+                        collapseSheet()
+                    }
+
+                    is BottomSheetAction.GotoFolder -> {
+                        onGotoFolder(action.name, action.path)
+                        collapseSheet()
+                    }
+
+                    else -> Unit
+                }
+            },
+            onChooseArtist = { hash ->
+                onClickArtist(hash)
+                collapseSheet()
+            },
+            onToggleTrackFavorite = { trackHash, isFavorite -> onToggleFavorite(isFavorite, trackHash) }
+        )
+    }
+
+    if (showAddToPlaylist) {
+        val context = LocalContext.current
+        AddToPlaylistSheet(
+            target = track.toPlaylistTarget(),
+            baseUrl = baseUrl,
+            onBack = {
+                showAddToPlaylist = false
+                showTrackMenu = true
+            },
+            onDismiss = { showAddToPlaylist = false },
+            onDone = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() }
+        )
+    }
     val configuration = LocalConfiguration.current
     // Whatever AS says about this, don't be tempted to change it... ref: Eric
     val screenWidthDp = configuration.screenWidthDp.dp
@@ -774,6 +848,15 @@ private fun AnimatedSheetContent(
                                     .heightIn(max = imageSize)
                                     .aspectRatio(1f)
                                     .clip(RoundedCornerShape(imageCornerRadius))
+                                    .then(
+                                        if (effectiveProgress > 0.5f) Modifier.clickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() }
+                                        ) {
+                                            onGotoAlbum(track.albumHash)
+                                            collapseSheet()
+                                        } else Modifier
+                                    )
                                     .graphicsLayer {
                                         val scale = androidx.compose.ui.util.lerp(
                                             1f,
@@ -790,7 +873,8 @@ private fun AnimatedSheetContent(
                                     .size(coil.size.Size.ORIGINAL)
                                     .crossfade(true)
                                     .build(),
-                                placeholder = painterResource(R.drawable.audio_fallback),
+                                placeholder = rememberBlurhashPainter((queue.getOrNull(page) ?: track).blurhash)
+                                    ?: painterResource(R.drawable.audio_fallback),
                                 fallback = painterResource(R.drawable.audio_fallback),
                                 error = painterResource(R.drawable.audio_fallback),
                                 contentDescription = "Track Image",
@@ -961,6 +1045,7 @@ private fun AnimatedSheetContent(
                                     }
                                 }
 
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(
                                     modifier = Modifier
                                         .scale(heartScale)
@@ -985,6 +1070,14 @@ private fun AnimatedSheetContent(
                                             contentDescription = "Favorite"
                                         )
                                     }
+                                }
+
+                                IconButton(onClick = { showTrackMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = "More"
+                                    )
+                                }
                                 }
                             }
 
@@ -1356,7 +1449,9 @@ private fun QueueSheetOverlay(
     onGotoFolder: (name: String, path: String) -> Unit,
     onPlayNext: (track: Track) -> Unit,
     onToggleTrackFavorite: (trackHash: String, isFavorite: Boolean) -> Unit,
-    onCloseSheets: () -> Unit
+    onCloseSheets: () -> Unit,
+    onMoveQueueItem: (from: Int, to: Int) -> Unit,
+    onRemoveQueueItem: (index: Int) -> Unit,
 ) {
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
@@ -1368,6 +1463,7 @@ private fun QueueSheetOverlay(
     val sheetState = rememberModalBottomSheetState()
     var showTrackBottomSheet by remember { mutableStateOf(false) }
     var clickedTrack: Track? by remember { mutableStateOf(null) }
+    var clickedIndex: Int? by remember { mutableStateOf(null) }
     var playlistTrack: Track? by remember { mutableStateOf(null) }
 
     // Update clicked track when queue changes
@@ -1489,43 +1585,10 @@ private fun QueueSheetOverlay(
                 clickedTrack = track,
                 isFavorite = track.isFavorite,
                 baseUrl = baseUrl,
-                bottomSheetItems = listOf(
-                    BottomSheetItemModel(
-                        label = "Go to Artist",
-                        enabled = true,
-                        painterId = R.drawable.ic_artist,
-                        track = track,
-                        sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
-                    ),
-                    BottomSheetItemModel(
-                        label = "Go to Album",
-                        painterId = R.drawable.ic_album,
-                        track = track,
-                        sheetAction = BottomSheetAction.GotoAlbum
-                    ),
-                    BottomSheetItemModel(
-                        label = "Go to Folder",
-                        enabled = true,
-                        painterId = R.drawable.folder_outlined_open,
-                        track = track,
-                        sheetAction = BottomSheetAction.GotoFolder(
-                            name = track.folder.getFolderName(),
-                            path = track.folder
-                        )
-                    ),
-                    BottomSheetItemModel(
-                        label = "Play Next",
-                        enabled = true,
-                        painterId = R.drawable.play_next,
-                        track = track,
-                        sheetAction = BottomSheetAction.PlayNext
-                    ),
-                    BottomSheetItemModel(
-                        label = "Add to Playlist",
-                        painterId = R.drawable.playlist_add,
-                        track = track,
-                        sheetAction = BottomSheetAction.AddToPlaylist
-                    )
+                bottomSheetItems = trackMenuItems(
+                    track,
+                    hide = setOf(TrackMenuOption.AddToQueue),
+                    removeFromQueue = true
                 ),
                 onHideBottomSheet = { showTrackBottomSheet = it },
                 onClickSheetItem = { sheetTrack, sheetAction ->
@@ -1545,6 +1608,7 @@ private fun QueueSheetOverlay(
                         }
 
                         is BottomSheetAction.PlayNext -> onPlayNext(sheetTrack)
+                        is BottomSheetAction.RemoveFromQueue -> clickedIndex?.let(onRemoveQueueItem)
                         else -> {}
                     }
                 },
@@ -1782,7 +1846,20 @@ private fun QueueSheetOverlay(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Queue items
+            // Queue items: drag the handle to reorder, long press for the menu
+            val haptics = LocalHapticFeedback.current
+            // Stable per-entry keys (a track can be queued more than once)
+            val queueKeys = remember(queue) {
+                val seen = HashMap<String, Int>()
+                queue.map { track ->
+                    val n = seen.getOrDefault(track.trackHash, 0)
+                    seen[track.trackHash] = n + 1
+                    "${track.trackHash}:$n"
+                }
+            }
+            val reorderableState = rememberReorderableLazyListState(lazyColumnState) { from, to ->
+                onMoveQueueItem(from.index, to.index)
+            }
             LazyColumn(
                 state = lazyColumnState,
                 modifier = Modifier
@@ -1793,20 +1870,38 @@ private fun QueueSheetOverlay(
             ) {
                 itemsIndexed(
                     items = queue,
-                    key = { index, track -> "$index:${track.filepath}" }
+                    key = { index, _ -> queueKeys.getOrElse(index) { index.toString() } }
                 ) { index, track ->
-                    TrackItem(
-                        track = track,
-                        playbackState = playbackState,
-                        isCurrentTrack = index == playingTrackIndex,
-                        baseUrl = baseUrl,
-                        showMenuIcon = true,
-                        onClickTrackItem = { onClickQueueItem(index) },
-                        onClickMoreVert = {
-                            clickedTrack = it
-                            showTrackBottomSheet = true
-                        }
-                    )
+                    ReorderableItem(reorderableState, key = queueKeys.getOrElse(index) { index.toString() }) {
+                        TrackItem(
+                            track = track,
+                            playbackState = playbackState,
+                            isCurrentTrack = index == playingTrackIndex,
+                            baseUrl = baseUrl,
+                            showMenuIcon = true,
+                            onClickTrackItem = { onClickQueueItem(index) },
+                            onClickMoreVert = {},
+                            onLongClickTrackItem = {
+                                clickedTrack = track
+                                clickedIndex = index
+                                showTrackBottomSheet = true
+                            },
+                            trailingContent = {
+                                Icon(
+                                    imageVector = Icons.Rounded.DragHandle,
+                                    contentDescription = "Reorder",
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .padding(12.dp)
+                                        .draggableHandle(
+                                            onDragStarted = {
+                                                haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                            }
+                                        )
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
