@@ -22,7 +22,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import com.android.swingmusic.common.presentation.navigator.TabReselect
+import kotlinx.coroutines.flow.filter
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -93,10 +96,15 @@ import kotlinx.coroutines.launch
 internal fun HomeScreen(
     navigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
+    tabReselect: TabReselect,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState()
+    LaunchedEffect(tabReselect) {
+        tabReselect.events.filter { it == TabReselect.Tab.HOME }.collect { listState.animateScrollToItem(0) }
+    }
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -138,6 +146,7 @@ internal fun HomeScreen(
         onEvent = viewModel::onEvent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
+        listState = listState,
     )
 }
 
@@ -150,8 +159,8 @@ private fun HomeScreenContent(
     onEvent: (HomeUiEvent) -> Unit,
     snackbarHost: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState(),
 ) {
-    val listState = rememberLazyListState()
 
     val titleState = rememberLargeTitleState(listState)
     val topBarHeight = largeTitleTopBarHeight()

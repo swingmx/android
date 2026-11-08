@@ -36,6 +36,7 @@ android {
 dependencies {
     // Raamcosta Navigation
     implementation(libs.compose.destinations.core)
+    implementation(libs.kotlinx.coroutines.core)
     ksp(libs.compose.destinations.ksp)
 }
 
