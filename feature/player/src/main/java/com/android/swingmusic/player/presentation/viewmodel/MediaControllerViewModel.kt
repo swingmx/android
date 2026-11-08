@@ -708,16 +708,11 @@ class MediaControllerViewModel @Inject constructor(
                     val positionInMs = (trackDurationMs * toValue).toLong()
                     val seekPosition = positionInMs.coerceIn(0, trackDurationMs.toLong())
 
-                    if (controller.playbackState == Player.STATE_READY) {
-                        controller.seekTo(seekPosition)
-                        controller.play()
-                    } else {
-                        mediaController?.apply {
-                            prepare()
-                            seekTo(seekPosition)
-                            play()
-                        }
-                    }
+                    // seekTo keeps playWhenReady, so a paused track stays paused. The
+                    // index overload also works before a restored track is prepared,
+                    // when seeking within the current item isn't available yet.
+                    if (controller.playbackState == Player.STATE_IDLE) controller.prepare()
+                    controller.seekTo(controller.currentMediaItemIndex, seekPosition)
                 }
 
                 is OnPrev -> {
