@@ -28,6 +28,7 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.io.File
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 @OptIn(ExperimentalCoilApi::class)
 class DataProfileRepository @Inject constructor(
@@ -83,6 +84,8 @@ class DataProfileRepository @Inject constructor(
                 bearerToken = authHeader()
             ).stats.orEmpty().mapNotNull { it.toStatItem() }
             Resource.Success(stats)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IOException) {
             Resource.Error(message = "Check your connection to the server.")
         } catch (e: HttpException) {
@@ -99,6 +102,8 @@ class DataProfileRepository @Inject constructor(
                 url = "${getBaseUrl()}notsettings",
                 bearerToken = authHeader()
             ).version?.takeIf { it.isNotBlank() }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -112,6 +117,8 @@ class DataProfileRepository @Inject constructor(
             ).code
             if (code.isNullOrBlank()) Resource.Error(message = "The server didn't return a code.")
             else Resource.Success(code)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IOException) {
             Resource.Error(message = "Check your connection to the server.")
         } catch (e: Exception) {
@@ -146,6 +153,8 @@ class DataProfileRepository @Inject constructor(
                 orderBy = orderBy
             )
             Resource.Success(map(response))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IOException) {
             Resource.Error(message = "Check your connection to the server.")
         } catch (e: HttpException) {
@@ -164,6 +173,8 @@ class DataProfileRepository @Inject constructor(
                 body = TriggerScanRequestDto(fullScan = fullScan)
             )
             Resource.Success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IOException) {
             Resource.Error(message = "Check your connection to the server.")
         } catch (e: Exception) {
@@ -179,6 +190,8 @@ class DataProfileRepository @Inject constructor(
                 bearerToken = authHeader()
             ).toRootDirs().rootDirs
             Resource.Success(dirs)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IOException) {
             Resource.Error(message = "Check your connection to the server.")
         } catch (e: Exception) {

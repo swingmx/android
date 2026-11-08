@@ -147,6 +147,7 @@ class MainActivityWithAnimatedPlayer : ComponentActivity() {
             LaunchedEffect(Unit) {
                 authViewModel.sessionEnded.collect { reason ->
                     mediaControllerViewModel.endSession()
+                    searchViewModel.onSearchUiEvent(SearchUiEvent.OnClearSearchStates)
                     imageLoader.memoryCache?.clear()
                     imageLoader.diskCache?.clear()
                     authViewModel.onSessionEnded(reason)

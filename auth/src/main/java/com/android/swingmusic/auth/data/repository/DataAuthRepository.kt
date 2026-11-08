@@ -47,6 +47,7 @@ import java.io.File
 import timber.log.Timber
 import java.io.IOException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataAuthRepository @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -128,6 +129,8 @@ class DataAuthRepository @Inject constructor(
                 storeAuthTokens(result.accessToken, result.refreshToken, result.maxAge)
                 TokenRefreshResult.Refreshed(result.accessToken)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: HttpException) {
             if (e.code() == 401 || e.code() == 422) TokenRefreshResult.Rejected
             else TokenRefreshResult.Failed
@@ -145,6 +148,8 @@ class DataAuthRepository @Inject constructor(
                 val result = authApiService.getAllUsers("$baseUrl/auth/users").toModel()
                 emit(Resource.Success(data = result))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "Connection Failed!"))
             } catch (e: Exception) {
@@ -233,6 +238,8 @@ class DataAuthRepository @Inject constructor(
             ).toModel()
             storeLoggedInUser(user)
             Resource.Success(user)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             val cached = getLoggedInUser()
             // Offline: the cached user still decides whose photo to show.
@@ -250,6 +257,8 @@ class DataAuthRepository @Inject constructor(
             ).toModel()
             storeLoggedInUser(user)
             Resource.Success(user)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: HttpException) {
             val serverMessage = runCatching {
                 JSONObject(e.response()?.errorBody()?.string().orEmpty()).optString("msg")
@@ -335,6 +344,8 @@ class DataAuthRepository @Inject constructor(
 
                 emit(Resource.Success(data = result))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Failed to create user"))
             }
@@ -358,6 +369,8 @@ class DataAuthRepository @Inject constructor(
 
                 emit(Resource.Success(result))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 val msg = when (e.code()) {
                     401 -> "INCORRECT PASSWORD!"
@@ -394,6 +407,8 @@ class DataAuthRepository @Inject constructor(
 
                 emit(Resource.Success(data = result))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
 
                 emit(Resource.Error(message = "PAIRING FAILED"))
