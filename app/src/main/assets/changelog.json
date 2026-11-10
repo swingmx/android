@@ -1,8 +1,8 @@
 {
   "releases": [
     {
-      "versionName": "2.1.0",
-      "versionCode": 20100,
+      "versionName": "2.1.1",
+      "versionCode": 20101,
       "date": "2026-11-10",
       "channel": "stable",
       "changes": [
@@ -22,6 +22,10 @@
           "type": "new",
           "text": "Blurry artwork placeholders while images load",
           "highlight": true
+        },
+        {
+          "type": "fixed",
+          "text": "This What's New sheet now opens in release builds; 2.1.0 shipped without it"
         },
         {
           "type": "new",
