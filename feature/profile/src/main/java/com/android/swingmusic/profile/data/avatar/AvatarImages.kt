@@ -13,7 +13,7 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 internal object AvatarImages {
-    const val OUTPUT_SIZE = 512
+    private const val OUTPUT_SIZE = 1024
     private const val MAX_DECODE_SIZE = 2048
 
     /** Decodes [uri] upright and no larger than 2048px, as a software bitmap that can be cropped. */
@@ -65,7 +65,7 @@ internal object AvatarImages {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
-    /** Cuts [rect] (in [bitmap] pixels) and scales it to the stored avatar size. */
+    /** Cuts [rect] (in [bitmap] pixels) and scales it down to at most the stored avatar size. */
     fun crop(bitmap: Bitmap, rect: Rect): Bitmap {
         val safe = Rect(
             rect.left.coerceIn(0, bitmap.width - 1),
@@ -73,7 +73,12 @@ internal object AvatarImages {
             rect.right.coerceIn(1, bitmap.width),
             rect.bottom.coerceIn(1, bitmap.height)
         )
-        val cropped = Bitmap.createBitmap(bitmap, safe.left, safe.top, safe.width(), safe.height())
-        return Bitmap.createScaledBitmap(cropped, OUTPUT_SIZE, OUTPUT_SIZE, true)
+        var scaled = Bitmap.createBitmap(bitmap, safe.left, safe.top, safe.width(), safe.height())
+        val target = minOf(OUTPUT_SIZE, max(scaled.width, scaled.height))
+        // Bilinear scaling only samples neighbouring pixels, so big reductions alias unless halved in steps
+        while (max(scaled.width, scaled.height) >= target * 2) {
+            scaled = Bitmap.createScaledBitmap(scaled, scaled.width / 2, scaled.height / 2, true)
+        }
+        return Bitmap.createScaledBitmap(scaled, target, target, true)
     }
 }

@@ -17,5 +17,7 @@ data class AlbumResultDto(
     @SerializedName("title")
     val title: String?,
     @SerializedName("versions")
-    val versions: List<Any>?
+    val versions: List<Any>?,
+    @SerializedName("blurhash")
+    val blurhash: String?
 )

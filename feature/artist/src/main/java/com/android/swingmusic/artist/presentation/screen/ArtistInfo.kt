@@ -89,7 +89,6 @@ import com.android.swingmusic.core.domain.model.Artist
 import com.android.swingmusic.core.domain.model.ArtistExpanded
 import com.android.swingmusic.core.domain.model.ArtistInfo
 import com.android.swingmusic.core.domain.model.StatItem
-import com.android.swingmusic.core.domain.model.BottomSheetItemModel
 import com.android.swingmusic.core.domain.model.Genre
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TrackArtist
@@ -99,6 +98,8 @@ import com.android.swingmusic.core.domain.util.QueueSource
 import com.android.swingmusic.player.presentation.event.PlayerUiEvent
 import com.android.swingmusic.playlist.domain.PlaylistTarget
 import com.android.swingmusic.playlist.presentation.screen.AddToPlaylistSheet
+import com.android.swingmusic.playlist.presentation.screen.AddToCollectionSheet
+import com.android.swingmusic.playlist.domain.CollectionTarget
 import com.android.swingmusic.player.presentation.event.QueueEvent
 import com.android.swingmusic.player.presentation.viewmodel.MediaControllerViewModel
 import com.android.swingmusic.uicomponent.presentation.component.FavoriteAndMoreActions
@@ -109,6 +110,8 @@ import com.android.swingmusic.uicomponent.R
 import com.android.swingmusic.uicomponent.presentation.component.AlbumItem
 import com.android.swingmusic.uicomponent.presentation.component.ArtistItem
 import com.android.swingmusic.uicomponent.presentation.component.CustomTrackBottomSheet
+import com.android.swingmusic.uicomponent.presentation.component.ListeningStatsSection
+import com.android.swingmusic.uicomponent.presentation.component.trackMenuItems
 import com.android.swingmusic.uicomponent.presentation.component.PlayAndShuffleButtons
 import com.android.swingmusic.uicomponent.presentation.component.TrackItem
 import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
@@ -153,6 +156,7 @@ private fun ArtistInfo(
     var playlistTrack: Track? by remember { mutableStateOf(null) }
     var showOptionsSheet by remember { mutableStateOf(false) }
     var showAddToPlaylistSheet by remember { mutableStateOf(false) }
+    var showAddToCollectionSheet by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(artistInfo.tracks) {
@@ -175,8 +179,22 @@ private fun ArtistInfo(
                 onAddToQueue = onAddToQueue,
                 onSearchOn = onSearchOn,
                 onAddToPlaylist = { showAddToPlaylistSheet = true },
+                onAddToCollection = { showAddToCollectionSheet = true },
                 brandColours = searchOnBrandColours,
                 onToggleBrandColours = onToggleSearchOnBrandColours
+            )
+        }
+
+        if (showAddToCollectionSheet) {
+            AddToCollectionSheet(
+                target = CollectionTarget(
+                    type = CollectionTarget.Type.ARTIST,
+                    hash = artistInfo.artist.artistHash,
+                    suggestedName = artistInfo.artist.name
+                ),
+                onBack = { showOptionsSheet = true },
+                onDismiss = { showAddToCollectionSheet = false },
+                onDone = onPlaylistMessage
             )
         }
 
@@ -228,48 +246,9 @@ private fun ArtistInfo(
                     clickedTrack = track,
                     baseUrl = baseUrl,
                     currentArtisthash = artistInfo.artist.artistHash,
-                    bottomSheetItems = listOf(
-                        BottomSheetItemModel(
-                            label = "Go to Artist",
-                            enabled = artistInfo.artist.artistHash != track.trackHash && track.trackArtists.size != 1,
-                            painterId = R.drawable.ic_artist,
-                            track = track,
-                            sheetAction = BottomSheetAction.OpenArtistsDialog(track.trackArtists)
-                        ),
-                        BottomSheetItemModel(
-                            label = "Go to Album",
-                            painterId = R.drawable.ic_album,
-                            track = track,
-                            sheetAction = BottomSheetAction.GotoAlbum
-                        ),
-                        BottomSheetItemModel(
-                            label = "Go to Folder",
-                            painterId = R.drawable.folder_outlined_open,
-                            track = track,
-                            sheetAction = BottomSheetAction.GotoFolder(
-                                name = track.folder.getFolderName(),
-                                path = track.folder
-                            )
-                        ),
-                        BottomSheetItemModel(
-                            label = "Play Next",
-                            enabled = true,
-                            painterId = R.drawable.play_next,
-                            track = track,
-                            sheetAction = BottomSheetAction.PlayNext
-                        ),
-                        BottomSheetItemModel(
-                            label = "Add to Queue",
-                            painterId = R.drawable.add_to_queue,
-                            track = track,
-                            sheetAction = BottomSheetAction.AddToQueue
-                        ),
-                        BottomSheetItemModel(
-                            label = "Add to Playlist",
-                            painterId = R.drawable.playlist_add,
-                            track = track,
-                            sheetAction = BottomSheetAction.AddToPlaylist
-                        )
+                    bottomSheetItems = trackMenuItems(
+                        track,
+                        gotoArtistEnabled = artistInfo.artist.artistHash != track.trackHash && track.trackArtists.size != 1
                     ),
                     onHideBottomSheet = {
                         showTrackBottomSheet = it
@@ -880,9 +859,22 @@ private fun ArtistInfo(
                     }
                 }
 
-                if (artistInfo.stats.isNotEmpty()) {
+                artistInfo.listening?.let { listening ->
                     item {
-                        ArtistStatsSection(stats = artistInfo.stats, baseUrl = baseUrl)
+                        ListeningStatsSection(
+                            listening = listening,
+                            baseUrl = baseUrl,
+                            onAlbumClick = onClickAlbum
+                        )
+                    }
+                }
+
+                // Time listened, top track and top album already show in the listening block
+                val extraStats = if (artistInfo.listening == null) artistInfo.stats
+                else artistInfo.stats.filterNot { it.type in listOf("play_duration", "toptrack", "topalbum") }
+                if (extraStats.isNotEmpty()) {
+                    item {
+                        ArtistStatsSection(stats = extraStats, baseUrl = baseUrl)
                     }
                 }
 
@@ -1054,14 +1046,10 @@ fun ArtistInfoScreen(
         )
         val count = if (tracks.size == 1) "1 track" else "${tracks.size} tracks"
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
+            snackbarHostState.showSnackbar(
                 message = if (playNext) "$count added to play next" else "$count added to queue",
-                actionLabel = "View Queue",
                 duration = SnackbarDuration.Short
             )
-            if (result == SnackbarResult.ActionPerformed) {
-                commonNavigator.gotoQueueScreen()
-            }
         }
     }
 
@@ -1258,14 +1246,10 @@ fun ArtistInfoScreen(
                                         )
 
                                         scope.launch {
-                                            val result = snackbarHostState.showSnackbar(
+                                            snackbarHostState.showSnackbar(
                                                 message = "Track added to play next",
-                                                actionLabel = "View Queue",
                                                 duration = SnackbarDuration.Short
                                             )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                commonNavigator.gotoQueueScreen()
-                                            }
                                         }
                                     }
 
@@ -1282,14 +1266,10 @@ fun ArtistInfoScreen(
                                         )
 
                                         scope.launch {
-                                            val result = snackbarHostState.showSnackbar(
+                                            snackbarHostState.showSnackbar(
                                                 message = "Track added to queue",
-                                                actionLabel = "View Queue",
                                                 duration = SnackbarDuration.Short
                                             )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                commonNavigator.gotoQueueScreen()
-                                            }
                                         }
                                     }
 

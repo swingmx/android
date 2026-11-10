@@ -1,10 +1,10 @@
 package com.android.swingmusic.library.data.repository
 
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toAlbum
 import com.android.swingmusic.core.data.mapper.Map.toArtist
+import com.android.swingmusic.core.data.mapper.Map.toRecentFavourite
 import com.android.swingmusic.core.data.mapper.Map.toTrack
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.Album
@@ -32,7 +32,7 @@ class DataFavouritesRepository @Inject constructor(
     ): Resource<FavouritesSummary> = request("Couldn't load favourites") {
         val dto = networkApiService.getFavourites(
             url = "${baseUrl()}favorites",
-            bearerToken = bearerToken(),
+            bearerToken = authRepository.requireBearerToken(),
             trackLimit = trackLimit,
             albumLimit = albumLimit,
             artistLimit = artistLimit
@@ -46,25 +46,26 @@ class DataFavouritesRepository @Inject constructor(
             artists = artists,
             trackCount = dto.count?.tracks ?: tracks.size,
             albumCount = dto.count?.albums ?: albums.size,
-            artistCount = dto.count?.artists ?: artists.size
+            artistCount = dto.count?.artists ?: artists.size,
+            recents = dto.recents.orEmpty().mapNotNull { it.toRecentFavourite() }
         )
     }
 
     override suspend fun getTracks(start: Int, limit: Int): Resource<FavouritesPage<Track>> =
         request("Couldn't load favourite tracks") {
-            val dto = networkApiService.getFavouriteTracks("${baseUrl()}favorites/tracks", bearerToken(), start, limit)
+            val dto = networkApiService.getFavouriteTracks("${baseUrl()}favorites/tracks", authRepository.requireBearerToken(), start, limit)
             FavouritesPage(dto.tracks.orEmpty().map { it.toTrack() }, dto.total?.takeIf { it >= 0 })
         }
 
     override suspend fun getAlbums(start: Int, limit: Int): Resource<FavouritesPage<Album>> =
         request("Couldn't load favourite albums") {
-            val dto = networkApiService.getFavouriteAlbums("${baseUrl()}favorites/albums", bearerToken(), start, limit)
+            val dto = networkApiService.getFavouriteAlbums("${baseUrl()}favorites/albums", authRepository.requireBearerToken(), start, limit)
             FavouritesPage(dto.albums.orEmpty().map { it.toAlbum() }, dto.total?.takeIf { it >= 0 })
         }
 
     override suspend fun getArtists(start: Int, limit: Int): Resource<FavouritesPage<Artist>> =
         request("Couldn't load favourite artists") {
-            val dto = networkApiService.getFavouriteArtists("${baseUrl()}favorites/artists", bearerToken(), start, limit)
+            val dto = networkApiService.getFavouriteArtists("${baseUrl()}favorites/artists", authRepository.requireBearerToken(), start, limit)
             FavouritesPage(dto.artists.orEmpty().map { it.toArtist() }, dto.total?.takeIf { it >= 0 })
         }
 
@@ -72,17 +73,15 @@ class DataFavouritesRepository @Inject constructor(
         request("Couldn't update favourites") {
             val body = ToggleFavoriteRequest(hash = hash, type = type.value)
             if (isFavourite) {
-                networkApiService.addFavorite("${baseUrl()}favorites/add", body, bearerToken())
+                networkApiService.addFavorite("${baseUrl()}favorites/add", body, authRepository.requireBearerToken())
             } else {
-                networkApiService.removeFavorite("${baseUrl()}favorites/remove", body, bearerToken())
+                networkApiService.removeFavorite("${baseUrl()}favorites/remove", body, authRepository.requireBearerToken())
             }
             Unit
         }
 
     private suspend fun baseUrl() = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl() ?: ""
 
-    private suspend fun bearerToken() =
-        "Bearer ${AuthTokenHolder.accessToken ?: authRepository.getAccessToken()}"
 
     private suspend fun <T> request(errorMessage: String, block: suspend () -> T): Resource<T> = try {
         Resource.Success(block())

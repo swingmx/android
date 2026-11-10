@@ -1,7 +1,6 @@
 package com.android.swingmusic.search.data.repository
 
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toAlbumsSearchResult
 import com.android.swingmusic.core.data.mapper.Map.toArtistsSearchResult
@@ -15,10 +14,11 @@ import com.android.swingmusic.core.domain.model.TopSearchResults
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.model.TracksSearchResult
 import com.android.swingmusic.network.data.api.service.NetworkApiService
-import com.android.swingmusic.search.domain.reposotory.SearchRepository
+import com.android.swingmusic.search.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataSearchRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
@@ -27,7 +27,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun getTopSearchResults(searchParams: String): Flow<Resource<TopSearchResults>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -35,13 +34,15 @@ class DataSearchRepository @Inject constructor(
 
                 val topSearchResultsDto = networkApiService.getTopSearchResults(
                     url = "${baseUrl}search/top",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                     searchParams = searchParams
                 )
                 val topSearchResult = topSearchResultsDto.toTopSearchResults()
 
                 emit(Resource.Success(data = topSearchResult))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Top Result"))
             }
@@ -50,7 +51,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun getArtistTracks(artistHash: String): Flow<Resource<List<Track>>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -58,11 +58,13 @@ class DataSearchRepository @Inject constructor(
 
                 val tracksResultDto = networkApiService.getArtistTracks(
                     url = "${baseUrl}artist/$artistHash/tracks",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                 )
                 val tracksResult = tracksResultDto.map { it.toTrack() }
 
                 emit(Resource.Success(data = tracksResult))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Artist Tracks"))
             }
@@ -71,7 +73,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun getAlbumTracks(albumHash: String): Flow<Resource<List<Track>>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -79,11 +80,13 @@ class DataSearchRepository @Inject constructor(
 
                 val tracksResultDto = networkApiService.getAlbumTracks(
                     url = "${baseUrl}album/$albumHash/tracks",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                 )
                 val tracksResult = tracksResultDto.map { it.toTrack() }
 
                 emit(Resource.Success(data = tracksResult))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Album Tracks"))
             }
@@ -92,7 +95,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun searchAllTracks(searchParams: String): Flow<Resource<TracksSearchResult>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -100,13 +102,15 @@ class DataSearchRepository @Inject constructor(
 
                 val tracksSearchResultDto = networkApiService.searchAllTracks(
                     url = "${baseUrl}search/",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                     searchParams = searchParams
                 )
                 val tracksSearchResult = tracksSearchResultDto.toTracksSearchResult()
 
                 emit(Resource.Success(data = tracksSearchResult))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Tracks"))
             }
@@ -115,7 +119,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun searchAllAlbums(searchParams: String): Flow<Resource<AlbumsSearchResult>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -123,13 +126,15 @@ class DataSearchRepository @Inject constructor(
 
                 val albumsSearchResultDto = networkApiService.searchAllAlbums(
                     url = "${baseUrl}search/",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                     searchParams = searchParams
                 )
                 val albumsSearchResult = albumsSearchResultDto.toAlbumsSearchResult()
 
                 emit(Resource.Success(data = albumsSearchResult))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Albums"))
             }
@@ -138,7 +143,6 @@ class DataSearchRepository @Inject constructor(
 
     override suspend fun searchAllArtists(searchParams: String): Flow<Resource<ArtistsSearchResult>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -146,13 +150,15 @@ class DataSearchRepository @Inject constructor(
 
                 val artistsSearchResultDto = networkApiService.searchAllArtists(
                     url = "${baseUrl}search/",
-                    bearerToken = "Bearer $accessToken",
+                    bearerToken = authRepository.requireBearerToken(),
                     searchParams = searchParams
                 )
                 val artistsSearchResult = artistsSearchResultDto.toArtistsSearchResult()
 
                 emit(Resource.Success(data = artistsSearchResult))
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error Searching Artists"))
             }

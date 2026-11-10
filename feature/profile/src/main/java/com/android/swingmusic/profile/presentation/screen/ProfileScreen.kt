@@ -106,7 +106,6 @@ import com.android.swingmusic.uicomponent.presentation.theme.SwingMusicTheme
 import com.android.swingmusic.uicomponent.presentation.util.ObserverAsEvent
 import com.ramcosta.composedestinations.annotation.Destination
 import kotlinx.coroutines.launch
-import java.io.File
 
 @Destination
 @Composable
@@ -140,6 +139,7 @@ internal fun ProfileScreen(
             }
 
             ProfileUiEffect.NavigateBack -> navigator.navigateBack()
+            is ProfileUiEffect.ShowMessage -> scope.launch { snackbarHostState.showSnackbar(effect.message) }
             ProfileUiEffect.NavigateToStats -> navigator.gotoStats()
             ProfileUiEffect.NavigateToPairDevice -> navigator.gotoPairDevice()
             ProfileUiEffect.NavigateToSettings -> navigator.gotoSettings()
@@ -184,7 +184,7 @@ private fun ProfileScreenContent(
 
             ProfileHeader(
                 user = uiState.user,
-                avatarPath = uiState.avatarPath,
+                avatarModel = uiState.avatarModel,
                 serverHost = serverHost(uiState.baseUrl),
                 onAvatarClick = { onEvent(ProfileUiEvent.OnAvatarClicked) },
                 onCopyServer = { onEvent(ProfileUiEvent.OnCopyServerClicked) }
@@ -246,7 +246,7 @@ private fun ProfileScreenContent(
         PhotoViewer(
             username = uiState.user?.displayName.orEmpty(),
             initials = uiState.user?.initials.orEmpty(),
-            avatarPath = uiState.avatarPath,
+            avatarModel = uiState.avatarModel,
             onChange = { onEvent(ProfileUiEvent.OnChangePhoto) },
             onRemove = { onEvent(ProfileUiEvent.OnRemovePhoto) },
             onDismiss = { onEvent(ProfileUiEvent.OnPhotoViewerDismissed) }
@@ -265,7 +265,7 @@ private fun ProfileScreenContent(
 @Composable
 private fun ProfileHeader(
     user: User?,
-    avatarPath: String?,
+    avatarModel: String?,
     serverHost: String,
     onAvatarClick: () -> Unit,
     onCopyServer: () -> Unit
@@ -273,7 +273,7 @@ private fun ProfileHeader(
     Row(verticalAlignment = Alignment.CenterVertically) {
         ProfileAvatar(
             initials = user?.initials.orEmpty(),
-            avatarPath = avatarPath,
+            avatarModel = avatarModel,
             size = 72.dp,
             modifier = Modifier
                 .clip(CircleShape)
@@ -325,7 +325,7 @@ private fun ProfileHeader(
 @Composable
 private fun ProfileAvatar(
     initials: String,
-    avatarPath: String?,
+    avatarModel: String?,
     size: Dp,
     modifier: Modifier = Modifier
 ) {
@@ -336,9 +336,9 @@ private fun ProfileAvatar(
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
         contentAlignment = Alignment.Center
     ) {
-        if (avatarPath != null) {
+        if (avatarModel != null) {
             AsyncImage(
-                model = File(avatarPath),
+                model = avatarModel,
                 contentDescription = "Profile photo",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -357,7 +357,7 @@ private fun ProfileAvatar(
 private fun PhotoViewer(
     username: String,
     initials: String,
-    avatarPath: String?,
+    avatarModel: String?,
     onChange: () -> Unit,
     onRemove: () -> Unit,
     onDismiss: () -> Unit
@@ -410,7 +410,7 @@ private fun PhotoViewer(
                 ) {
                     ProfileAvatar(
                         initials = initials,
-                        avatarPath = avatarPath,
+                        avatarModel = avatarModel,
                         size = 264.dp,
                         modifier = Modifier.shadow(24.dp, CircleShape)
                     )
@@ -418,7 +418,8 @@ private fun PhotoViewer(
                     Text(text = username, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Only on this device",
+                        text = if (avatarModel?.startsWith("file:") == true) "Only on this device"
+                        else "Synced with your server",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -679,7 +680,7 @@ private fun LogOutDialog(isLoggingOut: Boolean, onConfirm: () -> Unit, onDismiss
 
 private fun versionsLine(appVersion: String, serverVersion: String?): String {
     val app = "Swing Music $appVersion".trim()
-    val server = serverVersion?.let { "Server ${if (it.startsWith("v")) it else "v$it"}" }
+    val server = serverVersion?.let { "Server $it" }
     return listOfNotNull(app, server).joinToString(" · ")
 }
 

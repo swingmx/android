@@ -20,5 +20,6 @@ data class QueueEntity(
     val albumTrackArtists: List<TrackArtistEntity>,
     val trackArtists: List<TrackArtistEntity>,
     val disc: Int,
-    val trackNumber: Int
+    val trackNumber: Int,
+    val blurhash: String = ""
 )

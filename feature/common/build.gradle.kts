@@ -36,6 +36,7 @@ android {
 dependencies {
     // Raamcosta Navigation
     implementation(libs.compose.destinations.core)
+    implementation(libs.kotlinx.coroutines.core)
     ksp(libs.compose.destinations.ksp)
 }
 
@@ -52,5 +53,5 @@ kotlin {
 
 ksp {
     arg("compose-destinations.mode", "destinations")
-    arg("compose-destinations.moduleName", "feature:folder")
+    arg("compose-destinations.moduleName", "feature:common")
 }

@@ -41,7 +41,9 @@ internal class HomeViewModel @Inject constructor(
     init {
         getSections()
         viewModelScope.launch {
-            avatarStore.avatar.collect { file -> _uiState.update { it.copy(avatarPath = file?.absolutePath) } }
+            avatarStore.avatar.collect { avatar ->
+                _uiState.update { it.copy(avatarModel = avatar.model, avatarInitials = avatar.initials) }
+            }
         }
     }
 
@@ -52,6 +54,8 @@ internal class HomeViewModel @Inject constructor(
             HomeUiEvent.OnScreenResumed -> refreshIfStale()
             HomeUiEvent.OnProfileClicked -> _uiEffect.trySend(HomeUiEffect.NavigateToProfile)
             is HomeUiEvent.OnItemClicked -> onItemClicked(event.item)
+            is HomeUiEvent.OnPlayTrackClicked ->
+                _uiEffect.trySend(HomeUiEffect.PlayTracks(listOf(event.track), QueueSource.UNKNOWN))
         }
     }
 
@@ -122,13 +126,13 @@ internal class HomeViewModel @Inject constructor(
                 _uiEffect.trySend(HomeUiEffect.NavigateToArtist(item.artist.artistHash))
 
             is HomeItem.TrackItem ->
-                _uiEffect.trySend(HomeUiEffect.PlayTracks(listOf(item.track), QueueSource.UNKNOWN))
+                _uiEffect.trySend(HomeUiEffect.NavigateToAlbum(item.track.albumHash))
 
-            is HomeItem.PlaylistItem -> playFetchedTracks(
-                itemKey = item.key,
-                source = QueueSource.PLAYLIST(id = item.playlist.id, name = item.playlist.name),
-                fetch = { homeRepository.getPlaylistTracks(item.playlist.id) }
-            )
+            is HomeItem.PlaylistItem ->
+                _uiEffect.trySend(HomeUiEffect.NavigateToPlaylist(item.playlist.id))
+
+            is HomeItem.FolderItem ->
+                _uiEffect.trySend(HomeUiEffect.NavigateToFolder(item.folder.name, item.folder.path))
 
             is HomeItem.MixItem -> playFetchedTracks(
                 itemKey = item.key,

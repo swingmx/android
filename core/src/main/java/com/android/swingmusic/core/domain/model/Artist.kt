@@ -6,5 +6,6 @@ data class Artist(
     val createdDate: Double,
     val helpText: String,
     val image: String,
-    val name: String
+    val name: String,
+    val blurhash: String = ""
 )

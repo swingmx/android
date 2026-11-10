@@ -1,4 +1,4 @@
-package com.android.swingmusic.search.domain.reposotory
+package com.android.swingmusic.search.domain.repository
 
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumsSearchResult

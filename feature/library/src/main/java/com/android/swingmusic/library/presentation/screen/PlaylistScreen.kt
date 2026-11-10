@@ -1,5 +1,6 @@
 package com.android.swingmusic.library.presentation.screen
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -113,14 +114,12 @@ private fun PlaylistPage(
         uri?.let { viewModel.onEvent(PlaylistUiEvent.OnImagePicked(it.toString())) }
     }
 
-    fun showMessage(message: String, withQueueAction: Boolean = false) {
+    fun showMessage(message: String) {
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
+            snackbarHostState.showSnackbar(
                 message = message,
-                actionLabel = if (withQueueAction) "View Queue" else null,
                 duration = SnackbarDuration.Short
             )
-            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) navigator.gotoQueueScreen()
         }
     }
 
@@ -158,13 +157,14 @@ private fun PlaylistPage(
                 if (playNext) QueueEvent.PlayNext(track = track, source = source)
                 else QueueEvent.AddToQueue(track = track, source = source)
             )
-            showMessage(if (playNext) "Track added to play next" else "Track added to queue", withQueueAction = true)
+            showMessage(if (playNext) "Track added to play next" else "Track added to queue")
         },
         onMessage = { showMessage(it) }
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun PlaylistScreenContent(
     uiState: PlaylistUiState,

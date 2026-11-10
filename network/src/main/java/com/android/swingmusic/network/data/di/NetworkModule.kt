@@ -26,7 +26,7 @@ object NetworkModule {
         val baseUrl = runBlocking(Dispatchers.IO) {
             baseUrlDao.getBaseUrl()?.url ?: "http://default"
         }
-        Timber.e("BASE URL: $baseUrl")
+        Timber.d("Base URL: $baseUrl")
 
         return Retrofit.Builder()
             .baseUrl(baseUrl)

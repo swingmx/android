@@ -1,7 +1,6 @@
 package com.android.swingmusic.player.data.repository
 
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.dto.LyricsRequestDto
 import com.android.swingmusic.core.data.dto.PluginLyricsRequestDto
@@ -16,16 +15,12 @@ import retrofit2.HttpException
 import timber.log.Timber
 import java.io.IOException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataLyricsRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
     private val authRepository: AuthRepository
 ) : LyricsRepository {
-
-    private suspend fun authHeader(): String {
-        val token = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
-        return "Bearer ${token ?: "TOKEN NOT FOUND"}"
-    }
 
     private suspend fun baseUrl(): String {
         return BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl() ?: ""
@@ -38,9 +33,11 @@ class DataLyricsRepository @Inject constructor(
                 val dto = networkApiService.getLyrics(
                     url = "${baseUrl()}lyrics",
                     request = LyricsRequestDto(filepath = filepath, trackhash = trackHash),
-                    bearerToken = authHeader()
+                    bearerToken = authRepository.requireBearerToken()
                 )
                 emit(Resource.Success(dto.toLyrics()))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: IOException) {
                 emit(Resource.Error<Lyrics>(message = "Unable to fetch lyrics\nCheck your connection and try again!"))
             } catch (e: HttpException) {
@@ -56,9 +53,11 @@ class DataLyricsRepository @Inject constructor(
             val dto = networkApiService.checkLyricsExist(
                 url = "${baseUrl()}lyrics/check",
                 request = LyricsRequestDto(filepath = filepath, trackhash = trackHash),
-                bearerToken = authHeader()
+                bearerToken = authRepository.requireBearerToken()
             )
             dto.exists ?: false
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             false
         }
@@ -82,7 +81,7 @@ class DataLyricsRepository @Inject constructor(
                     filepath = filepath,
                     album = album
                 ),
-                bearerToken = authHeader()
+                bearerToken = authRepository.requireBearerToken()
             )
             val pluginError = dto.error
             if (!pluginError.isNullOrEmpty()) {
@@ -95,6 +94,8 @@ class DataLyricsRepository @Inject constructor(
                     emit(Resource.Success(lyrics.copy(exists = true)))
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IOException) {
             emit(Resource.Error<Lyrics>(message = "Unable to search lyrics\nCheck your connection and try again!"))
         } catch (e: HttpException) {

@@ -1,16 +1,14 @@
 package com.android.swingmusic.profile.presentation.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.swingmusic.profile.domain.AppVersionProvider
 import com.android.swingmusic.profile.domain.ProfileRepository
 import com.android.swingmusic.profile.presentation.event.SettingsUiEffect
 import com.android.swingmusic.profile.presentation.event.SettingsUiEvent
 import com.android.swingmusic.profile.presentation.state.SettingsUiState
 import com.android.swingmusic.profile.presentation.state.isAdmin
-import com.android.swingmusic.profile.presentation.util.appVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,10 +20,10 @@ import javax.inject.Inject
 @HiltViewModel
 internal class SettingsViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
-    @ApplicationContext context: Context
+    appVersion: AppVersionProvider
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SettingsUiState(appVersion = context.appVersion()))
+    private val _uiState = MutableStateFlow(SettingsUiState(appVersion = appVersion.get()))
     val uiState = _uiState.asStateFlow()
 
     private val _uiEffect = Channel<SettingsUiEffect>(capacity = Channel.UNLIMITED)

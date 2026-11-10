@@ -11,7 +11,7 @@ import com.android.swingmusic.album.presentation.state.AlbumInfoWithGroupedTrack
 import com.android.swingmusic.album.presentation.state.AlbumWithInfoState
 import com.android.swingmusic.core.data.util.Resource
 import com.android.swingmusic.core.domain.model.AlbumWithInfo
-import com.android.swingmusic.player.domain.repository.PLayerRepository
+import com.android.swingmusic.player.domain.repository.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AlbumWithInfoViewModel @Inject constructor(
     private val albumRepository: AlbumRepository,
-    private val pLayerRepository: PLayerRepository,
+    private val playerRepository: PlayerRepository,
     private val appSettingsRepository: AppSettingsRepository,
 ) : ViewModel() {
 
@@ -170,9 +170,9 @@ class AlbumWithInfoViewModel @Inject constructor(
 
 
             val request = if (isFavorite) {
-                pLayerRepository.removeTrackFromFavorite(trackHash)
+                playerRepository.removeTrackFromFavorite(trackHash)
             } else {
-                pLayerRepository.addTrackToFavorite(trackHash)
+                playerRepository.addTrackToFavorite(trackHash)
             }
 
             request.collectLatest {

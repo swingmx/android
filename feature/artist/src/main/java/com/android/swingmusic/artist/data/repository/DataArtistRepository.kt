@@ -6,7 +6,6 @@ import androidx.paging.PagingData
 import com.android.swingmusic.artist.data.paging.ArtistsPagingSource
 import com.android.swingmusic.artist.domain.repository.ArtistRepository
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.mapper.Map.toAllArtists
 import com.android.swingmusic.core.data.mapper.Map.toArtist
@@ -20,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 class DataArtistRepository @Inject constructor(
     private val networkApiService: NetworkApiService,
@@ -28,7 +28,6 @@ class DataArtistRepository @Inject constructor(
 
     override suspend fun getArtistsCount(): Flow<Resource<Int>> {
         val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
-        val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
 
         return flow {
             try {
@@ -38,10 +37,12 @@ class DataArtistRepository @Inject constructor(
                     Resource.Success(
                         data = networkApiService.getArtistsCount(
                             url = "${baseUrl}getall/artists",
-                            bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                            bearerToken = authRepository.requireBearerToken()
                         ).toAllArtists().total
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error loading artists"))
             }
@@ -49,7 +50,6 @@ class DataArtistRepository @Inject constructor(
     }
 
     override fun getPagingArtists(sortBy: String, sortOrder: Int): Flow<PagingData<Artist>> {
-        val accessToken = AuthTokenHolder.accessToken
         val baseUrl = BaseUrlHolder.baseUrl
 
         return Pager(
@@ -57,7 +57,7 @@ class DataArtistRepository @Inject constructor(
             pagingSourceFactory = {
                 ArtistsPagingSource(
                     baseUrl = "${baseUrl}getall/artists",
-                    accessToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}",
+                    bearerToken = authRepository::requireBearerToken,
                     api = networkApiService,
                     sortBy = sortBy,
                     sortOrder = sortOrder
@@ -69,7 +69,6 @@ class DataArtistRepository @Inject constructor(
     override fun getArtistInfo(artistHash: String): Flow<Resource<ArtistInfo>> {
 
         return flow {
-            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
             val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
             try {
@@ -79,10 +78,12 @@ class DataArtistRepository @Inject constructor(
                     Resource.Success(
                         data = networkApiService.getArtistInfo(
                             url = "${baseUrl}artist/$artistHash",
-                            bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                            bearerToken = authRepository.requireBearerToken()
                         ).toArtistInfo()
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error loading artist info"))
             }
@@ -92,7 +93,6 @@ class DataArtistRepository @Inject constructor(
     override fun getSimilarArtists(artistHash: String): Flow<Resource<List<Artist>>> {
 
         return flow {
-            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
             val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
             try {
@@ -102,10 +102,12 @@ class DataArtistRepository @Inject constructor(
                     Resource.Success(
                         data = networkApiService.getSimilarArtists(
                             url = "${baseUrl}artist/${artistHash}/similar",
-                            bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                            bearerToken = authRepository.requireBearerToken()
                         ).map { it.toArtist() }
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emit(Resource.Error(message = "Error loading similar artists"))
             }
@@ -117,17 +119,18 @@ class DataArtistRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
                 networkApiService.addFavorite(
                     url = "${baseUrl}favorites/add",
                     toggleFavoriteRequest = ToggleFavoriteRequest(hash = artistHash, type = "artist"),
-                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                    bearerToken = authRepository.requireBearerToken()
                 )
 
                 emit(Resource.Success(data = true)) // isFavorite = true
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO ADD ARTIST TO FAVORITE"))
 
@@ -142,17 +145,18 @@ class DataArtistRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
                 networkApiService.removeFavorite(
                     url = "${baseUrl}favorites/remove",
                     toggleFavoriteRequest = ToggleFavoriteRequest(hash = artistHash, type = "artist"),
-                    bearerToken = "Bearer ${accessToken ?: "TOKEN NOT FOUND"}"
+                    bearerToken = authRepository.requireBearerToken()
                 )
 
                 emit(Resource.Success(data = false)) // isFavorite = false
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO REMOVE ALBUM FROM FAVORITE"))
 

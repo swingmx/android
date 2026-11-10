@@ -3,7 +3,7 @@ package com.android.swingmusic.player.presentation.event
 import com.android.swingmusic.core.domain.model.Track
 import com.android.swingmusic.core.domain.util.QueueSource
 
-interface QueueEvent {
+sealed interface QueueEvent {
 
     data class RecreateQueue(
         val source: QueueSource,
@@ -21,6 +21,8 @@ interface QueueEvent {
     }
 
     data class SeekToQueueItem(val index: Int) : QueueEvent
+    data class MoveQueueItem(val from: Int, val to: Int) : QueueEvent
+    data class RemoveQueueItem(val index: Int) : QueueEvent
 
     object ClearQueue : QueueEvent
 }

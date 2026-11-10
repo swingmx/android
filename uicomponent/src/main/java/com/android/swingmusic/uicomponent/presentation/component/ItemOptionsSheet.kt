@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.LibraryAdd
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
@@ -115,6 +116,7 @@ fun ItemOptionsSheet(
     onAddToQueue: () -> Unit,
     onSearchOn: (url: String) -> Unit,
     onAddToPlaylist: (() -> Unit)? = null,
+    onAddToCollection: (() -> Unit)? = null,
     brandColours: Boolean = false,
     onToggleBrandColours: () -> Unit = {},
 ) {
@@ -232,6 +234,13 @@ fun ItemOptionsSheet(
                     icon = rememberVectorPainter(Icons.AutoMirrored.Rounded.PlaylistAdd),
                     label = "Add to Playlist",
                     onClick = { hideThen(addToPlaylist) }
+                )
+            }
+            onAddToCollection?.let { addToCollection ->
+                OptionRow(
+                    icon = rememberVectorPainter(Icons.Rounded.LibraryAdd),
+                    label = "Add to Collection",
+                    onClick = { hideThen(addToCollection) }
                 )
             }
             OptionRow(

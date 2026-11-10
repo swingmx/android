@@ -1,7 +1,6 @@
 package com.android.swingmusic.player.data.repository
 
 import com.android.swingmusic.auth.data.baseurlholder.BaseUrlHolder
-import com.android.swingmusic.auth.data.tokenholder.AuthTokenHolder
 import com.android.swingmusic.auth.domain.repository.AuthRepository
 import com.android.swingmusic.core.data.dto.FoldersAndTracksRequestDto
 import com.android.swingmusic.core.data.mapper.Map.toModel
@@ -18,7 +17,7 @@ import com.android.swingmusic.network.data.api.service.NetworkApiService
 import com.android.swingmusic.network.data.dto.ToggleFavoriteRequest
 import com.android.swingmusic.network.data.mapper.toDto
 import com.android.swingmusic.network.domain.model.LogTrackRequest
-import com.android.swingmusic.player.domain.repository.PLayerRepository
+import com.android.swingmusic.player.domain.repository.PlayerRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
@@ -26,13 +25,14 @@ import timber.log.Timber
 import java.sql.Timestamp
 import java.time.Instant
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
-class DataPLayerRepository @Inject constructor(
+class DataPlayerRepository @Inject constructor(
     private val queueDao: QueueDao,
     private val lastPlayedTrackDao: LastPlayedTrackDao,
     private val networkApiService: NetworkApiService,
     private val authRepository: AuthRepository
-) : PLayerRepository {
+) : PlayerRepository {
 
     override suspend fun insertQueue(track: List<Track>) {
         val trackEntities = track.map { it.toEntity() }
@@ -73,7 +73,6 @@ class DataPLayerRepository @Inject constructor(
         source: String
     ) {
         try {
-            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
             val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
             val timeStamp = Timestamp.from(Instant.now()).toInstant().epochSecond
@@ -87,13 +86,15 @@ class DataPLayerRepository @Inject constructor(
             networkApiService.logLastPlayedTrackToServer(
                 logTrackRequest = logRequest,
                 url = "${baseUrl}logger/track/log",
-                bearerToken = "Bearer $accessToken"
+                bearerToken = authRepository.requireBearerToken()
             )
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: HttpException) {
-            Timber.e("NETWORK ERROR LOGGING TRACK TO SERVER")
+            Timber.tag("PLAYER").w(e, "Couldn't log the play to the server")
         } catch (e: Exception) {
-            Timber.e("ERROR LOGGING TRACK TO SERVER: CAUSED BY -> ${e.message}")
+            Timber.tag("PLAYER").e(e, "Couldn't log the play to the server")
         }
     }
 
@@ -102,17 +103,18 @@ class DataPLayerRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
                 networkApiService.addFavorite(
                     url = "${baseUrl}favorites/add",
                     toggleFavoriteRequest = ToggleFavoriteRequest(hash = trackHash, type = "track"),
-                    bearerToken = "Bearer $accessToken"
+                    bearerToken = authRepository.requireBearerToken()
                 )
 
                 emit(Resource.Success(data = true)) // isFavorite = true
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO ADD TRACK TO FAVORITE"))
 
@@ -127,16 +129,17 @@ class DataPLayerRepository @Inject constructor(
             try {
                 emit(Resource.Loading())
 
-                val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
                 val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
                 networkApiService.removeFavorite(
                     url = "${baseUrl}favorites/remove",
                     toggleFavoriteRequest = ToggleFavoriteRequest(hash = trackHash, type = "track"),
-                    bearerToken = "Bearer $accessToken"
+                    bearerToken = authRepository.requireBearerToken()
                 )
                 emit(Resource.Success(data = false)) // isFavorite = false
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 emit(Resource.Error(message = "FAILED TO REMOVE TRACK FROM FAVORITE"))
 
@@ -148,7 +151,6 @@ class DataPLayerRepository @Inject constructor(
 
     override suspend fun getTracksChunk(folderPath: String, start: Int, limit: Int): List<Track> {
         return try {
-            val accessToken = AuthTokenHolder.accessToken ?: authRepository.getAccessToken()
             val baseUrl = BaseUrlHolder.baseUrl ?: authRepository.getBaseUrl()
 
             val requestDto = FoldersAndTracksRequestDto(
@@ -161,16 +163,18 @@ class DataPLayerRepository @Inject constructor(
             val response = networkApiService.getFoldersAndTracks(
                 requestData = requestDto,
                 url = "${baseUrl}folder",
-                bearerToken = "Bearer $accessToken"
+                bearerToken = authRepository.requireBearerToken()
             )
 
             response.tracksDto?.map { it.toTrack() } ?: emptyList()
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: HttpException) {
-            Timber.e("Network error fetching tracks chunk: $e")
+            Timber.tag("PLAYER").w(e, "Couldn't fetch the next tracks")
             emptyList()
         } catch (e: Exception) {
-            Timber.e("Error fetching tracks chunk: $e")
+            Timber.tag("PLAYER").e(e, "Couldn't fetch the next tracks")
             emptyList()
         }
     }

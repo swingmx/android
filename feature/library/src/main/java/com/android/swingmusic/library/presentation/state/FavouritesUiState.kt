@@ -5,7 +5,8 @@ import com.android.swingmusic.library.domain.FavouritesSummary
 
 @Immutable
 internal data class FavouritesUiState(
-    val avatarPath: String? = null,
+    val avatarModel: String? = null,
+    val avatarInitials: String = "",
     val baseUrl: String = "",
     val isLoadingFavourites: Boolean = true,
     val errorLoadingFavourites: String? = null,

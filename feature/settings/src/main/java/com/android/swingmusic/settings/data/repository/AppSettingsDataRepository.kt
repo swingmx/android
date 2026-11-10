@@ -5,6 +5,7 @@ import com.android.swingmusic.core.domain.util.SortOrder
 import com.android.swingmusic.settings.data.datastore.AppSettings
 import com.android.swingmusic.settings.domain.repository.AppSettingsRepository
 import kotlinx.coroutines.flow.Flow
+import com.android.swingmusic.core.domain.util.RepeatMode
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -84,7 +85,21 @@ class AppSettingsDataRepository @Inject constructor(
         appSettings.updateLyricsWordSweep(enabled)
     }
 
+    override val repeatMode: Flow<RepeatMode> = appSettings.getRepeatMode.map { name ->
+        RepeatMode.entries.firstOrNull { it.name == name } ?: RepeatMode.REPEAT_OFF
+    }
+
+    override suspend fun setRepeatMode(mode: RepeatMode) {
+        appSettings.updateRepeatMode(mode.name)
+    }
+
     override suspend fun setSearchOnBrandColours(enabled: Boolean) {
         appSettings.updateSearchOnBrandColours(enabled)
+    }
+
+    override val lastSeenChangelogVersionCode: Flow<Int> = appSettings.getLastSeenChangelogVersionCode
+
+    override suspend fun setLastSeenChangelogVersionCode(versionCode: Int) {
+        appSettings.updateLastSeenChangelogVersionCode(versionCode)
     }
 }

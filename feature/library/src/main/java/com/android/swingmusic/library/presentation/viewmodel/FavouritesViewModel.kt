@@ -38,7 +38,9 @@ internal class FavouritesViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            avatarStore.avatar.collect { file -> updateUiState { copy(avatarPath = file?.absolutePath) } }
+            avatarStore.avatar.collect { avatar ->
+                updateUiState { copy(avatarModel = avatar.model, avatarInitials = avatar.initials) }
+            }
         }
         viewModelScope.launch {
             val url = libraryRepository.getBaseUrl()

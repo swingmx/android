@@ -13,7 +13,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import com.android.swingmusic.common.presentation.navigator.TabReselect
+import kotlinx.coroutines.flow.filter
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
@@ -29,6 +33,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.Text
+import com.android.swingmusic.core.domain.model.HomeItem
+import com.android.swingmusic.core.domain.model.RecentFavourite
+import com.android.swingmusic.library.domain.FavouritesSummary
+import com.android.swingmusic.library.presentation.component.RecentFavouriteCard
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -68,17 +77,23 @@ private const val FAVOURITES_TITLE = "Favourites"
 fun FavouritesScreen(
     navigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
+    tabReselect: TabReselect,
 ) {
-    Favourites(navigator = navigator, mediaControllerViewModel = mediaControllerViewModel)
+    Favourites(navigator = navigator, mediaControllerViewModel = mediaControllerViewModel, tabReselect = tabReselect)
 }
 
 @Composable
 private fun Favourites(
     navigator: CommonNavigator,
     mediaControllerViewModel: MediaControllerViewModel,
+    tabReselect: TabReselect,
     viewModel: FavouritesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+    LaunchedEffect(tabReselect) {
+        tabReselect.events.filter { it == TabReselect.Tab.FAVOURITES }.collect { listState.animateScrollToItem(0) }
+    }
     val playerUiState by mediaControllerViewModel.playerUiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -115,6 +130,7 @@ private fun Favourites(
 
     FavouritesScreenContent(
         uiState = uiState,
+        listState = listState,
         nowPlayingTrackHash = playerUiState.nowPlayingTrack?.trackHash,
         playbackState = playerUiState.playbackState,
         onEvent = viewModel::onEvent,
@@ -134,10 +150,7 @@ private fun Favourites(
                 onGotoFolder = { name, path -> navigator.gotoSourceFolder(name, path) },
                 onQueue = { queued, playNext ->
                     queueFavourite(mediaControllerViewModel, queued, playNext)
-                    showMessage(
-                        if (playNext) "Track added to play next" else "Track added to queue",
-                        "View Queue"
-                    ) { navigator.gotoQueueScreen() }
+                    showMessage(if (playNext) "Track added to play next" else "Track added to queue")
                 },
                 onMessage = { showMessage(it) }
             )
@@ -176,8 +189,8 @@ private fun FavouritesScreenContent(
     onEvent: (FavouritesUiEvent) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     trackMenu: @Composable (track: Track, onDismiss: () -> Unit) -> Unit = { _, _ -> },
+    listState: LazyListState = rememberLazyListState(),
 ) {
-    val listState = rememberLazyListState()
     val titleState = rememberLargeTitleState(listState)
     var menuTrack by remember { mutableStateOf<Track?>(null) }
     val favourites = uiState.favourites
@@ -199,6 +212,53 @@ private fun FavouritesScreenContent(
             when {
                 favourites != null -> {
                     val isEmpty = favourites.tracks.isEmpty() && favourites.albums.isEmpty() && favourites.artists.isEmpty()
+                    if (!isEmpty) {
+                        item(key = "tagline") {
+                            Text(
+                                text = favourites.tagline(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
+                    }
+                    if (favourites.trackCount > 0) {
+                        item(key = "playButtons") {
+                            PlayAndShuffleButtons(
+                                onShuffle = { onEvent(FavouritesUiEvent.OnShuffleClicked) },
+                                onPlay = { onEvent(FavouritesUiEvent.OnPlayClicked) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                            )
+                        }
+                    }
+                    if (favourites.recents.isNotEmpty()) {
+                        item(key = "recentsHeader") {
+                            SectionHeader(title = "Recents", count = null, onSeeAll = null)
+                        }
+                        item(key = "recents") {
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(favourites.recents, key = { it.key }) { recent ->
+                                    RecentFavouriteCard(
+                                        recent = recent,
+                                        baseUrl = uiState.baseUrl,
+                                        onClick = {
+                                            when (val item = recent.item) {
+                                                is HomeItem.AlbumItem -> onEvent(FavouritesUiEvent.OnAlbumClicked(item.album.albumHash))
+                                                is HomeItem.ArtistItem -> onEvent(FavouritesUiEvent.OnArtistClicked(item.artist.artistHash))
+                                                is HomeItem.TrackItem -> onEvent(FavouritesUiEvent.OnAlbumClicked(item.track.albumHash))
+                                                else -> Unit
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                     if (isEmpty) {
                         item(key = "empty") {
                             LibraryMessage(
@@ -216,15 +276,6 @@ private fun FavouritesScreenContent(
                                 title = "Tracks",
                                 count = favourites.trackCount,
                                 onSeeAll = { onEvent(FavouritesUiEvent.OnSeeAllTracksClicked) }
-                            )
-                        }
-                        item(key = "playButtons") {
-                            PlayAndShuffleButtons(
-                                onShuffle = { onEvent(FavouritesUiEvent.OnShuffleClicked) },
-                                onPlay = { onEvent(FavouritesUiEvent.OnPlayClicked) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 4.dp)
                             )
                         }
                         itemsIndexed(favourites.tracks, key = { _, track -> "track-${track.trackHash}" }) { index, track ->
@@ -318,7 +369,8 @@ private fun FavouritesScreenContent(
         LargeTitleTopBar(
             title = FAVOURITES_TITLE,
             state = titleState,
-            avatarPath = uiState.avatarPath,
+            avatarModel = uiState.avatarModel,
+            avatarInitials = uiState.avatarInitials,
             onProfileClick = { onEvent(FavouritesUiEvent.OnProfileClicked) }
         )
 
@@ -329,6 +381,21 @@ private fun FavouritesScreenContent(
 
     menuTrack?.let { track -> trackMenu(track) { menuTrack = null } }
 }
+
+private fun FavouritesSummary.tagline(): String = listOfNotNull(
+    trackCount.takeIf { it > 0 }?.let { if (it == 1) "1 Track" else "$it Tracks" },
+    albumCount.takeIf { it > 0 }?.let { if (it == 1) "1 Album" else "$it Albums" },
+    artistCount.takeIf { it > 0 }?.let { if (it == 1) "1 Artist" else "$it Artists" },
+).joinToString(" • ")
+
+private val RecentFavourite.key: String
+    get() = when (val item = item) {
+        is HomeItem.AlbumItem -> "album:${item.album.albumHash}"
+        is HomeItem.ArtistItem -> "artist:${item.artist.artistHash}"
+        is HomeItem.TrackItem -> "track:${item.track.trackHash}"
+        is HomeItem.PlaylistItem -> "playlist:${item.playlist.id}"
+        else -> item.hashCode().toString()
+    }
 
 @Preview(showBackground = true, backgroundColor = 0xFF0A0A0A)
 @Composable
