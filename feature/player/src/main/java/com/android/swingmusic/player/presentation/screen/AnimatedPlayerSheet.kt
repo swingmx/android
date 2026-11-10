@@ -1890,6 +1890,7 @@ private fun QueueSheetOverlay(
                                 Icon(
                                     imageVector = Icons.Rounded.DragHandle,
                                     contentDescription = "Reorder",
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .50F),
                                     modifier = Modifier
                                         .size(48.dp)
                                         .padding(12.dp)
