@@ -3,7 +3,7 @@
 </div>
 <div align="center" style="font-size: 2rem"><b>Swing Music Android Client</b></div>
 
-<div align="center"><b><sub><code>v1.0.1</code></sub></b></div>
+<div align="center"><b><sub><code>v2.1.0</code></sub></b></div>
 
 **<div align="center" style="padding-top: 1.25rem">[Download](https://github.com/swingmx/android/releases) • <a href="https://github.com/sponsors/swingmx" target="_blank">Sponsor Us ❤️</a> • [Swing Music Docs](https://swingmx.com/guide/introduction.html) • [r/SwingMusicApp](https://www.reddit.com/r/SwingMusicApp)</div>**
 
@@ -31,7 +31,7 @@ Download the app from the [releases page](https://github.com/swingmx/android/rel
 You can go to `Settings > Pair device` on the webclient to get the QR code.
 
 
-<!-- [![wakatime](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d.svg)](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d) -->
+[![wakatime](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d.svg)](https://wakatime.com/badge/user/99206146-a1fc-4be5-adc8-c2351f27ecef/project/018e7aae-f9e9-42e9-99e1-fc381580884d)
 
 ### License
 
