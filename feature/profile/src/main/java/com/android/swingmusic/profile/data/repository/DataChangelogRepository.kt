@@ -2,6 +2,7 @@ package com.android.swingmusic.profile.data.repository
 
 import android.content.Context
 import android.os.Build
+import androidx.annotation.Keep
 import com.android.swingmusic.core.domain.model.Change
 import com.android.swingmusic.core.domain.model.ChangeLink
 import com.android.swingmusic.core.domain.model.ChangeType
@@ -69,8 +70,11 @@ class DataChangelogRepository @Inject constructor(
     }
 }
 
+// Gson fills these by field name, so R8 must leave them alone in release builds.
+@Keep
 private class ChangelogDto(val releases: List<ReleaseDto>?)
 
+@Keep
 private class ReleaseDto(
     @SerializedName("versionName") val versionName: String?,
     @SerializedName("versionCode") val versionCode: Int?,
@@ -79,6 +83,7 @@ private class ReleaseDto(
     val changes: List<ChangeDto>?,
 )
 
+@Keep
 private class ChangeDto(
     val type: String?,
     val text: String?,
@@ -86,6 +91,7 @@ private class ChangeDto(
     val link: LinkDto?,
 )
 
+@Keep
 private class LinkDto(val label: String?, val url: String?)
 
 private fun ChangelogDto.toChangelog(runningVersionCode: Int): Changelog? {
