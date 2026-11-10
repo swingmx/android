@@ -81,8 +81,7 @@ private fun AboutScreenContent(
                 SettingsGroupDivider(inset = false)
                 ValueRow(
                     title = "Server version",
-                    value = uiState.serverVersion?.let { if (it.startsWith("v")) it else "v$it" }
-                        ?: "Unavailable"
+                    value = uiState.serverVersion ?: "Unavailable"
                 )
             }
 

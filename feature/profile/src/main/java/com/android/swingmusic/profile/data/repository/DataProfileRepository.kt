@@ -95,7 +95,7 @@ class DataProfileRepository @Inject constructor(
             networkApiService.getServerSettings(
                 url = "${getBaseUrl()}notsettings",
                 bearerToken = authRepository.requireBearerToken()
-            ).version?.takeIf { it.isNotBlank() }
+            ).version?.trim()?.removePrefix("v")?.takeIf { it.isNotBlank() }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

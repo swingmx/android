@@ -680,7 +680,7 @@ private fun LogOutDialog(isLoggingOut: Boolean, onConfirm: () -> Unit, onDismiss
 
 private fun versionsLine(appVersion: String, serverVersion: String?): String {
     val app = "Swing Music $appVersion".trim()
-    val server = serverVersion?.let { "Server ${if (it.startsWith("v")) it else "v$it"}" }
+    val server = serverVersion?.let { "Server $it" }
     return listOfNotNull(app, server).joinToString(" · ")
 }
 
